@@ -1,0 +1,3685 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#f5f0e8">
+<title>LUMEN — Biblioteca Personal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --cream: #f5f0e8;
+  --cream2: #ede7d9;
+  --cream3: #e0d8c8;
+  --ink: #1a1510;
+  --ink2: #4a4035;
+  --ink3: #8a7a68;
+  --ink4: #b8a898;
+  --red: #8b2020;
+  --red2: #c0392b;
+  --gold: #c8952a;
+  --blue: #1a3a5c;
+  --green: #2d5a3d;
+  --border: #d4c8b4;
+  --shadow: 0 2px 12px rgba(26,21,16,0.1);
+  --font-serif: 'Playfair Display', Georgia, serif;
+  --font-sans: 'Lato', sans-serif;
+  --radius: 4px;
+  --transition: 0.2s ease;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  height: 100%; background: var(--cream); color: var(--ink);
+  font-family: var(--font-sans); font-size: 15px;
+  overscroll-behavior: none;
+}
+
+/* ── LAYOUT ── */
+#app { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; }
+.screen { display: none; flex-direction: column; height: 100%; overflow-y: auto; padding-bottom: 72px; }
+.screen.active { display: flex; }
+
+/* ── TOPBAR ── */
+.topbar {
+  position: sticky; top: 0; z-index: 50;
+  background: var(--ink); padding: 14px 20px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.topbar-logo {
+  font-family: var(--font-serif); font-size: 24px; font-weight: 900;
+  color: var(--cream); letter-spacing: 3px; font-style: italic;
+}
+.topbar-sub { font-size: 10px; color: var(--ink4); letter-spacing: 3px; text-transform: uppercase; margin-top: 1px; }
+
+/* ── BOTTOM NAV ── */
+.bottomnav {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+  background: var(--ink); border-top: 2px solid var(--red);
+  display: flex; height: 64px;
+}
+.nav-btn {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 3px; background: none; border: none;
+  color: var(--ink4); cursor: pointer; transition: color var(--transition);
+  font-family: var(--font-sans); font-size: 9px; font-weight: 700;
+  letter-spacing: 1.5px; text-transform: uppercase;
+}
+.nav-btn svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 1.6; }
+.nav-btn.active { color: var(--gold); }
+
+/* ── BUTTONS ── */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 11px 20px; border-radius: var(--radius); border: none; cursor: pointer;
+  font-family: var(--font-sans); font-size: 13px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; transition: all var(--transition); width: 100%;
+}
+.btn-primary { background: var(--ink); color: var(--cream); }
+.btn-primary:active { background: var(--ink2); }
+.btn-secondary { background: transparent; color: var(--ink2); border: 1.5px solid var(--border); }
+.btn-secondary:active { background: var(--cream2); }
+.btn-red { background: var(--red); color: var(--cream); }
+.btn-sm { padding: 7px 14px; font-size: 11px; width: auto; }
+.btn-icon { background: none; border: none; cursor: pointer; color: var(--ink3); padding: 6px; display: inline-flex; align-items: center; }
+.btn-icon svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; }
+
+/* ── CARDS ── */
+.card {
+  background: #fff; border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 16px; margin-bottom: 10px; box-shadow: var(--shadow);
+}
+.card-sm { padding: 12px; }
+
+/* ── FORM ── */
+.field { margin-bottom: 13px; }
+.field label { display: block; font-size: 10px; color: var(--ink3); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 5px; font-weight: 700; }
+.input {
+  width: 100%; background: #fff; border: 1.5px solid var(--border); border-radius: var(--radius);
+  padding: 10px 13px; color: var(--ink); font-family: var(--font-sans); font-size: 14px;
+  outline: none; transition: border-color var(--transition);
+}
+.input:focus { border-color: var(--ink); }
+.input::placeholder { color: var(--ink4); }
+select.input { cursor: pointer; }
+
+/* ── BADGES ── */
+.badge {
+  display: inline-block; padding: 2px 9px; border-radius: 2px;
+  font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+}
+.badge-libro { background: #e8f0e8; color: var(--green); border: 1px solid #c0d8c0; }
+.badge-pelicula { background: #f0e8e8; color: var(--red); border: 1px solid #d8c0c0; }
+.badge-serie { background: #e8eef5; color: var(--blue); border: 1px solid #c0ccd8; }
+.badge-leyendo { background: #fff8e8; color: var(--gold); border: 1px solid #e8d8a0; }
+
+/* ── SECTION TITLE ── */
+.section-title {
+  font-family: var(--font-serif); font-size: 18px; font-weight: 700;
+  color: var(--ink); padding: 20px 20px 10px; border-bottom: 1px solid var(--border);
+  margin-bottom: 12px;
+}
+.section-sub { font-size: 11px; color: var(--ink3); letter-spacing: 2px; text-transform: uppercase; }
+
+/* ── TABS ── */
+.tabs { display: flex; background: var(--ink); overflow-x: auto; }
+.tab {
+  flex-shrink: 0; padding: 11px 18px; background: none; border: none; border-bottom: 2px solid transparent;
+  color: var(--ink4); font-family: var(--font-sans); font-size: 11px; font-weight: 700;
+  letter-spacing: 1.5px; text-transform: uppercase; cursor: pointer; transition: all var(--transition);
+}
+.tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+
+.tab-panel { display: none; padding: 16px 20px; }
+.tab-panel.active { display: block; }
+
+/* ── MODALS ── */
+.modal-overlay {
+  display: none; position: fixed; inset: 0; z-index: 200;
+  background: rgba(26,21,16,0.7); align-items: flex-end;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: var(--cream); border-top: 3px solid var(--red); width: 100%;
+  max-height: 93dvh; overflow-y: auto; padding: 0 0 40px;
+  animation: slideUp 0.22s ease;
+}
+@keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.modal-handle { width: 36px; height: 3px; background: var(--border); border-radius: 2px; margin: 12px auto; }
+.modal-header {
+  padding: 8px 20px 14px; display: flex; justify-content: space-between; align-items: center;
+  border-bottom: 1px solid var(--border);
+}
+.modal-title { font-family: var(--font-serif); font-size: 22px; font-weight: 700; font-style: italic; }
+.modal-body { padding: 18px 20px; }
+
+/* ── SEARCH RESULTS ── */
+.search-results { border: 1.5px solid var(--border); border-radius: var(--radius); background: #fff; overflow: hidden; margin-top: -8px; margin-bottom: 13px; }
+.search-result-item {
+  display: flex; gap: 12px; padding: 11px 14px; border-bottom: 1px solid var(--cream2);
+  cursor: pointer; transition: background var(--transition); align-items: flex-start;
+}
+.search-result-item:last-child { border-bottom: none; }
+.search-result-item:hover, .search-result-item:active { background: var(--cream2); }
+.sr-cover { width: 36px; height: 50px; object-fit: cover; border-radius: 2px; flex-shrink: 0; background: var(--cream3); }
+.sr-title { font-family: var(--font-serif); font-size: 14px; font-weight: 700; line-height: 1.2; }
+.sr-sub { font-size: 11px; color: var(--ink3); margin-top: 2px; line-height: 1.4; }
+
+/* ── ENTRY CARDS ── */
+.entry-card {
+  background: #fff; border: 1px solid var(--border); border-radius: var(--radius);
+  margin-bottom: 10px; overflow: hidden; box-shadow: var(--shadow);
+  display: flex; cursor: pointer; transition: box-shadow var(--transition);
+}
+.entry-card:active { box-shadow: none; }
+.entry-card-spine { width: 5px; flex-shrink: 0; }
+.entry-card-spine.libro { background: var(--green); }
+.entry-card-spine.pelicula { background: var(--red); }
+.entry-card-spine.serie { background: var(--blue); }
+.entry-card-cover { width: 56px; height: 80px; object-fit: cover; flex-shrink: 0; background: var(--cream3); }
+.entry-card-info { padding: 11px 13px; flex: 1; min-width: 0; }
+.entry-card-title { font-family: var(--font-serif); font-size: 15px; font-weight: 700; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.entry-card-sub { font-size: 11px; color: var(--ink3); margin-top: 2px; }
+.entry-card-meta { display: flex; align-items: center; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+.entry-card-rating { font-size: 12px; color: var(--gold); }
+
+/* ── PROGRESS BAR ── */
+.progress-wrap { background: var(--cream2); border-radius: 2px; height: 5px; overflow: hidden; margin-top: 6px; }
+.progress-fill { height: 100%; background: var(--gold); border-radius: 2px; transition: width 0.4s ease; }
+
+/* ── STATS ── */
+.stat-box {
+  background: #fff; border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 14px 16px; text-align: center; box-shadow: var(--shadow);
+}
+.stat-num { font-family: var(--font-serif); font-size: 36px; font-weight: 900; color: var(--ink); line-height: 1; }
+.stat-label { font-size: 10px; color: var(--ink3); letter-spacing: 2px; text-transform: uppercase; margin-top: 4px; }
+.stat-vs { font-size: 11px; margin-top: 4px; font-weight: 700; }
+.stat-vs.up { color: var(--green); }
+.stat-vs.down { color: var(--red2); }
+
+.chart-wrap { position: relative; height: 200px; margin-bottom: 16px; }
+
+.top-item {
+  display: flex; align-items: center; gap: 12px; padding: 10px 0;
+  border-bottom: 1px solid var(--cream2);
+}
+.top-rank { font-family: var(--font-serif); font-size: 22px; font-weight: 900; color: var(--ink4); width: 28px; flex-shrink: 0; }
+.top-rank.gold { color: var(--gold); }
+.top-info { flex: 1; }
+.top-name { font-family: var(--font-serif); font-size: 14px; font-weight: 700; }
+.top-count { font-size: 11px; color: var(--ink3); }
+.top-bar-wrap { width: 80px; }
+.top-bar { height: 6px; background: var(--red); border-radius: 2px; }
+
+/* ── HOME HERO ── */
+.home-hero {
+  background: var(--ink); padding: 28px 20px 24px;
+  background-image: linear-gradient(135deg, #1a1510 0%, #2d2318 100%);
+}
+.hero-year { font-family: var(--font-sans); font-size: 11px; color: var(--ink4); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 6px; }
+.hero-title { font-family: var(--font-serif); font-size: 32px; font-weight: 900; color: var(--cream); font-style: italic; line-height: 1.1; }
+.hero-sub { font-size: 12px; color: var(--ink3); margin-top: 6px; }
+
+.year-summary { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; padding: 16px 20px; }
+.ys-box { background: #fff; border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 10px; text-align: center; box-shadow: var(--shadow); }
+.ys-num { font-family: var(--font-serif); font-size: 28px; font-weight: 900; color: var(--ink); line-height: 1; }
+.ys-label { font-size: 9px; color: var(--ink3); letter-spacing: 1.5px; text-transform: uppercase; margin-top: 3px; }
+.ys-sub { font-size: 10px; color: var(--gold); font-weight: 700; margin-top: 2px; }
+
+.currently-reading { padding: 0 20px 16px; }
+.cr-title { font-family: var(--font-serif); font-size: 13px; font-style: italic; color: var(--ink3); margin-bottom: 8px; letter-spacing: 1px; }
+
+/* ── STARS ── */
+.stars { display: flex; gap: 2px; }
+.star { font-size: 14px; cursor: pointer; color: var(--ink4); transition: color var(--transition); }
+.star.filled { color: var(--gold); }
+
+/* ── TOAST ── */
+.toast {
+  position: fixed; bottom: 76px; left: 50%; transform: translateX(-50%) translateY(16px);
+  background: var(--ink); color: var(--cream); font-family: var(--font-sans);
+  font-size: 13px; font-weight: 700; letter-spacing: 1px;
+  padding: 11px 22px; border-radius: 30px; white-space: nowrap;
+  opacity: 0; pointer-events: none; z-index: 300; transition: all 0.3s ease;
+  border-left: 3px solid var(--gold);
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ── EMPTY ── */
+.empty { padding: 40px 20px; text-align: center; color: var(--ink4); }
+.empty-icon { font-size: 36px; margin-bottom: 12px; }
+.empty-text { font-family: var(--font-serif); font-size: 16px; font-style: italic; }
+
+/* ── DIVIDER ── */
+.divider { height: 1px; background: var(--border); margin: 14px 0; }
+
+/* ── FILTER PILLS ── */
+.filter-pills { display: flex; gap: 6px; padding: 12px 20px 4px; overflow-x: auto; }
+.filter-pill {
+  flex-shrink: 0; padding: 5px 14px; border-radius: 20px;
+  border: 1.5px solid var(--border); background: #fff; color: var(--ink3);
+  font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+  cursor: pointer; transition: all var(--transition); font-family: var(--font-sans);
+}
+.filter-pill.active { background: var(--ink); color: var(--cream); border-color: var(--ink); }
+
+/* ── IMPORT ZONE ── */
+.import-zone {
+  border: 2px dashed var(--border); border-radius: var(--radius);
+  padding: 28px 20px; text-align: center; cursor: pointer;
+  transition: border-color var(--transition); background: #fff;
+}
+.import-zone:hover { border-color: var(--ink); }
+.import-zone-icon { font-size: 28px; margin-bottom: 8px; }
+.import-zone-text { font-size: 13px; color: var(--ink3); line-height: 1.5; }
+
+/* ── SORT PILLS ── */
+.sort-pill {
+  padding: 5px 12px; border-radius: 20px; border: 1.5px solid var(--border);
+  background: #fff; color: var(--ink3); font-size: 11px; font-weight: 700;
+  letter-spacing: 1px; text-transform: uppercase; cursor: pointer;
+  font-family: var(--font-sans); transition: all var(--transition);
+}
+.sort-pill.active { background: var(--ink); color: var(--cream); border-color: var(--ink); }
+
+/* ── INTERACTIVE TOP LIST ── */
+.stat-sublabel { font-size: 10px; color: var(--ink4); letter-spacing: 2px; text-transform: uppercase; font-weight: 700; margin-bottom: 6px; }
+.top-interactive { }
+.top-int-item {
+  display: flex; align-items: center; gap: 8px; padding: 6px 8px;
+  border-radius: 4px; cursor: pointer; transition: background var(--transition);
+  border-bottom: 1px solid var(--cream2);
+}
+.top-int-item:hover { background: var(--cream2); }
+.top-int-item.selected { background: var(--ink); color: var(--cream); border-radius: 4px; }
+.top-int-item.selected .top-int-count { color: var(--gold); }
+.top-int-item.dimmed { opacity: 0.35; }
+.top-int-rank { font-family: var(--font-serif); font-size: 13px; font-weight: 900; color: var(--ink4); width: 18px; flex-shrink: 0; }
+.top-int-name { flex: 1; font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.top-int-count { font-size: 11px; color: var(--ink3); flex-shrink: 0; }
+.top-int-bar { width: 40px; height: 4px; background: var(--cream3); border-radius: 2px; flex-shrink: 0; overflow: hidden; }
+.top-int-bar-fill { height: 100%; border-radius: 2px; }
+
+/* ── DATA TABLE ── */
+.data-table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 500px; }
+.data-table th { background: var(--ink); color: var(--cream); padding: 8px 10px; text-align: left; font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; font-weight: 700; }
+.data-table td { padding: 8px 10px; border-bottom: 1px solid var(--cream2); vertical-align: middle; }
+.data-table tr:hover td { background: var(--cream2); }
+.data-table tr.dimmed td { opacity: 0.3; }
+.data-table .clickable { cursor: pointer; color: var(--red); text-decoration: underline; text-decoration-style: dotted; }
+.data-table .clickable:hover { color: var(--red2); }
+
+/* ── RITMO BOX ── */
+.ritmo-box { background: linear-gradient(135deg, var(--ink) 0%, #2d2318 100%); border-radius: var(--radius); padding: 14px 16px; color: var(--cream); }
+.ritmo-num { font-family: var(--font-serif); font-size: 32px; font-weight: 900; color: var(--gold); }
+.ritmo-label { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--ink4); margin-top: 2px; }
+
+/* ── ACTIVE FILTER TAG ── */
+.filter-tag { display: inline-flex; align-items: center; gap: 6px; background: var(--ink); color: var(--cream); padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+.filter-tag button { background: none; border: none; color: var(--ink4); cursor: pointer; font-size: 14px; line-height: 1; padding: 0; }
+
+/* ── STATS SEGMENTED CONTROL ── */
+.stats-seg {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  background: var(--cream2); border-radius: 8px; padding: 3px; gap: 2px;
+}
+.stats-seg-btn {
+  padding: 8px 4px; border: none; border-radius: 6px; background: transparent;
+  font-family: var(--font-sans); font-size: 11px; font-weight: 700;
+  color: var(--ink3); cursor: pointer; transition: all 0.18s; letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+.stats-seg-btn.active { background: var(--ink); color: var(--cream); box-shadow: 0 1px 4px rgba(0,0,0,0.18); }
+/* ── STATS PANEL ── */
+.stats-panel { display: none; }
+.stats-panel.active { display: block; }
+/* ── STATS YEAR NAV ── */
+.stats-year-nav {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 20px; background: var(--cream2); border-bottom: 1px solid var(--border); margin-top: 10px;
+}
+.stats-year-label { font-family: var(--font-serif); font-size: 18px; font-weight: 700; font-style: italic; color: var(--ink); }
+.stats-year-btn {
+  width: 36px; height: 36px; border-radius: 50%; border: 1.5px solid var(--border);
+  background: #fff; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; color: var(--ink2); transition: all 0.15s;
+}
+.stats-year-btn:hover { background: var(--ink); color: var(--cream); border-color: var(--ink); }
+/* ── CHART SECTION HEADER ── */
+.chart-section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; flex-wrap: wrap; gap: 8px; }
+.chart-section-title { font-family: var(--font-serif); font-size: 15px; font-weight: 700; font-style: italic; }
+.chart-mode-pills { display: flex; gap: 3px; }
+.chart-mode-pill {
+  padding: 4px 10px; border-radius: 20px; border: 1.5px solid var(--border);
+  background: #fff; color: var(--ink3); font-size: 10px; font-weight: 700;
+  letter-spacing: 0.5px; cursor: pointer; font-family: var(--font-sans); transition: all 0.15s;
+}
+.chart-mode-pill.active { background: var(--ink); color: var(--cream); border-color: var(--ink); }
+/* ── TABLE PAGINATION ── */
+.table-pagination { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 0; }
+.pag-btn {
+  width: 32px; height: 32px; border-radius: 50%; border: 1.5px solid var(--border);
+  background: #fff; color: var(--ink2); font-size: 14px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; transition: all 0.15s;
+}
+.pag-btn:disabled { opacity: 0.3; cursor: default; }
+.pag-btn:not(:disabled):hover { background: var(--ink); color: var(--cream); border-color: var(--ink); }
+.pag-info { font-size: 12px; color: var(--ink3); font-weight: 700; min-width: 80px; text-align: center; }
+
+/* ── HOME 3-COL GRID ── */
+.home-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.home-grid-3 .entry-card {
+  flex-direction: column; margin-bottom: 0;
+}
+.home-grid-3 .entry-card-spine { width: 100%; height: 4px; }
+.home-grid-3 .entry-card-cover { width: 100%; height: 100px; object-fit: cover; flex-shrink: 0; }
+.home-grid-3 .entry-card-info { padding: 8px 9px; }
+.home-grid-3 .entry-card-title { font-size: 12px; white-space: normal; display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden; }
+.home-grid-3 .entry-card-sub { font-size: 10px; }
+.home-grid-3 .entry-card-meta { display: none; } /* hide chips in grid to save space */
+
+/* reading mini grid */
+.reading-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.reading-mini-card {
+  background: #fff; border-radius: 6px; overflow: hidden;
+  border: 1px solid var(--border); display: flex; flex-direction: column;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+}
+.reading-mini-cover {
+  width: 100%; height: 100px; object-fit: cover; display: block;
+  background: var(--cream3); flex-shrink: 0;
+}
+.reading-mini-body { padding: 7px 8px; flex: 1; display: flex; flex-direction: column; gap: 3px; }
+.reading-mini-title { font-family: var(--font-serif); font-size: 11px; font-weight: 700; line-height: 1.3; color: var(--ink); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.reading-mini-autor { font-size: 10px; color: var(--ink4); }
+.reading-mini-pct { font-size: 10px; color: var(--gold); font-weight: 700; margin-top: 2px; }
+.reading-mini-btn { margin: 0 7px 7px; padding: 5px; font-size: 10px; letter-spacing: 0.5px; text-align: center; background: var(--cream2); border: 1px solid var(--border); border-radius: 4px; cursor: pointer; color: var(--ink2); font-family: var(--font-sans); font-weight: 700; }
+.reading-mini-btn:active { background: var(--ink); color: var(--cream); }
+
+/* ── RITMO HERO CARD ── */
+.ritmo-hero {
+  margin: 0 20px 12px;
+  background: var(--ink); color: var(--cream);
+  border-radius: 8px; padding: 14px 16px;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+}
+.ritmo-hero-main { display: flex; flex-direction: column; justify-content: center; }
+.ritmo-hero-num { font-family: var(--font-serif); font-size: 32px; font-weight: 700; font-style: italic; line-height: 1; color: var(--gold); }
+.ritmo-hero-label { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: rgba(245,240,232,0.6); margin-top: 4px; }
+.ritmo-hero-sub { font-size: 11px; color: rgba(245,240,232,0.7); margin-top: 6px; line-height: 1.5; }
+.ritmo-hero-vs { display: flex; flex-direction: column; justify-content: center; border-left: 1px solid rgba(245,240,232,0.15); padding-left: 12px; }
+.ritmo-hero-vs-label { font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: rgba(245,240,232,0.5); margin-bottom: 4px; }
+.ritmo-hero-vs-num { font-family: var(--font-serif); font-size: 22px; font-weight: 700; font-style: italic; line-height: 1; }
+.ritmo-hero-vs-pct { font-size: 12px; font-weight: 700; margin-top: 4px; }
+.ritmo-hero-vs-context { font-size: 10px; color: rgba(245,240,232,0.5); margin-top: 3px; line-height: 1.4; }
+
+/* ── HOME HERO position for user pill ── */
+.home-hero { position: relative; }
+
+/* ── USER MENU ── */
+#user-menu {
+  position: fixed; top: 60px; right: 12px; z-index: 500;
+  background: #fff; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.18);
+  border: 1px solid var(--border); overflow: hidden; min-width: 220px;
+  display: none;
+}
+#user-menu.open { display: block; }
+.user-menu-header { padding: 14px 16px; background: var(--cream2); border-bottom: 1px solid var(--border); }
+.user-menu-name { font-family: var(--font-serif); font-weight: 700; font-size: 14px; color: var(--ink); }
+.user-menu-email { font-size: 11px; color: var(--ink4); margin-top: 2px; }
+.user-menu-item { display: flex; align-items: center; gap: 10px; padding: 12px 16px; font-size: 13px; color: var(--ink2); cursor: pointer; border: none; background: none; width: 100%; font-family: var(--font-sans); }
+.user-menu-item:hover { background: var(--cream2); }
+.user-menu-item.danger { color: var(--red); }
+.sync-status { font-size: 11px; color: var(--ink4); padding: 8px 16px; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 6px; }
+
+::-webkit-scrollbar-track { background: var(--cream); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+</style>
+</head>
+<body>
+<!-- ══════ AUTH OVERLAY ══════ -->
+<div id="auth-overlay" style="
+  position:fixed;inset:0;z-index:9999;
+  background:var(--ink);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:24px;padding:40px 32px;text-align:center;
+">
+  <div style="font-family:var(--font-serif);font-size:42px;font-weight:900;font-style:italic;color:var(--cream);letter-spacing:-1px;">LUMEN</div>
+  <div style="font-size:12px;letter-spacing:4px;text-transform:uppercase;color:var(--ink4);">Biblioteca Personal</div>
+  <div style="width:40px;height:1px;background:var(--gold);"></div>
+  <div style="font-size:14px;color:var(--ink3);line-height:1.7;max-width:280px;">
+    Inicia sesión con Google para sincronizar tu biblioteca entre dispositivos.
+  </div>
+  <button id="btn-google-login" onclick="loginWithGoogle()" style="
+    display:flex;align-items:center;gap:12px;
+    background:#fff;color:#3c4043;
+    border:none;border-radius:6px;
+    padding:13px 24px;font-size:15px;font-weight:700;
+    cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.3);
+    font-family:var(--font-sans);letter-spacing:0.3px;
+    transition:box-shadow 0.2s;
+  ">
+    <svg width="20" height="20" viewBox="0 0 48 48">
+      <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+      <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+      <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+      <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+      <path fill="none" d="M0 0h48v48H0z"/>
+    </svg>
+    Continuar con Google
+  </button>
+  <div id="auth-error" style="font-size:12px;color:#f08080;min-height:16px;"></div>
+  <div style="font-size:11px;color:var(--ink4);margin-top:8px;line-height:1.6;">
+    Tus datos se almacenan en tu cuenta Google.<br>Funciona sin conexión y se sincroniza automáticamente.
+  </div>
+</div>
+
+<div id="app">
+
+<!-- ══════ SCREEN: HOME ══════ -->
+<div id="screen-home" class="screen active">
+  <div class="home-hero">
+    <div class="hero-year" id="hero-year-label"></div>
+    <div class="hero-title" id="hero-title">Mi Biblioteca<br>Cultural</div>
+    <div class="hero-sub" id="hero-sub"></div>
+    <!-- User pill -->
+    <div id="user-pill" style="
+      position:absolute;top:14px;right:16px;
+      display:flex;align-items:center;gap:8px;
+    ">
+      <div id="sync-dot" style="
+        width:7px;height:7px;border-radius:50%;
+        background:#7ec98f;flex-shrink:0;
+        transition:background 0.4s;
+      " title="Sincronizado"></div>
+      <img id="user-avatar" src="" style="
+        width:30px;height:30px;border-radius:50%;
+        border:2px solid rgba(245,240,232,0.4);
+        display:none;cursor:pointer;
+      " onclick="showUserMenu()" title="Cuenta">
+      <div id="user-initials" style="
+        width:30px;height:30px;border-radius:50%;
+        background:var(--gold);color:var(--ink);
+        display:none;align-items:center;justify-content:center;
+        font-size:12px;font-weight:700;cursor:pointer;
+        border:2px solid rgba(245,240,232,0.4);
+      " onclick="showUserMenu()"></div>
+    </div>
+  </div>
+  <div class="year-summary" id="year-summary"></div>
+
+  <!-- RITMO HERO CARD -->
+  <div id="ritmo-hero-card"></div>
+
+  <!-- LEYENDO AHORA -->
+  <div style="padding:0 20px 4px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+      <div class="cr-title" style="margin:0;">— Leyendo ahora —</div>
+      <button class="btn btn-secondary btn-sm" onclick="openModal('modal-add-reading')" style="font-size:10px;letter-spacing:1px;">+ Lectura en curso</button>
+    </div>
+    <div id="currently-reading-list" class="reading-grid-3"></div>
+  </div>
+
+  <!-- VIENDO AHORA -->
+  <div style="padding:4px 20px 4px;" id="viendo-section">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+      <div class="cr-title" style="margin:0;">— Viendo ahora —</div>
+    </div>
+    <div id="currently-watching-list" class="reading-grid-3"></div>
+  </div>
+
+  <div style="padding:8px 20px 4px;">
+    <div class="cr-title" style="margin-bottom:8px;">— Últimas películas —</div>
+    <div id="recent-peliculas" class="home-grid-3"></div>
+  </div>
+  <div style="padding:4px 20px 4px;">
+    <div class="cr-title" style="margin-bottom:8px;">— Últimos libros leídos —</div>
+    <div id="recent-libros" class="home-grid-3"></div>
+  </div>
+  <div style="padding:4px 20px 8px;">
+    <div class="cr-title" style="margin-bottom:8px;">— Últimas series —</div>
+    <div id="recent-series" class="home-grid-3"></div>
+  </div>
+  <div style="padding:0 20px 12px;">
+    <button class="btn btn-primary" onclick="openModal('modal-add')">+ Registrar estímulo</button>
+  </div>
+</div>
+
+<!-- ══════ SCREEN: BIBLIOTECA ══════ -->
+<div id="screen-library" class="screen">
+  <div class="topbar">
+    <div>
+      <div class="topbar-logo">LUMEN</div>
+      <div class="topbar-sub">Biblioteca</div>
+    </div>
+    <button class="btn btn-sm" style="background:var(--red);color:var(--cream);width:auto;font-size:11px;letter-spacing:1px;" onclick="openModal('modal-add')">+ Añadir</button>
+  </div>
+  <div style="padding:12px 20px 8px;">
+    <div class="stats-seg" id="lib-seg">
+      <button class="stats-seg-btn active" data-tab="todos"    onclick="filterLib('todos',this)">Todos</button>
+      <button class="stats-seg-btn"        data-tab="libro"    onclick="filterLib('libro',this)">📚 Libros</button>
+      <button class="stats-seg-btn"        data-tab="pelicula" onclick="filterLib('pelicula',this)">🎬 Pelícs.</button>
+      <button class="stats-seg-btn"        data-tab="serie"    onclick="filterLib('serie',this)">📺 Series</button>
+    </div>
+  </div>
+  <div style="padding:0 20px 4px;">
+    <input class="input" type="text" id="lib-search" placeholder="Buscar en mi biblioteca..." oninput="renderLibrary()">
+  </div>
+  <div id="library-list" style="padding:4px 20px;"></div>
+</div>
+
+<!-- ══════ SCREEN: AÑO ══════ -->
+<div id="screen-year" class="screen">
+  <div class="topbar">
+    <div>
+      <div class="topbar-logo">LUMEN</div>
+      <div class="topbar-sub">Mi Año</div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <button class="btn-icon" onclick="changeYear(-1)"><svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:var(--cream);fill:none;stroke-width:2;"><polyline points="15 18 9 12 15 6"/></svg></button>
+      <span id="year-display" style="font-family:var(--font-serif);font-size:18px;font-weight:700;color:var(--cream);"></span>
+      <button class="btn-icon" onclick="changeYear(1)"><svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:var(--cream);fill:none;stroke-width:2;"><polyline points="9 18 15 12 9 6"/></svg></button>
+    </div>
+  </div>
+  <div id="year-content" style="padding:16px 20px;"></div>
+</div>
+
+<!-- ══════ SCREEN: STATS ══════ -->
+<div id="screen-stats" class="screen">
+  <div class="topbar">
+    <div class="topbar-logo">LUMEN</div>
+    <div class="topbar-sub">Estadísticas</div>
+  </div>
+
+  <!-- SEGMENTADOR PRINCIPAL -->
+  <div style="padding:14px 20px 0;">
+    <div class="stats-seg" id="stats-seg">
+      <button class="stats-seg-btn active" data-seg="libros" onclick="switchStatsSeg('libros',this)">📚 Libros</button>
+      <button class="stats-seg-btn" data-seg="peliculas" onclick="switchStatsSeg('peliculas',this)">🎬 Películas</button>
+      <button class="stats-seg-btn" data-seg="series" onclick="switchStatsSeg('series',this)">📺 Series</button>
+      <button class="stats-seg-btn" data-seg="global" onclick="switchStatsSeg('global',this)">🌐 Global</button>
+    </div>
+  </div>
+
+  <!-- ── PANEL LIBROS ── -->
+  <div class="stats-panel active" id="spanel-libros">
+
+    <!-- Navegador de año -->
+    <div class="stats-year-nav">
+      <button class="stats-year-btn" onclick="changeStatsYear('libros',-1)">
+        <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.5;"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <div style="text-align:center;">
+        <div class="stats-year-label" id="lb-year-label">Todos los años</div>
+        <div id="lb-vs-best" style="font-size:11px;color:var(--ink4);margin-top:2px;"></div>
+      </div>
+      <button class="stats-year-btn" onclick="changeStatsYear('libros',1)">
+        <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.5;"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+    </div>
+
+    <div style="padding:0 20px 20px;">
+      <!-- KPIs -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;" id="lb-kpis"></div>
+
+      <!-- Gráficos con toggle de vista -->
+      <div class="chart-section-header">
+        <div class="chart-section-title">Por mes</div>
+        <div class="chart-mode-pills" id="lb-chart-mode-pills">
+          <button class="chart-mode-pill active" onclick="setLbChartMode('pags',this)">Páginas</button>
+          <button class="chart-mode-pill" onclick="setLbChartMode('cantidad',this)">Libros</button>
+          <button class="chart-mode-pill" onclick="setLbChartMode('ritmo',this)">Ritmo</button>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="lb-chart-mes"></canvas></div>
+
+      <div class="divider"></div>
+
+      <!-- Rankings interactivos -->
+      <div class="chart-section-title" style="margin-bottom:4px;">Rankings interactivos</div>
+      <p style="font-size:11px;color:var(--ink4);margin-bottom:10px;">Toca un elemento para filtrar todos los rankings y la tabla.</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+        <div><div class="stat-sublabel">Autores</div><div id="lb-top-autor" class="top-interactive"></div></div>
+        <div><div class="stat-sublabel">Editoriales</div><div id="lb-top-editorial" class="top-interactive"></div></div>
+        <div><div class="stat-sublabel">Traductores</div><div id="lb-top-traductor" class="top-interactive"></div></div>
+        <div><div class="stat-sublabel">Idioma original</div><div id="lb-top-idioma" class="top-interactive"></div></div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Tabla paginada -->
+      <div class="chart-section-title" style="margin-bottom:8px;">Todos los libros</div>
+      <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;">
+        <button class="sort-pill active" onclick="sortLibros('anio_pub',this)">Año pub.</button>
+        <button class="sort-pill" onclick="sortLibros('autor',this)">Autor</button>
+        <button class="sort-pill" onclick="sortLibros('titulo',this)">Título</button>
+        <button class="sort-pill" onclick="sortLibros('paginas',this)">Páginas</button>
+      </div>
+      <div id="lb-active-filter" style="margin-bottom:8px;"></div>
+      <div id="lb-tabla" style="overflow-x:auto;"></div>
+      <div id="lb-pagination" class="table-pagination"></div>
+
+      <div class="divider"></div>
+
+      <!-- Scatter -->
+      <div class="chart-section-title" style="margin-bottom:4px;">Libros en el tiempo (publicación)</div>
+      <p style="font-size:11px;color:var(--ink4);margin-bottom:8px;">Cada punto es un libro. Pasa el cursor para ver título y autor.</p>
+      <div style="position:relative;height:260px;margin-bottom:8px;"><canvas id="lb-chart-scatter"></canvas></div>
+
+      <div class="divider"></div>
+      <div id="lb-curiosidades"></div>
+    </div>
+  </div>
+
+  <!-- ── PANEL PELÍCULAS ── -->
+  <div class="stats-panel" id="spanel-peliculas">
+
+    <div class="stats-year-nav">
+      <button class="stats-year-btn" onclick="changeStatsYear('peliculas',-1)">
+        <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.5;"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <div style="text-align:center;">
+        <div class="stats-year-label" id="pl-year-label">Todos los años</div>
+        <div id="pl-vs-best" style="font-size:11px;color:var(--ink4);margin-top:2px;"></div>
+      </div>
+      <button class="stats-year-btn" onclick="changeStatsYear('peliculas',1)">
+        <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.5;"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+    </div>
+
+    <div style="padding:0 20px 20px;">
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;" id="pl-kpis"></div>
+
+      <div class="chart-section-header">
+        <div class="chart-section-title">Por mes</div>
+        <div class="chart-mode-pills" id="pl-chart-mode-pills">
+          <button class="chart-mode-pill active" onclick="setPlChartMode('cantidad',this)">Cantidad</button>
+          <button class="chart-mode-pill" onclick="setPlChartMode('minutos',this)">Minutos</button>
+          <button class="chart-mode-pill" onclick="setPlChartMode('promedio',this)">Promedio</button>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="pl-chart-mes"></canvas></div>
+
+      <div class="divider"></div>
+
+      <div class="chart-section-title" style="margin-bottom:4px;">Rankings interactivos</div>
+      <p style="font-size:11px;color:var(--ink4);margin-bottom:10px;">Toca un nombre para filtrar todos los rankings y la tabla.</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+        <div><div class="stat-sublabel">Directores</div><div id="pl-top-director" class="top-interactive"></div></div>
+        <div><div class="stat-sublabel">Guionistas</div><div id="pl-top-guion" class="top-interactive"></div></div>
+        <div><div class="stat-sublabel">Música / BSO</div><div id="pl-top-musica" class="top-interactive"></div></div>
+        <div><div class="stat-sublabel">Fotografía</div><div id="pl-top-foto" class="top-interactive"></div></div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="chart-section-title" style="margin-bottom:8px;">Todas las películas</div>
+      <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;">
+        <button class="sort-pill active" onclick="sortPeliculas('anio_est',this)">Año estreno</button>
+        <button class="sort-pill" onclick="sortPeliculas('director',this)">Director</button>
+        <button class="sort-pill" onclick="sortPeliculas('duracion',this)">Duración</button>
+        <button class="sort-pill" onclick="sortPeliculas('titulo',this)">Título</button>
+      </div>
+      <div id="pl-active-filter" style="margin-bottom:8px;"></div>
+      <div id="pl-tabla" style="overflow-x:auto;"></div>
+      <div id="pl-pagination" class="table-pagination"></div>
+
+      <div class="divider"></div>
+      <div class="chart-section-title" style="margin-bottom:4px;">Películas en el tiempo (estreno)</div>
+      <p style="font-size:11px;color:var(--ink4);margin-bottom:8px;">Cada punto es una película. Pasa el cursor para ver título y director.</p>
+      <div style="position:relative;height:240px;margin-bottom:8px;"><canvas id="pl-chart-scatter"></canvas></div>
+      <div class="divider"></div>
+      <div id="pl-curiosidades"></div>
+    </div>
+  </div>
+
+  <!-- ── PANEL SERIES ── -->
+  <div class="stats-panel" id="spanel-series">
+
+    <div class="stats-year-nav">
+      <button class="stats-year-btn" onclick="changeStatsYear('series',-1)">
+        <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.5;"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <div style="text-align:center;">
+        <div class="stats-year-label" id="sr-year-label">Todos los años</div>
+        <div id="sr-vs-best" style="font-size:11px;color:var(--ink4);margin-top:2px;"></div>
+      </div>
+      <button class="stats-year-btn" onclick="changeStatsYear('series',1)">
+        <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.5;"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+    </div>
+
+    <div style="padding:0 20px 20px;">
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;" id="sr-kpis"></div>
+
+      <div class="chart-section-header">
+        <div class="chart-section-title">Por mes</div>
+        <div class="chart-mode-pills" id="sr-chart-mode-pills">
+          <button class="chart-mode-pill active" onclick="setSrChartMode('cantidad',this)">Cantidad</button>
+          <button class="chart-mode-pill" onclick="setSrChartMode('minutos',this)">Minutos</button>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="sr-chart-mes"></canvas></div>
+
+      <div class="divider"></div>
+
+      <div class="chart-section-title" style="margin-bottom:4px;">Rankings interactivos</div>
+      <p style="font-size:11px;color:var(--ink4);margin-bottom:10px;">Toca un nombre para filtrar todos los rankings y la tabla.</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+        <div><div class="stat-sublabel">Directores</div><div id="sr-top-director" class="top-interactive"></div></div>
+        <div><div class="stat-sublabel">Guionistas</div><div id="sr-top-guion" class="top-interactive"></div></div>
+        <div><div class="stat-sublabel">Música / BSO</div><div id="sr-top-musica" class="top-interactive"></div></div>
+        <div><div class="stat-sublabel">Protagonistas</div><div id="sr-top-protagonista" class="top-interactive"></div></div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="chart-section-title" style="margin-bottom:8px;">Todas las series</div>
+      <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;">
+        <button class="sort-pill active" onclick="sortSeries('anio_est',this)">Año estreno</button>
+        <button class="sort-pill" onclick="sortSeries('director',this)">Creador</button>
+        <button class="sort-pill" onclick="sortSeries('duracion',this)">Duración</button>
+        <button class="sort-pill" onclick="sortSeries('titulo',this)">Título</button>
+      </div>
+      <div id="sr-active-filter" style="margin-bottom:8px;"></div>
+      <div id="sr-tabla" style="overflow-x:auto;"></div>
+      <div id="sr-pagination" class="table-pagination"></div>
+
+      <div class="divider"></div>
+      <div class="chart-section-title" style="margin-bottom:4px;">Series en el tiempo (estreno)</div>
+      <p style="font-size:11px;color:var(--ink4);margin-bottom:8px;">Cada punto es una serie. Eje Y = duración total.</p>
+      <div style="position:relative;height:240px;margin-bottom:8px;"><canvas id="sr-chart-scatter"></canvas></div>
+      <div class="divider"></div>
+      <div id="sr-curiosidades"></div>
+    </div>
+  </div>
+
+  <!-- ── PANEL GLOBAL ── -->
+  <div class="stats-panel" id="spanel-global">
+    <div style="padding:16px 20px 20px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;" id="gl-kpis"></div>
+      <div class="chart-section-title" style="margin-bottom:8px;">Estímulos por año</div>
+      <div class="chart-wrap"><canvas id="gl-chart-anual"></canvas></div>
+      <div class="divider"></div>
+      <div id="gl-curiosidades"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ USER MENU ══════ -->
+<div id="user-menu">
+  <div class="user-menu-header">
+    <div class="user-menu-name" id="menu-name">—</div>
+    <div class="user-menu-email" id="menu-email">—</div>
+  </div>
+  <div class="sync-status">
+    <div id="menu-sync-dot" style="width:7px;height:7px;border-radius:50%;background:#7ec98f;flex-shrink:0;"></div>
+    <span id="menu-sync-text">Sincronizado</span>
+  </div>
+  <button class="user-menu-item" onclick="forcSync()">
+    <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;"><polyline points="1 4 1 10 7 10"/><polyline points="23 20 23 14 17 14"/><path d="M20.49 9A9 9 0 005.64 5.64L1 10M23 14l-4.64 4.36A9 9 0 013.51 15"/></svg>
+    Forzar sincronización
+  </button>
+  <button class="user-menu-item danger" onclick="logOut()">
+    <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+    Cerrar sesión
+  </button>
+</div>
+
+<!-- ══════ BOTTOM NAV ══════ -->
+<nav class="bottomnav">
+  <button class="nav-btn active" id="nav-home" onclick="gotoScreen('home')">
+    <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    Inicio
+  </button>
+  <button class="nav-btn" id="nav-library" onclick="gotoScreen('library')">
+    <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+    Biblioteca
+  </button>
+  <button class="nav-btn" id="nav-year" onclick="gotoScreen('year')">
+    <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    Mi Año
+  </button>
+  <button class="nav-btn" id="nav-stats" onclick="gotoScreen('stats')">
+    <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+    Stats
+  </button>
+  <button class="nav-btn" id="nav-import" onclick="openModal('modal-import')">
+    <svg viewBox="0 0 24 24"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0018 9h-1.26A8 8 0 103 16.3"/></svg>
+    Importar
+  </button>
+</nav>
+</div>
+
+<!-- ══════ MODAL: AÑADIR ══════ -->
+<div id="modal-add" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title">Registrar estímulo</div>
+      <button class="btn-icon" onclick="closeModal('modal-add')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <!-- Type selector -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:18px;">
+        <button class="type-btn active" data-type="libro" onclick="selectType('libro',this)" style="padding:12px 8px;border:2px solid var(--green);border-radius:4px;background:#e8f0e8;cursor:pointer;font-family:var(--font-sans);font-size:12px;font-weight:700;color:var(--green);letter-spacing:1px;text-transform:uppercase;">📚 Libro</button>
+        <button class="type-btn" data-type="pelicula" onclick="selectType('pelicula',this)" style="padding:12px 8px;border:2px solid var(--border);border-radius:4px;background:#fff;cursor:pointer;font-family:var(--font-sans);font-size:12px;font-weight:700;color:var(--ink3);letter-spacing:1px;text-transform:uppercase;">🎬 Película</button>
+        <button class="type-btn" data-type="serie" onclick="selectType('serie',this)" style="padding:12px 8px;border:2px solid var(--border);border-radius:4px;background:#fff;cursor:pointer;font-family:var(--font-sans);font-size:12px;font-weight:700;color:var(--ink3);letter-spacing:1px;text-transform:uppercase;">📺 Serie</button>
+      </div>
+
+      <!-- SEARCH -->
+      <div class="field">
+        <label id="search-label">Buscar libro</label>
+        <input class="input" type="text" id="add-search" placeholder="Título, autor..." oninput="debounceSearch()">
+        <div id="add-search-results" style="display:none;" class="search-results"></div>
+      </div>
+
+      <!-- MANUAL FORM -->
+      <div id="form-libro">
+        <div class="field"><label>Título</label><input class="input" type="text" id="f-titulo" placeholder="Título del libro"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="field"><label>Autor</label><input class="input" type="text" id="f-autor"></div>
+          <div class="field"><label>Editorial</label><input class="input" type="text" id="f-editorial"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="field"><label>Páginas</label><input class="input" type="number" id="f-paginas" min="1"></div>
+          <div class="field"><label>Año publicación</label><input class="input" type="number" id="f-anio-pub"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="field"><label>Traductor</label><input class="input" type="text" id="f-traductor"></div>
+          <div class="field"><label>Idioma original</label><input class="input" type="text" id="f-idioma"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="field"><label>Mes lectura</label>
+            <select class="input" id="f-mes"><option value="">—</option>
+              <option>Enero</option><option>Febrero</option><option>Marzo</option><option>Abril</option>
+              <option>Mayo</option><option>Junio</option><option>Julio</option><option>Agosto</option>
+              <option>Septiembre</option><option>Octubre</option><option>Noviembre</option><option>Diciembre</option>
+            </select>
+          </div>
+          <div class="field"><label>Año lectura</label><input class="input" type="number" id="f-anio-lect" placeholder="2025"></div>
+        </div>
+        <div class="field">
+          <label>Estado</label>
+          <select class="input" id="f-estado">
+            <option value="leido">Leído</option>
+            <option value="leyendo">Leyendo</option>
+            <option value="pendiente">Pendiente</option>
+          </select>
+        </div>
+        <div class="field" id="progreso-field">
+          <label>Progreso (<span id="prog-pct">0</span>%)</label>
+          <input type="range" id="f-progreso" min="0" max="100" value="0" style="width:100%;accent-color:var(--gold);" oninput="document.getElementById('prog-pct').textContent=this.value">
+        </div>
+        <div class="field"><label>URL portada (opcional)</label><input class="input" type="text" id="f-cover" placeholder="https://..."></div>
+      </div>
+
+      <div id="form-pelicula" style="display:none;">
+        <!-- Wikipedia import -->
+        <div class="field" style="background:var(--cream2);border-radius:6px;padding:12px;margin-bottom:12px;">
+          <label style="color:var(--ink2);font-size:11px;letter-spacing:1.5px;">🌐 IMPORTAR DESDE WIKIPEDIA</label>
+          <div style="display:flex;gap:8px;margin-top:6px;">
+            <input class="input" type="text" id="fp-wiki-url" placeholder="Pega la URL de Wikipedia..." style="flex:1;font-size:13px;">
+            <button class="btn btn-secondary btn-sm" onclick="importFromWikipedia()" style="white-space:nowrap;flex-shrink:0;">Cargar</button>
+          </div>
+          <div id="fp-wiki-status" style="font-size:11px;color:var(--ink4);margin-top:4px;min-height:14px;"></div>
+        </div>
+        <div class="field"><label>Título</label><input class="input" type="text" id="fp-titulo"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="field"><label>Director</label><input class="input" type="text" id="fp-director"></div>
+          <div class="field"><label>Año estreno</label><input class="input" type="number" id="fp-anio-est"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="field"><label>Duración (min)</label><input class="input" type="number" id="fp-duracion"></div>
+          <div class="field"><label>Fotografía</label><input class="input" type="text" id="fp-foto"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="field"><label>Música / B.S.O.</label><input class="input" type="text" id="fp-musica"></div>
+          <div class="field"><label>Protagonista</label><input class="input" type="text" id="fp-protagonista"></div>
+        </div>
+        <div class="field"><label>Guionista</label><input class="input" type="text" id="fp-guionista"></div>
+        <div class="field">
+          <label>Basada en</label>
+          <select class="input" id="fp-basada">
+            <option value="">— Original —</option>
+            <option value="libro">Libro</option>
+            <option value="comic">Cómic</option>
+            <option value="pelicula">Película anterior</option>
+            <option value="serie">Serie</option>
+            <option value="hecho-real">Hecho real</option>
+          </select>
+        </div>
+        <div class="field" id="fp-autor-original-field" style="display:none;">
+          <label>Autor/a obra original</label>
+          <input class="input" type="text" id="fp-autor-original">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="field"><label>Mes visto</label>
+            <select class="input" id="fp-mes"><option value="">—</option>
+              <option>Enero</option><option>Febrero</option><option>Marzo</option><option>Abril</option>
+              <option>Mayo</option><option>Junio</option><option>Julio</option><option>Agosto</option>
+              <option>Septiembre</option><option>Octubre</option><option>Noviembre</option><option>Diciembre</option>
+            </select>
+          </div>
+          <div class="field"><label>Año visto</label><input class="input" type="number" id="fp-anio-visto" placeholder="2025"></div>
+        </div>
+        <div class="field"><label>URL poster (opcional)</label><input class="input" type="text" id="fp-cover" placeholder="https://..."></div>
+      </div>
+
+      <div id="form-serie" style="display:none;">
+        <div class="field"><label>Título</label><input class="input" type="text" id="fs-titulo"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="field"><label>Creador/Director</label><input class="input" type="text" id="fs-director"></div>
+          <div class="field"><label>Año estreno</label><input class="input" type="number" id="fs-anio-est"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="field"><label>Temporadas</label><input class="input" type="number" id="fs-temporadas" min="1" value="1"></div>
+          <div class="field"><label>Duración total (min)</label><input class="input" type="number" id="fs-duracion"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="field"><label>Música / B.S.O.</label><input class="input" type="text" id="fs-musica"></div>
+          <div class="field"><label>Protagonista</label><input class="input" type="text" id="fs-protagonista"></div>
+        </div>
+        <div class="field"><label>Guionista</label><input class="input" type="text" id="fs-guionista"></div>
+        <div class="field">
+          <label>Estado</label>
+          <select class="input" id="fs-estado">
+            <option value="vista">Vista ✓</option>
+            <option value="viendo">Viendo ahora</option>
+            <option value="pendiente">Pendiente</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Basada en</label>
+          <select class="input" id="fs-basada">
+            <option value="">— Original —</option>
+            <option value="libro">Libro</option>
+            <option value="comic">Cómic</option>
+            <option value="hecho-real">Hecho real</option>
+          </select>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="field"><label>Mes visto</label>
+            <select class="input" id="fs-mes"><option value="">—</option>
+              <option>Enero</option><option>Febrero</option><option>Marzo</option><option>Abril</option>
+              <option>Mayo</option><option>Junio</option><option>Julio</option><option>Agosto</option>
+              <option>Septiembre</option><option>Octubre</option><option>Noviembre</option><option>Diciembre</option>
+            </select>
+          </div>
+          <div class="field"><label>Año visto</label><input class="input" type="number" id="fs-anio-visto" placeholder="2025"></div>
+        </div>
+        <div class="field"><label>URL poster (opcional)</label><input class="input" type="text" id="fs-cover" placeholder="https://..."></div>
+      </div>
+
+      <!-- RATING -->
+      <div class="field">
+        <label>Mi valoración</label>
+        <div class="stars" id="rating-stars">
+          <span class="star" onclick="setRating(1)">★</span>
+          <span class="star" onclick="setRating(2)">★</span>
+          <span class="star" onclick="setRating(3)">★</span>
+          <span class="star" onclick="setRating(4)">★</span>
+          <span class="star" onclick="setRating(5)">★</span>
+        </div>
+      </div>
+      <div class="field"><label>Notas personales</label><textarea class="input" id="f-notas" rows="2" placeholder="Impresiones, citas..."></textarea></div>
+      <button class="btn btn-primary" onclick="saveEntry()" style="margin-top:6px;">Guardar en biblioteca</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ MODAL: DETALLE ══════ -->
+<div id="modal-detail" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title" id="detail-title">—</div>
+      <button class="btn-icon" onclick="closeModal('modal-detail')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body" id="detail-body"></div>
+  </div>
+</div>
+
+<!-- ══════ MODAL: IMPORTAR ══════ -->
+<div id="modal-import" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title">Importar datos</div>
+      <button class="btn-icon" onclick="closeModal('modal-import')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--ink3);margin-bottom:16px;line-height:1.6;">
+        Importa tu historial desde una planilla de Google Sheets exportada como CSV, o desde un archivo JSON de respaldo.
+      </p>
+      <div class="import-zone" onclick="document.getElementById('import-csv').click()">
+        <div class="import-zone-icon">📊</div>
+        <div class="import-zone-text"><strong>CSV desde Google Sheets</strong><br>Exporta tu planilla como .csv y súbela aquí</div>
+      </div>
+      <input type="file" id="import-csv" accept=".csv,.json" style="display:none" onchange="handleImport(event)">
+      <div class="divider"></div>
+      <div style="font-family:var(--font-serif);font-style:italic;font-size:14px;color:var(--ink2);margin-bottom:6px;">Columnas reconocidas de tu planilla</div>
+      <p style="font-size:12px;color:var(--ink3);margin-bottom:10px;line-height:1.6;">
+        La app reconoce automáticamente la estructura de tu Google Sheets. Exporta cada pestaña (Libros, Películas, Series) como CSV separado, o todo en uno. Las columnas detectadas son:
+      </p>
+      <div style="background:#fff;border:1px solid var(--border);border-radius:4px;padding:12px;font-size:10.5px;color:var(--ink3);font-family:monospace;line-height:2;overflow-x:auto;">
+        <span style="color:var(--ink);font-weight:700;">Serie ID</span> · <span style="color:var(--red);font-weight:700;">Categoría</span> · <span style="color:var(--ink);font-weight:700;">Nombre</span> · Temporada/Saga<br>
+        <span style="color:var(--red);font-weight:700;">Autor/Director</span> · LEN · <span style="color:var(--red);font-weight:700;">Publicación</span> · <span style="color:var(--red);font-weight:700;">Año de Lec</span> · <span style="color:var(--red);font-weight:700;">Mes de Lec</span> · N° Mes<br>
+        Traductor · <span style="color:var(--red);font-weight:700;">Editorial</span> · <span style="color:var(--red);font-weight:700;">Páginas / Minutos totales</span><br>
+        Guion · <span style="color:var(--red);font-weight:700;">Música</span> · Fotografía · <span style="color:var(--red);font-weight:700;">Protagonista</span><br>
+        Basado en · Título · Idea Original · Colección · Dirigida por
+      </div>
+      <p style="font-size:11px;color:var(--ink4);margin-top:8px;">Las columnas en <span style="color:var(--red);font-weight:700;">rojo</span> son las que se importan. "No aplica" se omite automáticamente.</p>
+      <div class="divider"></div>
+      <button class="btn btn-secondary" onclick="exportJSON()" style="margin-bottom:8px;">⬇ Exportar todo (JSON)</button>
+      <button class="btn btn-secondary" onclick="clearAll()">🗑 Limpiar todos los datos</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ MODAL: AÑADIR LECTURA EN CURSO ══════ -->
+<div id="modal-add-reading" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title">Lectura en curso</div>
+      <button class="btn-icon" onclick="closeModal('modal-add-reading')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label>Buscar libro</label>
+        <input class="input" type="text" id="reading-search" placeholder="Título, autor..." oninput="debounceReadingSearch()">
+        <div id="reading-search-results" style="display:none;" class="search-results"></div>
+      </div>
+      <div class="field"><label>Título</label><input class="input" type="text" id="reading-titulo" placeholder="Título del libro"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div class="field"><label>Autor</label><input class="input" type="text" id="reading-autor"></div>
+        <div class="field"><label>Editorial</label><input class="input" type="text" id="reading-editorial"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div class="field"><label>Páginas totales</label><input class="input" type="number" id="reading-paginas" min="1" placeholder="300"></div>
+        <div class="field"><label>Año publicación</label><input class="input" type="number" id="reading-anio-pub"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div class="field"><label>Traductor</label><input class="input" type="text" id="reading-traductor"></div>
+        <div class="field"><label>Idioma original</label><input class="input" type="text" id="reading-idioma"></div>
+      </div>
+      <div class="field">
+        <label>Portada</label>
+        <!-- Preview grande -->
+        <div id="reading-cover-preview" style="margin-bottom:10px;min-height:0;transition:all 0.2s;"></div>
+        <!-- URL input con botón limpiar -->
+        <div style="display:flex;gap:6px;align-items:center;">
+          <input class="input" type="text" id="reading-cover" placeholder="Pega una URL de imagen..." style="flex:1;" oninput="previewReadingCover(this.value)">
+          <button class="btn-icon" onclick="clearReadingCover()" title="Limpiar portada" style="padding:8px;border:1.5px solid var(--border);border-radius:4px;background:#fff;">
+            <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:var(--ink3);fill:none;stroke-width:2;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div style="display:flex;gap:6px;margin-top:8px;">
+          <button class="btn btn-secondary btn-sm" onclick="document.getElementById('reading-cover-file').click()" style="flex:1;font-size:11px;">📁 Subir imagen</button>
+          <button class="btn btn-secondary btn-sm" onclick="searchReadingCoverGoogle()" style="flex:1;font-size:11px;">🔍 Buscar portada</button>
+        </div>
+        <input type="file" id="reading-cover-file" accept="image/*" style="display:none;" onchange="handleReadingCoverFile(event)">
+        <div id="reading-cover-google-results" style="display:none;margin-top:8px;" class="search-results"></div>
+      </div>
+      <!-- Tipo de progreso -->
+      <div class="field">
+        <label>¿Cómo lees?</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <button class="reading-mode-btn active" data-mode="pct" onclick="selectReadingMode('pct',this)"
+            style="padding:10px;border:2px solid var(--gold);border-radius:4px;background:#fff8e8;font-family:var(--font-sans);font-size:12px;font-weight:700;color:var(--gold);cursor:pointer;letter-spacing:1px;">
+            📱 Kindle / %
+          </button>
+          <button class="reading-mode-btn" data-mode="pag" onclick="selectReadingMode('pag',this)"
+            style="padding:10px;border:2px solid var(--border);border-radius:4px;background:#fff;font-family:var(--font-sans);font-size:12px;font-weight:700;color:var(--ink3);cursor:pointer;letter-spacing:1px;">
+            📖 Físico / Págs
+          </button>
+        </div>
+      </div>
+      <div id="reading-prog-pct-field" class="field">
+        <label>Progreso actual (<span id="reading-pct-display">0</span>%)</label>
+        <input type="range" id="reading-prog-pct" min="0" max="100" value="0" style="width:100%;accent-color:var(--gold);"
+          oninput="document.getElementById('reading-pct-display').textContent=this.value">
+      </div>
+      <div id="reading-prog-pag-field" class="field" style="display:none;">
+        <label>Página actual</label>
+        <input class="input" type="number" id="reading-prog-pag" min="0" placeholder="0">
+      </div>
+      <button class="btn btn-primary" onclick="saveReadingEntry()">Empezar a seguir</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ MODAL: ACTUALIZAR PROGRESO ══════ -->
+<div id="modal-progress" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title" id="progress-modal-title">Actualizar progreso</div>
+      <button class="btn-icon" onclick="closeModal('modal-progress')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="progress-entry-id">
+      <!-- Book cover + info + editar portada -->
+      <div id="progress-book-info" style="display:flex;gap:12px;margin-bottom:10px;padding:12px;background:var(--cream2);border-radius:var(--radius);align-items:center;"></div>
+      <!-- Editar portada (colapsable) -->
+      <div style="margin-bottom:14px;">
+        <button onclick="toggleEditCover()" style="background:none;border:none;font-size:11px;color:var(--ink3);cursor:pointer;font-family:var(--font-sans);font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:0;display:flex;align-items:center;gap:4px;">
+          <svg viewBox="0 0 24 24" id="edit-cover-chevron" style="width:12px;height:12px;stroke:var(--ink3);fill:none;stroke-width:2.5;transition:transform 0.2s;"><polyline points="6 9 12 15 18 9"/></svg>
+          Editar portada
+        </button>
+        <div id="edit-cover-panel" style="display:none;margin-top:10px;padding:12px;background:#fff;border:1px solid var(--border);border-radius:var(--radius);">
+          <div id="progress-cover-preview" style="margin-bottom:10px;"></div>
+          <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;">
+            <input class="input" type="text" id="progress-cover-url" placeholder="Pega URL de la portada..." style="flex:1;" oninput="previewProgressCover(this.value)">
+            <button class="btn-icon" onclick="clearProgressCover()" style="padding:8px;border:1.5px solid var(--border);border-radius:4px;background:#fff;" title="Limpiar">
+              <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:var(--ink3);fill:none;stroke-width:2;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <div style="display:flex;gap:6px;">
+            <button class="btn btn-secondary btn-sm" onclick="document.getElementById('progress-cover-file').click()" style="flex:1;font-size:11px;">📁 Subir imagen</button>
+            <button class="btn btn-secondary btn-sm" onclick="searchProgressCoverGoogle()" style="flex:1;font-size:11px;">🔍 Buscar portada</button>
+          </div>
+          <input type="file" id="progress-cover-file" accept="image/*" style="display:none;" onchange="handleProgressCoverFile(event)">
+          <div id="progress-cover-google-results" style="display:none;margin-top:8px;" class="search-results"></div>
+          <button class="btn btn-primary btn-sm" onclick="saveProgressCover()" style="margin-top:10px;font-size:11px;">Guardar portada</button>
+        </div>
+      </div>
+      <div id="progress-mode-display" style="margin-bottom:12px;"></div>
+      <!-- Pct mode -->
+      <div id="progress-pct-section">
+        <div class="field">
+          <label>Progreso (<span id="progress-pct-label">0</span>%)</label>
+          <input type="range" id="progress-pct-slider" min="0" max="100" value="0"
+            style="width:100%;accent-color:var(--gold);margin-bottom:8px;"
+            oninput="onProgressSlider(this.value)">
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--ink4);">
+            <span>0%</span><span>50%</span><span>100%</span>
+          </div>
+        </div>
+      </div>
+      <!-- Pag mode -->
+      <div id="progress-pag-section" style="display:none;">
+        <div class="field">
+          <label>Página actual <span id="progress-pag-of" style="color:var(--ink4);"></span></label>
+          <input class="input" type="number" id="progress-pag-input" min="0" oninput="onProgressPagInput(this.value)">
+        </div>
+        <div class="progress-wrap" style="margin-top:4px;margin-bottom:8px;height:8px;">
+          <div class="progress-fill" id="progress-pag-bar" style="width:0%;"></div>
+        </div>
+        <div id="progress-pag-pct-text" style="font-size:12px;color:var(--ink3);text-align:right;"></div>
+      </div>
+      <!-- Ritmo info -->
+      <div id="progress-ritmo-info" style="margin-bottom:14px;"></div>
+      <!-- Finish button -->
+      <div style="display:flex;gap:10px;margin-top:4px;">
+        <button class="btn btn-primary" onclick="saveProgress()" style="flex:2;">Guardar progreso</button>
+        <button class="btn" onclick="finishBook()" style="flex:1;background:var(--green);color:var(--cream);font-size:12px;">✓ Terminé</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+// ═══════════════════════════════════
+//  FIREBASE CONFIG
+// ═══════════════════════════════════
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut }
+  from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import { getFirestore, doc, getDoc, setDoc, onSnapshot, enableIndexedDbPersistence }
+  from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBKMfDz3XLJCmjjaYdeT_o1Z05T2yub_Qc",
+  authDomain: "lumen-6ed85.firebaseapp.com",
+  projectId: "lumen-6ed85",
+  storageBucket: "lumen-6ed85.firebasestorage.app",
+  messagingSenderId: "473887918286",
+  appId: "1:473887918286:web:e3ee5a38f52e9aa107e89f"
+};
+
+const firebaseApp = initializeApp(firebaseConfig);
+const auth = getAuth(firebaseApp);
+const firestore = getFirestore(firebaseApp);
+
+// Habilitar persistencia offline
+enableIndexedDbPersistence(firestore).catch(() => {});
+
+// ═══════════════════════════════════
+//  DATA — local + cloud
+// ═══════════════════════════════════
+const DB_KEY = 'lumen_db_v1';
+let currentUser = null;
+let unsubscribeSnapshot = null;
+let isSyncing = false;
+
+function loadDB() {
+  try { const r = localStorage.getItem(DB_KEY); return r ? JSON.parse(r) : { entries: [] }; }
+  catch { return { entries: [] }; }
+}
+
+function saveDB() {
+  localStorage.setItem(DB_KEY, JSON.stringify(db));
+  if (currentUser) syncToFirestore();
+}
+
+function saveDB() {
+  localStorage.setItem(DB_KEY, JSON.stringify(db));
+  if (currentUser && typeof firestore !== 'undefined') {
+    setSyncStatus('syncing');
+    setDoc(doc(firestore, 'users', currentUser.uid, 'data', 'library'), {
+      entries: db.entries, updatedAt: Date.now()
+    }).then(() => setSyncStatus('ok')).catch(() => setSyncStatus('offline'));
+  }
+}
+
+async function syncToFirestore() {
+  if (!currentUser) return;
+  try {
+    await setDoc(doc(firestore, 'users', currentUser.uid, 'data', 'library'), {
+      entries: db.entries, updatedAt: Date.now()
+    });
+  } catch(e) { console.warn('sync offline:', e.message); }
+}
+
+function subscribeToFirestore(uid) {
+  if (unsubscribeSnapshot) unsubscribeSnapshot();
+  const docRef = doc(firestore, 'users', uid, 'data', 'library');
+  unsubscribeSnapshot = onSnapshot(docRef, { includeMetadataChanges: false }, snap => {
+    if (snap.exists()) {
+      const remote = snap.data();
+      // Merge: keep local entries that aren't in remote (offline additions)
+      const remoteIds = new Set((remote.entries || []).map(e => e.id));
+      const localOnly = db.entries.filter(e => !remoteIds.has(e.id));
+      db.entries = [...(remote.entries || []), ...localOnly];
+      localStorage.setItem(DB_KEY, JSON.stringify(db));
+      // Re-upload merged if there were local-only items
+      if (localOnly.length > 0) syncToFirestore();
+      refreshCurrentScreen();
+    }
+  }, () => {}); // ignore offline errors
+}
+
+let db = loadDB();
+
+// ═══════════════════════════════════
+//  NAVIGATION
+// ═══════════════════════════════════
+let currentScreen = 'home';
+let currentYear = new Date().getFullYear();
+let libFilter = 'todos';
+let currentRating = 0;
+let currentType = 'libro';
+let searchTimeout = null;
+let editingId = null;
+
+function gotoScreen(s) {
+  document.querySelectorAll('.screen').forEach(x => x.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(x => x.classList.remove('active'));
+  document.getElementById('screen-' + s).classList.add('active');
+  document.getElementById('nav-' + s).classList.add('active');
+  currentScreen = s;
+  if (s === 'home') renderHome();
+  if (s === 'library') renderLibrary();
+  if (s === 'year') renderYear();
+  if (s === 'stats') renderStats();
+}
+
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+  if (id === 'modal-add') {
+    editingId = null;
+    resetForm();
+    document.getElementById('f-anio-lect').value = new Date().getFullYear();
+    document.getElementById('fp-anio-visto').value = new Date().getFullYear();
+    document.getElementById('fs-anio-visto').value = new Date().getFullYear();
+  }
+}
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(el => {
+  el.addEventListener('click', function(e) { if (e.target === this) closeModal(this.id); });
+});
+
+// ═══════════════════════════════════
+//  TYPE SELECTOR
+// ═══════════════════════════════════
+function selectType(type, btn) {
+  currentType = type;
+  document.querySelectorAll('.type-btn').forEach(b => {
+    b.style.borderColor = 'var(--border)';
+    b.style.background = '#fff';
+    b.style.color = 'var(--ink3)';
+  });
+  const colors = { libro: 'var(--green)', pelicula: 'var(--red)', serie: 'var(--blue)' };
+  const bgs = { libro: '#e8f0e8', pelicula: '#f0e8e8', serie: '#e8eef5' };
+  btn.style.borderColor = colors[type];
+  btn.style.background = bgs[type];
+  btn.style.color = colors[type];
+  ['form-libro','form-pelicula','form-serie'].forEach(f => document.getElementById(f).style.display = 'none');
+  document.getElementById('form-' + (type === 'pelicula' ? 'pelicula' : type === 'serie' ? 'serie' : 'libro')).style.display = 'block';
+  const labels = { libro: 'Buscar libro en Google Books', pelicula: 'Buscar película (OMDB/TMDB)', serie: 'Buscar serie' };
+  document.getElementById('search-label').textContent = labels[type];
+  document.getElementById('add-search').value = '';
+  document.getElementById('add-search-results').style.display = 'none';
+}
+
+function resetForm() {
+  ['f-titulo','f-autor','f-editorial','f-paginas','f-anio-pub','f-traductor','f-idioma','f-cover','f-notas',
+   'fp-titulo','fp-director','fp-anio-est','fp-duracion','fp-foto','fp-musica','fp-protagonista','fp-guionista','fp-cover',
+   'fs-titulo','fs-director','fs-anio-est','fs-duracion','fs-musica','fs-protagonista','fs-guionista','fs-cover']
+    .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  document.getElementById('f-estado').value = 'leido';
+  document.getElementById('f-progreso').value = 0;
+  document.getElementById('prog-pct').textContent = '0';
+  document.getElementById('fp-basada').value = '';
+  document.getElementById('fs-basada').value = '';
+  currentRating = 0;
+  updateStars(0);
+  selectType('libro', document.querySelector('.type-btn[data-type="libro"]'));
+}
+
+document.getElementById('fp-basada').addEventListener('change', function() {
+  document.getElementById('fp-autor-original-field').style.display = this.value ? 'block' : 'none';
+});
+document.getElementById('f-estado').addEventListener('change', function() {
+  document.getElementById('progreso-field').style.display = this.value === 'leyendo' ? 'block' : 'none';
+});
+
+// ═══════════════════════════════════
+//  SEARCH (Google Books + OMDB)
+// ═══════════════════════════════════
+function debounceSearch() {
+  clearTimeout(searchTimeout);
+  const q = document.getElementById('add-search').value.trim();
+  if (q.length < 3) { document.getElementById('add-search-results').style.display = 'none'; return; }
+  searchTimeout = setTimeout(() => doSearch(q), 500);
+}
+
+async function doSearch(q) {
+  const resultsEl = document.getElementById('add-search-results');
+  resultsEl.innerHTML = '<div style="padding:12px 14px;font-size:13px;color:var(--ink3);">Buscando...</div>';
+  resultsEl.style.display = 'block';
+  try {
+    if (currentType === 'libro') {
+      const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q)}&maxResults=5&langRestrict=`);
+      const data = await res.json();
+      if (!data.items || data.items.length === 0) { resultsEl.innerHTML = '<div style="padding:12px 14px;font-size:13px;color:var(--ink3);">Sin resultados.</div>'; return; }
+      resultsEl.innerHTML = data.items.map(item => {
+        const v = item.volumeInfo;
+        const cover = v.imageLinks ? v.imageLinks.thumbnail : '';
+        const authors = v.authors ? v.authors.join(', ') : '—';
+        return `<div class="search-result-item" onclick='fillBookForm(${JSON.stringify({
+          title: v.title || '',
+          authors: authors,
+          publisher: v.publisher || '',
+          pages: v.pageCount || '',
+          pubYear: v.publishedDate ? v.publishedDate.slice(0,4) : '',
+          language: v.language || '',
+          cover: cover,
+          description: v.description || ''
+        }).replace(/'/g,"&#39;")})'>
+          ${cover ? `<img src="${cover}" class="sr-cover">` : '<div class="sr-cover"></div>'}
+          <div>
+            <div class="sr-title">${v.title || ''}</div>
+            <div class="sr-sub">${authors} · ${v.publisher || ''} · ${v.publishedDate ? v.publishedDate.slice(0,4) : ''}</div>
+          </div>
+        </div>`;
+      }).join('');
+    } else {
+      // OMDB free API (open, no key needed for basic search)
+      const res = await fetch(`https://www.omdbapi.com/?s=${encodeURIComponent(q)}&type=${currentType === 'pelicula' ? 'movie' : 'series'}&apikey=trilogy`);
+      const data = await res.json();
+      if (data.Response === 'False' || !data.Search) {
+        // Fallback: manual entry notice
+        resultsEl.innerHTML = `<div style="padding:12px 14px;font-size:13px;color:var(--ink3);">Búsqueda automática disponible con API key de OMDB (omdbapi.com). Rellena manualmente.</div>`;
+        return;
+      }
+      resultsEl.innerHTML = data.Search.slice(0,5).map(item => `
+        <div class="search-result-item" onclick="fillMovieFromOMDB('${item.imdbID}')">
+          ${item.Poster !== 'N/A' ? `<img src="${item.Poster}" class="sr-cover">` : '<div class="sr-cover"></div>'}
+          <div>
+            <div class="sr-title">${item.Title}</div>
+            <div class="sr-sub">${item.Year} · ${item.Type}</div>
+          </div>
+        </div>`).join('');
+    }
+  } catch(e) {
+    resultsEl.innerHTML = '<div style="padding:12px 14px;font-size:13px;color:var(--ink3);">Error de búsqueda. Rellena manualmente.</div>';
+  }
+}
+
+function fillBookForm(data) {
+  document.getElementById('f-titulo').value = data.title;
+  document.getElementById('f-autor').value = data.authors;
+  document.getElementById('f-editorial').value = data.publisher;
+  document.getElementById('f-paginas').value = data.pages;
+  document.getElementById('f-anio-pub').value = data.pubYear;
+  document.getElementById('f-idioma').value = data.language;
+  document.getElementById('f-cover').value = data.cover;
+  document.getElementById('add-search-results').style.display = 'none';
+  document.getElementById('add-search').value = data.title;
+  showToast('✓ Datos importados de Google Books');
+}
+
+async function fillMovieFromOMDB(imdbId) {
+  try {
+    const res = await fetch(`https://www.omdbapi.com/?i=${imdbId}&apikey=trilogy`);
+    const d = await res.json();
+    if (currentType === 'pelicula') {
+      document.getElementById('fp-titulo').value = d.Title || '';
+      document.getElementById('fp-director').value = d.Director || '';
+      document.getElementById('fp-anio-est').value = d.Year ? d.Year.slice(0,4) : '';
+      const dur = d.Runtime ? parseInt(d.Runtime) : '';
+      document.getElementById('fp-duracion').value = dur;
+      document.getElementById('fp-protagonista').value = d.Actors ? d.Actors.split(',')[0].trim() : '';
+      document.getElementById('fp-guionista').value = d.Writer || '';
+      document.getElementById('fp-cover').value = d.Poster !== 'N/A' ? d.Poster : '';
+    } else {
+      document.getElementById('fs-titulo').value = d.Title || '';
+      document.getElementById('fs-director').value = d.Director || '';
+      document.getElementById('fs-anio-est').value = d.Year ? d.Year.slice(0,4) : '';
+      document.getElementById('fs-protagonista').value = d.Actors ? d.Actors.split(',')[0].trim() : '';
+      document.getElementById('fs-guionista').value = d.Writer || '';
+      document.getElementById('fs-cover').value = d.Poster !== 'N/A' ? d.Poster : '';
+    }
+    document.getElementById('add-search-results').style.display = 'none';
+    showToast('✓ Datos importados');
+  } catch { showToast('Error al obtener detalles'); }
+}
+
+// ═══════════════════════════════════
+//  WIKIPEDIA IMPORT
+// ═══════════════════════════════════
+async function importFromWikipedia() {
+  const urlInput = document.getElementById('fp-wiki-url');
+  const status   = document.getElementById('fp-wiki-status');
+  const raw = urlInput.value.trim();
+  if (!raw) { status.textContent = 'Pega la URL de una página de Wikipedia.'; return; }
+
+  // Extract article title from URL
+  // Supports: https://es.wikipedia.org/wiki/TITULO or https://en.wikipedia.org/wiki/TITULO
+  const match = raw.match(/wikipedia\.org\/wiki\/([^?#]+)/i);
+  if (!match) { status.textContent = '⚠ URL de Wikipedia no válida.'; return; }
+
+  const articleTitle = decodeURIComponent(match[1]);
+  // Detect language
+  const langMatch = raw.match(/\/\/([\w-]+)\.wikipedia/);
+  const lang = langMatch ? langMatch[1] : 'es';
+
+  status.textContent = '⏳ Cargando desde Wikipedia...';
+
+  try {
+    // Use Wikipedia REST API to get page summary + infobox via action API
+    const apiUrl = `https://${lang}.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(articleTitle)}&prop=revisions&rvprop=content&rvslots=main&format=json&origin=*`;
+    const res = await fetch(apiUrl);
+    const json = await res.json();
+    const pages = json.query?.pages || {};
+    const page = Object.values(pages)[0];
+    if (!page || page.missing) throw new Error('Página no encontrada');
+
+    const wikitext = page.revisions?.[0]?.slots?.main?.['*'] || '';
+    const fields = parseWikipediaInfobox(wikitext);
+
+    // Fill form fields
+    if (fields.titulo)      document.getElementById('fp-titulo').value = fields.titulo;
+    if (fields.director)    document.getElementById('fp-director').value = fields.director;
+    if (fields.anio)        document.getElementById('fp-anio-est').value = fields.anio;
+    if (fields.duracion)    document.getElementById('fp-duracion').value = fields.duracion;
+    if (fields.protagonista)document.getElementById('fp-protagonista').value = fields.protagonista;
+    if (fields.guionista)   document.getElementById('fp-guionista').value = fields.guionista;
+    if (fields.musica)      document.getElementById('fp-musica').value = fields.musica;
+    if (fields.fotografia)  document.getElementById('fp-foto').value = fields.fotografia;
+    if (fields.cover)       document.getElementById('fp-cover').value = fields.cover;
+
+    const filled = Object.keys(fields).length;
+    status.textContent = `✓ ${filled} campo${filled!==1?'s':''} importado${filled!==1?'s':''}. Revisa y edita si es necesario.`;
+    status.style.color = 'var(--green)';
+    showToast('✓ Datos importados de Wikipedia');
+  } catch(e) {
+    status.textContent = '⚠ Error al cargar. Verifica la URL e intenta de nuevo.';
+    status.style.color = 'var(--red)';
+  }
+}
+
+function parseWikipediaInfobox(wikitext) {
+  const fields = {};
+  // Extract infobox block (between {{ and }})
+  const infoboxMatch = wikitext.match(/\{\{[Ff]icha de película[\s\S]*?(?=\n\}\})/i)
+    || wikitext.match(/\{\{[Ii]nfobox film[\s\S]*?(?=\n\}\})/i)
+    || wikitext.match(/\{\{[Ff]ilm[\s\S]*?(?=\n\}\})/i)
+    || wikitext.match(/\{\{[Ii]nfobox[\s\S]*?(?=\n\}\})/i);
+
+  const text = infoboxMatch ? infoboxMatch[0] : wikitext;
+
+  // Helper: extract field value, stripping wiki markup
+  const getField = (patterns) => {
+    for (const pat of patterns) {
+      const r = new RegExp(`\\|\\s*${pat}\\s*=\\s*([^\\n|\\}]+)`, 'i');
+      const m = text.match(r);
+      if (m) return cleanWikiText(m[1]);
+    }
+    return null;
+  };
+
+  const t = getField(['título','titulo','title','nombre','name']);
+  if (t) fields.titulo = t;
+
+  const d = getField(['dirección','director','directed_by','dirección']);
+  if (d) fields.director = d;
+
+  // Year: try to extract from release_date or año
+  const yr = getField(['año','year','release_date','fecha de lanzamiento','fecha_de_lanzamiento']);
+  if (yr) { const ym = yr.match(/\d{4}/); if(ym) fields.anio = parseInt(ym[0]); }
+
+  const dur = getField(['duración','runtime','running_time','duracion']);
+  if (dur) { const dm = dur.match(/\d+/); if(dm) fields.duracion = parseInt(dm[0]); }
+
+  const stars = getField(['protagonista','starring','reparto','actores']);
+  if (stars) fields.protagonista = stars.split(/[,·]/)[0].trim();
+
+  const scr = getField(['guión','screenplay','guion','written_by','writer']);
+  if (scr) fields.guionista = scr.split(/[,·]/)[0].trim();
+
+  const mus = getField(['música','music','composer','musica']);
+  if (mus) fields.musica = mus.split(/[,·]/)[0].trim();
+
+  const cin = getField(['fotografía','cinematography','cinematógrafo','fotografia']);
+  if (cin) fields.fotografia = cin;
+
+  // Try to get cover from image field
+  const img = getField(['imagen','image','image_name','poster']);
+  if (img) {
+    const imgClean = img.replace(/\[\[.*?\]\]/g,'').replace(/File:|Archivo:/gi,'').trim();
+    if (imgClean) {
+      // Construct Wikimedia Commons thumbnail URL
+      const encoded = encodeURIComponent(imgClean.replace(/ /g,'_'));
+      fields.cover = `https://commons.wikimedia.org/wiki/Special:FilePath/${encoded}?width=300`;
+    }
+  }
+
+  return fields;
+}
+
+function cleanWikiText(str) {
+  return str
+    .replace(/\[\[([^\]|]*\|)?([^\]]*)\]\]/g, '$2')  // [[link|text]] → text
+    .replace(/\{\{[^}]*\}\}/g, '')                     // {{template}} → ''
+    .replace(/<[^>]+>/g, '')                            // HTML tags
+    .replace(/'''?/g, '')                               // bold/italic
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+function setRating(n) { currentRating = n; updateStars(n); }
+function updateStars(n) {
+  document.querySelectorAll('#rating-stars .star').forEach((s, i) => s.classList.toggle('filled', i < n));
+}
+
+// ═══════════════════════════════════
+//  SAVE ENTRY
+// ═══════════════════════════════════
+function saveEntry() {
+  let entry = { id: editingId || 'e_' + Date.now(), type: currentType, rating: currentRating, notas: document.getElementById('f-notas').value };
+  if (currentType === 'libro') {
+    const titulo = document.getElementById('f-titulo').value.trim();
+    if (!titulo) { showToast('Ingresa el título del libro'); return; }
+    entry = { ...entry, titulo, autor: document.getElementById('f-autor').value, editorial: document.getElementById('f-editorial').value,
+      paginas: parseInt(document.getElementById('f-paginas').value) || 0,
+      anio_pub: parseInt(document.getElementById('f-anio-pub').value) || null,
+      traductor: document.getElementById('f-traductor').value,
+      idioma: document.getElementById('f-idioma').value,
+      mes: document.getElementById('f-mes').value,
+      anio: parseInt(document.getElementById('f-anio-lect').value) || new Date().getFullYear(),
+      estado: document.getElementById('f-estado').value,
+      progreso: parseInt(document.getElementById('f-progreso').value),
+      cover: document.getElementById('f-cover').value };
+  } else if (currentType === 'pelicula') {
+    const titulo = document.getElementById('fp-titulo').value.trim();
+    if (!titulo) { showToast('Ingresa el título'); return; }
+    entry = { ...entry, titulo, director: document.getElementById('fp-director').value,
+      anio_est: parseInt(document.getElementById('fp-anio-est').value) || null,
+      duracion: parseInt(document.getElementById('fp-duracion').value) || 0,
+      fotografia: document.getElementById('fp-foto').value,
+      musica: document.getElementById('fp-musica').value,
+      protagonista: document.getElementById('fp-protagonista').value,
+      guionista: document.getElementById('fp-guionista').value,
+      basada: document.getElementById('fp-basada').value,
+      autor_original: document.getElementById('fp-autor-original').value,
+      mes: document.getElementById('fp-mes').value,
+      anio: parseInt(document.getElementById('fp-anio-visto').value) || new Date().getFullYear(),
+      cover: document.getElementById('fp-cover').value };
+  } else {
+    const titulo = document.getElementById('fs-titulo').value.trim();
+    if (!titulo) { showToast('Ingresa el título'); return; }
+    entry = { ...entry, titulo, director: document.getElementById('fs-director').value,
+      anio_est: parseInt(document.getElementById('fs-anio-est').value) || null,
+      temporadas: parseInt(document.getElementById('fs-temporadas').value) || 1,
+      duracion: parseInt(document.getElementById('fs-duracion').value) || 0,
+      musica: document.getElementById('fs-musica').value,
+      protagonista: document.getElementById('fs-protagonista').value,
+      guionista: document.getElementById('fs-guionista').value,
+      estado: document.getElementById('fs-estado').value,
+      basada: document.getElementById('fs-basada').value,
+      mes: document.getElementById('fs-mes').value,
+      anio: parseInt(document.getElementById('fs-anio-visto').value) || new Date().getFullYear(),
+      cover: document.getElementById('fs-cover').value };
+  }
+  if (editingId) {
+    const idx = db.entries.findIndex(e => e.id === editingId);
+    if (idx >= 0) db.entries[idx] = entry;
+  } else {
+    db.entries.push(entry);
+  }
+  saveDB();
+  closeModal('modal-add');
+  showToast('✓ Guardado en biblioteca');
+  if (currentScreen === 'home') renderHome();
+  if (currentScreen === 'library') renderLibrary();
+  if (currentScreen === 'year') renderYear();
+  if (currentScreen === 'stats') renderStats();
+}
+
+// ═══════════════════════════════════
+//  UPDATE BOOK PROGRESS
+// ═══════════════════════════════════
+function updateProgress(id, val) {
+  const e = db.entries.find(x => x.id === id);
+  if (e) { e.progreso = parseInt(val); saveDB(); }
+  document.getElementById('pp-' + id).textContent = val + '%';
+  document.getElementById('pb-' + id).style.width = val + '%';
+}
+
+// ── Helper: minutos → "Xh Ym" ──────
+function fmtMin(min) {
+  const m = parseInt(min) || 0;
+  if (m < 60) return `${m} min`;
+  const h = Math.floor(m / 60), r = m % 60;
+  return r > 0 ? `${h}:${String(r).padStart(2,'0')}` : `${h}:00`;
+}
+
+// ── Helper: días transcurridos del año hasta el mismo día-mes que hoy, para un año dado ──
+function diasHastaHoyEnAnio(year) {
+  const now = new Date();
+  // Misma fecha (mes+día) pero en el año target
+  const sameDate = new Date(year, now.getMonth(), now.getDate());
+  const jan1 = new Date(year, 0, 1);
+  return Math.max(1, Math.floor((sameDate - jan1) / 86400000) + 1);
+}
+
+// ── Helper: páginas leídas en un año dado, hasta el mismo mes/día que hoy ──
+// Para el año en curso incluye libros en curso. Para años pasados sólo finalizados.
+function pagsHastaDia(year) {
+  const now = new Date();
+  const mesIdx = now.getMonth(); // 0-based
+  const diaDelMes = now.getDate();
+  const esAnioActual = (year === now.getFullYear());
+
+  if (esAnioActual) {
+    // Finalizados este año + progreso actual de libros en curso
+    const fin = db.entries
+      .filter(e => e.type==='libro' && e.estado==='leido' && e.anio===year)
+      .reduce((a,b) => a+(b.paginas||0), 0);
+    const enCurso = db.entries
+      .filter(e => e.type==='libro' && e.estado==='leyendo')
+      .reduce((a,e) => {
+        const p = e.readingMode==='pag'
+          ? (e.progresoPag||0)
+          : Math.round(((e.progreso||0)/100)*(e.paginas||0));
+        return a + p;
+      }, 0);
+    return fin + enCurso;
+  } else {
+    // Año pasado: sólo libros finalizados, pero sólo los que tienen mes ≤ mes actual
+    // (si no tienen mes, los contamos completo como conservador)
+    return db.entries
+      .filter(e => {
+        if (e.type!=='libro' || e.estado!=='leido' || e.anio!==year) return false;
+        if (!e.mes) return true; // sin mes → incluir
+        const mi = MESES.indexOf(e.mes);
+        if (mi < mesIdx) return true;       // mes anterior → incluir
+        if (mi === mesIdx) return true;     // mismo mes → incluir (no tenemos día exacto)
+        return false;                        // mes posterior → excluir
+      })
+      .reduce((a,b) => a+(b.paginas||0), 0);
+  }
+}
+
+// ═══════════════════════════════════
+//  HOME
+// ═══════════════════════════════════
+function renderHome() {
+  const yr = new Date().getFullYear();
+  document.getElementById('hero-year-label').textContent = yr;
+  const thisYear = db.entries.filter(e => e.anio === yr);
+  const libros = thisYear.filter(e => e.type === 'libro' && e.estado !== 'pendiente');
+  const pags = libros.reduce((a, b) => a + (b.paginas || 0), 0);
+  const peliculas = thisYear.filter(e => e.type === 'pelicula');
+  const series = thisYear.filter(e => e.type === 'serie');
+
+  document.getElementById('hero-title').textContent = pags > 0 ? `${pags.toLocaleString()} páginas\neste año` : 'Mi Biblioteca\nCultural';
+  document.getElementById('hero-sub').textContent = `${libros.length} libros · ${peliculas.length} películas · ${series.length} series`;
+
+  document.getElementById('year-summary').innerHTML = `
+    <div class="ys-box">
+      <div class="ys-num">${libros.length}</div>
+      <div class="ys-label">Libros</div>
+      <div class="ys-sub">${pags.toLocaleString()} págs</div>
+    </div>
+    <div class="ys-box">
+      <div class="ys-num">${peliculas.length}</div>
+      <div class="ys-label">Películas</div>
+      <div class="ys-sub">${fmtMin(peliculas.reduce((a,b)=>a+(b.duracion||0),0))}</div>
+    </div>
+    <div class="ys-box">
+      <div class="ys-num">${series.length}</div>
+      <div class="ys-label">Series</div>
+      <div class="ys-sub">${fmtMin(series.reduce((a,b)=>a+(b.duracion||0),0))}</div>
+    </div>`;
+
+  // ── RITMO HERO CARD ──────────────
+  const now = new Date();
+  const dayOfYear = diasHastaHoyEnAnio(yr);
+  const pagsEsteAnio = pagsHastaDia(yr);
+  const ritmoActual = dayOfYear > 0 ? pagsEsteAnio / dayOfYear : 0;
+
+  // Histórico: mismos días del año (hasta mismo mes/día) para cada año pasado
+  const allYears = [...new Set(db.entries.filter(e=>e.type==='libro'&&e.anio&&e.anio<yr).map(e=>e.anio))];
+  let bestHistRitmo = 0, bestHistYear = null;
+  allYears.forEach(y => {
+    const pags = pagsHastaDia(y);
+    const dias = diasHastaHoyEnAnio(y);
+    const r = dias > 0 ? pags / dias : 0;
+    if (r > bestHistRitmo) { bestHistRitmo = r; bestHistYear = y; }
+  });
+
+  const ritmoCmp = bestHistRitmo > 0 ? bestHistRitmo : 0;
+  const cmpYear = bestHistYear;
+  const diff = ritmoCmp > 0 ? ritmoActual - ritmoCmp : 0;
+  const pctDiff = ritmoCmp > 0 ? Math.round((diff/ritmoCmp)*100) : 0;
+  const up = diff >= 0;
+  const diffColor = up ? '#7ec98f' : '#f08080';
+
+  document.getElementById('ritmo-hero-card').innerHTML = pagsEsteAnio > 0 ? `
+    <div class="ritmo-hero">
+      <div class="ritmo-hero-main">
+        <div class="ritmo-hero-num">${ritmoActual.toFixed(1)}</div>
+        <div class="ritmo-hero-label">págs / día · ${yr}</div>
+        <div class="ritmo-hero-sub">${pagsEsteAnio.toLocaleString()} págs<br>en ${dayOfYear} días</div>
+      </div>
+      <div class="ritmo-hero-vs">
+        ${cmpYear ? `
+          <div class="ritmo-hero-vs-label">vs ${cmpYear}</div>
+          <div class="ritmo-hero-vs-num" style="color:${diffColor};">${ritmoCmp.toFixed(1)}</div>
+          <div class="ritmo-hero-vs-pct" style="color:${diffColor};">${up?'▲':'▼'} ${Math.abs(pctDiff)}%</div>
+          <div class="ritmo-hero-vs-context">${up?'+':''}${diff.toFixed(1)} págs/día<br>hasta mismo día</div>
+        ` : `<div class="ritmo-hero-vs-label" style="font-size:12px;color:rgba(245,240,232,0.4);">Sin datos<br>históricos aún</div>`}
+      </div>
+    </div>` : '';
+
+  // ── LEYENDO AHORA — carousel compacto ──────────
+  const reading = db.entries.filter(e => e.type === 'libro' && e.estado === 'leyendo');
+  const crEl = document.getElementById('currently-reading-list');
+  if (reading.length === 0) {
+    crEl.className = 'reading-grid-3';
+    crEl.innerHTML = '<div style="grid-column:1/-1;font-size:13px;color:var(--ink4);font-style:italic;padding:4px 0;">Ningún libro en curso. Toca "+ Lectura en curso" para empezar.</div>';
+  } else {
+    crEl.className = 'reading-grid-3';
+    crEl.innerHTML = reading.map(e => {
+      const pct = e.readingMode === 'pag' && e.paginas
+        ? Math.round(((e.progresoPag||0) / e.paginas) * 100)
+        : (e.progreso || 0);
+      const progresoText = e.readingMode === 'pag'
+        ? `Pág ${e.progresoPag||0} / ${e.paginas||'?'}`
+        : `${pct}%`;
+      const coverHTML = e.cover
+        ? `<img src="${e.cover}" class="reading-mini-cover">`
+        : `<div class="reading-mini-cover" style="display:flex;align-items:center;justify-content:center;font-size:28px;">📚</div>`;
+      return `
+        <div class="reading-mini-card">
+          ${coverHTML}
+          <div class="reading-mini-body">
+            <div class="reading-mini-title">${e.titulo}</div>
+            <div class="reading-mini-autor">${e.autor||''}</div>
+            <div style="height:3px;background:var(--cream3);border-radius:2px;margin-top:4px;">
+              <div style="height:3px;background:var(--gold);border-radius:2px;width:${pct}%;"></div>
+            </div>
+            <div class="reading-mini-pct">${progresoText}</div>
+          </div>
+          <button class="reading-mini-btn" onclick="openProgressModal('${e.id}')">↑ Actualizar</button>
+        </div>`;
+    }).join('');
+  }
+
+  // ── VIENDO AHORA ─────────────────────
+  const watching = db.entries.filter(e => e.type === 'serie' && e.estado === 'viendo');
+  const watchEl = document.getElementById('currently-watching-list');
+  const watchSection = document.getElementById('viendo-section');
+  if (watching.length === 0) {
+    watchSection.style.display = 'none';
+  } else {
+    watchSection.style.display = '';
+    watchEl.innerHTML = watching.map(e => {
+      const coverHTML = e.cover
+        ? `<img src="${e.cover}" class="reading-mini-cover">`
+        : `<div class="reading-mini-cover" style="display:flex;align-items:center;justify-content:center;font-size:28px;">📺</div>`;
+      const temp = e.temporadas ? `${e.temporadas} temp.` : '';
+      return `
+        <div class="reading-mini-card" onclick="showDetail('${e.id}')">
+          ${coverHTML}
+          <div class="reading-mini-body">
+            <div class="reading-mini-title">${e.titulo}</div>
+            <div class="reading-mini-autor">${e.director||''}${temp?' · '+temp:''}</div>
+            <div class="reading-mini-pct">📺 Viendo</div>
+          </div>
+          <button class="reading-mini-btn" onclick="event.stopPropagation();finishSerie('${e.id}')">✓ Terminé</button>
+        </div>`;
+    }).join('');
+  }
+
+  // ── RECIENTES ────────────────────────
+  const sortRecent = arr => [...arr].sort((a,b) => {
+    const mi = MESES.indexOf(a.mes), mj = MESES.indexOf(b.mes);
+    const ai = (a.anio||0)*100+(mi>=0?mi:0), bi = (b.anio||0)*100+(mj>=0?mj:0);
+    return bi-ai || b.id.localeCompare(a.id);
+  });
+  const empty = '<div style="font-size:13px;color:var(--ink4);font-style:italic;padding:4px 0;">Nada registrado aún.</div>';
+
+  const recentPels = sortRecent(db.entries.filter(e=>e.type==='pelicula')).slice(0,3);
+  document.getElementById('recent-peliculas').innerHTML = recentPels.length ? recentPels.map(e=>entryCardHTML(e)).join('') : empty;
+
+  const recentLibros = sortRecent(db.entries.filter(e=>e.type==='libro'&&e.estado==='leido')).slice(0,3);
+  document.getElementById('recent-libros').innerHTML = recentLibros.length ? recentLibros.map(e=>entryCardHTML(e)).join('') : empty;
+
+  const recentSeries = sortRecent(db.entries.filter(e=>e.type==='serie')).slice(0,3);
+  document.getElementById('recent-series').innerHTML = recentSeries.length ? recentSeries.map(e=>entryCardHTML(e)).join('') : empty;
+}
+
+// ═══════════════════════════════════
+//  LIBRARY
+// ═══════════════════════════════════
+function filterLib(f, btn) {
+  libFilter = f;
+  document.querySelectorAll('#lib-seg .stats-seg-btn').forEach(t => t.classList.toggle('active', t.dataset.tab === f));
+  renderLibrary();
+}
+
+function renderLibrary() {
+  const q = (document.getElementById('lib-search').value || '').toLowerCase();
+  let items = db.entries.filter(e => {
+    if (libFilter === 'todos') return true;
+    if (libFilter === 'leyendo') return e.type === 'libro' && e.estado === 'leyendo';
+    return e.type === libFilter;
+  }).filter(e => !q || e.titulo.toLowerCase().includes(q) || (e.autor||'').toLowerCase().includes(q) || (e.director||'').toLowerCase().includes(q));
+
+  // Sort by date (anio+mes) desc, then id desc
+  items = items.sort((a, b) => {
+    const mi = MESES.indexOf(a.mes), mj = MESES.indexOf(b.mes);
+    const ai = (a.anio||0)*100 + (mi>=0?mi:0);
+    const bi = (b.anio||0)*100 + (mj>=0?mj:0);
+    return bi - ai || b.id.localeCompare(a.id);
+  });
+
+  const el = document.getElementById('library-list');
+  if (items.length === 0) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">📖</div><div class="empty-text">Tu biblioteca está vacía.<br>Empieza añadiendo algo.</div></div>';
+    return;
+  }
+  el.innerHTML = items.map(e => entryCardHTML(e)).join('');
+}
+
+function entryCardHTML(e) {
+  const stars = e.rating ? '★'.repeat(e.rating) + '☆'.repeat(5-e.rating) : '';
+  const ok = v => v && v.trim() && v.trim().toLowerCase() !== 'no aplica' && v.trim() !== '-';
+
+  let sub = '';
+  if (e.type === 'libro') {
+    sub = [e.autor, e.paginas ? e.paginas+' págs' : null, e.editorial].filter(ok).join(' · ');
+  } else if (e.type === 'pelicula') {
+    const parts = [ok(e.director)?e.director:null, e.anio_est?String(e.anio_est):null, e.duracion?fmtMin(e.duracion):null];
+    sub = parts.filter(Boolean).join(' · ');
+  } else { // serie
+    const temp = ok(e.temporadas) ? `${e.temporadas} temp.` : null;
+    const dur  = e.duracion ? fmtMin(e.duracion) : null;
+    sub = [ok(e.director)?e.director:null, e.anio_est?String(e.anio_est):null, temp, dur].filter(Boolean).join(' · ');
+  }
+
+  // Extra chips for películas & series
+  let chips = '';
+  if (e.type === 'pelicula' || e.type === 'serie') {
+    const extras = [];
+    if (ok(e.guionista))    extras.push({ icon: '✍', val: e.guionista });
+    if (ok(e.protagonista)) extras.push({ icon: '★', val: e.protagonista });
+    if (ok(e.musica))       extras.push({ icon: '♪', val: e.musica });
+    if (ok(e.fotografia))   extras.push({ icon: '◉', val: e.fotografia });
+    if (e.type === 'serie' && ok(e.temporadas)) {} // already in sub
+    if (extras.length) {
+      chips = `<div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:4px;">` +
+        extras.map(x => `<span style="font-size:10px;color:var(--ink3);background:var(--cream2);padding:2px 7px;border-radius:10px;">${x.icon} ${x.val}</span>`).join('') +
+        `</div>`;
+    }
+  }
+
+  const progress = e.type === 'libro' && e.estado === 'leyendo'
+    ? `<div class="progress-wrap"><div class="progress-fill" style="width:${e.progreso||0}%"></div></div>` : '';
+  const badge = `<span class="badge badge-${e.estado==='leyendo'?'leyendo':e.type}">${e.estado==='leyendo'?'Leyendo':e.type==='libro'?'Libro':e.type==='pelicula'?'Película':'Serie'}</span>`;
+  const metaLine = `${e.mes ? e.mes + ' ' : ''}${e.anio || ''}`;
+  return `
+    <div class="entry-card" onclick="showDetail('${e.id}')">
+      <div class="entry-card-spine ${e.estado==='leyendo'?'libro':e.type}"></div>
+      ${e.cover ? `<img src="${e.cover}" class="entry-card-cover">` : `<div class="entry-card-cover" style="display:flex;align-items:center;justify-content:center;font-size:22px;">${e.type==='libro'?'📚':e.type==='pelicula'?'🎬':'📺'}</div>`}
+      <div class="entry-card-info">
+        <div class="entry-card-title">${e.titulo}</div>
+        <div class="entry-card-sub">${sub}</div>
+        ${chips}
+        ${progress}
+        <div class="entry-card-meta">
+          ${badge}
+          ${metaLine ? `<span style="font-size:10px;color:var(--ink4);">${metaLine}</span>` : ''}
+          ${stars ? `<span class="entry-card-rating">${stars}</span>` : ''}
+        </div>
+      </div>
+    </div>`;
+}
+
+// ═══════════════════════════════════
+//  DETAIL MODAL
+// ═══════════════════════════════════
+function showDetail(id) {
+  const e = db.entries.find(x => x.id === id);
+  if (!e) return;
+  document.getElementById('detail-title').textContent = e.titulo;
+  let html = '';
+  const row = (label, val) => val ? `<div style="display:flex;gap:8px;padding:7px 0;border-bottom:1px solid var(--cream2);"><span style="font-size:10px;color:var(--ink4);letter-spacing:1.5px;text-transform:uppercase;font-weight:700;width:110px;flex-shrink:0;padding-top:2px;">${label}</span><span style="font-size:14px;color:var(--ink2);">${val}</span></div>` : '';
+  if (e.cover) html += `<img src="${e.cover}" style="width:80px;height:110px;object-fit:cover;border-radius:3px;float:right;margin:0 0 12px 12px;">`;
+  const stars = e.rating ? `<div class="stars" style="margin-bottom:12px;">${'<span class="star filled">★</span>'.repeat(e.rating) + '<span class="star">★</span>'.repeat(5-e.rating)}</div>` : '';
+  html += stars;
+  if (e.type === 'libro') {
+    html += row('Autor', e.autor) + row('Editorial', e.editorial) + row('Páginas', e.paginas) + row('Publicado', e.anio_pub) + row('Traductor', e.traductor) + row('Idioma orig.', e.idioma) + row('Leído', `${e.mes||''} ${e.anio||''}`);
+    if (e.estado === 'leyendo') html += row('Progreso', e.progreso + '%');
+  } else {
+    html += row('Director', e.director) + row('Estreno', e.anio_est) + row('Duración', e.duracion ? fmtMin(e.duracion) : '') + row('Fotografía', e.fotografia) + row('Música', e.musica) + row('Protagonista', e.protagonista) + row('Guionista', e.guionista);
+    if (e.basada) html += row('Basada en', e.basada + (e.autor_original ? ' — ' + e.autor_original : ''));
+    html += row('Temporadas', e.temporadas) + row('Visto', `${e.mes||''} ${e.anio||''}`);
+  }
+  if (e.notas) html += `<div style="margin-top:14px;padding:12px;background:var(--cream2);border-radius:4px;font-family:var(--font-serif);font-style:italic;font-size:14px;color:var(--ink2);line-height:1.5;">"${e.notas}"</div>`;
+  html += `<div style="display:flex;gap:8px;margin-top:16px;">
+    <button class="btn btn-secondary btn-sm" onclick="editEntry('${e.id}')">✏ Editar</button>
+    <button class="btn btn-sm" style="background:var(--red);color:var(--cream);width:auto;" onclick="deleteEntry('${e.id}')">🗑 Eliminar</button>
+  </div>`;
+  document.getElementById('detail-body').innerHTML = html;
+  openModal('modal-detail');
+}
+
+function editEntry(id) {
+  closeModal('modal-detail');
+  const e = db.entries.find(x => x.id === id);
+  if (!e) return;
+  editingId = id;
+  openModal('modal-add');
+  setTimeout(() => {
+    selectType(e.type, document.querySelector(`.type-btn[data-type="${e.type}"]`));
+    currentRating = e.rating || 0;
+    updateStars(currentRating);
+    document.getElementById('f-notas').value = e.notas || '';
+    if (e.type === 'libro') {
+      ['titulo','autor','editorial','paginas','anio_pub','traductor','idioma','cover'].forEach(k => { const el=document.getElementById('f-'+k); if(el) el.value=e[k]||''; });
+      document.getElementById('f-mes').value = e.mes||'';
+      document.getElementById('f-anio-lect').value = e.anio||'';
+      document.getElementById('f-estado').value = e.estado||'leido';
+      document.getElementById('f-progreso').value = e.progreso||0;
+      document.getElementById('prog-pct').textContent = e.progreso||0;
+    } else if (e.type === 'pelicula') {
+      const map = { titulo:'fp-titulo',director:'fp-director',anio_est:'fp-anio-est',duracion:'fp-duracion',fotografia:'fp-foto',musica:'fp-musica',protagonista:'fp-protagonista',guionista:'fp-guionista',cover:'fp-cover',autor_original:'fp-autor-original' };
+      Object.entries(map).forEach(([k,id])=>{ const el=document.getElementById(id); if(el) el.value=e[k]||''; });
+      document.getElementById('fp-mes').value = e.mes||'';
+      document.getElementById('fp-anio-visto').value = e.anio||'';
+      document.getElementById('fp-basada').value = e.basada||'';
+    } else {
+      ['titulo','director','anio_est','temporadas','duracion','musica','protagonista','guionista','cover'].forEach(k=>{ const el=document.getElementById('fs-'+k); if(el) el.value=e[k]||''; });
+      document.getElementById('fs-mes').value = e.mes||'';
+      document.getElementById('fs-anio-visto').value = e.anio||'';
+      document.getElementById('fs-basada').value = e.basada||'';
+    }
+  }, 100);
+}
+
+function deleteEntry(id) {
+  if (!confirm('¿Eliminar de tu biblioteca?')) return;
+  db.entries = db.entries.filter(e => e.id !== id);
+  saveDB();
+  closeModal('modal-detail');
+  showToast('Eliminado de la biblioteca');
+  if (currentScreen === 'library') renderLibrary();
+  if (currentScreen === 'home') renderHome();
+}
+
+function finishSerie(id) {
+  const e = db.entries.find(x => x.id === id);
+  if (!e) return;
+  const now = new Date();
+  e.estado = 'vista';
+  if (!e.mes) e.mes = MESES[now.getMonth()];
+  if (!e.anio) e.anio = now.getFullYear();
+  saveDB();
+  showToast(`🎉 ¡Terminaste "${e.titulo}"!`, 3000);
+  renderHome();
+  if (currentScreen === 'library') renderLibrary();
+}
+
+// ═══════════════════════════════════
+//  YEAR VIEW
+// ═══════════════════════════════════
+function changeYear(d) { currentYear += d; renderYear(); }
+
+let yearChartMode = { libros: 'pags', peliculas: 'cantidad', series: 'cantidad' };
+
+function renderYear() {
+  document.getElementById('year-display').textContent = currentYear;
+  const yr = db.entries.filter(e => e.anio === currentYear);
+  const libros = yr.filter(e => e.type === 'libro' && e.estado !== 'pendiente');
+  const peliculas = yr.filter(e => e.type === 'pelicula');
+  const series = yr.filter(e => e.type === 'serie');
+  const pags = libros.reduce((a,b) => a+(b.paginas||0), 0);
+  const minPels = peliculas.reduce((a,b)=>a+(b.duracion||0),0);
+  const minSeries = series.reduce((a,b)=>a+(b.duracion||0),0);
+
+  const prev = db.entries.filter(e => e.anio === currentYear-1);
+  const prevLibros = prev.filter(e => e.type==='libro'&&e.estado!=='pendiente');
+  const prevPags = prevLibros.reduce((a,b)=>a+(b.paginas||0),0);
+  const pagsDir = prevPags > 0 ? (pags >= prevPags ? 'up' : 'down') : '';
+  const pagsVs = prevPags > 0 ? (pags >= prevPags ? `▲ +${(((pags/prevPags)-1)*100).toFixed(0)}%` : `▼ ${(((pags/prevPags)-1)*100).toFixed(0)}%`) + ` vs ${currentYear-1}` : '';
+
+  const btnStyle = (key, mode) => yearChartMode[key]===mode
+    ? 'padding:5px 10px;border-radius:20px;border:none;background:var(--ink);color:var(--cream);font-size:10px;font-weight:700;letter-spacing:1px;cursor:pointer;font-family:var(--font-sans);'
+    : 'padding:5px 10px;border-radius:20px;border:1.5px solid var(--border);background:#fff;color:var(--ink3);font-size:10px;font-weight:700;letter-spacing:1px;cursor:pointer;font-family:var(--font-sans);';
+
+  document.getElementById('year-content').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+      <div class="stat-box">
+        <div class="stat-num">${libros.length}</div>
+        <div class="stat-label">Libros leídos</div>
+        <div class="stat-vs ${pagsDir}">${prevLibros.length>0?(libros.length>=prevLibros.length?'▲':'▼')+' vs '+prevLibros.length+' en '+(currentYear-1):''}</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num">${pags.toLocaleString()}</div>
+        <div class="stat-label">Páginas</div>
+        <div class="stat-vs ${pagsDir}">${pagsVs}</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num">${peliculas.length}</div>
+        <div class="stat-label">Películas</div>
+        <div style="font-size:10px;color:var(--ink3);margin-top:2px;">${Math.round(minPels/60)}h · ${minPels} min</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num">${series.length}</div>
+        <div class="stat-label">Series</div>
+        <div style="font-size:10px;color:var(--ink3);margin-top:2px;">${Math.round(minSeries/60)}h · ${minSeries} min</div>
+      </div>
+    </div>
+
+    <!-- LIBROS CHART -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:6px;">
+      <div style="font-family:var(--font-serif);font-size:15px;font-weight:700;font-style:italic;">📚 Libros por mes</div>
+      <div style="display:flex;gap:4px;">
+        <button style="${btnStyle('libros','pags')}" onclick="setYearChartMode('libros','pags')">Páginas</button>
+        <button style="${btnStyle('libros','cantidad')}" onclick="setYearChartMode('libros','cantidad')">Cantidad</button>
+        <button style="${btnStyle('libros','ritmo')}" onclick="setYearChartMode('libros','ritmo')">Ritmo</button>
+      </div>
+    </div>
+    <div class="chart-wrap"><canvas id="year-chart-libros"></canvas></div>
+
+    <!-- PELÍCULAS CHART -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin:14px 0 8px;flex-wrap:wrap;gap:6px;">
+      <div style="font-family:var(--font-serif);font-size:15px;font-weight:700;font-style:italic;">🎬 Películas por mes</div>
+      <div style="display:flex;gap:4px;">
+        <button style="${btnStyle('peliculas','cantidad')}" onclick="setYearChartMode('peliculas','cantidad')">Cantidad</button>
+        <button style="${btnStyle('peliculas','minutos')}" onclick="setYearChartMode('peliculas','minutos')">Minutos</button>
+        <button style="${btnStyle('peliculas','promedio')}" onclick="setYearChartMode('peliculas','promedio')">Promedio</button>
+      </div>
+    </div>
+    <div class="chart-wrap"><canvas id="year-chart-peliculas"></canvas></div>
+
+    <!-- SERIES CHART -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin:14px 0 8px;flex-wrap:wrap;gap:6px;">
+      <div style="font-family:var(--font-serif);font-size:15px;font-weight:700;font-style:italic;">📺 Series por mes</div>
+      <div style="display:flex;gap:4px;">
+        <button style="${btnStyle('series','cantidad')}" onclick="setYearChartMode('series','cantidad')">Cantidad</button>
+        <button style="${btnStyle('series','minutos')}" onclick="setYearChartMode('series','minutos')">Minutos</button>
+      </div>
+    </div>
+    <div class="chart-wrap"><canvas id="year-chart-series"></canvas></div>
+
+    <!-- LISTA LIBROS -->
+    <div style="font-family:var(--font-serif);font-size:15px;font-weight:700;font-style:italic;margin:16px 0 8px;">Libros del año</div>
+    ${libros.length===0?'<div style="color:var(--ink4);font-style:italic;font-size:13px;">Ningún libro registrado.</div>':
+      [...libros].sort((a,b)=>{return (MESES.indexOf(b.mes)||0)-(MESES.indexOf(a.mes)||0);}).map(e=>`
+      <div style="display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--cream2);align-items:center;">
+        ${e.cover?`<img src="${e.cover}" style="width:32px;height:45px;object-fit:cover;border-radius:2px;flex-shrink:0;">`:'<div style="width:32px;height:45px;background:var(--cream3);border-radius:2px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:16px;">📚</div>'}
+        <div style="flex:1;">
+          <div style="font-family:var(--font-serif);font-size:14px;font-weight:700;">${e.titulo}</div>
+          <div style="font-size:11px;color:var(--ink3);">${e.autor||''} · ${e.paginas||0} págs · ${e.mes||''}</div>
+        </div>
+        <div style="font-size:13px;color:var(--gold);">${'★'.repeat(e.rating||0)}</div>
+      </div>`).join('')}`;
+
+  renderYearCharts(libros, peliculas, series);
+}
+
+function setYearChartMode(key, mode) {
+  yearChartMode[key] = mode;
+  renderYear();
+}
+
+function renderYearCharts(libros, peliculas, series) {
+  const diasMes = [31,28,29,31,30,31,30,31,31,30,31,30];
+
+  setTimeout(() => {
+    // ── LIBROS ──
+    destroyChart('year-chart-libros');
+    const ctxL = document.getElementById('year-chart-libros');
+    if (ctxL) {
+      let dataL, labelL, colorL;
+      if (yearChartMode.libros === 'pags') {
+        dataL = monthlySum(libros,'paginas'); labelL = 'Páginas'; colorL = 'rgba(200,149,42,0.75)';
+      } else if (yearChartMode.libros === 'cantidad') {
+        dataL = monthlyCount(libros); labelL = 'Libros'; colorL = 'rgba(45,90,61,0.75)';
+      } else {
+        dataL = monthlySum(libros,'paginas').map((p,i)=>p>0?(p/diasMes[i]).toFixed(1):0); labelL = 'Págs/día'; colorL = 'rgba(200,149,42,0.6)';
+      }
+      new Chart(ctxL.getContext('2d'), {
+        type: yearChartMode.libros === 'ritmo' ? 'line' : 'bar',
+        data: { labels: MESES_SHORT, datasets: [{ data: dataL, backgroundColor: colorL, borderColor: colorL.replace('0.75','1').replace('0.6','1'), borderWidth: yearChartMode.libros==='ritmo'?2:1, borderRadius: 3, tension: 0.35, fill: yearChartMode.libros==='ritmo', pointRadius: 3 }] },
+        options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true,ticks:{color:'#8a7a68',font:{size:10}},grid:{color:'#ede7d9'}},x:{ticks:{color:'#8a7a68',font:{size:10}},grid:{display:false}}} }
+      });
+    }
+
+    // ── PELÍCULAS ──
+    destroyChart('year-chart-peliculas');
+    const ctxP = document.getElementById('year-chart-peliculas');
+    if (ctxP) {
+      const cantP = monthlyCount(peliculas);
+      const minP = monthlySum(peliculas,'duracion');
+      const useMin = yearChartMode.peliculas === 'minutos' || yearChartMode.peliculas === 'promedio';
+      let dataP;
+      if (yearChartMode.peliculas === 'cantidad') dataP = cantP;
+      else if (yearChartMode.peliculas === 'minutos') dataP = minP;
+      else dataP = cantP.map((c,i)=>c>0?Math.round(minP[i]/c):0);
+      const fmtP = useMin ? v=>fmtMin(v) : null;
+      if (fmtP) {
+        new Chart(ctxP.getContext('2d'), { type:'bar',
+          data:{ labels:MESES_SHORT, datasets:[{data:dataP, backgroundColor:'rgba(139,32,32,0.75)', borderRadius:3}] },
+          options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmtP(c.parsed.y)}}},
+            scales:{y:{beginAtZero:true,ticks:{color:'#8a7a68',font:{size:10},callback:fmtP},grid:{color:'#ede7d9'}},x:{ticks:{color:'#8a7a68',font:{size:10}},grid:{display:false}}}}
+        });
+      } else {
+        new Chart(ctxP.getContext('2d'), { type:'bar',
+          data:{ labels:MESES_SHORT, datasets:[{data:dataP, backgroundColor:'rgba(139,32,32,0.75)', borderRadius:3}] },
+          options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{color:'#8a7a68',font:{size:10}},grid:{color:'#ede7d9'}},x:{ticks:{color:'#8a7a68',font:{size:10}},grid:{display:false}}}}
+        });
+      }
+    }
+
+    // ── SERIES ──
+    destroyChart('year-chart-series');
+    const ctxS = document.getElementById('year-chart-series');
+    if (ctxS) {
+      const useMinS = yearChartMode.series === 'minutos';
+      const dataS = useMinS ? monthlySum(series,'duracion') : monthlyCount(series);
+      if (useMinS) {
+        new Chart(ctxS.getContext('2d'), { type:'bar',
+          data:{ labels:MESES_SHORT, datasets:[{data:dataS, backgroundColor:'rgba(26,58,92,0.75)', borderRadius:3}] },
+          options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmtMin(c.parsed.y)}}},
+            scales:{y:{beginAtZero:true,ticks:{color:'#8a7a68',font:{size:10},callback:v=>fmtMin(v)},grid:{color:'#ede7d9'}},x:{ticks:{color:'#8a7a68',font:{size:10}},grid:{display:false}}}}
+        });
+      } else {
+        new Chart(ctxS.getContext('2d'), { type:'bar',
+          data:{ labels:MESES_SHORT, datasets:[{data:dataS, backgroundColor:'rgba(26,58,92,0.75)', borderRadius:3}] },
+          options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{color:'#8a7a68',font:{size:10}},grid:{color:'#ede7d9'}},x:{ticks:{color:'#8a7a68',font:{size:10}},grid:{display:false}}}}
+        });
+      }
+    }
+  }, 40);
+}
+
+// ═══════════════════════════════════
+//  STATS — estado global
+// ═══════════════════════════════════
+const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const MESES_SHORT = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+
+let statsState = {
+  libros:    { year: 'todos', filter: null, filterField: null, sortField: 'anio_pub', sortDir: 1, page: 0, chartMode: 'pags' },
+  peliculas: { year: 'todos', filter: null, filterField: null, sortField: 'anio_est', sortDir: 1, page: 0, chartMode: 'cantidad' },
+};
+const PAGE_SIZE = 20;
+
+// ── Year navigation ──────────────
+function getYears(type) {
+  return [...new Set(db.entries.filter(e => e.type === type && e.anio).map(e => e.anio))].sort((a,b)=>a-b);
+}
+
+function changeStatsYear(key, dir) {
+  const typeMap = { libros: 'libro', peliculas: 'pelicula', series: 'serie' };
+  const type = typeMap[key] || key;
+  const yrs = ['todos', ...getYears(type)];
+  const cur = statsState[key].year;
+  let idx = yrs.findIndex(y => String(y) === String(cur));
+  if (idx === -1) idx = 0;
+  idx = Math.max(0, Math.min(yrs.length - 1, idx + dir));
+  statsState[key].year = yrs[idx];
+  statsState[key].page = 0;
+  if (key === 'libros') renderStatsLibros();
+  else if (key === 'peliculas') renderStatsPeliculas();
+  else if (key === 'series') renderStatsSeries();
+}
+
+function getFiltered(type, key) {
+  let items = db.entries.filter(e => e.type === type);
+  const yr = statsState[key].year;
+  if (yr !== 'todos') items = items.filter(e => e.anio === parseInt(yr) || e.anio === yr);
+  return items;
+}
+
+function getFilteredWithActive(type, key) {
+  let items = getFiltered(type, key);
+  const s = statsState[key];
+  if (s.filter && s.filterField) items = items.filter(e => (e[s.filterField]||'').trim() === s.filter);
+  return items;
+}
+
+// ── Utilities ──────────────────
+function monthlyCount(items) { return MESES.map(m => items.filter(e => e.mes === m).length); }
+function monthlySum(items, field) { return MESES.map(m => items.filter(e=>e.mes===m).reduce((a,b)=>a+(parseFloat(b[field])||0),0)); }
+
+function daysElapsedInYear() {
+  const now = new Date();
+  return Math.max(1, Math.floor((now - new Date(now.getFullYear(),0,1)) / 86400000) + 1);
+}
+
+function bestYear(type, metric) {
+  const yrs = getYears(type);
+  let best = null, bestVal = -1;
+  yrs.forEach(y => { const v = metric(db.entries.filter(e=>e.type===type&&e.anio===y)); if(v>bestVal){bestVal=v;best=y;} });
+  return { year: best, value: bestVal };
+}
+
+function vsTag(current, best, bYear, unit='') {
+  if (!best || best === 0) return '';
+  const pct = Math.round(((current - best) / best) * 100);
+  const up = pct >= 0;
+  return `<span style="color:${up?'var(--green)':'var(--red2)'};font-weight:700;">${up?'▲':'▼'} ${Math.abs(pct)}%</span> vs mejor año (${bYear}: ${best.toLocaleString()}${unit})`;
+}
+
+function destroyChart(id) { const c = Chart.getChart(id); if(c) c.destroy(); }
+
+function drawBarChart(id, labels, data, color) {
+  destroyChart(id);
+  const ctx = document.getElementById(id); if(!ctx) return;
+  new Chart(ctx.getContext('2d'), {
+    type:'bar', data:{labels, datasets:[{data, backgroundColor:color, borderRadius:3}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{y:{beginAtZero:true,ticks:{color:'#8a7a68',font:{size:10}},grid:{color:'#ede7d9'}},
+              x:{ticks:{color:'#8a7a68',font:{size:10}},grid:{display:false}}}}
+  });
+}
+
+function drawLineChart(id, labels, data, color) {
+  destroyChart(id);
+  const ctx = document.getElementById(id); if(!ctx) return;
+  new Chart(ctx.getContext('2d'), {
+    type:'line', data:{labels, datasets:[{data, borderColor:color, backgroundColor:color.replace('rgb(','rgba(').replace(')',',0.08)'), borderWidth:2, pointBackgroundColor:color, tension:0.35, fill:true, pointRadius:3}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{y:{beginAtZero:true,ticks:{color:'#8a7a68',font:{size:10}},grid:{color:'#ede7d9'}},
+              x:{ticks:{color:'#8a7a68',font:{size:10}},grid:{display:false}}}}
+  });
+}
+
+// Bar chart with custom value formatter (e.g. fmtMin for durations)
+function drawBarChartFmt(id, labels, data, color, fmt) {
+  destroyChart(id);
+  const ctx = document.getElementById(id); if(!ctx) return;
+  new Chart(ctx.getContext('2d'), {
+    type:'bar', data:{labels, datasets:[{data, backgroundColor:color, borderRadius:3}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{
+      legend:{display:false},
+      tooltip:{callbacks:{label:c=>fmt(c.parsed.y)}}
+    },
+      scales:{y:{beginAtZero:true,
+        ticks:{color:'#8a7a68',font:{size:10}, callback: v=>fmt(v)},
+        grid:{color:'#ede7d9'}},
+        x:{ticks:{color:'#8a7a68',font:{size:10}},grid:{display:false}}}}
+  });
+}
+
+// ── Interactive tops ──────────────
+const EXCLUDED_TOP = new Set(['no aplica','varios autores','varios','n/a','na','-','—','sin datos','desconocido','unknown','']);
+function isValidTopVal(v) {
+  if (!v || !v.trim()) return false;
+  return !EXCLUDED_TOP.has(v.trim().toLowerCase());
+}
+
+function renderTopInteractive(containerId, items, field, color, key, filterField) {
+  const counts = {};
+  items.forEach(e => { const v=(e[field]||'').trim(); if(isValidTopVal(v)) counts[v]=(counts[v]||0)+1; });
+  const sorted = Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,7);
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  if (!sorted.length) { el.innerHTML='<div style="color:var(--ink4);font-size:12px;padding:6px 0;">Sin datos.</div>'; return; }
+  const max = sorted[0][1];
+  const s = statsState[key];
+  el.innerHTML = sorted.map(([name,count],i) => {
+    const sel = s.filterField===filterField && s.filter===name;
+    const dim = s.filterField===filterField && !sel;
+    return `<div class="top-int-item ${sel?'selected':''} ${dim?'dimmed':''}"
+      onclick="toggleFilter('${key}','${filterField}','${name.replace(/'/g,"\\'")}')">
+      <div class="top-int-rank" style="color:${i===0?'var(--gold)':'var(--ink4)'};">${i+1}</div>
+      <div class="top-int-name">${name}</div>
+      <div class="top-int-count">${count}</div>
+      <div class="top-int-bar"><div class="top-int-bar-fill" style="width:${Math.round((count/max)*100)}%;background:${color};"></div></div>
+    </div>`;
+  }).join('');
+}
+
+function toggleFilter(key, field, value) {
+  const s = statsState[key];
+  s.filter = (s.filterField===field && s.filter===value) ? null : value;
+  s.filterField = s.filter ? field : null;
+  s.page = 0;
+  if (key==='libros') {
+    renderStatsLibros();
+  } else if (key==='peliculas') {
+    renderStatsPeliculas();
+  } else if (key==='series') {
+    renderStatsSeries();
+  }
+}
+
+function clearFilter(key) {
+  statsState[key].filter = null; statsState[key].filterField = null; statsState[key].page = 0;
+  if (key==='libros') renderStatsLibros();
+  else if (key==='peliculas') renderStatsPeliculas();
+  else if (key==='series') renderStatsSeries();
+}
+
+function activeFilterTag(key) {
+  const s = statsState[key];
+  if (!s.filter) return '';
+  return `<span class="filter-tag">${s.filter} <button onclick="clearFilter('${key}')">×</button></span>`;
+}
+
+// ── Pagination ──────────────────
+function renderPagination(containerId, total, key) {
+  const s = statsState[key];
+  const totalPages = Math.ceil(total / PAGE_SIZE);
+  if (totalPages <= 1) { document.getElementById(containerId).innerHTML=''; return; }
+  const cur = s.page;
+  document.getElementById(containerId).innerHTML = `
+    <button class="pag-btn" onclick="goPage('${key}',${cur-1})" ${cur===0?'disabled':''}>
+      <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.5;"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <span class="pag-info">${cur+1} / ${totalPages}<br><span style="font-size:10px;font-weight:400;">${total} registros</span></span>
+    <button class="pag-btn" onclick="goPage('${key}',${cur+1})" ${cur>=totalPages-1?'disabled':''}>
+      <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.5;"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>`;
+}
+
+function goPage(key, page) {
+  statsState[key].page = page;
+  if (key==='libros') renderLibrosTabla();
+  else if (key==='peliculas') renderPeliculasTabla();
+  else if (key==='series') renderSeriesTabla();
+  document.getElementById(key==='libros'?'lb-tabla':key==='peliculas'?'pl-tabla':'sr-tabla').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+// ═══════════════════════════════════
+//  STATS LIBROS
+// ═══════════════════════════════════
+let lbChartMode = 'pags';
+
+function setLbChartMode(mode, btn) {
+  lbChartMode = mode;
+  document.querySelectorAll('#lb-chart-mode-pills .chart-mode-pill').forEach(b=>b.classList.toggle('active',b===btn));
+  const yr = statsState.libros.year;
+  const libros = getFiltered('libro','libros').filter(e=>e.estado!=='pendiente');
+  renderLibrosChart(libros);
+}
+
+function renderStatsLibros() {
+  const yr = statsState.libros.year;
+  const yLabel = yr==='todos' ? 'Todos los años' : String(yr);
+  document.getElementById('lb-year-label').textContent = yLabel;
+
+  const allLibros = db.entries.filter(e=>e.type==='libro'&&e.estado!=='pendiente');
+  const libros = yr==='todos' ? allLibros : allLibros.filter(e=>e.anio===parseInt(yr)||e.anio===yr);
+
+  // KPIs
+  const totalPags = libros.reduce((a,b)=>a+(b.paginas||0),0);
+  const avgPags = libros.length ? Math.round(totalPags/libros.length) : 0;
+  document.getElementById('lb-kpis').innerHTML = `
+    <div class="stat-box"><div class="stat-num">${libros.length}</div><div class="stat-label">Libros</div></div>
+    <div class="stat-box"><div class="stat-num">${totalPags.toLocaleString()}</div><div class="stat-label">Páginas</div></div>
+    <div class="stat-box"><div class="stat-num">${avgPags}</div><div class="stat-label">Pág/libro</div></div>`;
+
+  // vs best year
+  const bestC = bestYear('libro', items=>items.length);
+  const bestP = bestYear('libro', items=>items.reduce((a,b)=>a+(b.paginas||0),0));
+  if (yr==='todos') {
+    document.getElementById('lb-vs-best').innerHTML =
+      `Mejor año libros: <b>${bestC.year||'—'}</b> (${bestC.value}) · Mejor año páginas: <b>${bestP.year||'—'}</b> (${bestP.value.toLocaleString()})`;
+  } else {
+    document.getElementById('lb-vs-best').innerHTML =
+      `${vsTag(libros.length,bestC.value,bestC.year,' libros')}`;
+  }
+
+  renderLibrosChart(libros);
+
+  // Tops
+  renderTopInteractive('lb-top-autor',   libros,'autor',     'var(--green)',  'libros','autor');
+  renderTopInteractive('lb-top-editorial',libros,'editorial','var(--gold)',   'libros','editorial');
+  renderTopInteractive('lb-top-traductor',libros,'traductor','var(--blue)',   'libros','traductor');
+  renderTopInteractive('lb-top-idioma',   libros,'idioma',   'var(--red)',    'libros','idioma');
+
+  document.getElementById('lb-active-filter').innerHTML = activeFilterTag('libros');
+  renderLibrosTabla();
+  renderScatterLibros(allLibros);
+  renderCuriosidadesLibros(allLibros);
+}
+
+function renderLibrosChart(libros) {
+  const diasMes = [31,28,29,31,30,31,30,31,31,30,31,30];
+  setTimeout(() => {
+    if (lbChartMode==='pags') {
+      drawBarChart('lb-chart-mes', MESES_SHORT, monthlySum(libros,'paginas'), 'rgba(200,149,42,0.75)');
+    } else if (lbChartMode==='cantidad') {
+      drawBarChart('lb-chart-mes', MESES_SHORT, monthlyCount(libros), 'rgba(45,90,61,0.75)');
+    } else {
+      const ritmos = monthlySum(libros,'paginas').map((p,i)=>p>0?parseFloat((p/diasMes[i]).toFixed(1)):0);
+      drawLineChart('lb-chart-mes', MESES_SHORT, ritmos, 'rgb(200,149,42)');
+    }
+  }, 20);
+}
+
+function sortLibros(field, btn) {
+  const s = statsState.libros;
+  s.sortDir = s.sortField===field ? s.sortDir*-1 : 1;
+  s.sortField = field; s.page = 0;
+  document.querySelectorAll('#spanel-libros .sort-pill').forEach(b=>b.classList.toggle('active',b===btn));
+  renderLibrosTabla();
+}
+
+function renderLibrosTabla() {
+  const s = statsState.libros;
+  let items = getFilteredWithActive('libro','libros').filter(e=>e.estado!=='pendiente');
+  items = items.sort((a,b)=>String(a[s.sortField]||'').localeCompare(String(b[s.sortField]||''),undefined,{numeric:true})*s.sortDir);
+  const total = items.length;
+  const page = items.slice(s.page*PAGE_SIZE, (s.page+1)*PAGE_SIZE);
+  const el = document.getElementById('lb-tabla');
+  if (!total) { el.innerHTML='<div style="color:var(--ink4);font-size:13px;padding:8px 0;">Sin libros para mostrar.</div>'; document.getElementById('lb-pagination').innerHTML=''; return; }
+  el.innerHTML = `<table class="data-table">
+    <thead><tr><th>Título</th><th>Autor</th><th>Pub.</th><th>Págs</th><th>Leído</th></tr></thead>
+    <tbody>${page.map(e=>`<tr>
+      <td style="font-family:var(--font-serif);font-weight:700;max-width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${e.titulo}">${e.titulo}</td>
+      <td class="clickable" onclick="toggleFilter('libros','autor','${(e.autor||'').replace(/'/g,"\\'")}')">${e.autor||'—'}</td>
+      <td>${e.anio_pub||'—'}</td>
+      <td>${(e.paginas||0).toLocaleString()}</td>
+      <td style="white-space:nowrap;font-size:11px;">${e.mes||'—'} ${e.anio||''}</td>
+    </tr>`).join('')}</tbody></table>`;
+  renderPagination('lb-pagination', total, 'libros');
+}
+
+function renderScatterLibros(allLibros) {
+  destroyChart('lb-chart-scatter');
+  const ctx = document.getElementById('lb-chart-scatter'); if(!ctx) return;
+  const filtered = statsState.libros.filter
+    ? allLibros.filter(e => e[statsState.libros.filterField] === statsState.libros.filter)
+    : allLibros;
+  const data = filtered.filter(e=>e.anio_pub&&e.paginas&&e.estado!=='leyendo'&&e.estado!=='pendiente').map(e=>({
+    x:parseInt(e.anio_pub), y:e.paginas||0, label:e.titulo, autor:e.autor||'—'
+  }));
+  setTimeout(()=>{
+    new Chart(ctx.getContext('2d'), {
+      type:'scatter',
+      data:{datasets:[{data, backgroundColor:'rgba(45,90,61,0.6)', pointRadius:6, pointHoverRadius:9, borderColor:'rgba(45,90,61,0.9)', borderWidth:1}]},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.raw.label} · ${c.raw.autor} (${c.raw.x}, ${c.raw.y} págs)`}}},
+        scales:{
+          x:{title:{display:true,text:'Año publicación',color:'#8a7a68',font:{size:10}},ticks:{color:'#8a7a68',font:{size:10}},grid:{color:'#ede7d9'}},
+          y:{title:{display:true,text:'Páginas',color:'#8a7a68',font:{size:10}},ticks:{color:'#8a7a68',font:{size:10}},grid:{color:'#ede7d9'}}
+        }
+      }
+    });
+  },20);
+}
+
+function renderScatterPeliculas(allPels) {
+  destroyChart('pl-chart-scatter');
+  const ctx = document.getElementById('pl-chart-scatter'); if(!ctx) return;
+  const filtered = statsState.peliculas.filter
+    ? allPels.filter(e => e[statsState.peliculas.filterField] === statsState.peliculas.filter)
+    : allPels;
+  const data = filtered.filter(e=>e.anio_est&&e.duracion).map(e=>({
+    x:parseInt(e.anio_est), y:e.duracion||0, label:e.titulo, dir:e.director||'—'
+  }));
+  setTimeout(()=>{
+    new Chart(ctx.getContext('2d'), {
+      type:'scatter',
+      data:{datasets:[{data, backgroundColor:'rgba(139,32,32,0.6)', pointRadius:6, pointHoverRadius:9, borderColor:'rgba(139,32,32,0.9)', borderWidth:1}]},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.raw.label} · ${c.raw.dir} (${c.raw.x}, ${fmtMin(c.raw.y)})`}}},
+        scales:{
+          x:{title:{display:true,text:'Año estreno',color:'#8a7a68',font:{size:10}},ticks:{color:'#8a7a68',font:{size:10}},grid:{color:'#ede7d9'}},
+          y:{title:{display:true,text:'Duración',color:'#8a7a68',font:{size:10}},ticks:{color:'#8a7a68',font:{size:10},callback:v=>fmtMin(v)},grid:{color:'#ede7d9'}}
+        }
+      }
+    });
+  },20);
+}
+
+function renderScatterSeries(allSeries) {
+  destroyChart('sr-chart-scatter');
+  const ctx = document.getElementById('sr-chart-scatter'); if(!ctx) return;
+  const filtered = statsState.series.filter
+    ? allSeries.filter(e => e[statsState.series.filterField] === statsState.series.filter)
+    : allSeries;
+  const data = filtered.filter(e=>e.anio_est).map(e=>({
+    x:parseInt(e.anio_est), y:e.duracion||0, label:e.titulo, dir:e.director||'—', temp:e.temporadas||1
+  }));
+  setTimeout(()=>{
+    new Chart(ctx.getContext('2d'), {
+      type:'scatter',
+      data:{datasets:[{data, backgroundColor:'rgba(26,58,92,0.6)', pointRadius:6, pointHoverRadius:9, borderColor:'rgba(26,58,92,0.9)', borderWidth:1}]},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.raw.label} · ${c.raw.dir} (${c.raw.x}, ${fmtMin(c.raw.y)}, ${c.raw.temp} temp.)`}}},
+        scales:{
+          x:{title:{display:true,text:'Año estreno',color:'#8a7a68',font:{size:10}},ticks:{color:'#8a7a68',font:{size:10}},grid:{color:'#ede7d9'}},
+          y:{title:{display:true,text:'Duración total',color:'#8a7a68',font:{size:10}},ticks:{color:'#8a7a68',font:{size:10},callback:v=>fmtMin(v)},grid:{color:'#ede7d9'}}
+        }
+      }
+    });
+  },20);
+}
+
+// ═══════════════════════════════════
+//  STATS PELÍCULAS
+// ═══════════════════════════════════
+let plChartMode = 'cantidad';
+
+function setPlChartMode(mode, btn) {
+  plChartMode = mode;
+  document.querySelectorAll('#pl-chart-mode-pills .chart-mode-pill').forEach(b=>b.classList.toggle('active',b===btn));
+  const pels = getFiltered('pelicula','peliculas');
+  renderPeliculasChart(pels);
+}
+
+function renderStatsPeliculas() {
+  const yr = statsState.peliculas.year;
+  document.getElementById('pl-year-label').textContent = yr==='todos'?'Todos los años':String(yr);
+
+  const allPels = db.entries.filter(e=>e.type==='pelicula');
+  const pels = yr==='todos' ? allPels : allPels.filter(e=>e.anio===parseInt(yr)||e.anio===yr);
+
+  const totalMin = pels.reduce((a,b)=>a+(b.duracion||0),0);
+  const avg = pels.length ? Math.round(totalMin/pels.length) : 0;
+  document.getElementById('pl-kpis').innerHTML = `
+    <div class="stat-box"><div class="stat-num">${pels.length}</div><div class="stat-label">Películas</div></div>
+    <div class="stat-box"><div class="stat-num">${fmtMin(totalMin)}</div><div class="stat-label">Tiempo total</div></div>
+    <div class="stat-box"><div class="stat-num">${fmtMin(avg)}</div><div class="stat-label">Prom/película</div></div>`;
+
+  const bestC = bestYear('pelicula', items=>items.length);
+  const bestM = bestYear('pelicula', items=>items.reduce((a,b)=>a+(b.duracion||0),0));
+  document.getElementById('pl-vs-best').innerHTML = yr==='todos'
+    ? `Mejor año: <b>${bestC.year||'—'}</b> (${bestC.value} películas) · <b>${bestM.year||'—'}</b> (${bestM.value.toLocaleString()} min)`
+    : vsTag(pels.length, bestC.value, bestC.year, ' películas');
+
+  renderPeliculasChart(pels);
+  renderTopInteractive('pl-top-director',pels,'director',  'var(--red)',   'peliculas','director');
+  renderTopInteractive('pl-top-guion',   pels,'guionista', 'var(--blue)',  'peliculas','guionista');
+  renderTopInteractive('pl-top-musica',  pels,'musica',    'var(--gold)',  'peliculas','musica');
+  renderTopInteractive('pl-top-foto',    pels,'fotografia','var(--green)', 'peliculas','fotografia');
+  document.getElementById('pl-active-filter').innerHTML = activeFilterTag('peliculas');
+  renderPeliculasTabla();
+  renderScatterPeliculas(allPels);
+  renderCuriosidadesPeliculas(allPels);
+}
+
+function renderPeliculasChart(pels) {
+  setTimeout(() => {
+    const cant = monthlyCount(pels);
+    const min  = monthlySum(pels,'duracion');
+    if (plChartMode==='cantidad') {
+      drawBarChart('pl-chart-mes', MESES_SHORT, cant, 'rgba(139,32,32,0.75)');
+    } else if (plChartMode==='minutos') {
+      // Show as h:mm labels on y-axis via custom chart
+      drawBarChartFmt('pl-chart-mes', MESES_SHORT, min, 'rgba(139,32,32,0.5)', v=>fmtMin(v));
+    } else {
+      drawBarChartFmt('pl-chart-mes', MESES_SHORT, cant.map((c,i)=>c>0?Math.round(min[i]/c):0), 'rgba(200,149,42,0.75)', v=>fmtMin(v));
+    }
+  }, 20);
+}
+
+function sortPeliculas(field, btn) {
+  const s = statsState.peliculas;
+  s.sortDir = s.sortField===field ? s.sortDir*-1 : 1;
+  s.sortField = field; s.page = 0;
+  document.querySelectorAll('#spanel-peliculas .sort-pill').forEach(b=>b.classList.toggle('active',b===btn));
+  renderPeliculasTabla();
+}
+
+function renderPeliculasTabla() {
+  const s = statsState.peliculas;
+  let items = getFilteredWithActive('pelicula','peliculas');
+  items = items.sort((a,b)=>String(a[s.sortField]||'').localeCompare(String(b[s.sortField]||''),undefined,{numeric:true})*s.sortDir);
+  const total = items.length;
+  const page = items.slice(s.page*PAGE_SIZE, (s.page+1)*PAGE_SIZE);
+  const el = document.getElementById('pl-tabla');
+  const ok = v => v && v.trim() && v.toLowerCase() !== 'no aplica';
+  if (!total) { el.innerHTML='<div style="color:var(--ink4);font-size:13px;padding:8px 0;">Sin películas para mostrar.</div>'; document.getElementById('pl-pagination').innerHTML=''; return; }
+  el.innerHTML = `<table class="data-table">
+    <thead><tr><th>Título</th><th>Director</th><th>Guión</th><th>Música</th><th>Foto</th><th>Año</th><th>Min</th></tr></thead>
+    <tbody>${page.map(e=>`<tr>
+      <td style="font-family:var(--font-serif);font-weight:700;max-width:110px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${e.titulo}">${e.titulo}</td>
+      <td class="clickable" onclick="toggleFilter('peliculas','director','${(e.director||'').replace(/'/g,"\\'")}')">${ok(e.director)?e.director:'—'}</td>
+      <td class="clickable" onclick="toggleFilter('peliculas','guionista','${(e.guionista||'').replace(/'/g,"\\'")}')">${ok(e.guionista)?e.guionista:'—'}</td>
+      <td class="clickable" onclick="toggleFilter('peliculas','musica','${(e.musica||'').replace(/'/g,"\\'")}')">${ok(e.musica)?e.musica:'—'}</td>
+      <td class="clickable" onclick="toggleFilter('peliculas','fotografia','${(e.fotografia||'').replace(/'/g,"\\'")}')">${ok(e.fotografia)?e.fotografia:'—'}</td>
+      <td>${e.anio_est||'—'}</td>
+      <td>${e.duracion||'—'}</td>
+    </tr>`).join('')}</tbody></table>`;
+  renderPagination('pl-pagination', total, 'peliculas');
+}
+
+// ═══════════════════════════════════
+//  STATS SERIES
+// ═══════════════════════════════════
+let srChartMode = 'cantidad';
+statsState.series = { year: 'todos', filter: null, filterField: null, sortField: 'anio_est', sortDir: 1, page: 0 };
+
+function setSrChartMode(mode, btn) {
+  srChartMode = mode;
+  document.querySelectorAll('#sr-chart-mode-pills .chart-mode-pill').forEach(b=>b.classList.toggle('active',b===btn));
+  renderSeriesChart(getFiltered('serie','series'));
+}
+
+function changeStatsYear_series(dir) { changeStatsYear('series', dir); }
+
+function renderStatsSeries() {
+  const yr = statsState.series.year;
+  document.getElementById('sr-year-label').textContent = yr==='todos'?'Todos los años':String(yr);
+
+  const allSeries = db.entries.filter(e=>e.type==='serie' && e.estado!=='viendo' && e.estado!=='pendiente');
+  const series = yr==='todos' ? allSeries : allSeries.filter(e=>e.anio===parseInt(yr)||e.anio===yr);
+
+  const totalMin = series.reduce((a,b)=>a+(b.duracion||0),0);
+  const totalTemp = series.reduce((a,b)=>a+(parseInt(b.temporadas)||0),0);
+  document.getElementById('sr-kpis').innerHTML = `
+    <div class="stat-box"><div class="stat-num">${series.length}</div><div class="stat-label">Series</div></div>
+    <div class="stat-box"><div class="stat-num">${fmtMin(totalMin)}</div><div class="stat-label">Tiempo total</div></div>
+    <div class="stat-box"><div class="stat-num">${totalTemp}</div><div class="stat-label">Temporadas</div></div>`;
+
+  const bestC = bestYear('serie', items=>items.length);
+  document.getElementById('sr-vs-best').innerHTML = yr==='todos'
+    ? `Mejor año: <b>${bestC.year||'—'}</b> (${bestC.value} series)`
+    : vsTag(series.length, bestC.value, bestC.year, ' series');
+
+  renderSeriesChart(series);
+
+  const ok = v => v && v.trim() && v.toLowerCase() !== 'no aplica';
+  const clean = (arr, f) => arr.filter(e => ok(e[f]));
+  renderTopInteractive('sr-top-director',    clean(series,'director'),    'director',    'var(--blue)',  'series','director');
+  renderTopInteractive('sr-top-guion',       clean(series,'guionista'),   'guionista',   'var(--gold)',  'series','guionista');
+  renderTopInteractive('sr-top-musica',      clean(series,'musica'),      'musica',      'var(--green)', 'series','musica');
+  renderTopInteractive('sr-top-protagonista',clean(series,'protagonista'),'protagonista','var(--red)',   'series','protagonista');
+
+  document.getElementById('sr-active-filter').innerHTML = activeFilterTag('series');
+  renderSeriesTabla();
+  renderScatterSeries(allSeries);
+  renderCuriosidadesSeries(allSeries);
+}
+
+function renderSeriesChart(series) {
+  setTimeout(() => {
+    if (srChartMode==='minutos') {
+      drawBarChartFmt('sr-chart-mes', MESES_SHORT, monthlySum(series,'duracion'), 'rgba(26,58,92,0.75)', v=>fmtMin(v));
+    } else {
+      drawBarChart('sr-chart-mes', MESES_SHORT, monthlyCount(series), 'rgba(26,58,92,0.75)');
+    }
+  }, 20);
+}
+
+function sortSeries(field, btn) {
+  const s = statsState.series;
+  s.sortDir = s.sortField===field ? s.sortDir*-1 : 1;
+  s.sortField = field; s.page = 0;
+  document.querySelectorAll('#spanel-series .sort-pill').forEach(b=>b.classList.toggle('active',b===btn));
+  renderSeriesTabla();
+}
+
+function renderSeriesTabla() {
+  const s = statsState.series;
+  const ok = v => v && v.trim() && v.toLowerCase() !== 'no aplica';
+  let items = getFilteredWithActive('serie','series');
+  items = items.sort((a,b)=>String(a[s.sortField]||'').localeCompare(String(b[s.sortField]||''),undefined,{numeric:true})*s.sortDir);
+  const total = items.length;
+  const page = items.slice(s.page*PAGE_SIZE, (s.page+1)*PAGE_SIZE);
+  const el = document.getElementById('sr-tabla');
+  if (!total) { el.innerHTML='<div style="color:var(--ink4);font-size:13px;padding:8px 0;">Sin series para mostrar.</div>'; document.getElementById('sr-pagination').innerHTML=''; return; }
+  el.innerHTML = `<table class="data-table">
+    <thead><tr><th>Título</th><th>Creador</th><th>Guión</th><th>Música</th><th>Temp.</th><th>Año</th></tr></thead>
+    <tbody>${page.map(e=>`<tr>
+      <td style="font-family:var(--font-serif);font-weight:700;max-width:110px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${e.titulo}">${e.titulo}</td>
+      <td class="clickable" onclick="toggleFilter('series','director','${(e.director||'').replace(/'/g,"\\'")}')">${ok(e.director)?e.director:'—'}</td>
+      <td class="clickable" onclick="toggleFilter('series','guionista','${(e.guionista||'').replace(/'/g,"\\'")}')">${ok(e.guionista)?e.guionista:'—'}</td>
+      <td class="clickable" onclick="toggleFilter('series','musica','${(e.musica||'').replace(/'/g,"\\'")}')">${ok(e.musica)?e.musica:'—'}</td>
+      <td>${ok(e.temporadas)?e.temporadas:'—'}</td>
+      <td>${e.anio_est||'—'}</td>
+    </tr>`).join('')}</tbody></table>`;
+  renderPagination('sr-pagination', total, 'series');
+}
+
+// ═══════════════════════════════════
+//  CURIOSIDADES por categoría
+// ═══════════════════════════════════
+function topField(arr, field) {
+  const c = {}; arr.forEach(e => { const v=(e[field]||'').trim(); if(isValidTopVal(v)) c[v]=(c[v]||0)+1; });
+  const s = Object.entries(c).sort((a,b)=>b[1]-a[1]); return s[0] || null;
+}
+
+function renderCuriosidadesLibros(libros) {
+  const el = document.getElementById('lb-curiosidades'); if(!el) return;
+  if (!libros.length) { el.innerHTML=''; return; }
+  const totalPags = libros.reduce((a,b)=>a+(b.paginas||0),0);
+  const avg = libros.length ? Math.round(totalPags/libros.length) : 0;
+  const masLargo = libros.reduce((a,b)=>(b.paginas||0)>(a.paginas||0)?b:a, libros[0]);
+  const masCorto = libros.filter(e=>e.paginas).reduce((a,b)=>b.paginas<a.paginas?b:a, libros.filter(e=>e.paginas)[0]);
+  const topAutor = topField(libros, 'autor');
+  const topEdit  = topField(libros, 'editorial');
+  const topIdioma= topField(libros, 'idioma');
+  const traducidos = libros.filter(e=>e.idioma && e.idioma.toLowerCase()!=='español'&&e.idioma.toLowerCase()!=='es'&&e.idioma.toLowerCase()!=='spanish');
+  const anios = [...new Set(libros.filter(e=>e.anio_pub).map(e=>parseInt(e.anio_pub)))].sort((a,b)=>a-b);
+  const spanAnios = anios.length>=2 ? `${anios[0]}–${anios[anios.length-1]}` : null;
+  el.innerHTML = `<div class="card" style="margin-bottom:20px;">
+    <div style="font-family:var(--font-serif);font-size:15px;font-weight:700;margin-bottom:10px;">Curiosidades de tus lecturas</div>
+    <div style="font-size:13px;color:var(--ink2);line-height:2.1;">
+      ${topAutor?`✍ Autor más leído: <b>${topAutor[0]}</b> (${topAutor[1]} libro${topAutor[1]>1?'s':''}).<br>`:''}
+      ${topEdit ?`📚 Editorial más frecuente: <b>${topEdit[0]}</b>.<br>`:''}
+      ${topIdioma?`🌍 Idioma original más leído: <b>${topIdioma[0]}</b>.<br>`:''}
+      ${avg?`📄 Promedio de páginas por libro: <b>${avg}</b>.<br>`:''}
+      ${masLargo?`📖 Libro más largo: <b>${masLargo.titulo}</b> (${masLargo.paginas} págs).<br>`:''}
+      ${masCorto&&masCorto.id!==masLargo?.id?`📗 Libro más corto: <b>${masCorto.titulo}</b> (${masCorto.paginas} págs).<br>`:''}
+      ${traducidos.length>0?`🔤 ${Math.round((traducidos.length/libros.length)*100)}% de tus libros son traducciones.<br>`:''}
+      ${spanAnios?`📅 Tus libros abarcan desde <b>${anios[0]}</b> hasta <b>${anios[anios.length-1]}</b>.<br>`:''}
+    </div></div>`;
+}
+
+function renderCuriosidadesPeliculas(pels) {
+  const el = document.getElementById('pl-curiosidades'); if(!el) return;
+  if (!pels.length) { el.innerHTML=''; return; }
+  const totalMin = pels.reduce((a,b)=>a+(b.duracion||0),0);
+  const avg = pels.length ? Math.round(totalMin/pels.length) : 0;
+  const masLarga = pels.reduce((a,b)=>(b.duracion||0)>(a.duracion||0)?b:a, pels[0]);
+  const topDir  = topField(pels, 'director');
+  const topComp = topField(pels, 'musica');
+  const topFoto = topField(pels, 'fotografia');
+  const basadas = pels.filter(e=>e.basada&&e.basada!=='');
+  const decadas = {};
+  pels.forEach(e=>{ if(e.anio_est){ const d=Math.floor(e.anio_est/10)*10; decadas[d]=(decadas[d]||0)+1; } });
+  const topDecada = Object.entries(decadas).sort((a,b)=>b[1]-a[1])[0];
+  el.innerHTML = `<div class="card" style="margin-bottom:20px;">
+    <div style="font-family:var(--font-serif);font-size:15px;font-weight:700;margin-bottom:10px;">Curiosidades de tu cine</div>
+    <div style="font-size:13px;color:var(--ink2);line-height:2.1;">
+      ${topDir ?`🎬 Director favorito: <b>${topDir[0]}</b> (${topDir[1]} película${topDir[1]>1?'s':''}).<br>`:''}
+      ${topComp?`🎵 Compositor más frecuente: <b>${topComp[0]}</b>.<br>`:''}
+      ${topFoto?`📷 Director de fotografía favorito: <b>${topFoto[0]}</b>.<br>`:''}
+      ${avg?`⏱ Duración media: <b>${fmtMin(avg)}</b> por película.<br>`:''}
+      ${masLarga?`🏆 Película más larga: <b>${masLarga.titulo}</b> (${fmtMin(masLarga.duracion)}).<br>`:''}
+      ${basadas.length>0?`🔗 El <b>${Math.round((basadas.length/pels.length)*100)}%</b> de tu cine está basado en otra obra.<br>`:''}
+      ${topDecada?`📅 Tu década favorita: <b>${topDecada[0]}s</b> (${topDecada[1]} películas).<br>`:''}
+    </div></div>`;
+}
+
+function renderCuriosidadesSeries(series) {
+  const el = document.getElementById('sr-curiosidades'); if(!el) return;
+  if (!series.length) { el.innerHTML=''; return; }
+  const totalMin = series.reduce((a,b)=>a+(b.duracion||0),0);
+  const totalTemp = series.reduce((a,b)=>a+(parseInt(b.temporadas)||0),0);
+  const masLarga = series.reduce((a,b)=>(b.duracion||0)>(a.duracion||0)?b:a, series[0]);
+  const topDir  = topField(series, 'director');
+  const topComp = topField(series, 'musica');
+  const topProt = topField(series, 'protagonista');
+  const basadas = series.filter(e=>e.basada&&e.basada!=='');
+  const avgTemp = series.length ? (totalTemp/series.length).toFixed(1) : 0;
+  el.innerHTML = `<div class="card" style="margin-bottom:20px;">
+    <div style="font-family:var(--font-serif);font-size:15px;font-weight:700;margin-bottom:10px;">Curiosidades de tus series</div>
+    <div style="font-size:13px;color:var(--ink2);line-height:2.1;">
+      ${topDir ?`🎬 Creador/Director favorito: <b>${topDir[0]}</b> (${topDir[1]} serie${topDir[1]>1?'s':''}).<br>`:''}
+      ${topComp?`🎵 Compositor más frecuente: <b>${topComp[0]}</b>.<br>`:''}
+      ${topProt?`⭐ Protagonista más visto: <b>${topProt[0]}</b>.<br>`:''}
+      ${totalMin?`📺 Tiempo total en series: <b>${fmtMin(totalMin)}</b>.<br>`:''}
+      ${masLarga?`🏆 Serie más larga: <b>${masLarga.titulo}</b> (${fmtMin(masLarga.duracion)}).<br>`:''}
+      ${avgTemp?`📋 Media de temporadas por serie: <b>${avgTemp}</b>.<br>`:''}
+      ${basadas.length>0?`🔗 El <b>${Math.round((basadas.length/series.length)*100)}%</b> de tus series está basado en otra obra.<br>`:''}
+    </div></div>`;
+}
+
+// ═══════════════════════════════════
+//  STATS GLOBAL
+// ═══════════════════════════════════
+function renderStatsGlobal() {
+  const allYears = [...new Set(db.entries.filter(e=>e.anio).map(e=>e.anio))].sort((a,b)=>a-b);
+  const libros = db.entries.filter(e=>e.type==='libro'&&e.estado!=='pendiente');
+  const pels   = db.entries.filter(e=>e.type==='pelicula');
+  const series = db.entries.filter(e=>e.type==='serie' && e.estado!=='viendo' && e.estado!=='pendiente');
+  const totalPags = libros.reduce((a,b)=>a+(b.paginas||0),0);
+  const totalMin  = [...pels,...series].reduce((a,b)=>a+(b.duracion||0),0);
+  document.getElementById('gl-kpis').innerHTML = `
+    <div class="stat-box"><div class="stat-num">${libros.length}</div><div class="stat-label">Libros</div><div style="font-size:11px;color:var(--ink3);margin-top:3px;">${totalPags.toLocaleString()} págs</div></div>
+    <div class="stat-box"><div class="stat-num">${pels.length}</div><div class="stat-label">Películas</div></div>
+    <div class="stat-box"><div class="stat-num">${series.length}</div><div class="stat-label">Series</div></div>
+    <div class="stat-box"><div class="stat-num">${Math.round(totalMin/60)}h</div><div class="stat-label">En pantalla</div></div>`;
+  setTimeout(() => {
+    destroyChart('gl-chart-anual');
+    const ctx = document.getElementById('gl-chart-anual'); if(!ctx) return;
+    new Chart(ctx.getContext('2d'), {
+      type:'bar',
+      data:{labels:allYears,datasets:[
+        {label:'Libros',   data:allYears.map(y=>db.entries.filter(e=>e.type==='libro'&&e.anio===y&&e.estado!=='pendiente').length), backgroundColor:'rgba(45,90,61,0.75)',borderRadius:3},
+        {label:'Películas',data:allYears.map(y=>db.entries.filter(e=>e.type==='pelicula'&&e.anio===y).length), backgroundColor:'rgba(139,32,32,0.75)',borderRadius:3},
+        {label:'Series',   data:allYears.map(y=>db.entries.filter(e=>e.type==='serie'&&e.anio===y).length), backgroundColor:'rgba(26,58,92,0.75)',borderRadius:3},
+      ]},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{labels:{color:'#4a4035',font:{size:11}}}},
+        scales:{x:{ticks:{color:'#8a7a68',font:{size:10}},grid:{display:false}},
+                y:{beginAtZero:true,ticks:{color:'#8a7a68',font:{size:10}},grid:{color:'#ede7d9'}}}}
+    });
+  }, 30);
+  const cntF = (arr,f) => { const c={}; arr.forEach(e=>{const v=(e[f]||'').trim();if(v&&v!=='No aplica')c[v]=(c[v]||0)+1;}); return Object.entries(c).sort((a,b)=>b[1]-a[1])[0]; };
+  const allCine = [...pels,...series];
+  const topDir = cntF(allCine,'director'), topComp = cntF(allCine,'musica');
+  const topEdit = cntF(libros,'editorial'), topAutor = cntF(libros,'autor');
+  const basadas = allCine.filter(e=>e.basada&&e.basada!=='');
+  document.getElementById('gl-curiosidades').innerHTML = `
+    <div class="card">
+      <div style="font-family:var(--font-serif);font-size:15px;font-weight:700;margin-bottom:10px;">Curiosidades de tu biblioteca</div>
+      <div style="font-size:13px;color:var(--ink2);line-height:2.1;">
+        ${topDir?`🎬 Tu director favorito es <b>${topDir[0]}</b> (${topDir[1]} veces).<br>`:''}
+        ${topComp?`🎵 Compositor más escuchado: <b>${topComp[0]}</b> (${topComp[1]} BSOs).<br>`:''}
+        ${topEdit?`📚 Editorial más leída: <b>${topEdit[0]}</b>.<br>`:''}
+        ${topAutor?`✍ Autor más leído: <b>${topAutor[0]}</b>.<br>`:''}
+        ${basadas.length>0?`🔗 El ${Math.round((basadas.length/allCine.length)*100)}% de tu cine está basado en otra obra.<br>`:''}
+        ${libros.length>0?`📖 Promedio páginas/libro: <b>${Math.round(totalPags/libros.length)}</b>.<br>`:''}
+      </div>
+    </div>`;
+}
+
+// ═══════════════════════════════════
+//  SEGMENTED CONTROL
+// ═══════════════════════════════════
+function switchStatsSeg(seg, btn) {
+  document.querySelectorAll('.stats-seg-btn').forEach(b=>b.classList.toggle('active',b===btn));
+  document.querySelectorAll('.stats-panel').forEach(p=>p.classList.toggle('active',p.id==='spanel-'+seg));
+  if (seg==='libros') renderStatsLibros();
+  else if (seg==='peliculas') renderStatsPeliculas();
+  else if (seg==='series') renderStatsSeries();
+  else if (seg==='global') renderStatsGlobal();
+}
+
+function renderStats() { renderStatsLibros(); }
+
+// ═══════════════════════════════════
+//  IMPORT CSV — compatible con planilla personal
+// ═══════════════════════════════════
+
+// Parsea CSV respetando campos entre comillas que contienen comas
+function parseCSVLine(line) {
+  const result = [];
+  let cur = '', inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') { inQ = !inQ; }
+    else if (ch === ',' && !inQ) { result.push(cur.trim()); cur = ''; }
+    else { cur += ch; }
+  }
+  result.push(cur.trim());
+  return result;
+}
+
+// Normaliza un header para comparación flexible
+function normHeader(h) {
+  return h.toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')  // quita tildes
+    .replace(/[^a-z0-9\/]/g, ' ')
+    .replace(/\s+/g, ' ').trim();
+}
+
+// Busca un valor en el row por múltiples variantes del nombre de columna
+function col(row, ...keys) {
+  for (const k of keys) {
+    const norm = normHeader(k);
+    const found = Object.keys(row).find(rk => normHeader(rk) === norm || normHeader(rk).includes(norm));
+    if (found && row[found] && row[found] !== 'No aplica' && row[found] !== 'No Aplica' && row[found] !== '-') {
+      return row[found].trim();
+    }
+  }
+  return '';
+}
+
+// Meses en español → nombre normalizado
+const MES_MAP = {
+  '1':'Enero','2':'Febrero','3':'Marzo','4':'Abril','5':'Mayo','6':'Junio',
+  '7':'Julio','8':'Agosto','9':'Septiembre','10':'Octubre','11':'Noviembre','12':'Diciembre',
+  'ene':'Enero','feb':'Febrero','mar':'Marzo','abr':'Abril','may':'Mayo','jun':'Junio',
+  'jul':'Julio','ago':'Agosto','sep':'Septiembre','oct':'Octubre','nov':'Noviembre','dic':'Diciembre',
+  'enero':'Enero','febrero':'Febrero','marzo':'Marzo','abril':'Abril','mayo':'Mayo','junio':'Junio',
+  'julio':'Julio','agosto':'Agosto','septiembre':'Septiembre','octubre':'Octubre','noviembre':'Noviembre','diciembre':'Diciembre',
+  'january':'Enero','february':'Febrero','march':'Marzo','april':'Abril','may':'Mayo','june':'Junio',
+  'july':'Julio','august':'Agosto','september':'Septiembre','october':'Octubre','november':'Noviembre','december':'Diciembre'
+};
+
+function normMes(val) {
+  if (!val) return '';
+  const v = val.toLowerCase().trim();
+  return MES_MAP[v] || val;
+}
+
+function handleImport(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const text = ev.target.result;
+
+    // ── JSON backup ──
+    if (file.name.endsWith('.json')) {
+      try {
+        const imported = JSON.parse(text);
+        if (imported.entries) {
+          db.entries = [...db.entries, ...imported.entries];
+          saveDB();
+          closeModal('modal-import');
+          showToast(`✓ ${imported.entries.length} entradas importadas`);
+          renderHome();
+        }
+      } catch { showToast('Error en archivo JSON'); }
+      return;
+    }
+
+    // ── CSV ──
+    // Soporte BOM UTF-8
+    const clean = text.replace(/^\uFEFF/, '');
+    const lines = clean.split(/\r?\n/).filter(l => l.trim());
+    if (lines.length < 2) { showToast('El archivo está vacío o no tiene datos'); return; }
+
+    const rawHeaders = parseCSVLine(lines[0]);
+    // Construir mapa header → índice
+    const headerMap = {};
+    rawHeaders.forEach((h, i) => { headerMap[h.trim()] = i; });
+
+    let count = 0, skipped = 0;
+    const importedIds = new Set(db.entries.map(e => e.id));
+
+    for (let i = 1; i < lines.length; i++) {
+      const cols = parseCSVLine(lines[i]);
+      if (cols.length < 3) continue;
+
+      // Construir objeto fila con headers originales
+      const row = {};
+      rawHeaders.forEach((h, idx) => { row[h.trim()] = (cols[idx] || '').trim(); });
+
+      // ── Detectar tipo ──
+      // Tu planilla usa "Categoría" con valores: Serie, Película, Libro
+      const catRaw = col(row, 'Categoría', 'Categoria', 'tipo', 'type', 'category') || '';
+      const cat = catRaw.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+      let type = null;
+      if (cat.includes('libro')) type = 'libro';
+      else if (cat.includes('pelicula') || cat.includes('película') || cat.includes('movie') || cat.includes('film')) type = 'pelicula';
+      else if (cat.includes('serie') || cat.includes('series') || cat.includes('tv')) type = 'serie';
+      if (!type) { skipped++; continue; }
+
+      // ── Título ──
+      const titulo = col(row, 'Nombre', 'Título', 'Titulo', 'title', 'nombre');
+      if (!titulo) { skipped++; continue; }
+
+      // ── Año y mes de lectura/visionado ──
+      const anioLecRaw = col(row, 'Año de Lec', 'Año de Lec.', 'Anio de Lec', 'año lectura', 'año visto', 'anio', 'year');
+      const anio = parseInt(anioLecRaw) || null;
+      const mesRaw = col(row, 'Mes de Lec', 'Mes de Lec.', 'mes lectura', 'mes visto', 'mes', 'month');
+      // También puede venir como número en "N° Mes"
+      const mesNum = col(row, 'N° Mes', 'N Mes', 'Nro Mes', 'num mes');
+      const mes = normMes(mesRaw) || normMes(mesNum);
+
+      // ── Autor / Director ──
+      const autorDir = col(row, 'Autor/Director', 'Autor / Director', 'autor', 'director', 'author', 'director');
+
+      // ── Páginas / Minutos ──
+      const pagsMin = parseInt(col(row, 'Páginas / Minutos totales', 'Paginas / Minutos totales', 'Páginas', 'Minutos', 'paginas', 'duracion', 'pages', 'minutes', 'duration')) || 0;
+
+      // ── Año publicación / estreno ──
+      const anioPub = parseInt(col(row, 'Publicación', 'Publicacion', 'Año publicación', 'año estreno', 'estreno', 'year published')) || null;
+
+      // ── Idioma original ──
+      const idioma = col(row, 'LEN', 'Idioma', 'Idioma original', 'language', 'lang');
+
+      // ── Datos libro ──
+      const editorial = col(row, 'Editorial', 'editorial', 'publisher');
+      const traductor = col(row, 'Traductor', 'traductor', 'translator');
+      const coleccion = col(row, 'Colección', 'Coleccion', 'collection', 'saga', 'Temporada/ Saga', 'Temporada/Saga');
+
+      // ── Datos cine ──
+      const musica = col(row, 'Música', 'Musica', 'music', 'bso', 'soundtrack');
+      const fotografia = col(row, 'Fotografía', 'Fotografia', 'photography', 'cinematography');
+      const guion = col(row, 'Guion', 'Guión', 'script', 'writer', 'screenplay');
+      const protagonista = col(row, 'Protagonista', 'protagonista', 'actor', 'lead');
+      const dirigidaPor = col(row, 'Dirigida por', 'Dirigido por', 'director film');
+
+      // Basado en
+      const basadaEn = col(row, 'Basado en', 'basado en', 'based on');
+      const tituloOrig = col(row, 'Título', 'Titulo original', 'title original'); // columna "Título" en tu planilla es el título de la obra original
+      const ideaOrig = col(row, 'Idea Original', 'idea original', 'original idea', 'autor original');
+
+      // Crear entrada única ID basada en contenido para evitar duplicados al reimportar
+      const uid = `imp_${type}_${titulo}_${anio || ''}`.replace(/\s+/g,'_').toLowerCase();
+      if (importedIds.has(uid)) { skipped++; continue; }
+
+      const entry = {
+        id: uid,
+        type,
+        titulo,
+        anio,
+        mes,
+        rating: 0,
+        notas: '',
+        estado: type === 'libro' ? 'leido' : undefined,
+        progreso: type === 'libro' ? 100 : undefined,
+
+        // Libro
+        autor: type === 'libro' ? autorDir : '',
+        editorial,
+        traductor,
+        idioma,
+        paginas: type === 'libro' ? pagsMin : 0,
+        anio_pub: anioPub,
+        coleccion,
+
+        // Cine
+        director: type !== 'libro' ? (autorDir || dirigidaPor) : '',
+        duracion: type !== 'libro' ? pagsMin : 0,
+        musica,
+        fotografia,
+        guionista: guion,
+        protagonista,
+        anio_est: anioPub,
+        basada: basadaEn ? basadaEn.toLowerCase() : '',
+        autor_original: ideaOrig || tituloOrig,
+
+        cover: ''
+      };
+
+      db.entries.push(entry);
+      importedIds.add(uid);
+      count++;
+    }
+
+    saveDB();
+    closeModal('modal-import');
+    const msg = skipped > 0
+      ? `✓ ${count} importadas · ${skipped} omitidas (sin categoría o duplicadas)`
+      : `✓ ${count} entradas importadas correctamente`;
+    showToast(msg, 3500);
+    renderHome();
+  };
+
+  // Intentar UTF-8 primero, luego latin1 si hay error
+  reader.readAsText(file, 'UTF-8');
+}
+
+function exportJSON() {
+  const blob = new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `LUMEN_backup_${new Date().toISOString().split('T')[0]}.json`;
+  a.click();
+  showToast('✓ Datos exportados');
+}
+
+function clearAll() {
+  if (!confirm('¿Eliminar TODOS los datos? Esta acción no se puede deshacer.')) return;
+  db = { entries: [] };
+  saveDB();
+  closeModal('modal-import');
+  showToast('Datos eliminados');
+  renderHome();
+}
+
+// ═══════════════════════════════════
+//  LECTURAS EN CURSO
+// ═══════════════════════════════════
+let readingMode = 'pct'; // 'pct' | 'pag'
+let readingSearchTimeout = null;
+
+function selectReadingMode(mode, btn) {
+  readingMode = mode;
+  document.querySelectorAll('.reading-mode-btn').forEach(b => {
+    b.style.borderColor = 'var(--border)'; b.style.background = '#fff'; b.style.color = 'var(--ink3)';
+  });
+  btn.style.borderColor = 'var(--gold)'; btn.style.background = '#fff8e8'; btn.style.color = 'var(--gold)';
+  document.getElementById('reading-prog-pct-field').style.display = mode === 'pct' ? 'block' : 'none';
+  document.getElementById('reading-prog-pag-field').style.display = mode === 'pag' ? 'block' : 'none';
+}
+
+function debounceReadingSearch() {
+  clearTimeout(readingSearchTimeout);
+  const q = document.getElementById('reading-search').value.trim();
+  if (q.length < 3) { document.getElementById('reading-search-results').style.display = 'none'; return; }
+  readingSearchTimeout = setTimeout(() => doReadingSearch(q), 500);
+}
+
+async function doReadingSearch(q) {
+  const resultsEl = document.getElementById('reading-search-results');
+  resultsEl.innerHTML = '<div style="padding:10px 14px;font-size:13px;color:var(--ink3);">Buscando...</div>';
+  resultsEl.style.display = 'block';
+  try {
+    const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q)}&maxResults=5`);
+    const data = await res.json();
+    if (!data.items) { resultsEl.innerHTML = '<div style="padding:10px 14px;font-size:13px;color:var(--ink3);">Sin resultados.</div>'; return; }
+    resultsEl.innerHTML = data.items.map(item => {
+      const v = item.volumeInfo;
+      const cover = v.imageLinks ? v.imageLinks.thumbnail.replace('http://','https://') : '';
+      const authors = v.authors ? v.authors.join(', ') : '—';
+      return `<div class="search-result-item" onclick='fillReadingForm(${JSON.stringify({
+        title: v.title||'', authors, publisher: v.publisher||'',
+        pages: v.pageCount||'', pubYear: v.publishedDate?v.publishedDate.slice(0,4):'',
+        language: v.language||'', cover
+      }).replace(/'/g,"&#39;")})'>
+        ${cover?`<img src="${cover}" class="sr-cover">`:'<div class="sr-cover"></div>'}
+        <div><div class="sr-title">${v.title||''}</div><div class="sr-sub">${authors} · ${v.publishedDate?v.publishedDate.slice(0,4):''}</div></div>
+      </div>`;
+    }).join('');
+  } catch { resultsEl.innerHTML = '<div style="padding:10px 14px;font-size:13px;color:var(--ink3);">Rellena manualmente.</div>'; }
+}
+
+function fillReadingForm(data) {
+  document.getElementById('reading-titulo').value = data.title;
+  document.getElementById('reading-autor').value = data.authors;
+  document.getElementById('reading-editorial').value = data.publisher;
+  document.getElementById('reading-paginas').value = data.pages;
+  document.getElementById('reading-anio-pub').value = data.pubYear;
+  document.getElementById('reading-idioma').value = data.language;
+  document.getElementById('reading-cover').value = data.cover;
+  previewReadingCover(data.cover);
+  document.getElementById('reading-search-results').style.display = 'none';
+  document.getElementById('reading-search').value = data.title;
+  showToast('✓ Datos de Google Books');
+}
+
+// ── PORTADA: modal lectura en curso ──────────────
+function previewReadingCover(url) {
+  const el = document.getElementById('reading-cover-preview');
+  if (!url) { el.innerHTML = ''; return; }
+  el.innerHTML = `
+    <div style="position:relative;display:inline-block;">
+      <img src="${url}" alt="Portada"
+        style="height:110px;border-radius:4px;box-shadow:0 3px 12px rgba(0,0,0,0.18);display:block;"
+        onerror="this.parentElement.innerHTML='<div style=\'padding:8px 12px;background:#fee;border-radius:4px;font-size:12px;color:var(--red);\'>⚠ No se pudo cargar la imagen</div>'">
+    </div>`;
+}
+
+function clearReadingCover() {
+  document.getElementById('reading-cover').value = '';
+  document.getElementById('reading-cover-preview').innerHTML = '';
+  document.getElementById('reading-cover-google-results').style.display = 'none';
+}
+
+function handleReadingCoverFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('reading-cover').value = e.target.result;
+    previewReadingCover(e.target.result);
+    showToast('✓ Imagen cargada');
+  };
+  reader.readAsDataURL(file);
+}
+
+async function searchReadingCoverGoogle() {
+  const titulo = document.getElementById('reading-titulo').value.trim() ||
+                 document.getElementById('reading-search').value.trim();
+  if (!titulo) { showToast('Ingresa primero el título'); return; }
+  const resultsEl = document.getElementById('reading-cover-google-results');
+  resultsEl.innerHTML = '<div style="padding:10px 14px;font-size:13px;color:var(--ink3);">Buscando portadas...</div>';
+  resultsEl.style.display = 'block';
+  try {
+    const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(titulo)}&maxResults=6`);
+    const data = await res.json();
+    if (!data.items) { resultsEl.innerHTML = '<div style="padding:10px 14px;font-size:13px;color:var(--ink3);">Sin resultados.</div>'; return; }
+    const covers = data.items
+      .map(i => ({ cover: i.volumeInfo.imageLinks?.thumbnail?.replace('http://','https://').replace('zoom=1','zoom=2') || '', title: i.volumeInfo.title || '' }))
+      .filter(i => i.cover);
+    if (covers.length === 0) { resultsEl.innerHTML = '<div style="padding:10px 14px;font-size:13px;color:var(--ink3);">No se encontraron portadas.</div>'; return; }
+    resultsEl.innerHTML = `<div style="display:flex;gap:8px;flex-wrap:wrap;padding:10px 12px;">` +
+      covers.map(c => `<img src="${c.cover}" title="${c.title}"
+        style="height:80px;border-radius:3px;cursor:pointer;border:2px solid transparent;transition:border-color 0.15s;box-shadow:0 2px 6px rgba(0,0,0,0.12);"
+        onclick="selectReadingCover('${c.cover.replace(/'/g,"&#39;")}')"
+        onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='transparent'"
+        onerror="this.style.display='none'">`).join('') + `</div>`;
+  } catch { resultsEl.innerHTML = '<div style="padding:10px 14px;font-size:13px;color:var(--ink3);">Error al buscar.</div>'; }
+}
+
+function selectReadingCover(url) {
+  document.getElementById('reading-cover').value = url;
+  previewReadingCover(url);
+  document.getElementById('reading-cover-google-results').style.display = 'none';
+  showToast('✓ Portada seleccionada');
+}
+
+// ── PORTADA: modal progreso ──────────────
+function toggleEditCover() {
+  const panel = document.getElementById('edit-cover-panel');
+  const chevron = document.getElementById('edit-cover-chevron');
+  const open = panel.style.display === 'none';
+  panel.style.display = open ? 'block' : 'none';
+  chevron.style.transform = open ? 'rotate(180deg)' : 'rotate(0deg)';
+  if (open) {
+    // Pre-fill with current cover
+    const id = document.getElementById('progress-entry-id').value;
+    const e = db.entries.find(x => x.id === id);
+    if (e && e.cover) {
+      document.getElementById('progress-cover-url').value = e.cover;
+      previewProgressCover(e.cover);
+    }
+  }
+}
+
+function previewProgressCover(url) {
+  const el = document.getElementById('progress-cover-preview');
+  if (!url) { el.innerHTML = ''; return; }
+  el.innerHTML = `
+    <div style="position:relative;display:inline-block;">
+      <img src="${url}" alt="Portada"
+        style="height:100px;border-radius:4px;box-shadow:0 3px 12px rgba(0,0,0,0.18);display:block;"
+        onerror="this.parentElement.innerHTML='<div style=\'padding:8px 12px;background:#fee;border-radius:4px;font-size:12px;color:var(--red);\'>⚠ No se pudo cargar la imagen</div>'">
+    </div>`;
+}
+
+function clearProgressCover() {
+  document.getElementById('progress-cover-url').value = '';
+  document.getElementById('progress-cover-preview').innerHTML = '';
+  document.getElementById('progress-cover-google-results').style.display = 'none';
+}
+
+function handleProgressCoverFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('progress-cover-url').value = e.target.result;
+    previewProgressCover(e.target.result);
+    showToast('✓ Imagen cargada');
+  };
+  reader.readAsDataURL(file);
+}
+
+async function searchProgressCoverGoogle() {
+  const id = document.getElementById('progress-entry-id').value;
+  const e = db.entries.find(x => x.id === id);
+  const titulo = e ? e.titulo : '';
+  if (!titulo) { showToast('Sin título para buscar'); return; }
+  const resultsEl = document.getElementById('progress-cover-google-results');
+  resultsEl.innerHTML = '<div style="padding:10px 14px;font-size:13px;color:var(--ink3);">Buscando portadas...</div>';
+  resultsEl.style.display = 'block';
+  try {
+    const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(titulo)}&maxResults=6`);
+    const data = await res.json();
+    if (!data.items) { resultsEl.innerHTML = '<div style="padding:10px;font-size:13px;color:var(--ink3);">Sin resultados.</div>'; return; }
+    const covers = data.items
+      .map(i => ({ cover: i.volumeInfo.imageLinks?.thumbnail?.replace('http://','https://').replace('zoom=1','zoom=2') || '', title: i.volumeInfo.title || '' }))
+      .filter(i => i.cover);
+    resultsEl.innerHTML = `<div style="display:flex;gap:8px;flex-wrap:wrap;padding:10px 12px;">` +
+      covers.map(c => `<img src="${c.cover}" title="${c.title}"
+        style="height:72px;border-radius:3px;cursor:pointer;border:2px solid transparent;transition:border-color 0.15s;box-shadow:0 2px 6px rgba(0,0,0,0.12);"
+        onclick="selectProgressCover('${c.cover.replace(/'/g,"&#39;")}')"
+        onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='transparent'"
+        onerror="this.style.display='none'">`).join('') + `</div>`;
+  } catch { resultsEl.innerHTML = '<div style="padding:10px;font-size:13px;color:var(--ink3);">Error al buscar.</div>'; }
+}
+
+function selectProgressCover(url) {
+  document.getElementById('progress-cover-url').value = url;
+  previewProgressCover(url);
+  document.getElementById('progress-cover-google-results').style.display = 'none';
+  showToast('✓ Portada seleccionada');
+}
+
+function saveProgressCover() {
+  const id = document.getElementById('progress-entry-id').value;
+  const e = db.entries.find(x => x.id === id);
+  const url = document.getElementById('progress-cover-url').value.trim();
+  if (!e) return;
+  e.cover = url;
+  saveDB();
+  // Rebuild header
+  const imgHtml = url
+    ? `<img src="${url}" style="width:44px;height:62px;object-fit:cover;border-radius:3px;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,0.15);">`
+    : `<div style="width:44px;height:62px;background:var(--cream3);border-radius:3px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:20px;">📚</div>`;
+  document.getElementById('progress-book-info').innerHTML = `
+    ${imgHtml}
+    <div>
+      <div style="font-family:var(--font-serif);font-size:14px;font-weight:700;">${e.titulo}</div>
+      <div style="font-size:11px;color:var(--ink3);">${e.autor||''}</div>
+      ${e.paginas?`<div style="font-size:11px;color:var(--ink4);margin-top:2px;">${e.paginas} páginas</div>`:''}
+    </div>`;
+  // Close panel
+  document.getElementById('edit-cover-panel').style.display = 'none';
+  document.getElementById('edit-cover-chevron').style.transform = 'rotate(0deg)';
+  showToast('✓ Portada actualizada');
+  renderHome();
+}
+
+function saveReadingEntry() {
+  const titulo = document.getElementById('reading-titulo').value.trim();
+  if (!titulo) { showToast('Ingresa el título'); return; }
+  const paginas = parseInt(document.getElementById('reading-paginas').value) || 0;
+  const progPct = parseInt(document.getElementById('reading-prog-pct').value) || 0;
+  const progPag = parseInt(document.getElementById('reading-prog-pag').value) || 0;
+  const entry = {
+    id: 'e_' + Date.now(),
+    type: 'libro',
+    titulo,
+    autor: document.getElementById('reading-autor').value,
+    editorial: document.getElementById('reading-editorial').value,
+    paginas,
+    anio_pub: parseInt(document.getElementById('reading-anio-pub').value) || null,
+    traductor: document.getElementById('reading-traductor').value,
+    idioma: document.getElementById('reading-idioma').value,
+    cover: document.getElementById('reading-cover').value,
+    estado: 'leyendo',
+    readingMode,
+    progreso: readingMode === 'pct' ? progPct : (paginas ? Math.round((progPag/paginas)*100) : 0),
+    progresoPag: readingMode === 'pag' ? progPag : null,
+    startDate: new Date().toISOString(),
+    rating: 0, notas: ''
+  };
+  db.entries.push(entry);
+  saveDB();
+  closeModal('modal-add-reading');
+  showToast('✓ Lectura en curso guardada');
+  renderHome();
+}
+
+// ── MODAL PROGRESO ──────────────────
+function openProgressModal(id) {
+  const e = db.entries.find(x => x.id === id);
+  if (!e) return;
+  document.getElementById('progress-entry-id').value = id;
+  document.getElementById('progress-modal-title').textContent = e.titulo;
+  // Book info header
+  document.getElementById('progress-book-info').innerHTML = `
+    ${e.cover?`<img src="${e.cover}" style="width:44px;height:62px;object-fit:cover;border-radius:3px;flex-shrink:0;">`:'<div style="width:44px;height:62px;background:var(--cream3);border-radius:3px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:20px;">📚</div>'}
+    <div>
+      <div style="font-family:var(--font-serif);font-size:14px;font-weight:700;">${e.titulo}</div>
+      <div style="font-size:11px;color:var(--ink3);">${e.autor||''}</div>
+      ${e.paginas?`<div style="font-size:11px;color:var(--ink4);margin-top:2px;">${e.paginas} páginas</div>`:''}
+    </div>`;
+  const mode = e.readingMode || 'pct';
+  document.getElementById('progress-mode-display').innerHTML = `<span class="badge" style="background:${mode==='pct'?'#fff8e8':'#e8f0e8'};color:${mode==='pct'?'var(--gold)':'var(--green)'};border:1px solid ${mode==='pct'?'#e8d8a0':'#c0d8c0'};">${mode==='pct'?'📱 Kindle / Porcentaje':'📖 Físico / Páginas'}</span>`;
+  if (mode === 'pct') {
+    document.getElementById('progress-pct-section').style.display = 'block';
+    document.getElementById('progress-pag-section').style.display = 'none';
+    const val = e.progreso || 0;
+    document.getElementById('progress-pct-slider').value = val;
+    document.getElementById('progress-pct-label').textContent = val;
+  } else {
+    document.getElementById('progress-pct-section').style.display = 'none';
+    document.getElementById('progress-pag-section').style.display = 'block';
+    document.getElementById('progress-pag-of').textContent = e.paginas ? `de ${e.paginas}` : '';
+    const pag = e.progresoPag || 0;
+    document.getElementById('progress-pag-input').value = pag;
+    document.getElementById('progress-pag-input').max = e.paginas || 9999;
+    const pct = e.paginas ? Math.round((pag/e.paginas)*100) : 0;
+    document.getElementById('progress-pag-bar').style.width = pct + '%';
+    document.getElementById('progress-pag-pct-text').textContent = `${pct}% completado`;
+  }
+  // Ritmo
+  const startDays = e.startDate ? Math.max(1,Math.floor((Date.now()-new Date(e.startDate))/86400000)) : 1;
+  const pagsLeidas = mode === 'pag' ? (e.progresoPag||0) : Math.round(((e.progreso||0)/100)*(e.paginas||0));
+  const ritmo = pagsLeidas > 0 ? (pagsLeidas/startDays).toFixed(1) : null;
+  document.getElementById('progress-ritmo-info').innerHTML = ritmo
+    ? `<div class="ritmo-box" style="padding:10px 14px;"><div style="display:flex;gap:12px;align-items:center;"><div><div class="ritmo-num" style="font-size:24px;">${ritmo}</div><div class="ritmo-label">págs/día</div></div><div style="font-size:12px;color:var(--ink4);">${pagsLeidas} págs leídas en ${startDays} días</div></div></div>` : '';
+  openModal('modal-progress');
+}
+
+function onProgressSlider(val) {
+  document.getElementById('progress-pct-label').textContent = val;
+}
+
+function onProgressPagInput(val) {
+  const id = document.getElementById('progress-entry-id').value;
+  const e = db.entries.find(x => x.id === id);
+  const pags = e ? e.paginas : 0;
+  const pct = pags ? Math.round((parseInt(val)||0)/pags*100) : 0;
+  document.getElementById('progress-pag-bar').style.width = Math.min(100,pct) + '%';
+  document.getElementById('progress-pag-pct-text').textContent = `${pct}% completado`;
+}
+
+function saveProgress() {
+  const id = document.getElementById('progress-entry-id').value;
+  const e = db.entries.find(x => x.id === id);
+  if (!e) return;
+  const mode = e.readingMode || 'pct';
+  if (mode === 'pct') {
+    e.progreso = parseInt(document.getElementById('progress-pct-slider').value) || 0;
+  } else {
+    const pag = parseInt(document.getElementById('progress-pag-input').value) || 0;
+    e.progresoPag = pag;
+    e.progreso = e.paginas ? Math.round((pag/e.paginas)*100) : 0;
+  }
+  saveDB();
+  closeModal('modal-progress');
+  showToast('✓ Progreso actualizado');
+  renderHome();
+}
+
+function finishBook() {
+  const id = document.getElementById('progress-entry-id').value;
+  const e = db.entries.find(x => x.id === id);
+  if (!e) return;
+  const now = new Date();
+  e.estado = 'leido';
+  e.progreso = 100;
+  if (e.readingMode === 'pag') e.progresoPag = e.paginas;
+  e.anio = now.getFullYear();
+  e.mes = MESES[now.getMonth()];
+  e.finishDate = now.toISOString();
+  saveDB();
+  closeModal('modal-progress');
+  showToast(`🎉 ¡Terminaste "${e.titulo}"!`, 3000);
+  renderHome();
+  if (currentScreen === 'library') renderLibrary();
+}
+function showToast(msg, dur = 2200) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), dur);
+}
+
+// ═══════════════════════════════════
+//  AUTH
+// ═══════════════════════════════════
+async function loginWithGoogle() {
+  const btn = document.getElementById('btn-google-login');
+  const err = document.getElementById('auth-error');
+  btn.disabled = true;
+  btn.style.opacity = '0.7';
+  err.textContent = '';
+  try {
+    const provider = new GoogleAuthProvider();
+    await signInWithPopup(auth, provider);
+  } catch (e) {
+    err.textContent = e.code === 'auth/popup-closed-by-user'
+      ? 'Ventana cerrada. Inténtalo de nuevo.'
+      : 'Error al iniciar sesión: ' + e.message;
+    btn.disabled = false;
+    btn.style.opacity = '1';
+  }
+}
+
+async function logOut() {
+  closeUserMenu();
+  if (unsubscribeSnapshot) { unsubscribeSnapshot(); unsubscribeSnapshot = null; }
+  await signOut(auth);
+}
+
+async function forcSync() {
+  closeUserMenu();
+  setSyncStatus('syncing');
+  await syncToFirestore();
+  setSyncStatus('ok');
+  showToast('✓ Sincronizado con la nube');
+}
+
+function setSyncStatus(state) {
+  const dot = document.getElementById('sync-dot');
+  const mdot = document.getElementById('menu-sync-dot');
+  const mtxt = document.getElementById('menu-sync-text');
+  const colors = { ok: '#7ec98f', syncing: '#c8952a', offline: '#f08080' };
+  const labels = { ok: 'Sincronizado', syncing: 'Sincronizando…', offline: 'Sin conexión' };
+  const c = colors[state] || colors.ok;
+  if (dot) dot.style.background = c;
+  if (mdot) mdot.style.background = c;
+  if (mtxt) mtxt.textContent = labels[state] || labels.ok;
+}
+
+function showUserMenu() {
+  const menu = document.getElementById('user-menu');
+  menu.classList.toggle('open');
+  if (menu.classList.contains('open')) {
+    setTimeout(() => document.addEventListener('click', closeUserMenuOutside, {once:true}), 10);
+  }
+}
+function closeUserMenu() { document.getElementById('user-menu').classList.remove('open'); }
+function closeUserMenuOutside(e) { if (!document.getElementById('user-menu').contains(e.target)) closeUserMenu(); }
+
+function updateUserUI(user) {
+  if (!user) return;
+  document.getElementById('menu-name').textContent = user.displayName || 'Usuario';
+  document.getElementById('menu-email').textContent = user.email || '';
+  const avatar = document.getElementById('user-avatar');
+  const initials = document.getElementById('user-initials');
+  if (user.photoURL) {
+    avatar.src = user.photoURL;
+    avatar.style.display = 'block';
+    initials.style.display = 'none';
+  } else {
+    const parts = (user.displayName || user.email || 'U').split(' ');
+    initials.textContent = parts.map(p=>p[0]).join('').slice(0,2).toUpperCase();
+    initials.style.display = 'flex';
+    avatar.style.display = 'none';
+  }
+}
+
+function refreshCurrentScreen() {
+  if (currentScreen === 'home') renderHome();
+  else if (currentScreen === 'library') renderLibrary();
+  else if (currentScreen === 'year') renderYear();
+  else if (currentScreen === 'stats') renderStats();
+}
+
+// ── Watch online/offline ──
+window.addEventListener('online', () => {
+  setSyncStatus('syncing');
+  syncToFirestore().then(() => setSyncStatus('ok'));
+});
+window.addEventListener('offline', () => setSyncStatus('offline'));
+
+// ═══════════════════════════════════
+//  AUTH STATE OBSERVER — main entry point
+// ═══════════════════════════════════
+onAuthStateChanged(auth, async user => {
+  const overlay = document.getElementById('auth-overlay');
+  if (user) {
+    currentUser = user;
+    overlay.style.display = 'none';
+    updateUserUI(user);
+
+    // Load from Firestore first (merging with any local data)
+    setSyncStatus('syncing');
+    try {
+      const snap = await getDoc(doc(firestore, 'users', user.uid, 'data', 'library'));
+      if (snap.exists()) {
+        const remote = snap.data();
+        const remoteIds = new Set((remote.entries||[]).map(e=>e.id));
+        const localOnly = db.entries.filter(e=>!remoteIds.has(e.id));
+        db.entries = [...(remote.entries||[]), ...localOnly];
+        localStorage.setItem(DB_KEY, JSON.stringify(db));
+        if (localOnly.length > 0) await syncToFirestore();
+      } else if (db.entries.length > 0) {
+        // First login — upload local data
+        await syncToFirestore();
+      }
+    } catch(e) {
+      // Offline — work with local data
+    }
+    setSyncStatus('ok');
+    subscribeToFirestore(user.uid);
+    renderHome();
+  } else {
+    currentUser = null;
+    if (unsubscribeSnapshot) { unsubscribeSnapshot(); unsubscribeSnapshot = null; }
+    overlay.style.display = 'flex';
+    // Reset error and button
+    const btn = document.getElementById('btn-google-login');
+    if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
+  }
+});
+
+// ═══════════════════════════════════
+//  EXPOSE FUNCTIONS TO HTML onclick
+//  (needed because script type="module" is scoped)
+// ═══════════════════════════════════
+Object.assign(window, {
+  loginWithGoogle, logOut, forcSync, showUserMenu,
+  // Navigation
+  gotoScreen, openModal, closeModal,
+  // Library
+  filterLib, renderLibrary,
+  // Forms
+  switchType, submitEntry, deleteEntry, editEntry, showDetail,
+  // Year
+  changeYear, setYearChartMode, renderYear,
+  // Stats
+  switchStatsSeg, changeStatsYear, setLbChartMode, setPlChartMode, setSrChartMode,
+  sortLibros, sortPeliculas, sortSeries, toggleFilter, clearFilter, goPage,
+  // Home
+  openProgressModal,
+  // Search
+  searchGoogleBooks, searchOMDB, fillBookForm, fillMovieFromOMDB,
+  // Wikipedia
+  importFromWikipedia,
+  // Progress
+  saveProgress, finishBook, saveProgressCover,
+  // Cover search
+  searchCoversModal, pickCover, searchCoversProgress, pickCoverProgress,
+  // Import
+  handleImportFile, confirmImport,
+  // Reading / Watching
+  saveNewReading, toggleReadingMode, finishSerie,
+});
+</script>
+</body>
+</html>
