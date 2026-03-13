@@ -1388,11 +1388,11 @@ select.input { cursor: pointer; }
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:8px;">
         <div class="field">
-          <label>Temporada</label>
+          <label>Temporada actual</label>
           <input class="input" type="number" id="serie-temporada-actual" min="1" value="1">
         </div>
         <div class="field">
-          <label>Total temporadas</label>
+          <label>Total de temporadas</label>
           <input class="input" type="number" id="serie-temporadas-total" min="1">
         </div>
       </div>
@@ -2444,7 +2444,6 @@ function saveSerieProgress() {
 }
 
 function finishSerie(id) {
-  // Called from modal "Terminé" button (id=null uses modal's hidden input) or directly with id
   const eid = id || document.getElementById('serie-progress-id')?.value;
   const e = db.entries.find(x => x.id === eid);
   if (!e) return;
@@ -2452,6 +2451,9 @@ function finishSerie(id) {
   e.estado = 'vista';
   if (!e.mes) e.mes = MESES[now.getMonth()];
   if (!e.anio) e.anio = now.getFullYear();
+  // Guardar temporada actual en campo Temporada/Saga
+  const tempActual = parseInt(document.getElementById('serie-temporada-actual')?.value) || e.temporadaActual;
+  if (tempActual) e.coleccion = `Temporada ${tempActual}`;
   e._updatedAt = Date.now();
   saveDB();
   closeModal('modal-serie-progress');
