@@ -2079,6 +2079,8 @@ function updateCarouselArrows(listId, arrowsId, count) {
   const arrows = document.getElementById(arrowsId);
   if (arrows) arrows.classList.toggle('visible', count > 3);
 }
+
+function filterLib(f, btn) {
   libFilter = f;
   document.querySelectorAll('#lib-seg .stats-seg-btn').forEach(t => t.classList.toggle('active', t.dataset.tab === f));
   renderLibrary();
@@ -3706,6 +3708,8 @@ function switchProgressMode(mode) {
     document.getElementById('progress-pag-pct-text').textContent = pct ? `${pct}% completado` : '';
   }
 }
+
+function onProgressPagInput(val) {
   const id = document.getElementById('progress-entry-id').value;
   const e = db.entries.find(x => x.id === id);
   const pags = e ? e.paginas : 0;
