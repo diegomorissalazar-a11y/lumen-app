@@ -455,35 +455,72 @@ select.input { cursor: pointer; }
   position:fixed;inset:0;z-index:9999;
   background:var(--ink);
   display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:24px;padding:40px 32px;text-align:center;
+  padding:40px 32px;overflow-y:auto;
 ">
-  <div style="font-family:var(--font-serif);font-size:42px;font-weight:900;font-style:italic;color:var(--cream);letter-spacing:-1px;">LUMEN</div>
-  <div style="font-size:12px;letter-spacing:4px;text-transform:uppercase;color:var(--ink4);">Biblioteca Personal</div>
-  <div style="width:40px;height:1px;background:var(--gold);"></div>
-  <div style="font-size:14px;color:var(--ink3);line-height:1.7;max-width:280px;">
-    Inicia sesión con Google para sincronizar tu biblioteca entre dispositivos.
-  </div>
-  <button id="btn-google-login" onclick="loginWithGoogle()" style="
-    display:flex;align-items:center;gap:12px;
-    background:#fff;color:#3c4043;
-    border:none;border-radius:6px;
-    padding:13px 24px;font-size:15px;font-weight:700;
-    cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.3);
-    font-family:var(--font-sans);letter-spacing:0.3px;
-    transition:box-shadow 0.2s;
-  ">
-    <svg width="20" height="20" viewBox="0 0 48 48">
-      <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
-      <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
-      <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
-      <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
-      <path fill="none" d="M0 0h48v48H0z"/>
-    </svg>
-    Continuar con Google
-  </button>
-  <div id="auth-error" style="font-size:12px;color:#f08080;min-height:16px;"></div>
-  <div style="font-size:11px;color:var(--ink4);margin-top:8px;line-height:1.6;">
-    Tus datos se almacenan en tu cuenta Google.<br>Funciona sin conexión y se sincroniza automáticamente.
+  <div style="width:100%;max-width:320px;display:flex;flex-direction:column;gap:20px;">
+
+    <div style="text-align:center;">
+      <div style="font-family:var(--font-serif);font-size:42px;font-weight:900;font-style:italic;color:var(--cream);letter-spacing:-1px;">LUMEN</div>
+      <div style="font-size:12px;letter-spacing:4px;text-transform:uppercase;color:var(--ink4);margin-top:4px;">Biblioteca Personal</div>
+      <div style="width:40px;height:1px;background:var(--gold);margin:14px auto 0;"></div>
+    </div>
+
+    <!-- TABS login / registro -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid rgba(255,255,255,0.12);border-radius:6px;overflow:hidden;">
+      <button id="tab-login" onclick="authTab('login')" style="padding:10px;background:var(--gold);color:var(--ink);border:none;font-family:var(--font-sans);font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;">Entrar</button>
+      <button id="tab-register" onclick="authTab('register')" style="padding:10px;background:transparent;color:var(--ink4);border:none;font-family:var(--font-sans);font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;">Crear cuenta</button>
+    </div>
+
+    <!-- FORM LOGIN -->
+    <div id="auth-form-login" style="display:flex;flex-direction:column;gap:12px;">
+      <input id="auth-email" type="email" placeholder="Correo electrónico" autocomplete="email" style="
+        width:100%;padding:13px 16px;border-radius:6px;border:1px solid rgba(255,255,255,0.15);
+        background:rgba(255,255,255,0.07);color:var(--cream);font-size:15px;font-family:var(--font-sans);
+        outline:none;box-sizing:border-box;
+      ">
+      <input id="auth-password" type="password" placeholder="Contraseña" autocomplete="current-password" style="
+        width:100%;padding:13px 16px;border-radius:6px;border:1px solid rgba(255,255,255,0.15);
+        background:rgba(255,255,255,0.07);color:var(--cream);font-size:15px;font-family:var(--font-sans);
+        outline:none;box-sizing:border-box;
+      ">
+      <button onclick="loginEmail()" style="
+        width:100%;padding:14px;border-radius:6px;border:none;
+        background:var(--gold);color:var(--ink);font-family:var(--font-sans);
+        font-size:15px;font-weight:700;letter-spacing:1px;cursor:pointer;
+      ">Entrar</button>
+      <button onclick="resetPassword()" style="background:none;border:none;color:var(--ink4);font-size:12px;cursor:pointer;font-family:var(--font-sans);text-decoration:underline;">¿Olvidaste tu contraseña?</button>
+    </div>
+
+    <!-- FORM REGISTRO -->
+    <div id="auth-form-register" style="display:none;flex-direction:column;gap:12px;">
+      <input id="auth-reg-name" type="text" placeholder="Tu nombre" autocomplete="name" style="
+        width:100%;padding:13px 16px;border-radius:6px;border:1px solid rgba(255,255,255,0.15);
+        background:rgba(255,255,255,0.07);color:var(--cream);font-size:15px;font-family:var(--font-sans);
+        outline:none;box-sizing:border-box;
+      ">
+      <input id="auth-reg-email" type="email" placeholder="Correo electrónico" autocomplete="email" style="
+        width:100%;padding:13px 16px;border-radius:6px;border:1px solid rgba(255,255,255,0.15);
+        background:rgba(255,255,255,0.07);color:var(--cream);font-size:15px;font-family:var(--font-sans);
+        outline:none;box-sizing:border-box;
+      ">
+      <input id="auth-reg-password" type="password" placeholder="Contraseña (mínimo 6 caracteres)" autocomplete="new-password" style="
+        width:100%;padding:13px 16px;border-radius:6px;border:1px solid rgba(255,255,255,0.15);
+        background:rgba(255,255,255,0.07);color:var(--cream);font-size:15px;font-family:var(--font-sans);
+        outline:none;box-sizing:border-box;
+      ">
+      <button onclick="registerEmail()" style="
+        width:100%;padding:14px;border-radius:6px;border:none;
+        background:var(--gold);color:var(--ink);font-family:var(--font-sans);
+        font-size:15px;font-weight:700;letter-spacing:1px;cursor:pointer;
+      ">Crear cuenta</button>
+    </div>
+
+    <div id="auth-error" style="font-size:13px;color:#f08080;text-align:center;min-height:18px;"></div>
+    <div id="auth-success" style="font-size:13px;color:#7ec98f;text-align:center;min-height:18px;display:none;"></div>
+
+    <div style="font-size:11px;color:var(--ink4);text-align:center;line-height:1.6;">
+      Tus datos se sincronizan en la nube.<br>Funciona sin conexión automáticamente.
+    </div>
   </div>
 </div>
 
@@ -1240,7 +1277,7 @@ select.input { cursor: pointer; }
 //  FIREBASE CONFIG
 // ═══════════════════════════════════
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-import { getAuth, signInWithRedirect, getRedirectResult, GoogleAuthProvider, onAuthStateChanged, signOut }
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, updateProfile, onAuthStateChanged, signOut }
   from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import { getFirestore, doc, getDoc, setDoc, onSnapshot, enableIndexedDbPersistence }
   from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
@@ -1262,9 +1299,7 @@ const firestore = getFirestore(firebaseApp);
 enableIndexedDbPersistence(firestore).catch(() => {});
 
 // ── Handle redirect result on page load ──
-// When Google redirects back after login, catch the result here
-getRedirectResult(auth).catch(() => {});
-// onAuthStateChanged below will fire automatically with the user
+// (kept for compatibility, no-op with email auth)
 
 // ═══════════════════════════════════
 //  DATA — local + cloud
@@ -3524,23 +3559,80 @@ function showToast(msg, dur = 2200) {
 }
 
 // ═══════════════════════════════════
-//  AUTH
+//  AUTH — email / contraseña
 // ═══════════════════════════════════
-async function loginWithGoogle() {
-  const btn = document.getElementById('btn-google-login');
-  const err = document.getElementById('auth-error');
-  btn.disabled = true;
-  btn.style.opacity = '0.7';
-  btn.innerHTML = `<svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg> Redirigiendo a Google...`;
-  err.textContent = '';
+function authTab(tab) {
+  const isLogin = tab === 'login';
+  document.getElementById('auth-form-login').style.display    = isLogin ? 'flex' : 'none';
+  document.getElementById('auth-form-register').style.display = isLogin ? 'none' : 'flex';
+  document.getElementById('tab-login').style.background    = isLogin ? 'var(--gold)' : 'transparent';
+  document.getElementById('tab-login').style.color         = isLogin ? 'var(--ink)'  : 'var(--ink4)';
+  document.getElementById('tab-register').style.background = isLogin ? 'transparent' : 'var(--gold)';
+  document.getElementById('tab-register').style.color      = isLogin ? 'var(--ink4)' : 'var(--ink)';
+  document.getElementById('auth-error').textContent = '';
+  document.getElementById('auth-success').style.display = 'none';
+}
+
+function authErr(msg) {
+  const el = document.getElementById('auth-error');
+  el.textContent = msg;
+  const suc = document.getElementById('auth-success');
+  suc.style.display = 'none';
+}
+function authOk(msg) {
+  const suc = document.getElementById('auth-success');
+  suc.textContent = msg;
+  suc.style.display = 'block';
+  document.getElementById('auth-error').textContent = '';
+}
+
+async function loginEmail() {
+  const email = document.getElementById('auth-email').value.trim();
+  const pass  = document.getElementById('auth-password').value;
+  if (!email || !pass) { authErr('Ingresa tu correo y contraseña.'); return; }
+  authErr('');
   try {
-    const provider = new GoogleAuthProvider();
-    await signInWithRedirect(auth, provider);
-    // Page will redirect — no code runs after this
-  } catch (e) {
-    err.textContent = 'Error: ' + e.message;
-    btn.disabled = false;
-    btn.style.opacity = '1';
+    await signInWithEmailAndPassword(auth, email, pass);
+  } catch(e) {
+    const msgs = {
+      'auth/user-not-found':   'No existe una cuenta con ese correo.',
+      'auth/wrong-password':   'Contraseña incorrecta.',
+      'auth/invalid-email':    'Correo no válido.',
+      'auth/too-many-requests':'Demasiados intentos. Espera unos minutos.',
+      'auth/invalid-credential': 'Correo o contraseña incorrectos.',
+    };
+    authErr(msgs[e.code] || 'Error: ' + e.message);
+  }
+}
+
+async function registerEmail() {
+  const name  = document.getElementById('auth-reg-name').value.trim();
+  const email = document.getElementById('auth-reg-email').value.trim();
+  const pass  = document.getElementById('auth-reg-password').value;
+  if (!email || !pass) { authErr('Ingresa correo y contraseña.'); return; }
+  if (pass.length < 6) { authErr('La contraseña debe tener al menos 6 caracteres.'); return; }
+  authErr('');
+  try {
+    const cred = await createUserWithEmailAndPassword(auth, email, pass);
+    if (name) await updateProfile(cred.user, { displayName: name });
+  } catch(e) {
+    const msgs = {
+      'auth/email-already-in-use': 'Ya existe una cuenta con ese correo.',
+      'auth/invalid-email':        'Correo no válido.',
+      'auth/weak-password':        'Contraseña muy débil (mínimo 6 caracteres).',
+    };
+    authErr(msgs[e.code] || 'Error: ' + e.message);
+  }
+}
+
+async function resetPassword() {
+  const email = document.getElementById('auth-email').value.trim();
+  if (!email) { authErr('Ingresa tu correo primero.'); return; }
+  try {
+    await sendPasswordResetEmail(auth, email);
+    authOk('✓ Te enviamos un correo para restablecer tu contraseña.');
+  } catch(e) {
+    authErr('No se pudo enviar el correo. Verifica la dirección.');
   }
 }
 
@@ -3647,9 +3739,7 @@ onAuthStateChanged(auth, async user => {
     currentUser = null;
     if (unsubscribeSnapshot) { unsubscribeSnapshot(); unsubscribeSnapshot = null; }
     overlay.style.display = 'flex';
-    // Reset error and button
-    const btn = document.getElementById('btn-google-login');
-    if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
+    authTab('login');
   }
 });
 
@@ -3658,7 +3748,8 @@ onAuthStateChanged(auth, async user => {
 //  (needed because script type="module" is scoped)
 // ═══════════════════════════════════
 Object.assign(window, {
-  loginWithGoogle, logOut, forcSync, showUserMenu,
+  // Auth
+  authTab, loginEmail, registerEmail, resetPassword, logOut, forcSync, showUserMenu,
   // Navigation
   gotoScreen, openModal, closeModal,
   // Library
