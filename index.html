@@ -593,6 +593,7 @@ select.input { cursor: pointer; }
   <div style="padding:4px 20px 4px;" id="viendo-section">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
       <div class="cr-title" style="margin:0;">— Viendo ahora —</div>
+      <button class="btn btn-secondary btn-sm" onclick="openModal('modal-add-watching')" style="font-size:10px;letter-spacing:1px;">+ Serie en curso</button>
     </div>
     <div class="reading-carousel-wrap">
       <div id="currently-watching-list" class="reading-carousel"></div>
@@ -1222,6 +1223,50 @@ select.input { cursor: pointer; }
         <input class="input" type="number" id="reading-prog-pag" min="0" placeholder="0">
       </div>
       <button class="btn btn-primary" onclick="saveReadingEntry()">Empezar a seguir</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ MODAL: SERIE EN CURSO ══════ -->
+<div id="modal-add-watching" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title">Serie en curso</div>
+      <button class="btn-icon" onclick="closeModal('modal-add-watching')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label>Título</label>
+        <input class="input" type="text" id="watching-titulo" placeholder="Nombre de la serie">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div class="field"><label>Creador / Director</label><input class="input" type="text" id="watching-director"></div>
+        <div class="field"><label>Año estreno</label><input class="input" type="number" id="watching-anio-est"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div class="field"><label>Temporadas</label><input class="input" type="number" id="watching-temporadas" min="1" value="1"></div>
+        <div class="field"><label>Protagonista</label><input class="input" type="text" id="watching-protagonista"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div class="field">
+          <label>Capítulo actual</label>
+          <input class="input" type="number" id="watching-cap-actual" min="0" value="0" oninput="updateWatchingBar()">
+        </div>
+        <div class="field">
+          <label>Total capítulos</label>
+          <input class="input" type="number" id="watching-cap-total" min="0" placeholder="Ej: 24" oninput="updateWatchingBar()">
+        </div>
+      </div>
+      <div class="progress-wrap" style="height:6px;margin-bottom:4px;">
+        <div class="progress-fill" id="watching-progress-bar" style="width:0%;background:var(--red);"></div>
+      </div>
+      <div id="watching-progress-pct" style="font-size:11px;color:var(--ink4);text-align:right;margin-bottom:14px;"></div>
+      <div class="field">
+        <label>Portada (URL)</label>
+        <input class="input" type="text" id="watching-cover" placeholder="https://...">
+      </div>
+      <button class="btn btn-primary" onclick="saveWatchingEntry()">Empezar a seguir</button>
     </div>
   </div>
 </div>
@@ -2018,11 +2063,9 @@ function renderHome() {
   // ── VIENDO AHORA ─────────────────────
   const watching = db.entries.filter(e => e.type === 'serie' && e.estado === 'viendo');
   const watchEl = document.getElementById('currently-watching-list');
-  const watchSection = document.getElementById('viendo-section');
   if (watching.length === 0) {
-    watchSection.style.display = 'none';
+    watchEl.innerHTML = '<div style="font-size:13px;color:var(--ink4);font-style:italic;padding:4px 0;">Ninguna serie en curso. Toca "+ Serie en curso" para empezar.</div>';
   } else {
-    watchSection.style.display = '';
     watchEl.innerHTML = watching.map(e => {
       const capActual = parseInt(e.capActual) || 0;
       const capTotal  = parseInt(e.capTotal)  || 0;
@@ -3630,6 +3673,47 @@ function saveReadingEntry() {
   saveDB();
   closeModal('modal-add-reading');
   showToast('✓ Lectura en curso guardada');
+  renderHome();
+}
+
+function updateWatchingBar() {
+  const actual = parseInt(document.getElementById('watching-cap-actual').value) || 0;
+  const total  = parseInt(document.getElementById('watching-cap-total').value)  || 0;
+  const pct = total > 0 ? Math.round((actual / total) * 100) : 0;
+  document.getElementById('watching-progress-bar').style.width = pct + '%';
+  document.getElementById('watching-progress-pct').textContent = total > 0 ? `Cap. ${actual} de ${total} · ${pct}%` : '';
+}
+
+function saveWatchingEntry() {
+  const titulo = document.getElementById('watching-titulo').value.trim();
+  if (!titulo) { showToast('Ingresa el título'); return; }
+  const entry = {
+    id: 'e_' + Date.now(),
+    type: 'serie',
+    titulo,
+    director:     document.getElementById('watching-director').value.trim(),
+    anio_est:     parseInt(document.getElementById('watching-anio-est').value) || null,
+    temporadas:   parseInt(document.getElementById('watching-temporadas').value) || 1,
+    protagonista: document.getElementById('watching-protagonista').value.trim(),
+    capActual:    parseInt(document.getElementById('watching-cap-actual').value) || 0,
+    capTotal:     parseInt(document.getElementById('watching-cap-total').value)  || 0,
+    cover:        document.getElementById('watching-cover').value.trim(),
+    estado: 'viendo',
+    rating: 0, notas: '',
+    _updatedAt: Date.now()
+  };
+  // Reset form
+  ['watching-titulo','watching-director','watching-anio-est','watching-protagonista','watching-cap-actual','watching-cap-total','watching-cover'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  document.getElementById('watching-temporadas').value = 1;
+  document.getElementById('watching-progress-bar').style.width = '0%';
+  document.getElementById('watching-progress-pct').textContent = '';
+  db.entries.push(entry);
+  saveDB();
+  closeModal('modal-add-watching');
+  showToast('✓ Serie en curso guardada');
   renderHome();
 }
 
