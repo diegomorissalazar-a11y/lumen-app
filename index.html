@@ -3732,37 +3732,7 @@ auth.onAuthStateChanged(async user => {
 //  EXPOSE FUNCTIONS TO HTML onclick
 //  (needed because script type="module" is scoped)
 // ═══════════════════════════════════
-Object.assign(window, {
-  // Auth
-  authTab, loginEmail, registerEmail, resetPassword, logOut, forcSync, showUserMenu,
-  // Navigation
-  gotoScreen, openModal, closeModal,
-  // Library
-  filterLib, renderLibrary,
-  // Forms
-  switchType, submitEntry, deleteEntry, editEntry, showDetail,
-  // Year
-  changeYear, setYearChartMode, renderYear,
-  // Stats
-  switchStatsSeg, changeStatsYear, setLbChartMode, setPlChartMode, setSrChartMode,
-  sortLibros, sortPeliculas, sortSeries, toggleFilter, clearFilter, goPage,
-  // Home
-  openProgressModal,
-  // Search
-  searchGoogleBooks, searchOMDB, fillBookForm, fillMovieFromOMDB,
-  // Wikipedia
-  importFromWikipedia,
-  // Progress
-  saveProgress, finishBook, saveProgressCover,
-  // Cover search
-  searchCoversModal, pickCover, searchCoversProgress, pickCoverProgress,
-  // Import
-  handleImportFile, confirmImport,
-  // Reading / Watching
-  saveNewReading, toggleReadingMode, finishSerie,
-});
-
-// ── Wire auth buttons directly inside module (guaranteed to run after all functions exist) ──
+// ── Wire auth buttons ──
 document.getElementById('tab-login')?.addEventListener('click', () => authTab('login'));
 document.getElementById('tab-register')?.addEventListener('click', () => authTab('register'));
 document.getElementById('btn-login-email')?.addEventListener('click', () => loginEmail());
