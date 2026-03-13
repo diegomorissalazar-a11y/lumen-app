@@ -467,8 +467,8 @@ select.input { cursor: pointer; }
 
     <!-- TABS login / registro -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid rgba(255,255,255,0.12);border-radius:6px;overflow:hidden;">
-      <button id="tab-login" onclick="authTab('login')" style="padding:10px;background:var(--gold);color:var(--ink);border:none;font-family:var(--font-sans);font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;">Entrar</button>
-      <button id="tab-register" onclick="authTab('register')" style="padding:10px;background:transparent;color:var(--ink4);border:none;font-family:var(--font-sans);font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;">Crear cuenta</button>
+      <button id="tab-login" style="padding:10px;background:var(--gold);color:var(--ink);border:none;font-family:var(--font-sans);font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;">Entrar</button>
+      <button id="tab-register" style="padding:10px;background:transparent;color:var(--ink4);border:none;font-family:var(--font-sans);font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;">Crear cuenta</button>
     </div>
 
     <!-- FORM LOGIN -->
@@ -483,12 +483,12 @@ select.input { cursor: pointer; }
         background:rgba(255,255,255,0.07);color:var(--cream);font-size:15px;font-family:var(--font-sans);
         outline:none;box-sizing:border-box;
       ">
-      <button onclick="loginEmail()" style="
+      <button id="btn-login-email" style="
         width:100%;padding:14px;border-radius:6px;border:none;
         background:var(--gold);color:var(--ink);font-family:var(--font-sans);
         font-size:15px;font-weight:700;letter-spacing:1px;cursor:pointer;
       ">Entrar</button>
-      <button onclick="resetPassword()" style="background:none;border:none;color:var(--ink4);font-size:12px;cursor:pointer;font-family:var(--font-sans);text-decoration:underline;">¿Olvidaste tu contraseña?</button>
+      <button id="btn-forgot-password" style="background:none;border:none;color:var(--ink4);font-size:12px;cursor:pointer;font-family:var(--font-sans);text-decoration:underline;">¿Olvidaste tu contraseña?</button>
     </div>
 
     <!-- FORM REGISTRO -->
@@ -508,7 +508,7 @@ select.input { cursor: pointer; }
         background:rgba(255,255,255,0.07);color:var(--cream);font-size:15px;font-family:var(--font-sans);
         outline:none;box-sizing:border-box;
       ">
-      <button onclick="registerEmail()" style="
+      <button id="btn-register-email" style="
         width:100%;padding:14px;border-radius:6px;border:none;
         background:var(--gold);color:var(--ink);font-family:var(--font-sans);
         font-size:15px;font-weight:700;letter-spacing:1px;cursor:pointer;
@@ -3775,6 +3775,40 @@ Object.assign(window, {
   handleImportFile, confirmImport,
   // Reading / Watching
   saveNewReading, toggleReadingMode, finishSerie,
+});
+</script>
+
+<!-- Auth buttons wired AFTER module loads to avoid timing issues -->
+<script>
+function waitForAuth(cb, tries) {
+  tries = tries || 0;
+  if (typeof window.loginEmail === 'function') { cb(); }
+  else if (tries < 100) { setTimeout(() => waitForAuth(cb, tries + 1), 50); }
+}
+waitForAuth(function() {
+  var tl = document.getElementById('tab-login');
+  var tr = document.getElementById('tab-register');
+  var bl = document.getElementById('btn-login-email');
+  var br = document.getElementById('btn-register-email');
+  var bf = document.getElementById('btn-forgot-password');
+  var ei = document.getElementById('auth-email');
+  var pi = document.getElementById('auth-password');
+  var rei= document.getElementById('auth-reg-email');
+  var rpi= document.getElementById('auth-reg-password');
+
+  if (tl) tl.addEventListener('click', function() { window.authTab('login'); });
+  if (tr) tr.addEventListener('click', function() { window.authTab('register'); });
+  if (bl) bl.addEventListener('click', function() { window.loginEmail(); });
+  if (br) br.addEventListener('click', function() { window.registerEmail(); });
+  if (bf) bf.addEventListener('click', function() { window.resetPassword(); });
+
+  // Allow Enter key in login fields
+  function onEnterLogin(e) { if (e.key === 'Enter') window.loginEmail(); }
+  function onEnterReg(e)   { if (e.key === 'Enter') window.registerEmail(); }
+  if (ei) ei.addEventListener('keydown', onEnterLogin);
+  if (pi) pi.addEventListener('keydown', onEnterLogin);
+  if (rei) rei.addEventListener('keydown', onEnterReg);
+  if (rpi) rpi.addEventListener('keydown', onEnterReg);
 });
 </script>
 </body>
