@@ -371,43 +371,52 @@ select.input { cursor: pointer; }
 .pag-btn:not(:disabled):hover { background: var(--ink); color: var(--cream); border-color: var(--ink); }
 .pag-info { font-size: 12px; color: var(--ink3); font-weight: 700; min-width: 80px; text-align: center; }
 
-/* ── HOME 3-COL GRID ── */
-.home-grid-3 {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-}
-.home-grid-3 .entry-card {
-  flex-direction: column; margin-bottom: 0;
-}
-.home-grid-3 .entry-card-spine { width: 100%; height: 4px; }
-.home-grid-3 .entry-card-cover { width: 100%; height: 100px; object-fit: cover; flex-shrink: 0; }
-.home-grid-3 .entry-card-info { padding: 8px 9px; }
-.home-grid-3 .entry-card-title { font-size: 12px; white-space: normal; display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden; }
-.home-grid-3 .entry-card-sub { font-size: 10px; }
-.home-grid-3 .entry-card-meta { display: none; } /* hide chips in grid to save space */
+/* ── HOME RECENT SECTIONS — full width cards ── */
+.home-recent-list .entry-card { margin-bottom: 0; }
 
-/* reading mini grid */
-.reading-grid-3 {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
+/* ── READING CAROUSEL ── */
+.reading-carousel-wrap {
+  position: relative;
 }
+.reading-carousel {
+  display: flex; gap: 10px;
+  overflow-x: auto; scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch; padding-bottom: 4px;
+  scroll-behavior: smooth;
+}
+.reading-carousel::-webkit-scrollbar { display: none; }
+.reading-carousel-arrows {
+  display: none; justify-content: flex-end; gap: 6px; margin-top: 6px;
+}
+.reading-carousel-arrows.visible { display: flex; }
+.reading-carousel-arrow {
+  width: 28px; height: 28px; border-radius: 50%;
+  border: 1.5px solid var(--border); background: #fff;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; color: var(--ink2); font-size: 14px;
+}
+.reading-carousel-arrow:active { background: var(--ink); color: var(--cream); }
 .reading-mini-card {
+  flex: 0 0 150px; scroll-snap-align: start;
   background: #fff; border-radius: 6px; overflow: hidden;
   border: 1px solid var(--border); display: flex; flex-direction: column;
   box-shadow: 0 1px 4px rgba(0,0,0,0.07);
 }
 .reading-mini-cover {
-  width: 100%; height: 100px; object-fit: cover; display: block;
+  width: 100%; height: 110px; object-fit: cover; display: block;
   background: var(--cream3); flex-shrink: 0;
 }
-.reading-mini-body { padding: 7px 8px; flex: 1; display: flex; flex-direction: column; gap: 3px; }
-.reading-mini-title { font-family: var(--font-serif); font-size: 11px; font-weight: 700; line-height: 1.3; color: var(--ink); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.reading-mini-body { padding: 8px; flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.reading-mini-title { font-family: var(--font-serif); font-size: 12px; font-weight: 700; line-height: 1.3; color: var(--ink); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 .reading-mini-autor { font-size: 10px; color: var(--ink4); }
-.reading-mini-pct { font-size: 10px; color: var(--gold); font-weight: 700; margin-top: 2px; }
-.reading-mini-btn { margin: 0 7px 7px; padding: 5px; font-size: 10px; letter-spacing: 0.5px; text-align: center; background: var(--cream2); border: 1px solid var(--border); border-radius: 4px; cursor: pointer; color: var(--ink2); font-family: var(--font-sans); font-weight: 700; }
+.reading-mini-pct { font-size: 11px; color: var(--gold); font-weight: 700; margin-top: 2px; }
+.reading-mini-btn { margin: 0 8px 8px; padding: 5px; font-size: 10px; letter-spacing: 0.5px; text-align: center; background: var(--cream2); border: 1px solid var(--border); border-radius: 4px; cursor: pointer; color: var(--ink2); font-family: var(--font-sans); font-weight: 700; }
 .reading-mini-btn:active { background: var(--ink); color: var(--cream); }
+
+/* progress mode toggle */
+.progress-mode-toggle { display:flex; gap:6px; margin-bottom:10px; }
+.progress-mode-btn { flex:1; padding:7px; border:1.5px solid var(--border); border-radius:4px; background:#fff; font-size:11px; font-weight:700; letter-spacing:1px; text-transform:uppercase; cursor:pointer; font-family:var(--font-sans); color:var(--ink3); transition:all 0.15s; }
+.progress-mode-btn.active { background:var(--ink); color:var(--cream); border-color:var(--ink); }
 
 /* ── RITMO HERO CARD ── */
 .ritmo-hero {
@@ -571,7 +580,13 @@ select.input { cursor: pointer; }
       <div class="cr-title" style="margin:0;">— Leyendo ahora —</div>
       <button class="btn btn-secondary btn-sm" onclick="openModal('modal-add-reading')" style="font-size:10px;letter-spacing:1px;">+ Lectura en curso</button>
     </div>
-    <div id="currently-reading-list" class="reading-grid-3"></div>
+    <div class="reading-carousel-wrap">
+      <div id="currently-reading-list" class="reading-carousel"></div>
+      <div class="reading-carousel-arrows" id="reading-carousel-arrows">
+        <button class="reading-carousel-arrow" onclick="scrollCarousel('currently-reading-list',-1)">&#8592;</button>
+        <button class="reading-carousel-arrow" onclick="scrollCarousel('currently-reading-list',1)">&#8594;</button>
+      </div>
+    </div>
   </div>
 
   <!-- VIENDO AHORA -->
@@ -579,20 +594,26 @@ select.input { cursor: pointer; }
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
       <div class="cr-title" style="margin:0;">— Viendo ahora —</div>
     </div>
-    <div id="currently-watching-list" class="reading-grid-3"></div>
+    <div class="reading-carousel-wrap">
+      <div id="currently-watching-list" class="reading-carousel"></div>
+      <div class="reading-carousel-arrows" id="watching-carousel-arrows">
+        <button class="reading-carousel-arrow" onclick="scrollCarousel('currently-watching-list',-1)">&#8592;</button>
+        <button class="reading-carousel-arrow" onclick="scrollCarousel('currently-watching-list',1)">&#8594;</button>
+      </div>
+    </div>
   </div>
 
   <div style="padding:8px 20px 4px;">
     <div class="cr-title" style="margin-bottom:8px;">— Últimas películas —</div>
-    <div id="recent-peliculas" class="home-grid-3"></div>
+    <div id="recent-peliculas" class="home-recent-list"></div>
   </div>
   <div style="padding:4px 20px 4px;">
     <div class="cr-title" style="margin-bottom:8px;">— Últimos libros leídos —</div>
-    <div id="recent-libros" class="home-grid-3"></div>
+    <div id="recent-libros" class="home-recent-list"></div>
   </div>
   <div style="padding:4px 20px 8px;">
     <div class="cr-title" style="margin-bottom:8px;">— Últimas series —</div>
-    <div id="recent-series" class="home-grid-3"></div>
+    <div id="recent-series" class="home-recent-list"></div>
   </div>
   <div style="padding:0 20px 12px;">
     <button class="btn btn-primary" onclick="openModal('modal-add')">+ Registrar estímulo</button>
@@ -804,7 +825,7 @@ select.input { cursor: pointer; }
     </div>
 
     <div style="padding:0 20px 20px;">
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;" id="sr-kpis"></div>
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:16px;" id="sr-kpis"></div>
 
       <div class="chart-section-header">
         <div class="chart-section-title">Por mes</div>
@@ -870,6 +891,7 @@ select.input { cursor: pointer; }
     <div id="menu-sync-dot" style="width:7px;height:7px;border-radius:50%;background:#7ec98f;flex-shrink:0;"></div>
     <span id="menu-sync-text">Sincronizado</span>
   </div>
+  <div style="font-size:10px;color:var(--ink4);padding:4px 16px 8px;border-bottom:1px solid var(--border);" id="menu-last-sync">—</div>
   <button class="user-menu-item" onclick="forcSync()">
     <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;"><polyline points="1 4 1 10 7 10"/><polyline points="23 20 23 14 17 14"/><path d="M20.49 9A9 9 0 005.64 5.64L1 10M23 14l-4.64 4.36A9 9 0 013.51 15"/></svg>
     Forzar sincronización
@@ -1274,6 +1296,39 @@ select.input { cursor: pointer; }
   </div>
 </div>
 
+<!-- ══════ MODAL: SERIE PROGRESS ══════ -->
+<div id="modal-serie-progress" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title" id="serie-progress-title">Actualizar serie</div>
+      <button class="btn-icon" onclick="closeModal('modal-serie-progress')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="serie-progress-id">
+      <div id="serie-progress-info" style="display:flex;gap:12px;margin-bottom:16px;padding:12px;background:var(--cream2);border-radius:var(--radius);align-items:center;"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+        <div class="field">
+          <label>Capítulo actual</label>
+          <input class="input" type="number" id="serie-cap-actual" min="0" oninput="updateSerieProgressBar()">
+        </div>
+        <div class="field">
+          <label>Total de capítulos</label>
+          <input class="input" type="number" id="serie-cap-total" min="0" oninput="updateSerieProgressBar()">
+        </div>
+      </div>
+      <div class="progress-wrap" style="height:8px;margin-bottom:6px;">
+        <div class="progress-fill" id="serie-progress-bar" style="width:0%;background:var(--red);"></div>
+      </div>
+      <div id="serie-progress-pct" style="font-size:12px;color:var(--ink3);text-align:right;margin-bottom:16px;">0%</div>
+      <div style="display:flex;gap:10px;">
+        <button class="btn btn-primary" onclick="saveSerieProgress()" style="flex:2;">Guardar progreso</button>
+        <button class="btn" onclick="finishSerie(null)" style="flex:1;background:var(--red);color:var(--cream);font-size:12px;">✓ Terminé</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -1306,18 +1361,61 @@ function loadDB() {
   catch { return { entries: [] }; }
 }
 
-function saveDB() {
-  localStorage.setItem(DB_KEY, JSON.stringify(db));
-  if (currentUser) syncToFirestore();
+// ═══════════════════════════════════
+//  SYNC — timestamp por entrada
+// ═══════════════════════════════════
+const LAST_SYNC_KEY = 'lumen_last_sync';
+
+function stampEntry(entry) {
+  if (!entry._updatedAt) entry._updatedAt = Date.now();
+  return entry;
+}
+
+function mergeEntries(local, remote) {
+  const map = {};
+  // Primero cargamos locales
+  local.forEach(e => { map[e.id] = e; });
+  // Luego remotos — gana el más reciente por timestamp
+  remote.forEach(e => {
+    if (!map[e.id]) {
+      map[e.id] = e; // nuevo remoto que no tenemos
+    } else {
+      const localTs = map[e.id]._updatedAt || 0;
+      const remoteTs = e._updatedAt || 0;
+      if (remoteTs > localTs) map[e.id] = e; // remoto más nuevo gana
+      // si local es más nuevo, lo mantenemos
+    }
+  });
+  return Object.values(map);
+}
+
+function setLastSync() {
+  const now = new Date();
+  localStorage.setItem(LAST_SYNC_KEY, now.toISOString());
+  const el = document.getElementById('menu-last-sync');
+  if (el) el.textContent = 'Sincronizado: ' + now.toLocaleTimeString('es', {hour:'2-digit', minute:'2-digit'}) + ' · ' + now.toLocaleDateString('es', {day:'2-digit', month:'short'});
+}
+
+function loadLastSync() {
+  const el = document.getElementById('menu-last-sync');
+  if (!el) return;
+  const s = localStorage.getItem(LAST_SYNC_KEY);
+  if (!s) { el.textContent = 'Sin sincronización reciente'; return; }
+  const d = new Date(s);
+  el.textContent = 'Última sync: ' + d.toLocaleTimeString('es', {hour:'2-digit', minute:'2-digit'}) + ' · ' + d.toLocaleDateString('es', {day:'2-digit', month:'short'});
 }
 
 function saveDB() {
+  // Stamp the most recently modified entry
   localStorage.setItem(DB_KEY, JSON.stringify(db));
   if (currentUser) {
     setSyncStatus('syncing');
     firestore.collection('users').doc(currentUser.uid).collection('data').doc('library').set({
       entries: db.entries, updatedAt: Date.now()
-    }).then(() => setSyncStatus('ok')).catch(() => setSyncStatus('offline'));
+    }).then(() => {
+      setSyncStatus('ok');
+      setLastSync();
+    }).catch(() => setSyncStatus('offline'));
   }
 }
 
@@ -1327,23 +1425,44 @@ async function syncToFirestore() {
     await firestore.collection('users').doc(currentUser.uid).collection('data').doc('library').set({
       entries: db.entries, updatedAt: Date.now()
     });
-  } catch(e) { console.warn('sync offline:', e.message); }
+    setSyncStatus('ok');
+    setLastSync();
+  } catch(e) {
+    setSyncStatus('offline');
+    console.warn('sync offline:', e.message);
+  }
+}
+
+async function pullAndMerge(uid) {
+  try {
+    const snap = await firestore.collection('users').doc(uid).collection('data').doc('library').get();
+    if (snap.exists) {
+      const remote = snap.data();
+      const merged = mergeEntries(db.entries, remote.entries || []);
+      const changed = merged.length !== db.entries.length ||
+        merged.some((e,i) => e._updatedAt !== db.entries[i]?._updatedAt);
+      db.entries = merged;
+      localStorage.setItem(DB_KEY, JSON.stringify(db));
+      if (changed) await syncToFirestore();
+      else { setSyncStatus('ok'); setLastSync(); }
+    } else if (db.entries.length > 0) {
+      await syncToFirestore();
+    }
+  } catch(e) { /* offline — work with local */ }
 }
 
 function subscribeToFirestore(uid) {
   if (unsubscribeSnapshot) unsubscribeSnapshot();
   const docRef = firestore.collection('users').doc(uid).collection('data').doc('library');
   unsubscribeSnapshot = docRef.onSnapshot({ includeMetadataChanges: false }, snap => {
-    if (snap.exists) {
-      const remote = snap.data();
-      const remoteIds = new Set((remote.entries || []).map(e => e.id));
-      const localOnly = db.entries.filter(e => !remoteIds.has(e.id));
-      db.entries = [...(remote.entries || []), ...localOnly];
-      localStorage.setItem(DB_KEY, JSON.stringify(db));
-      if (localOnly.length > 0) syncToFirestore();
-      refreshCurrentScreen();
-    }
-  }, () => {});
+    if (!snap.exists) return;
+    const remote = snap.data();
+    const merged = mergeEntries(db.entries, remote.entries || []);
+    db.entries = merged;
+    localStorage.setItem(DB_KEY, JSON.stringify(db));
+    setLastSync();
+    refreshCurrentScreen();
+  }, () => setSyncStatus('offline'));
 }
 
 let db = loadDB();
@@ -1710,9 +1829,11 @@ function saveEntry() {
       cover: document.getElementById('fs-cover').value };
   }
   if (editingId) {
+    entry._updatedAt = Date.now();
     const idx = db.entries.findIndex(e => e.id === editingId);
     if (idx >= 0) db.entries[idx] = entry;
   } else {
+    entry._updatedAt = Date.now();
     db.entries.push(entry);
   }
   saveDB();
@@ -1739,7 +1860,7 @@ function fmtMin(min) {
   const m = parseInt(min) || 0;
   if (m < 60) return `${m} min`;
   const h = Math.floor(m / 60), r = m % 60;
-  return r > 0 ? `${h}:${String(r).padStart(2,'0')}` : `${h}:00`;
+  return r > 0 ? `${h}h ${r} min` : `${h}h`;
 }
 
 // ── Helper: días transcurridos del año hasta el mismo día-mes que hoy, para un año dado ──
@@ -1861,14 +1982,12 @@ function renderHome() {
       </div>
     </div>` : '';
 
-  // ── LEYENDO AHORA — carousel compacto ──────────
+  // ── LEYENDO AHORA — carousel ──────────
   const reading = db.entries.filter(e => e.type === 'libro' && e.estado === 'leyendo');
   const crEl = document.getElementById('currently-reading-list');
   if (reading.length === 0) {
-    crEl.className = 'reading-grid-3';
-    crEl.innerHTML = '<div style="grid-column:1/-1;font-size:13px;color:var(--ink4);font-style:italic;padding:4px 0;">Ningún libro en curso. Toca "+ Lectura en curso" para empezar.</div>';
+    crEl.innerHTML = '<div style="font-size:13px;color:var(--ink4);font-style:italic;padding:4px 0;">Ningún libro en curso. Toca "+ Lectura en curso" para empezar.</div>';
   } else {
-    crEl.className = 'reading-grid-3';
     crEl.innerHTML = reading.map(e => {
       const pct = e.readingMode === 'pag' && e.paginas
         ? Math.round(((e.progresoPag||0) / e.paginas) * 100)
@@ -1894,6 +2013,7 @@ function renderHome() {
         </div>`;
     }).join('');
   }
+  updateCarouselArrows('currently-reading-list', 'reading-carousel-arrows', reading.length);
 
   // ── VIENDO AHORA ─────────────────────
   const watching = db.entries.filter(e => e.type === 'serie' && e.estado === 'viendo');
@@ -1904,21 +2024,29 @@ function renderHome() {
   } else {
     watchSection.style.display = '';
     watchEl.innerHTML = watching.map(e => {
+      const capActual = parseInt(e.capActual) || 0;
+      const capTotal  = parseInt(e.capTotal)  || 0;
+      const pct = capTotal > 0 ? Math.round((capActual / capTotal) * 100) : 0;
+      const progresoText = capTotal > 0 ? `Cap. ${capActual} / ${capTotal}` : (e.temporadas ? `${e.temporadas} temp.` : '📺 Viendo');
       const coverHTML = e.cover
         ? `<img src="${e.cover}" class="reading-mini-cover">`
         : `<div class="reading-mini-cover" style="display:flex;align-items:center;justify-content:center;font-size:28px;">📺</div>`;
-      const temp = e.temporadas ? `${e.temporadas} temp.` : '';
       return `
         <div class="reading-mini-card" onclick="showDetail('${e.id}')">
           ${coverHTML}
           <div class="reading-mini-body">
             <div class="reading-mini-title">${e.titulo}</div>
-            <div class="reading-mini-autor">${e.director||''}${temp?' · '+temp:''}</div>
-            <div class="reading-mini-pct">📺 Viendo</div>
+            <div class="reading-mini-autor">${e.director||''}</div>
+            ${capTotal > 0 ? `
+            <div style="height:3px;background:var(--cream3);border-radius:2px;margin-top:4px;">
+              <div style="height:3px;background:var(--red);border-radius:2px;width:${pct}%;"></div>
+            </div>` : ''}
+            <div class="reading-mini-pct" style="color:var(--red);">${progresoText}</div>
           </div>
-          <button class="reading-mini-btn" onclick="event.stopPropagation();finishSerie('${e.id}')">✓ Terminé</button>
+          <button class="reading-mini-btn" onclick="event.stopPropagation();openSerieProgressModal('${e.id}')">↑ Actualizar</button>
         </div>`;
     }).join('');
+    updateCarouselArrows('currently-watching-list', 'watching-carousel-arrows', watching.length);
   }
 
   // ── RECIENTES ────────────────────────
@@ -1942,7 +2070,15 @@ function renderHome() {
 // ═══════════════════════════════════
 //  LIBRARY
 // ═══════════════════════════════════
-function filterLib(f, btn) {
+function scrollCarousel(id, dir) {
+  const el = document.getElementById(id);
+  if (el) el.scrollBy({ left: dir * 160, behavior: 'smooth' });
+}
+
+function updateCarouselArrows(listId, arrowsId, count) {
+  const arrows = document.getElementById(arrowsId);
+  if (arrows) arrows.classList.toggle('visible', count > 3);
+}
   libFilter = f;
   document.querySelectorAll('#lib-seg .stats-seg-btn').forEach(t => t.classList.toggle('active', t.dataset.tab === f));
   renderLibrary();
@@ -2098,14 +2234,60 @@ function deleteEntry(id) {
   if (currentScreen === 'home') renderHome();
 }
 
-function finishSerie(id) {
+function openSerieProgressModal(id) {
   const e = db.entries.find(x => x.id === id);
+  if (!e) return;
+  document.getElementById('serie-progress-id').value = id;
+  document.getElementById('serie-progress-title').textContent = e.titulo;
+  const cover = e.cover
+    ? `<img src="${e.cover}" style="width:50px;height:70px;object-fit:cover;border-radius:4px;flex-shrink:0;">`
+    : `<div style="width:50px;height:70px;background:var(--cream3);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">📺</div>`;
+  document.getElementById('serie-progress-info').innerHTML = `
+    ${cover}
+    <div>
+      <div style="font-family:var(--font-serif);font-weight:700;font-size:15px;">${e.titulo}</div>
+      <div style="font-size:12px;color:var(--ink4);margin-top:2px;">${e.director||''}</div>
+      ${e.temporadas ? `<div style="font-size:11px;color:var(--ink4);">${e.temporadas} temporada${e.temporadas>1?'s':''}</div>` : ''}
+    </div>`;
+  document.getElementById('serie-cap-actual').value = e.capActual || '';
+  document.getElementById('serie-cap-total').value = e.capTotal || '';
+  updateSerieProgressBar();
+  openModal('modal-serie-progress');
+}
+
+function updateSerieProgressBar() {
+  const actual = parseInt(document.getElementById('serie-cap-actual').value) || 0;
+  const total  = parseInt(document.getElementById('serie-cap-total').value)  || 0;
+  const pct = total > 0 ? Math.round((actual / total) * 100) : 0;
+  document.getElementById('serie-progress-bar').style.width = pct + '%';
+  document.getElementById('serie-progress-pct').textContent = total > 0 ? `Cap. ${actual} de ${total} · ${pct}%` : '';
+}
+
+function saveSerieProgress() {
+  const id = document.getElementById('serie-progress-id').value;
+  const e = db.entries.find(x => x.id === id);
+  if (!e) return;
+  e.capActual = parseInt(document.getElementById('serie-cap-actual').value) || 0;
+  e.capTotal  = parseInt(document.getElementById('serie-cap-total').value)  || 0;
+  e._updatedAt = Date.now();
+  saveDB();
+  closeModal('modal-serie-progress');
+  showToast('✓ Progreso guardado');
+  renderHome();
+}
+
+function finishSerie(id) {
+  // Called from modal "Terminé" button (id=null uses modal's hidden input) or directly with id
+  const eid = id || document.getElementById('serie-progress-id')?.value;
+  const e = db.entries.find(x => x.id === eid);
   if (!e) return;
   const now = new Date();
   e.estado = 'vista';
   if (!e.mes) e.mes = MESES[now.getMonth()];
   if (!e.anio) e.anio = now.getFullYear();
+  e._updatedAt = Date.now();
   saveDB();
+  closeModal('modal-serie-progress');
   showToast(`🎉 ¡Terminaste "${e.titulo}"!`, 3000);
   renderHome();
   if (currentScreen === 'library') renderLibrary();
@@ -2754,11 +2936,9 @@ function renderStatsSeries() {
   const allSeries = db.entries.filter(e=>e.type==='serie' && e.estado!=='viendo' && e.estado!=='pendiente');
   const series = yr==='todos' ? allSeries : allSeries.filter(e=>e.anio===parseInt(yr)||e.anio===yr);
 
-  const totalMin = series.reduce((a,b)=>a+(b.duracion||0),0);
   const totalTemp = series.reduce((a,b)=>a+(parseInt(b.temporadas)||0),0);
   document.getElementById('sr-kpis').innerHTML = `
     <div class="stat-box"><div class="stat-num">${series.length}</div><div class="stat-label">Series</div></div>
-    <div class="stat-box"><div class="stat-num">${fmtMin(totalMin)}</div><div class="stat-label">Tiempo total</div></div>
     <div class="stat-box"><div class="stat-num">${totalTemp}</div><div class="stat-label">Temporadas</div></div>`;
 
   const bestC = bestYear('serie', items=>items.length);
@@ -3466,7 +3646,11 @@ function openProgressModal(id) {
       ${e.paginas?`<div style="font-size:11px;color:var(--ink4);margin-top:2px;">${e.paginas} páginas</div>`:''}
     </div>`;
   const mode = e.readingMode || 'pct';
-  document.getElementById('progress-mode-display').innerHTML = `<span class="badge" style="background:${mode==='pct'?'#fff8e8':'#e8f0e8'};color:${mode==='pct'?'var(--gold)':'var(--green)'};border:1px solid ${mode==='pct'?'#e8d8a0':'#c0d8c0'};">${mode==='pct'?'📱 Kindle / Porcentaje':'📖 Físico / Páginas'}</span>`;
+  document.getElementById('progress-mode-display').innerHTML = `
+    <div class="progress-mode-toggle">
+      <button class="progress-mode-btn ${mode==='pct'?'active':''}" onclick="switchProgressMode('pct')">% Porcentaje</button>
+      <button class="progress-mode-btn ${mode==='pag'?'active':''}" onclick="switchProgressMode('pag')"># Página</button>
+    </div>`;
   if (mode === 'pct') {
     document.getElementById('progress-pct-section').style.display = 'block';
     document.getElementById('progress-pag-section').style.display = 'none';
@@ -3497,7 +3681,31 @@ function onProgressSlider(val) {
   document.getElementById('progress-pct-label').textContent = val;
 }
 
-function onProgressPagInput(val) {
+function switchProgressMode(mode) {
+  const id = document.getElementById('progress-entry-id').value;
+  const e = db.entries.find(x => x.id === id);
+  if (!e) return;
+  e.readingMode = mode;
+  // Update button active state
+  document.querySelectorAll('.progress-mode-btn').forEach(b => b.classList.toggle('active', b.textContent.startsWith(mode==='pct'?'%':'#')));
+  if (mode === 'pct') {
+    document.getElementById('progress-pct-section').style.display = 'block';
+    document.getElementById('progress-pag-section').style.display = 'none';
+    const val = e.progreso || 0;
+    document.getElementById('progress-pct-slider').value = val;
+    document.getElementById('progress-pct-label').textContent = val;
+  } else {
+    document.getElementById('progress-pct-section').style.display = 'none';
+    document.getElementById('progress-pag-section').style.display = 'block';
+    document.getElementById('progress-pag-of').textContent = e.paginas ? `de ${e.paginas}` : '';
+    const pag = e.progresoPag || 0;
+    document.getElementById('progress-pag-input').value = pag;
+    document.getElementById('progress-pag-input').max = e.paginas || 9999;
+    const pct = e.paginas ? Math.round((pag/e.paginas)*100) : 0;
+    document.getElementById('progress-pag-bar').style.width = pct + '%';
+    document.getElementById('progress-pag-pct-text').textContent = pct ? `${pct}% completado` : '';
+  }
+}
   const id = document.getElementById('progress-entry-id').value;
   const e = db.entries.find(x => x.id === id);
   const pags = e ? e.paginas : 0;
@@ -3635,9 +3843,9 @@ async function logOut() {
 async function forcSync() {
   closeUserMenu();
   setSyncStatus('syncing');
-  await syncToFirestore();
-  setSyncStatus('ok');
+  if (currentUser) await pullAndMerge(currentUser.uid);
   showToast('✓ Sincronizado con la nube');
+  refreshCurrentScreen();
 }
 
 function setSyncStatus(state) {
@@ -3704,21 +3912,9 @@ auth.onAuthStateChanged(async user => {
     overlay.style.display = 'none';
     updateUserUI(user);
     setSyncStatus('syncing');
-    try {
-      const snap = await firestore.collection('users').doc(user.uid).collection('data').doc('library').get();
-      if (snap.exists) {
-        const remote = snap.data();
-        const remoteIds = new Set((remote.entries||[]).map(e=>e.id));
-        const localOnly = db.entries.filter(e=>!remoteIds.has(e.id));
-        db.entries = [...(remote.entries||[]), ...localOnly];
-        localStorage.setItem(DB_KEY, JSON.stringify(db));
-        if (localOnly.length > 0) await syncToFirestore();
-      } else if (db.entries.length > 0) {
-        await syncToFirestore();
-      }
-    } catch(e) { /* offline */ }
-    setSyncStatus('ok');
+    await pullAndMerge(user.uid);
     subscribeToFirestore(user.uid);
+    loadLastSync();
     renderHome();
   } else {
     currentUser = null;
