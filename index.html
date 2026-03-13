@@ -1245,9 +1245,14 @@ select.input { cursor: pointer; }
         <div class="field"><label>Año estreno</label><input class="input" type="number" id="watching-anio-est"></div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-        <div class="field"><label>Temporadas</label><input class="input" type="number" id="watching-temporadas" min="1" value="1"></div>
-        <div class="field"><label>Protagonista</label><input class="input" type="text" id="watching-protagonista"></div>
+        <div class="field"><label>Temporada actual</label>
+          <input class="input" type="number" id="watching-temporada-actual" min="1" value="1" placeholder="1">
+        </div>
+        <div class="field"><label>Total temporadas</label>
+          <input class="input" type="number" id="watching-temporadas" min="1" value="1">
+        </div>
       </div>
+      <div class="field"><label>Protagonista</label><input class="input" type="text" id="watching-protagonista"></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
         <div class="field">
           <label>Capítulo actual</label>
@@ -1263,8 +1268,16 @@ select.input { cursor: pointer; }
       </div>
       <div id="watching-progress-pct" style="font-size:11px;color:var(--ink4);text-align:right;margin-bottom:14px;"></div>
       <div class="field">
-        <label>Portada (URL)</label>
-        <input class="input" type="text" id="watching-cover" placeholder="https://...">
+        <label>Portada</label>
+        <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px;">
+          <input class="input" type="text" id="watching-cover" placeholder="Pega URL de imagen..." style="flex:1;">
+          <button class="btn-icon" onclick="document.getElementById('watching-cover').value=''" style="padding:8px;border:1.5px solid var(--border);border-radius:4px;background:#fff;">
+            <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:var(--ink3);fill:none;stroke-width:2;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="document.getElementById('watching-cover-file').click()" style="width:100%;font-size:11px;">📁 Subir imagen desde dispositivo</button>
+        <input type="file" id="watching-cover-file" accept="image/*" style="display:none;" onchange="handleWatchingCoverFile(event)">
+        <div id="watching-cover-preview" style="margin-top:8px;"></div>
       </div>
       <button class="btn btn-primary" onclick="saveWatchingEntry()">Empezar a seguir</button>
     </div>
@@ -1351,21 +1364,52 @@ select.input { cursor: pointer; }
     </div>
     <div class="modal-body">
       <input type="hidden" id="serie-progress-id">
-      <div id="serie-progress-info" style="display:flex;gap:12px;margin-bottom:16px;padding:12px;background:var(--cream2);border-radius:var(--radius);align-items:center;"></div>
+      <div id="serie-progress-info" style="display:flex;gap:12px;margin-bottom:12px;padding:12px;background:var(--cream2);border-radius:var(--radius);align-items:center;"></div>
+
+      <!-- Editar portada colapsable -->
+      <div style="margin-bottom:14px;">
+        <button onclick="toggleSerieCover()" style="background:none;border:none;font-size:11px;color:var(--ink3);cursor:pointer;font-family:var(--font-sans);font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:0;display:flex;align-items:center;gap:4px;">
+          <svg viewBox="0 0 24 24" id="serie-cover-chevron" style="width:12px;height:12px;stroke:var(--ink3);fill:none;stroke-width:2.5;transition:transform 0.2s;"><polyline points="6 9 12 15 18 9"/></svg>
+          Editar portada
+        </button>
+        <div id="serie-cover-panel" style="display:none;margin-top:10px;padding:12px;background:#fff;border:1px solid var(--border);border-radius:var(--radius);">
+          <div id="serie-cover-preview" style="margin-bottom:10px;"></div>
+          <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;">
+            <input class="input" type="text" id="serie-cover-url" placeholder="Pega URL de la portada..." style="flex:1;" oninput="previewSerieCover(this.value)">
+            <button class="btn-icon" onclick="clearSerieCover()" style="padding:8px;border:1.5px solid var(--border);border-radius:4px;background:#fff;">
+              <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:var(--ink3);fill:none;stroke-width:2;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="document.getElementById('serie-cover-file').click()" style="width:100%;font-size:11px;margin-bottom:6px;">📁 Subir imagen desde dispositivo</button>
+          <input type="file" id="serie-cover-file" accept="image/*" style="display:none;" onchange="handleSerieCoverFile(event)">
+          <button class="btn btn-primary btn-sm" onclick="saveSerieCover()" style="width:100%;font-size:11px;">Guardar portada</button>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:8px;">
+        <div class="field">
+          <label>Temporada</label>
+          <input class="input" type="number" id="serie-temporada-actual" min="1" value="1">
+        </div>
+        <div class="field">
+          <label>Total temporadas</label>
+          <input class="input" type="number" id="serie-temporadas-total" min="1">
+        </div>
+      </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
         <div class="field">
           <label>Capítulo actual</label>
           <input class="input" type="number" id="serie-cap-actual" min="0" oninput="updateSerieProgressBar()">
         </div>
         <div class="field">
-          <label>Total de capítulos</label>
+          <label>Total capítulos</label>
           <input class="input" type="number" id="serie-cap-total" min="0" oninput="updateSerieProgressBar()">
         </div>
       </div>
       <div class="progress-wrap" style="height:8px;margin-bottom:6px;">
         <div class="progress-fill" id="serie-progress-bar" style="width:0%;background:var(--red);"></div>
       </div>
-      <div id="serie-progress-pct" style="font-size:12px;color:var(--ink3);text-align:right;margin-bottom:16px;">0%</div>
+      <div id="serie-progress-pct" style="font-size:12px;color:var(--ink3);text-align:right;margin-bottom:16px;"></div>
       <div style="display:flex;gap:10px;">
         <button class="btn btn-primary" onclick="saveSerieProgress()" style="flex:2;">Guardar progreso</button>
         <button class="btn" onclick="finishSerie(null)" style="flex:1;background:var(--red);color:var(--cream);font-size:12px;">✓ Terminé</button>
@@ -2070,7 +2114,8 @@ function renderHome() {
       const capActual = parseInt(e.capActual) || 0;
       const capTotal  = parseInt(e.capTotal)  || 0;
       const pct = capTotal > 0 ? Math.round((capActual / capTotal) * 100) : 0;
-      const progresoText = capTotal > 0 ? `Cap. ${capActual} / ${capTotal}` : (e.temporadas ? `${e.temporadas} temp.` : '📺 Viendo');
+      const progresoText = capTotal > 0 ? `Cap. ${capActual} / ${capTotal}` : '📺 Viendo';
+      const tempText = e.temporadaActual ? `Temp. ${e.temporadaActual}${e.temporadas?' / '+e.temporadas:''}` : (e.temporadas ? `${e.temporadas} temp.` : '');
       const coverHTML = e.cover
         ? `<img src="${e.cover}" class="reading-mini-cover">`
         : `<div class="reading-mini-cover" style="display:flex;align-items:center;justify-content:center;font-size:28px;">📺</div>`;
@@ -2085,6 +2130,7 @@ function renderHome() {
               <div style="height:3px;background:var(--red);border-radius:2px;width:${pct}%;"></div>
             </div>` : ''}
             <div class="reading-mini-pct" style="color:var(--red);">${progresoText}</div>
+            ${tempText ? `<div style="font-size:10px;color:var(--ink4);">${tempText}</div>` : ''}
           </div>
           <button class="reading-mini-btn" onclick="event.stopPropagation();openSerieProgressModal('${e.id}')">↑ Actualizar</button>
         </div>`;
@@ -2222,10 +2268,19 @@ function showDetail(id) {
   if (e.type === 'libro') {
     html += row('Autor', e.autor) + row('Editorial', e.editorial) + row('Páginas', e.paginas) + row('Publicado', e.anio_pub) + row('Traductor', e.traductor) + row('Idioma orig.', e.idioma) + row('Leído', `${e.mes||''} ${e.anio||''}`);
     if (e.estado === 'leyendo') html += row('Progreso', e.progreso + '%');
-  } else {
+  } else if (e.type === 'pelicula') {
     html += row('Director', e.director) + row('Estreno', e.anio_est) + row('Duración', e.duracion ? fmtMin(e.duracion) : '') + row('Fotografía', e.fotografia) + row('Música', e.musica) + row('Protagonista', e.protagonista) + row('Guionista', e.guionista);
     if (e.basada) html += row('Basada en', e.basada + (e.autor_original ? ' — ' + e.autor_original : ''));
-    html += row('Temporadas', e.temporadas) + row('Visto', `${e.mes||''} ${e.anio||''}`);
+    html += row('Vista', `${e.mes||''} ${e.anio||''}`);
+  } else { // serie
+    const capInfo = (e.capActual || e.capTotal) ? `Cap. ${e.capActual||0} / ${e.capTotal||'?'}` : null;
+    const pctCap = e.capTotal > 0 ? `${Math.round((e.capActual||0)/e.capTotal*100)}%` : null;
+    html += row('Director', e.director) + row('Estreno', e.anio_est) + row('Temporadas', e.temporadas) + row('Protagonista', e.protagonista) + row('Música', e.musica) + row('Guionista', e.guionista);
+    if (e.basada) html += row('Basada en', e.basada + (e.autor_original ? ' — ' + e.autor_original : ''));
+    if (e.estado === 'viendo') {
+      html += row('Progreso', capInfo ? `${capInfo}${pctCap?' · '+pctCap:''}` : 'Viendo');
+    }
+    html += row('Vista', `${e.mes||''} ${e.anio||''}`);
   }
   if (e.notas) html += `<div style="margin-top:14px;padding:12px;background:var(--cream2);border-radius:4px;font-family:var(--font-serif);font-style:italic;font-size:14px;color:var(--ink2);line-height:1.5;">"${e.notas}"</div>`;
   html += `<div style="display:flex;gap:8px;margin-top:16px;">
@@ -2292,12 +2347,77 @@ function openSerieProgressModal(id) {
     <div>
       <div style="font-family:var(--font-serif);font-weight:700;font-size:15px;">${e.titulo}</div>
       <div style="font-size:12px;color:var(--ink4);margin-top:2px;">${e.director||''}</div>
-      ${e.temporadas ? `<div style="font-size:11px;color:var(--ink4);">${e.temporadas} temporada${e.temporadas>1?'s':''}</div>` : ''}
     </div>`;
   document.getElementById('serie-cap-actual').value = e.capActual || '';
   document.getElementById('serie-cap-total').value = e.capTotal || '';
+  document.getElementById('serie-temporada-actual').value = e.temporadaActual || 1;
+  document.getElementById('serie-temporadas-total').value = e.temporadas || '';
+  // Reset cover panel
+  document.getElementById('serie-cover-panel').style.display = 'none';
+  document.getElementById('serie-cover-chevron').style.transform = '';
+  document.getElementById('serie-cover-url').value = e.cover || '';
+  const prev = document.getElementById('serie-cover-preview');
+  prev.innerHTML = e.cover ? `<img src="${e.cover}" style="width:60px;height:84px;object-fit:cover;border-radius:4px;">` : '';
   updateSerieProgressBar();
   openModal('modal-serie-progress');
+}
+
+function toggleSerieCover() {
+  const panel = document.getElementById('serie-cover-panel');
+  const chevron = document.getElementById('serie-cover-chevron');
+  const open = panel.style.display === 'none';
+  panel.style.display = open ? 'block' : 'none';
+  chevron.style.transform = open ? 'rotate(180deg)' : '';
+}
+
+function previewSerieCover(url) {
+  const prev = document.getElementById('serie-cover-preview');
+  prev.innerHTML = url ? `<img src="${url}" style="width:60px;height:84px;object-fit:cover;border-radius:4px;" onerror="this.style.display='none'">` : '';
+}
+
+function clearSerieCover() {
+  document.getElementById('serie-cover-url').value = '';
+  document.getElementById('serie-cover-preview').innerHTML = '';
+}
+
+function handleSerieCoverFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    document.getElementById('serie-cover-url').value = ev.target.result;
+    previewSerieCover(ev.target.result);
+  };
+  reader.readAsDataURL(file);
+}
+
+function saveSerieCover() {
+  const id = document.getElementById('serie-progress-id').value;
+  const e = db.entries.find(x => x.id === id);
+  if (!e) return;
+  e.cover = document.getElementById('serie-cover-url').value;
+  e._updatedAt = Date.now();
+  saveDB();
+  // Update info header
+  const img = e.cover ? `<img src="${e.cover}" style="width:50px;height:70px;object-fit:cover;border-radius:4px;flex-shrink:0;">` : '';
+  const info = document.getElementById('serie-progress-info');
+  if (info && img) info.querySelector('div,img')?.replaceWith?.(...new DOMParser().parseFromString(img,'text/html').body.childNodes);
+  document.getElementById('serie-cover-panel').style.display = 'none';
+  document.getElementById('serie-cover-chevron').style.transform = '';
+  showToast('✓ Portada guardada');
+  renderHome();
+}
+
+function handleWatchingCoverFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    document.getElementById('watching-cover').value = ev.target.result;
+    const prev = document.getElementById('watching-cover-preview');
+    prev.innerHTML = `<img src="${ev.target.result}" style="width:60px;height:84px;object-fit:cover;border-radius:4px;margin-top:4px;">`;
+  };
+  reader.readAsDataURL(file);
 }
 
 function updateSerieProgressBar() {
@@ -2312,8 +2432,10 @@ function saveSerieProgress() {
   const id = document.getElementById('serie-progress-id').value;
   const e = db.entries.find(x => x.id === id);
   if (!e) return;
-  e.capActual = parseInt(document.getElementById('serie-cap-actual').value) || 0;
-  e.capTotal  = parseInt(document.getElementById('serie-cap-total').value)  || 0;
+  e.capActual        = parseInt(document.getElementById('serie-cap-actual').value) || 0;
+  e.capTotal         = parseInt(document.getElementById('serie-cap-total').value)  || 0;
+  e.temporadaActual  = parseInt(document.getElementById('serie-temporada-actual').value) || 1;
+  e.temporadas       = parseInt(document.getElementById('serie-temporadas-total').value) || e.temporadas || 1;
   e._updatedAt = Date.now();
   saveDB();
   closeModal('modal-serie-progress');
@@ -3110,24 +3232,41 @@ function renderCuriosidadesPeliculas(pels) {
 function renderCuriosidadesSeries(series) {
   const el = document.getElementById('sr-curiosidades'); if(!el) return;
   if (!series.length) { el.innerHTML=''; return; }
-  const totalMin = series.reduce((a,b)=>a+(b.duracion||0),0);
-  const totalTemp = series.reduce((a,b)=>a+(parseInt(b.temporadas)||0),0);
-  const masLarga = series.reduce((a,b)=>(b.duracion||0)>(a.duracion||0)?b:a, series[0]);
+
   const topDir  = topField(series, 'director');
   const topComp = topField(series, 'musica');
   const topProt = topField(series, 'protagonista');
   const basadas = series.filter(e=>e.basada&&e.basada!=='');
-  const avgTemp = series.length ? (totalTemp/series.length).toFixed(1) : 0;
+
+  // Agrupar por título normalizado → contar temporadas máximas
+  const byTitle = {};
+  series.forEach(e => {
+    const key = e.titulo.trim().toLowerCase();
+    const temp = parseInt(e.temporadas) || 1;
+    if (!byTitle[key]) byTitle[key] = { titulo: e.titulo, temp };
+    else if (temp > byTitle[key].temp) byTitle[key].temp = temp;
+  });
+  const franquicias = Object.values(byTitle).filter(x => x.temp > 1).sort((a,b) => b.temp - a.temp);
+  const masTemporadas = franquicias[0] || null;
+  const totalTemp = Object.values(byTitle).reduce((a,b) => a + b.temp, 0);
+  const avgTemp = series.length ? (totalTemp / Object.keys(byTitle).length).toFixed(1) : 0;
+
+  // Año con más series
+  const porAnio = {};
+  series.forEach(e => { if(e.anio) porAnio[e.anio] = (porAnio[e.anio]||0)+1; });
+  const mejorAnio = Object.entries(porAnio).sort((a,b)=>b[1]-a[1])[0];
+
   el.innerHTML = `<div class="card" style="margin-bottom:20px;">
     <div style="font-family:var(--font-serif);font-size:15px;font-weight:700;margin-bottom:10px;">Curiosidades de tus series</div>
     <div style="font-size:13px;color:var(--ink2);line-height:2.1;">
-      ${topDir ?`🎬 Creador/Director favorito: <b>${topDir[0]}</b> (${topDir[1]} serie${topDir[1]>1?'s':''}).<br>`:''}
-      ${topComp?`🎵 Compositor más frecuente: <b>${topComp[0]}</b>.<br>`:''}
-      ${topProt?`⭐ Protagonista más visto: <b>${topProt[0]}</b>.<br>`:''}
-      ${totalMin?`📺 Tiempo total en series: <b>${fmtMin(totalMin)}</b>.<br>`:''}
-      ${masLarga?`🏆 Serie más larga: <b>${masLarga.titulo}</b> (${fmtMin(masLarga.duracion)}).<br>`:''}
-      ${avgTemp?`📋 Media de temporadas por serie: <b>${avgTemp}</b>.<br>`:''}
-      ${basadas.length>0?`🔗 El <b>${Math.round((basadas.length/series.length)*100)}%</b> de tus series está basado en otra obra.<br>`:''}
+      ${topDir  ? `🎬 Creador favorito: <b>${topDir[0]}</b> (${topDir[1]} serie${topDir[1]>1?'s':''}).<br>` : ''}
+      ${topProt ? `⭐ Protagonista más visto: <b>${topProt[0]}</b>.<br>` : ''}
+      ${topComp ? `🎵 Compositor más frecuente: <b>${topComp[0]}</b>.<br>` : ''}
+      ${masTemporadas ? `📺 Serie con más temporadas: <b>${masTemporadas.titulo}</b> (${masTemporadas.temp} temp.).<br>` : ''}
+      ${franquicias.length > 1 ? `🔢 <b>${franquicias.length}</b> series tienen más de una temporada registrada.<br>` : ''}
+      ${avgTemp > 0 ? `📋 Media de temporadas por serie: <b>${avgTemp}</b>.<br>` : ''}
+      ${mejorAnio ? `📅 Año con más series vistas: <b>${mejorAnio[0]}</b> (${mejorAnio[1]} series).<br>` : ''}
+      ${basadas.length > 0 ? `🔗 El <b>${Math.round((basadas.length/series.length)*100)}%</b> de tus series está basado en otra obra.<br>` : ''}
     </div></div>`;
 }
 
@@ -3691,23 +3830,24 @@ function saveWatchingEntry() {
     id: 'e_' + Date.now(),
     type: 'serie',
     titulo,
-    director:     document.getElementById('watching-director').value.trim(),
-    anio_est:     parseInt(document.getElementById('watching-anio-est').value) || null,
-    temporadas:   parseInt(document.getElementById('watching-temporadas').value) || 1,
-    protagonista: document.getElementById('watching-protagonista').value.trim(),
-    capActual:    parseInt(document.getElementById('watching-cap-actual').value) || 0,
-    capTotal:     parseInt(document.getElementById('watching-cap-total').value)  || 0,
-    cover:        document.getElementById('watching-cover').value.trim(),
+    director:        document.getElementById('watching-director').value.trim(),
+    anio_est:        parseInt(document.getElementById('watching-anio-est').value) || null,
+    temporadas:      parseInt(document.getElementById('watching-temporadas').value) || 1,
+    temporadaActual: parseInt(document.getElementById('watching-temporada-actual').value) || 1,
+    protagonista:    document.getElementById('watching-protagonista').value.trim(),
+    capActual:       parseInt(document.getElementById('watching-cap-actual').value) || 0,
+    capTotal:        parseInt(document.getElementById('watching-cap-total').value)  || 0,
+    cover:           document.getElementById('watching-cover').value.trim(),
     estado: 'viendo',
     rating: 0, notas: '',
     _updatedAt: Date.now()
   };
   // Reset form
   ['watching-titulo','watching-director','watching-anio-est','watching-protagonista','watching-cap-actual','watching-cap-total','watching-cover'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.value = '';
+    const el = document.getElementById(id); if (el) el.value = '';
   });
   document.getElementById('watching-temporadas').value = 1;
+  document.getElementById('watching-temporada-actual').value = 1;
   document.getElementById('watching-progress-bar').style.width = '0%';
   document.getElementById('watching-progress-pct').textContent = '';
   db.entries.push(entry);
