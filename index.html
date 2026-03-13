@@ -448,6 +448,10 @@ select.input { cursor: pointer; }
 ::-webkit-scrollbar-track { background: var(--cream); }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 </style>
+<!-- Firebase compat SDKs (carga síncrona, sin módulos) -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 </head>
 <body>
 <!-- ══════ AUTH OVERLAY ══════ -->
@@ -1272,16 +1276,10 @@ select.input { cursor: pointer; }
 
 <div class="toast" id="toast"></div>
 
-<script type="module">
+<script>
 // ═══════════════════════════════════
-//  FIREBASE CONFIG
+//  FIREBASE CONFIG — compat SDK
 // ═══════════════════════════════════
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, updateProfile, onAuthStateChanged, signOut }
-  from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import { getFirestore, doc, getDoc, setDoc, onSnapshot, enableIndexedDbPersistence }
-  from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-
 const firebaseConfig = {
   apiKey: "AIzaSyBKMfDz3XLJCmjjaYdeT_o1Z05T2yub_Qc",
   authDomain: "lumen-6ed85.firebaseapp.com",
@@ -1290,16 +1288,10 @@ const firebaseConfig = {
   messagingSenderId: "473887918286",
   appId: "1:473887918286:web:e3ee5a38f52e9aa107e89f"
 };
-
-const firebaseApp = initializeApp(firebaseConfig);
-const auth = getAuth(firebaseApp);
-const firestore = getFirestore(firebaseApp);
-
-// Habilitar persistencia offline
-enableIndexedDbPersistence(firestore).catch(() => {});
-
-// ── Handle redirect result on page load ──
-// (kept for compatibility, no-op with email auth)
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const firestore = firebase.firestore();
+firestore.enablePersistence().catch(() => {});
 
 // ═══════════════════════════════════
 //  DATA — local + cloud
@@ -1321,9 +1313,9 @@ function saveDB() {
 
 function saveDB() {
   localStorage.setItem(DB_KEY, JSON.stringify(db));
-  if (currentUser && typeof firestore !== 'undefined') {
+  if (currentUser) {
     setSyncStatus('syncing');
-    setDoc(doc(firestore, 'users', currentUser.uid, 'data', 'library'), {
+    firestore.collection('users').doc(currentUser.uid).collection('data').doc('library').set({
       entries: db.entries, updatedAt: Date.now()
     }).then(() => setSyncStatus('ok')).catch(() => setSyncStatus('offline'));
   }
@@ -1332,7 +1324,7 @@ function saveDB() {
 async function syncToFirestore() {
   if (!currentUser) return;
   try {
-    await setDoc(doc(firestore, 'users', currentUser.uid, 'data', 'library'), {
+    await firestore.collection('users').doc(currentUser.uid).collection('data').doc('library').set({
       entries: db.entries, updatedAt: Date.now()
     });
   } catch(e) { console.warn('sync offline:', e.message); }
@@ -1340,20 +1332,18 @@ async function syncToFirestore() {
 
 function subscribeToFirestore(uid) {
   if (unsubscribeSnapshot) unsubscribeSnapshot();
-  const docRef = doc(firestore, 'users', uid, 'data', 'library');
-  unsubscribeSnapshot = onSnapshot(docRef, { includeMetadataChanges: false }, snap => {
-    if (snap.exists()) {
+  const docRef = firestore.collection('users').doc(uid).collection('data').doc('library');
+  unsubscribeSnapshot = docRef.onSnapshot({ includeMetadataChanges: false }, snap => {
+    if (snap.exists) {
       const remote = snap.data();
-      // Merge: keep local entries that aren't in remote (offline additions)
       const remoteIds = new Set((remote.entries || []).map(e => e.id));
       const localOnly = db.entries.filter(e => !remoteIds.has(e.id));
       db.entries = [...(remote.entries || []), ...localOnly];
       localStorage.setItem(DB_KEY, JSON.stringify(db));
-      // Re-upload merged if there were local-only items
       if (localOnly.length > 0) syncToFirestore();
       refreshCurrentScreen();
     }
-  }, () => {}); // ignore offline errors
+  }, () => {});
 }
 
 let db = loadDB();
@@ -3592,13 +3582,13 @@ async function loginEmail() {
   if (!email || !pass) { authErr('Ingresa tu correo y contraseña.'); return; }
   authErr('');
   try {
-    await signInWithEmailAndPassword(auth, email, pass);
+    await auth.signInWithEmailAndPassword(email, pass);
   } catch(e) {
     const msgs = {
-      'auth/user-not-found':   'No existe una cuenta con ese correo.',
-      'auth/wrong-password':   'Contraseña incorrecta.',
-      'auth/invalid-email':    'Correo no válido.',
-      'auth/too-many-requests':'Demasiados intentos. Espera unos minutos.',
+      'auth/user-not-found':     'No existe una cuenta con ese correo.',
+      'auth/wrong-password':     'Contraseña incorrecta.',
+      'auth/invalid-email':      'Correo no válido.',
+      'auth/too-many-requests':  'Demasiados intentos. Espera unos minutos.',
       'auth/invalid-credential': 'Correo o contraseña incorrectos.',
     };
     authErr(msgs[e.code] || 'Error: ' + e.message);
@@ -3613,8 +3603,8 @@ async function registerEmail() {
   if (pass.length < 6) { authErr('La contraseña debe tener al menos 6 caracteres.'); return; }
   authErr('');
   try {
-    const cred = await createUserWithEmailAndPassword(auth, email, pass);
-    if (name) await updateProfile(cred.user, { displayName: name });
+    const cred = await auth.createUserWithEmailAndPassword(email, pass);
+    if (name) await cred.user.updateProfile({ displayName: name });
   } catch(e) {
     const msgs = {
       'auth/email-already-in-use': 'Ya existe una cuenta con ese correo.',
@@ -3629,7 +3619,7 @@ async function resetPassword() {
   const email = document.getElementById('auth-email').value.trim();
   if (!email) { authErr('Ingresa tu correo primero.'); return; }
   try {
-    await sendPasswordResetEmail(auth, email);
+    await auth.sendPasswordResetEmail(email);
     authOk('✓ Te enviamos un correo para restablecer tu contraseña.');
   } catch(e) {
     authErr('No se pudo enviar el correo. Verifica la dirección.');
@@ -3639,7 +3629,7 @@ async function resetPassword() {
 async function logOut() {
   closeUserMenu();
   if (unsubscribeSnapshot) { unsubscribeSnapshot(); unsubscribeSnapshot = null; }
-  await signOut(auth);
+  await auth.signOut();
 }
 
 async function forcSync() {
@@ -3707,18 +3697,16 @@ window.addEventListener('offline', () => setSyncStatus('offline'));
 // ═══════════════════════════════════
 //  AUTH STATE OBSERVER — main entry point
 // ═══════════════════════════════════
-onAuthStateChanged(auth, async user => {
+auth.onAuthStateChanged(async user => {
   const overlay = document.getElementById('auth-overlay');
   if (user) {
     currentUser = user;
     overlay.style.display = 'none';
     updateUserUI(user);
-
-    // Load from Firestore first (merging with any local data)
     setSyncStatus('syncing');
     try {
-      const snap = await getDoc(doc(firestore, 'users', user.uid, 'data', 'library'));
-      if (snap.exists()) {
+      const snap = await firestore.collection('users').doc(user.uid).collection('data').doc('library').get();
+      if (snap.exists) {
         const remote = snap.data();
         const remoteIds = new Set((remote.entries||[]).map(e=>e.id));
         const localOnly = db.entries.filter(e=>!remoteIds.has(e.id));
@@ -3726,12 +3714,9 @@ onAuthStateChanged(auth, async user => {
         localStorage.setItem(DB_KEY, JSON.stringify(db));
         if (localOnly.length > 0) await syncToFirestore();
       } else if (db.entries.length > 0) {
-        // First login — upload local data
         await syncToFirestore();
       }
-    } catch(e) {
-      // Offline — work with local data
-    }
+    } catch(e) { /* offline */ }
     setSyncStatus('ok');
     subscribeToFirestore(user.uid);
     renderHome();
@@ -3776,40 +3761,17 @@ Object.assign(window, {
   // Reading / Watching
   saveNewReading, toggleReadingMode, finishSerie,
 });
-</script>
 
-<!-- Auth buttons wired AFTER module loads to avoid timing issues -->
-<script>
-function waitForAuth(cb, tries) {
-  tries = tries || 0;
-  if (typeof window.loginEmail === 'function') { cb(); }
-  else if (tries < 100) { setTimeout(() => waitForAuth(cb, tries + 1), 50); }
-}
-waitForAuth(function() {
-  var tl = document.getElementById('tab-login');
-  var tr = document.getElementById('tab-register');
-  var bl = document.getElementById('btn-login-email');
-  var br = document.getElementById('btn-register-email');
-  var bf = document.getElementById('btn-forgot-password');
-  var ei = document.getElementById('auth-email');
-  var pi = document.getElementById('auth-password');
-  var rei= document.getElementById('auth-reg-email');
-  var rpi= document.getElementById('auth-reg-password');
-
-  if (tl) tl.addEventListener('click', function() { window.authTab('login'); });
-  if (tr) tr.addEventListener('click', function() { window.authTab('register'); });
-  if (bl) bl.addEventListener('click', function() { window.loginEmail(); });
-  if (br) br.addEventListener('click', function() { window.registerEmail(); });
-  if (bf) bf.addEventListener('click', function() { window.resetPassword(); });
-
-  // Allow Enter key in login fields
-  function onEnterLogin(e) { if (e.key === 'Enter') window.loginEmail(); }
-  function onEnterReg(e)   { if (e.key === 'Enter') window.registerEmail(); }
-  if (ei) ei.addEventListener('keydown', onEnterLogin);
-  if (pi) pi.addEventListener('keydown', onEnterLogin);
-  if (rei) rei.addEventListener('keydown', onEnterReg);
-  if (rpi) rpi.addEventListener('keydown', onEnterReg);
-});
+// ── Wire auth buttons directly inside module (guaranteed to run after all functions exist) ──
+document.getElementById('tab-login')?.addEventListener('click', () => authTab('login'));
+document.getElementById('tab-register')?.addEventListener('click', () => authTab('register'));
+document.getElementById('btn-login-email')?.addEventListener('click', () => loginEmail());
+document.getElementById('btn-register-email')?.addEventListener('click', () => registerEmail());
+document.getElementById('btn-forgot-password')?.addEventListener('click', () => resetPassword());
+document.getElementById('auth-email')?.addEventListener('keydown', e => { if(e.key==='Enter') loginEmail(); });
+document.getElementById('auth-password')?.addEventListener('keydown', e => { if(e.key==='Enter') loginEmail(); });
+document.getElementById('auth-reg-email')?.addEventListener('keydown', e => { if(e.key==='Enter') registerEmail(); });
+document.getElementById('auth-reg-password')?.addEventListener('keydown', e => { if(e.key==='Enter') registerEmail(); });
 </script>
 </body>
 </html>
