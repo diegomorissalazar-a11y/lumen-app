@@ -9,6 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
 <style>
 :root {
   --cream: #f5f0e8;
@@ -66,10 +67,10 @@ html, body {
   flex: 1; display: flex; flex-direction: column; align-items: center;
   justify-content: center; gap: 3px; background: none; border: none;
   color: var(--ink4); cursor: pointer; transition: color var(--transition);
-  font-family: var(--font-sans); font-size: 9px; font-weight: 700;
-  letter-spacing: 1.5px; text-transform: uppercase;
+  font-family: var(--font-sans); font-size: 8px; font-weight: 700;
+  letter-spacing: 1px; text-transform: uppercase;
 }
-.nav-btn svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 1.6; }
+.nav-btn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.6; }
 .nav-btn.active { color: var(--gold); }
 
 /* ── BUTTONS ── */
@@ -370,6 +371,42 @@ select.input { cursor: pointer; }
 .pag-btn:disabled { opacity: 0.3; cursor: default; }
 .pag-btn:not(:disabled):hover { background: var(--ink); color: var(--cream); border-color: var(--ink); }
 .pag-info { font-size: 12px; color: var(--ink3); font-weight: 700; min-width: 80px; text-align: center; }
+
+/* ── GÉNEROS ── */
+.genero-chip {
+  padding:5px 11px; border-radius:20px; border:1.5px solid var(--border);
+  background:#fff; font-size:11px; font-weight:700; letter-spacing:0.5px;
+  cursor:pointer; font-family:var(--font-sans); color:var(--ink3);
+  transition:all 0.15s;
+}
+.genero-chip.active {
+  background:var(--ink); color:var(--cream); border-color:var(--ink);
+}
+/* ── RACHAS ── */
+.racha-widget {
+  margin:0 20px 12px; background:#fff; border:1px solid var(--border);
+  border-radius:8px; padding:14px 16px;
+  display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;
+}
+.racha-box { display:flex; flex-direction:column; align-items:center; gap:2px; }
+.racha-num { font-family:var(--font-serif); font-size:28px; font-weight:700; font-style:italic; color:var(--ink); line-height:1; }
+.racha-label { font-size:9px; letter-spacing:1.5px; text-transform:uppercase; color:var(--ink4); text-align:center; }
+.racha-icon { font-size:18px; margin-bottom:2px; }
+/* ── HEATMAP ── */
+.heatmap-wrap { padding:0 20px 16px; }
+.heatmap-grid { display:grid; grid-template-columns:repeat(53,1fr); gap:2px; margin-top:8px; }
+.heatmap-cell { aspect-ratio:1; border-radius:2px; background:var(--cream3); }
+.heatmap-cell.lvl1 { background:#d4e8d4; }
+.heatmap-cell.lvl2 { background:#8ec98e; }
+.heatmap-cell.lvl3 { background:#4a9e6b; }
+.heatmap-cell.lvl4 { background:#1a6e3c; }
+/* ── COMPARADOR ── */
+.comparador-cols { display:grid; grid-template-columns:1fr 1fr; gap:12px; padding:0 20px 16px; }
+.comparador-col { background:#fff; border:1px solid var(--border); border-radius:8px; padding:12px; }
+.comparador-year-label { font-family:var(--font-serif); font-size:18px; font-weight:700; margin-bottom:8px; color:var(--ink); }
+.comparador-kpi { display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px solid var(--cream2); font-size:12px; }
+.comparador-kpi-label { color:var(--ink4); }
+.comparador-kpi-val { font-weight:700; color:var(--ink); }
 
 /* ── NOTAS ── */
 .notas-section { margin-top:16px; border-top:1px solid var(--cream3); padding-top:12px; }
@@ -898,6 +935,222 @@ select.input { cursor: pointer; }
   </div>
 </div>
 
+<!-- ══════ SCREEN: HÁBITOS ══════ -->
+<div id="screen-habitos" class="screen">
+  <div class="topbar">
+    <div><div class="topbar-logo">LUMEN</div><div class="topbar-sub">Hábitos</div></div>
+  </div>
+  <div style="padding:16px 20px;display:flex;flex-direction:column;gap:16px;">
+    <!-- Rachas -->
+    <div id="habitos-rachas"></div>
+    <!-- Heatmap -->
+    <div id="habitos-heatmap-wrap">
+      <div class="chart-section-title" style="margin-bottom:4px;">Actividad lectora</div>
+      <p style="font-size:11px;color:var(--ink4);margin-bottom:10px;">Cada celda es un día. Color = páginas o registros.</p>
+      <div style="display:flex;gap:8px;margin-bottom:10px;">
+        <select id="heatmap-year-sel" class="input" style="width:auto;font-size:12px;padding:6px 10px;" onchange="renderHabitos()"></select>
+      </div>
+      <div id="habitos-heatmap" style="overflow-x:auto;"></div>
+      <div style="display:flex;gap:4px;align-items:center;margin-top:8px;">
+        <span style="font-size:10px;color:var(--ink4);">Menos</span>
+        <div style="width:12px;height:12px;border-radius:2px;background:#ede7d9;border:1px solid var(--border);"></div>
+        <div style="width:12px;height:12px;border-radius:2px;background:#c8b87a;"></div>
+        <div style="width:12px;height:12px;border-radius:2px;background:#c8952a;"></div>
+        <div style="width:12px;height:12px;border-radius:2px;background:#8b6010;"></div>
+        <div style="width:12px;height:12px;border-radius:2px;background:#1a1510;"></div>
+        <span style="font-size:10px;color:var(--ink4);">Más</span>
+      </div>
+    </div>
+    <!-- Comparador de años -->
+    <div id="habitos-comparador-wrap">
+      <div class="chart-section-title" style="margin-bottom:8px;">Comparador de años</div>
+      <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+        <select id="comp-year-a" class="input" style="width:auto;font-size:12px;padding:6px 10px;" onchange="renderComparador()"></select>
+        <span style="font-size:14px;font-weight:700;color:var(--ink3);align-self:center;">vs</span>
+        <select id="comp-year-b" class="input" style="width:auto;font-size:12px;padding:6px 10px;" onchange="renderComparador()"></select>
+      </div>
+      <div id="habitos-comparador"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ SCREEN: MAPAS ══════ -->
+<div id="screen-mapas" class="screen">
+  <div class="topbar">
+    <div>
+      <div class="topbar-logo">LUMEN</div>
+      <div class="topbar-sub">Mapas</div>
+    </div>
+  </div>
+  <!-- Tabs -->
+  <div style="display:flex;border-bottom:2px solid var(--border);background:#fff;">
+    <button id="mapa-tab-influencias" onclick="switchMapaTab('influencias')"
+      style="flex:1;padding:12px;border:none;background:none;font-family:var(--font-sans);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;color:var(--gold);border-bottom:2px solid var(--gold);margin-bottom:-2px;">
+      🔗 Influencias
+    </button>
+    <button id="mapa-tab-rutas" onclick="switchMapaTab('rutas')"
+      style="flex:1;padding:12px;border:none;background:none;font-family:var(--font-sans);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;color:var(--ink4);border-bottom:2px solid transparent;margin-bottom:-2px;">
+      🗺 Rutas de lectura
+    </button>
+  </div>
+
+  <!-- TAB: INFLUENCIAS -->
+  <div id="mapa-influencias-panel" style="display:flex;flex-direction:column;flex:1;overflow:hidden;">
+    <div style="padding:10px 16px;display:flex;gap:8px;align-items:center;border-bottom:1px solid var(--border);flex-shrink:0;">
+      <button class="btn btn-secondary btn-sm" style="width:auto;" onclick="openModalInfluencia()">+ Añadir relación</button>
+      <button class="btn btn-secondary btn-sm" style="width:auto;" onclick="renderMapaInfluencias()">↻ Actualizar</button>
+      <span id="inf-count" style="font-size:11px;color:var(--ink4);margin-left:auto;"></span>
+    </div>
+    <div id="mapa-influencias-svg" style="flex:1;overflow:hidden;position:relative;cursor:grab;">
+      <div id="inf-empty" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;color:var(--ink4);">
+        <div style="font-size:32px;">🔗</div>
+        <div style="font-size:13px;font-style:italic;">Sin relaciones aún.<br>Añade una desde aquí o desde cualquier ficha.</div>
+      </div>
+    </div>
+    <!-- Legend -->
+    <div id="inf-legend" style="display:none;padding:8px 16px;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:8px;flex-shrink:0;">
+      <span style="font-size:10px;color:var(--ink4);font-weight:700;letter-spacing:1px;text-transform:uppercase;width:100%;">Tipo de relación:</span>
+      <span style="font-size:10px;">🟠 Cita directa</span>
+      <span style="font-size:10px;">🟡 Cita indirecta</span>
+      <span style="font-size:10px;">🔵 Uso de personaje</span>
+      <span style="font-size:10px;">🟢 Contexto histórico</span>
+      <span style="font-size:10px;">🟣 Continuación</span>
+    </div>
+  </div>
+
+  <!-- TAB: RUTAS -->
+  <div id="mapa-rutas-panel" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+    <div style="padding:10px 16px;display:flex;gap:8px;align-items:center;border-bottom:1px solid var(--border);flex-shrink:0;">
+      <button class="btn btn-secondary btn-sm" style="width:auto;" onclick="openModalRuta()">+ Añadir conexión</button>
+      <button class="btn btn-secondary btn-sm" style="width:auto;" onclick="renderMapaRutas()">↻ Actualizar</button>
+      <span id="ruta-count" style="font-size:11px;color:var(--ink4);margin-left:auto;"></span>
+    </div>
+    <div id="mapa-rutas-svg" style="flex:1;overflow:hidden;position:relative;cursor:grab;">
+      <div id="ruta-empty" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;color:var(--ink4);">
+        <div style="font-size:32px;">🗺</div>
+        <div style="font-size:13px;font-style:italic;">Sin conexiones aún.<br>¿Qué te llevó a tu último libro?</div>
+      </div>
+    </div>
+    <div id="ruta-legend" style="display:none;padding:8px 16px;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:8px;flex-shrink:0;">
+      <span style="font-size:10px;color:var(--ink4);font-weight:700;letter-spacing:1px;text-transform:uppercase;width:100%;">Tipo de conexión:</span>
+      <span style="font-size:10px;">📖 Referencia en libro</span>
+      <span style="font-size:10px;">👤 Recomendación</span>
+      <span style="font-size:10px;">🔍 Curiosidad temática</span>
+      <span style="font-size:10px;">✍ Mismo autor</span>
+      <span style="font-size:10px;">💫 Contexto vital</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ MODAL: AÑADIR INFLUENCIA ══════ -->
+<div id="modal-influencia" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title">Nueva relación de influencia</div>
+      <button class="btn-icon" onclick="closeModal('modal-influencia')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="inf-edit-id">
+      <div class="field">
+        <label>Fuente (quien influye / cita)</label>
+        <input class="input" type="text" id="inf-fuente" placeholder="Autor o título de la obra fuente" list="inf-fuente-list">
+        <datalist id="inf-fuente-list"></datalist>
+      </div>
+      <div class="field">
+        <label>Destino (quien es influido / citado)</label>
+        <input class="input" type="text" id="inf-destino" placeholder="Autor o título de la obra destino" list="inf-destino-list">
+        <datalist id="inf-destino-list"></datalist>
+      </div>
+      <div class="field">
+        <label>Tipo de relación</label>
+        <select class="input" id="inf-tipo">
+          <option value="cita_directa">🟠 Cita directa</option>
+          <option value="cita_indirecta">🟡 Cita indirecta</option>
+          <option value="uso_personaje">🔵 Uso de personaje</option>
+          <option value="contexto_historico">🟢 Contexto histórico</option>
+          <option value="continuacion">🟣 Continuación / adaptación</option>
+        </select>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div class="field">
+          <label>Libro donde lo encontré</label>
+          <input class="input" type="text" id="inf-libro-ref" placeholder="Título de mi libro" list="inf-libro-list">
+          <datalist id="inf-libro-list"></datalist>
+        </div>
+        <div class="field">
+          <label>Página</label>
+          <input class="input" type="number" id="inf-pagina" placeholder="57">
+        </div>
+      </div>
+      <div class="field">
+        <label>Texto de referencia (opcional)</label>
+        <textarea class="input" id="inf-texto" rows="3" placeholder="Transcripción o descripción de la referencia..." style="resize:vertical;font-family:var(--font-serif);font-size:13px;"></textarea>
+      </div>
+      <button class="btn btn-primary" onclick="saveInfluencia()">Guardar relación</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ MODAL: AÑADIR RUTA ══════ -->
+<div id="modal-ruta" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title">Nueva conexión de lectura</div>
+      <button class="btn-icon" onclick="closeModal('modal-ruta')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="ruta-edit-id">
+      <div class="field">
+        <label>¿Qué te llevó al libro?</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px;" id="ruta-fuente-tipo-btns">
+          <button class="ruta-tipo-btn active" data-tipo="libro" onclick="selectRutaFuenteTipo('libro',this)" style="padding:8px 4px;border:2px solid var(--gold);border-radius:4px;background:#fff8e8;font-size:10px;font-weight:700;letter-spacing:0.5px;cursor:pointer;font-family:var(--font-sans);color:var(--gold);">📚 Libro</button>
+          <button class="ruta-tipo-btn" data-tipo="evento" onclick="selectRutaFuenteTipo('evento',this)" style="padding:8px 4px;border:2px solid var(--border);border-radius:4px;background:#fff;font-size:10px;font-weight:700;letter-spacing:0.5px;cursor:pointer;font-family:var(--font-sans);color:var(--ink3);">🎙 Evento</button>
+          <button class="ruta-tipo-btn" data-tipo="origen" onclick="selectRutaFuenteTipo('origen',this)" style="padding:8px 4px;border:2px solid var(--border);border-radius:4px;background:#fff;font-size:10px;font-weight:700;letter-spacing:0.5px;cursor:pointer;font-family:var(--font-sans);color:var(--ink3);">⭐ Origen</button>
+        </div>
+        <div id="ruta-fuente-libro-field">
+          <input class="input" type="text" id="ruta-fuente-libro" placeholder="Título del libro que me llevó..." list="ruta-fuente-list">
+          <datalist id="ruta-fuente-list"></datalist>
+        </div>
+        <div id="ruta-fuente-evento-field" style="display:none;">
+          <select class="input" id="ruta-evento-tipo" style="margin-bottom:8px;">
+            <option value="charla">🎙 Charla / podcast / entrevista</option>
+            <option value="persona">👤 Recomendación de persona</option>
+            <option value="curiosidad">🔍 Curiosidad temática propia</option>
+            <option value="viaje">✈️ Viaje / experiencia vital</option>
+            <option value="algoritmo">🤖 Algoritmo / librería / lista</option>
+          </select>
+          <input class="input" type="text" id="ruta-evento-desc" placeholder="Describe brevemente el evento...">
+        </div>
+        <div id="ruta-fuente-origen-field" style="display:none;">
+          <p style="font-size:12px;color:var(--ink4);font-style:italic;margin:4px 0 0;">Este es un libro de origen — el punto de partida de una cadena.</p>
+        </div>
+      </div>
+      <div class="field">
+        <label>Libro destino (al que llegué)</label>
+        <input class="input" type="text" id="ruta-destino" placeholder="Título del libro al que llegué..." list="ruta-destino-list">
+        <datalist id="ruta-destino-list"></datalist>
+      </div>
+      <div class="field">
+        <label>Tipo de conexión</label>
+        <select class="input" id="ruta-tipo">
+          <option value="referencia">📖 Referencia explícita en el libro</option>
+          <option value="recomendacion">👤 Recomendación directa</option>
+          <option value="curiosidad">🔍 Curiosidad temática</option>
+          <option value="mismo_autor">✍ Mismo autor</option>
+          <option value="contexto_vital">💫 Contexto vital / momento de vida</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Nota (opcional)</label>
+        <textarea class="input" id="ruta-nota" rows="2" placeholder="¿Cómo hiciste esta conexión?" style="resize:vertical;font-family:var(--font-serif);font-size:13px;"></textarea>
+      </div>
+      <button class="btn btn-primary" onclick="saveRuta()">Guardar conexión</button>
+    </div>
+  </div>
+</div>
+
 <!-- ══════ USER MENU ══════ -->
 <div id="user-menu">
   <div class="user-menu-header">
@@ -940,6 +1193,10 @@ select.input { cursor: pointer; }
   <button class="nav-btn" id="nav-import" onclick="openModal('modal-import')">
     <svg viewBox="0 0 24 24"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0018 9h-1.26A8 8 0 103 16.3"/></svg>
     Importar
+  </button>
+  <button class="nav-btn" id="nav-habitos" onclick="gotoScreen('habitos')">
+    <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 9h18"/><circle cx="8" cy="14" r="1" fill="currentColor"/><circle cx="12" cy="14" r="1" fill="currentColor"/><circle cx="16" cy="14" r="1" fill="currentColor"/><circle cx="8" cy="18" r="1" fill="currentColor"/></svg>
+    Hábitos
   </button>
 </nav>
 </div>
@@ -995,14 +1252,33 @@ select.input { cursor: pointer; }
         <div class="field">
           <label>Estado</label>
           <select class="input" id="f-estado">
-            <option value="leido">Leído</option>
+            <option value="leido">Leído ✓</option>
             <option value="leyendo">Leyendo</option>
+            <option value="abandonado">Abandonado ✗</option>
             <option value="pendiente">Pendiente</option>
           </select>
+        </div>
+        <div class="field" id="abandono-field" style="display:none;">
+          <label>¿Por qué lo abandonaste?</label>
+          <input class="input" type="text" id="f-abandono" placeholder="Motivo opcional...">
         </div>
         <div class="field" id="progreso-field">
           <label>Progreso (<span id="prog-pct">0</span>%)</label>
           <input type="range" id="f-progreso" min="0" max="100" value="0" style="width:100%;accent-color:var(--gold);" oninput="document.getElementById('prog-pct').textContent=this.value">
+        </div>
+        <div class="field">
+          <label>Géneros</label>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;" id="generos-chips">
+            <button type="button" class="genero-chip" data-g="Novela"     onclick="toggleGenero(this)">Novela</button>
+            <button type="button" class="genero-chip" data-g="Cuento"     onclick="toggleGenero(this)">Cuento</button>
+            <button type="button" class="genero-chip" data-g="Poesía"     onclick="toggleGenero(this)">Poesía</button>
+            <button type="button" class="genero-chip" data-g="Ensayo"     onclick="toggleGenero(this)">Ensayo</button>
+            <button type="button" class="genero-chip" data-g="Historia"   onclick="toggleGenero(this)">Historia</button>
+            <button type="button" class="genero-chip" data-g="Biografía"  onclick="toggleGenero(this)">Biografía</button>
+            <button type="button" class="genero-chip" data-g="Crónica"    onclick="toggleGenero(this)">Crónica</button>
+            <button type="button" class="genero-chip" data-g="Ciencia ficción" onclick="toggleGenero(this)">Ciencia ficción</button>
+            <button type="button" class="genero-chip" data-g="Filosofía"  onclick="toggleGenero(this)">Filosofía</button>
+          </div>
         </div>
         <div class="field"><label>URL portada (opcional)</label><input class="input" type="text" id="f-cover" placeholder="https://..."></div>
       </div>
@@ -1628,6 +1904,8 @@ function gotoScreen(s) {
   if (s === 'library') renderLibrary();
   if (s === 'year') renderYear();
   if (s === 'stats') renderStats();
+  if (s === 'habitos') initHabitos();
+  if (s === 'mapas') switchMapaTab('influencias');
 }
 
 function openModal(id) {
@@ -1676,6 +1954,9 @@ function resetForm() {
   document.getElementById('f-estado').value = 'leido';
   document.getElementById('f-progreso').value = 0;
   document.getElementById('prog-pct').textContent = '0';
+  document.getElementById('abandono-field').style.display = 'none';
+  document.getElementById('f-abandono').value = '';
+  resetGeneros();
   document.getElementById('fp-basada').value = '';
   document.getElementById('fs-basada').value = '';
   currentRating = 0;
@@ -1687,8 +1968,27 @@ document.getElementById('fp-basada').addEventListener('change', function() {
   document.getElementById('fp-autor-original-field').style.display = this.value ? 'block' : 'none';
 });
 document.getElementById('f-estado').addEventListener('change', function() {
-  document.getElementById('progreso-field').style.display = this.value === 'leyendo' ? 'block' : 'none';
+  document.getElementById('progreso-field').style.display  = this.value === 'leyendo'   ? 'block' : 'none';
+  document.getElementById('abandono-field').style.display  = this.value === 'abandonado' ? 'block' : 'none';
 });
+
+function toggleGenero(btn) {
+  btn.classList.toggle('active');
+}
+
+function getGenerosSeleccionados() {
+  return [...document.querySelectorAll('#generos-chips .genero-chip.active')].map(b => b.dataset.g);
+}
+
+function setGenerosSeleccionados(generos) {
+  document.querySelectorAll('#generos-chips .genero-chip').forEach(b => {
+    b.classList.toggle('active', (generos||[]).includes(b.dataset.g));
+  });
+}
+
+function resetGeneros() {
+  document.querySelectorAll('#generos-chips .genero-chip').forEach(b => b.classList.remove('active'));
+}
 
 // ═══════════════════════════════════
 //  SEARCH (Google Books + OMDB)
@@ -1936,6 +2236,8 @@ function saveEntry() {
       anio: parseInt(document.getElementById('f-anio-lect').value) || new Date().getFullYear(),
       estado: document.getElementById('f-estado').value,
       progreso: parseInt(document.getElementById('f-progreso').value),
+      abandono: document.getElementById('f-abandono').value.trim() || null,
+      generos: getGenerosSeleccionados(),
       cover: document.getElementById('f-cover').value };
   } else if (currentType === 'pelicula') {
     const titulo = document.getElementById('fp-titulo').value.trim();
@@ -2316,6 +2618,8 @@ function entryCardHTML(e) {
     ? `<div class="progress-wrap"><div class="progress-fill" style="width:${e.progreso||0}%"></div></div>` : '';
   const notasBadge = (e.notas_lista && e.notas_lista.length > 0)
     ? `<span style="font-size:10px;color:var(--ink4);margin-left:4px;">📝 ${e.notas_lista.length}</span>` : '';
+  const generosBadge = (e.generos && e.generos.length > 0)
+    ? `<span style="font-size:9px;background:var(--cream2);border:1px solid var(--border);border-radius:10px;padding:1px 6px;color:var(--ink3);">${e.generos[0]}</span>` : '';
   const badge = `<span class="badge badge-${e.estado==='leyendo'?'leyendo':e.type}">${e.estado==='leyendo'?'Leyendo':e.type==='libro'?'Libro':e.type==='pelicula'?'Película':'Serie'}</span>`;
   const metaLine = `${e.mes ? e.mes + ' ' : ''}${e.anio || ''}`;
   return `
@@ -2331,6 +2635,7 @@ function entryCardHTML(e) {
           ${badge}
           ${metaLine ? `<span style="font-size:10px;color:var(--ink4);">${metaLine}</span>` : ''}
           ${stars ? `<span class="entry-card-rating">${stars}</span>` : ''}
+          ${generosBadge}
           ${notasBadge}
         </div>
       </div>
@@ -2352,6 +2657,11 @@ function showDetail(id) {
   if (e.type === 'libro') {
     html += row('Autor', e.autor) + row('Editorial', e.editorial) + row('Páginas', e.paginas) + row('Publicado', e.anio_pub) + row('Traductor', e.traductor) + row('Idioma orig.', e.idioma) + row('Leído', `${e.mes||''} ${e.anio||''}`);
     if (e.estado === 'leyendo') html += row('Progreso', e.progreso + '%');
+    if (e.estado === 'abandonado' && e.abandono) html += row('Abandonado', e.abandono);
+    if (e.generos && e.generos.length) {
+      const chips = e.generos.map(g=>`<span style="font-size:11px;background:var(--cream2);border:1px solid var(--border);border-radius:12px;padding:2px 9px;color:var(--ink2);">${g}</span>`).join(' ');
+      html += `<div style="display:flex;gap:8px;padding:7px 0;border-bottom:1px solid var(--cream2);align-items:flex-start;"><span style="font-size:10px;color:var(--ink4);letter-spacing:1.5px;text-transform:uppercase;font-weight:700;width:110px;flex-shrink:0;padding-top:4px;">Géneros</span><div style="display:flex;flex-wrap:wrap;gap:4px;">${chips}</div></div>`;
+    }
   } else if (e.type === 'pelicula') {
     html += row('Director', e.director) + row('Estreno', e.anio_est) + row('Duración', e.duracion ? fmtMin(e.duracion) : '') + row('Fotografía', e.fotografia) + row('Música', e.musica) + row('Protagonista', e.protagonista) + row('Guionista', e.guionista);
     if (e.basada) html += row('Basada en', e.basada + (e.autor_original ? ' — ' + e.autor_original : ''));
@@ -2508,6 +2818,10 @@ function editEntry(id) {
       document.getElementById('f-estado').value = e.estado||'leido';
       document.getElementById('f-progreso').value = e.progreso||0;
       document.getElementById('prog-pct').textContent = e.progreso||0;
+      document.getElementById('progreso-field').style.display  = e.estado==='leyendo'    ? 'block' : 'none';
+      document.getElementById('abandono-field').style.display  = e.estado==='abandonado' ? 'block' : 'none';
+      document.getElementById('f-abandono').value = e.abandono||'';
+      setGenerosSeleccionados(e.generos||[]);
     } else if (e.type === 'pelicula') {
       const map = { titulo:'fp-titulo',director:'fp-director',anio_est:'fp-anio-est',duracion:'fp-duracion',fotografia:'fp-foto',musica:'fp-musica',protagonista:'fp-protagonista',guionista:'fp-guionista',cover:'fp-cover',autor_original:'fp-autor-original' };
       Object.entries(map).forEach(([k,id])=>{ const el=document.getElementById(id); if(el) el.value=e[k]||''; });
@@ -4157,6 +4471,11 @@ function saveProgress() {
     e.progresoPag = pag;
     e.progreso = e.paginas ? Math.round((pag/e.paginas)*100) : 0;
   }
+  // Stamp reading activity date for streak tracking
+  const today = new Date().toISOString().split('T')[0];
+  if (!e.readDates) e.readDates = [];
+  if (!e.readDates.includes(today)) e.readDates.push(today);
+  e._updatedAt = Date.now();
   saveDB();
   closeModal('modal-progress');
   showToast('✓ Progreso actualizado');
@@ -4324,6 +4643,7 @@ function refreshCurrentScreen() {
   else if (currentScreen === 'library') renderLibrary();
   else if (currentScreen === 'year') renderYear();
   else if (currentScreen === 'stats') renderStats();
+  else if (currentScreen === 'habitos') renderHabitos();
 }
 
 // ── Watch online/offline ──
@@ -4359,7 +4679,554 @@ auth.onAuthStateChanged(async user => {
 //  EXPOSE FUNCTIONS TO HTML onclick
 //  (needed because script type="module" is scoped)
 // ═══════════════════════════════════
-// ── Wire auth buttons ──
+// ═══════════════════════════════════
+//  HÁBITOS — RACHAS, HEATMAP, COMPARADOR
+// ═══════════════════════════════════
+
+// Collect all reading activity dates from entries
+function getAllReadDates() {
+  const dates = new Set();
+  db.entries.forEach(e => {
+    // Dates from explicit readDates array (progress updates)
+    if (e.readDates) e.readDates.forEach(d => dates.add(d));
+    // Infer from finishDate
+    if (e.finishDate) dates.add(e.finishDate.split('T')[0]);
+    // Infer from startDate
+    if (e.startDate) dates.add(e.startDate.split('T')[0]);
+  });
+  return dates;
+}
+
+// Get all activity dates with page counts per day
+function getActivityByDate() {
+  const map = {}; // date → pages read
+  db.entries.filter(e => e.type === 'libro').forEach(e => {
+    if (e.readDates && e.paginas) {
+      const pgsPerDay = e.readDates.length > 0 ? Math.round(((e.progreso||0)/100 * e.paginas) / e.readDates.length) : 0;
+      e.readDates.forEach(d => { map[d] = (map[d] || 0) + pgsPerDay; });
+    } else if (e.readDates) {
+      e.readDates.forEach(d => { map[d] = (map[d] || 0) + 1; }); // count as 1 activity
+    }
+    if (e.finishDate) {
+      const d = e.finishDate.split('T')[0];
+      map[d] = (map[d] || 0) + (e.paginas ? Math.round(e.paginas * 0.1) : 1);
+    }
+  });
+  return map;
+}
+
+function calcStreaks() {
+  const dates = [...getAllReadDates()].sort();
+  if (dates.length === 0) return { current: 0, best: 0, bestStart: null, bestEnd: null, total: 0 };
+  let current = 0, best = 0, bestStart = null, bestEnd = null;
+  let streak = 1, streakStart = dates[0];
+  for (let i = 1; i < dates.length; i++) {
+    const prev = new Date(dates[i-1]);
+    const curr = new Date(dates[i]);
+    const diff = (curr - prev) / 86400000;
+    if (diff === 1) {
+      streak++;
+    } else {
+      if (streak > best) { best = streak; bestStart = streakStart; bestEnd = dates[i-1]; }
+      streak = 1; streakStart = dates[i];
+    }
+  }
+  if (streak > best) { best = streak; bestStart = streakStart; bestEnd = dates[dates.length-1]; }
+  // Current streak: check if last date was today or yesterday
+  const today = new Date().toISOString().split('T')[0];
+  const yesterday = new Date(Date.now()-86400000).toISOString().split('T')[0];
+  const lastDate = dates[dates.length-1];
+  if (lastDate === today || lastDate === yesterday) {
+    // Count backwards from last date
+    current = 1;
+    for (let i = dates.length-2; i >= 0; i--) {
+      const d1 = new Date(dates[i+1]), d0 = new Date(dates[i]);
+      if ((d1-d0)/86400000 === 1) current++;
+      else break;
+    }
+  }
+  return { current, best, bestStart, bestEnd, total: dates.length };
+}
+
+function renderHabitos() {
+  if (!document.getElementById('habitos-rachas')) return;
+
+  // ── Populate year selectors ──
+  const years = [...new Set(db.entries.filter(e=>e.anio).map(e=>parseInt(e.anio)))].sort((a,b)=>b-a);
+  const currentYr = new Date().getFullYear();
+  if (years.indexOf(currentYr) === -1) years.unshift(currentYr);
+
+  const heatSel = document.getElementById('heatmap-year-sel');
+  if (heatSel && heatSel.options.length === 0) {
+    years.forEach(y => { heatSel.innerHTML += `<option value="${y}"${y===currentYr?' selected':''}>${y}</option>`; });
+  }
+  const compA = document.getElementById('comp-year-a');
+  const compB = document.getElementById('comp-year-b');
+  if (compA && compA.options.length === 0) {
+    years.forEach(y => { compA.innerHTML += `<option value="${y}"${y===currentYr?' selected':''}>${y}</option>`; });
+    years.forEach(y => { compB.innerHTML += `<option value="${y}"${y===(currentYr-1)?' selected':''}>${y}</option>`; });
+  }
+
+  renderRachas();
+  renderHeatmap();
+  renderComparador();
+}
+
+// ── RACHAS ──
+function renderRachas() {
+  const el = document.getElementById('habitos-rachas'); if(!el) return;
+  const s = calcStreaks();
+  const fmtDate = d => d ? new Date(d).toLocaleDateString('es',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+  el.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+      <div class="stat-box" style="text-align:center;">
+        <div style="font-family:var(--font-serif);font-size:36px;font-weight:700;font-style:italic;color:${s.current>0?'var(--gold)':'var(--ink4)'};">${s.current}</div>
+        <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--ink4);margin-top:4px;">Racha actual</div>
+        <div style="font-size:10px;color:var(--ink4);margin-top:2px;">${s.current>0?'días seguidos':'sin actividad'}</div>
+      </div>
+      <div class="stat-box" style="text-align:center;">
+        <div style="font-family:var(--font-serif);font-size:36px;font-weight:700;font-style:italic;color:var(--red);">${s.best}</div>
+        <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--ink4);margin-top:4px;">Mejor racha</div>
+        <div style="font-size:10px;color:var(--ink4);margin-top:2px;">${s.bestStart?fmtDate(s.bestStart):'—'}</div>
+      </div>
+      <div class="stat-box" style="text-align:center;">
+        <div style="font-family:var(--font-serif);font-size:36px;font-weight:700;font-style:italic;color:var(--ink);">${s.total}</div>
+        <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--ink4);margin-top:4px;">Días con lectura</div>
+        <div style="font-size:10px;color:var(--ink4);margin-top:2px;">registrados</div>
+      </div>
+    </div>`;
+}
+
+// ── HEATMAP ──
+function renderHeatmap() {
+  const el = document.getElementById('habitos-heatmap'); if(!el) return;
+  const yr = parseInt(document.getElementById('heatmap-year-sel')?.value || new Date().getFullYear());
+  const activity = getActivityByDate();
+
+  const DAYS = ['D','L','M','X','J','V','S'];
+  const MONTHS_SHORT = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  const cellSize = 13, gap = 2, unit = cellSize + gap;
+
+  // Build week columns for the year
+  const jan1 = new Date(yr, 0, 1);
+  const dec31 = new Date(yr, 11, 31);
+  const startOffset = jan1.getDay(); // 0=Sun
+  const totalDays = Math.ceil((dec31 - jan1) / 86400000) + 1;
+  const totalCells = startOffset + totalDays;
+  const totalWeeks = Math.ceil(totalCells / 7);
+
+  // Max activity for color scale
+  const vals = Object.values(activity).filter(v=>v>0);
+  const maxVal = vals.length ? Math.max(...vals) : 1;
+
+  function getColor(val) {
+    if (!val) return '#ede7d9';
+    const t = Math.min(val / maxVal, 1);
+    if (t < 0.25) return '#c8b87a';
+    if (t < 0.5)  return '#c8952a';
+    if (t < 0.75) return '#8b6010';
+    return '#1a1510';
+  }
+
+  // SVG dimensions
+  const svgW = totalWeeks * unit + 30; // +30 for day labels
+  const svgH = 7 * unit + 30; // +30 for month labels
+
+  let svg = `<svg width="${svgW}" height="${svgH}" style="font-family:var(--font-sans);">`;
+
+  // Day labels
+  DAYS.forEach((d, i) => {
+    if (i % 2 === 1) { // only show odd days to save space
+      svg += `<text x="0" y="${30 + i * unit + cellSize - 2}" font-size="9" fill="#8a7a68">${d}</text>`;
+    }
+  });
+
+  // Month labels
+  let lastMonth = -1;
+  for (let w = 0; w < totalWeeks; w++) {
+    const dayIdx = w * 7 - startOffset;
+    if (dayIdx >= 0 && dayIdx < totalDays) {
+      const d = new Date(yr, 0, dayIdx + 1);
+      if (d.getMonth() !== lastMonth) {
+        lastMonth = d.getMonth();
+        svg += `<text x="${30 + w * unit}" y="12" font-size="9" fill="#8a7a68">${MONTHS_SHORT[d.getMonth()]}</text>`;
+      }
+    }
+  }
+
+  // Cells
+  for (let w = 0; w < totalWeeks; w++) {
+    for (let dow = 0; dow < 7; dow++) {
+      const dayIdx = w * 7 + dow - startOffset;
+      if (dayIdx < 0 || dayIdx >= totalDays) continue;
+      const date = new Date(yr, 0, dayIdx + 1);
+      const dateStr = date.toISOString().split('T')[0];
+      const val = activity[dateStr] || 0;
+      const color = getColor(val);
+      const x = 30 + w * unit;
+      const y = 18 + dow * unit;
+      const title = val > 0 ? `${dateStr}: ${val} págs/actividad` : dateStr;
+      svg += `<rect x="${x}" y="${y}" width="${cellSize}" height="${cellSize}" rx="2" fill="${color}" opacity="0.9"><title>${title}</title></rect>`;
+    }
+  }
+  svg += '</svg>';
+  el.innerHTML = svg;
+}
+
+// ── COMPARADOR DE AÑOS ──
+function renderComparador() {
+  const el = document.getElementById('habitos-comparador'); if(!el) return;
+  const yrA = parseInt(document.getElementById('comp-year-a')?.value || new Date().getFullYear());
+  const yrB = parseInt(document.getElementById('comp-year-b')?.value || new Date().getFullYear()-1);
+
+  function statsForYear(yr) {
+    const libros   = db.entries.filter(e=>e.type==='libro'&&e.estado==='leido'&&parseInt(e.anio)===yr);
+    const peliculas= db.entries.filter(e=>e.type==='pelicula'&&parseInt(e.anio)===yr);
+    const series   = db.entries.filter(e=>e.type==='serie'&&e.estado==='vista'&&parseInt(e.anio)===yr);
+    const paginas  = libros.reduce((a,b)=>a+(parseInt(b.paginas)||0),0);
+    const autores  = new Set(libros.map(e=>e.autor).filter(Boolean)).size;
+    const directores = new Set([...peliculas,...series].map(e=>e.director).filter(Boolean)).size;
+    const idiomas  = new Set(libros.map(e=>e.idioma).filter(Boolean)).size;
+    return { libros: libros.length, peliculas: peliculas.length, series: series.length, paginas, autores, directores, idiomas, total: libros.length+peliculas.length+series.length };
+  }
+
+  const a = statsForYear(yrA), b = statsForYear(yrB);
+
+  function row(label, va, vb, unit='') {
+    const diff = va - vb;
+    const pct  = vb > 0 ? Math.round((diff/vb)*100) : 0;
+    const arrow = diff > 0 ? `<span style="color:#7ec98f;">▲${Math.abs(pct)}%</span>` : diff < 0 ? `<span style="color:#f08080;">▼${Math.abs(pct)}%</span>` : '<span style="color:var(--ink4);">—</span>';
+    return `
+      <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:8px;padding:10px 0;border-bottom:1px solid var(--cream2);align-items:center;">
+        <div style="font-size:12px;color:var(--ink3);font-weight:700;letter-spacing:1px;text-transform:uppercase;">${label}</div>
+        <div style="font-family:var(--font-serif);font-size:18px;font-weight:700;color:var(--ink);text-align:center;">${va.toLocaleString()}${unit}</div>
+        <div style="font-family:var(--font-serif);font-size:18px;font-weight:700;color:var(--ink4);text-align:center;">${vb.toLocaleString()}${unit}</div>
+        <div style="text-align:center;font-size:12px;font-weight:700;">${arrow}</div>
+      </div>`;
+  }
+
+  el.innerHTML = `
+    <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:8px;padding:0 0 8px;border-bottom:2px solid var(--ink);">
+      <div></div>
+      <div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold);text-align:center;">${yrA}</div>
+      <div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink4);text-align:center;">${yrB}</div>
+      <div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink3);text-align:center;">Δ</div>
+    </div>
+    ${row('📚 Libros leídos', a.libros, b.libros)}
+    ${row('📄 Páginas', a.paginas, b.paginas)}
+    ${row('🎬 Películas', a.peliculas, b.peliculas)}
+    ${row('📺 Series', a.series, b.series)}
+    ${row('✍ Autores únicos', a.autores, b.autores)}
+    ${row('🎬 Directores únicos', a.directores, b.directores)}
+    ${row('🌍 Idiomas', a.idiomas, b.idiomas)}
+    ${row('⭐ Total estímulos', a.total, b.total)}`;
+}
+
+// ═══════════════════════════════════
+//  MAPAS — implementación completa
+// ═══════════════════════════════════
+const MAPAS_KEY = 'lumen_mapas_v1';
+function loadMapas() {
+  try { const r=localStorage.getItem(MAPAS_KEY); return r?JSON.parse(r):{influencias:[],rutas:[]}; }
+  catch { return {influencias:[],rutas:[]}; }
+}
+function saveMapas() { localStorage.setItem(MAPAS_KEY, JSON.stringify(mapas)); }
+let mapas = loadMapas();
+let currentMapaTab = 'influencias';
+
+// ── Tab switch ──
+function switchMapaTab(tab) {
+  currentMapaTab = tab;
+  document.getElementById('mapa-influencias-panel').style.display = tab==='influencias'?'flex':'none';
+  document.getElementById('mapa-rutas-panel').style.display       = tab==='rutas'?'flex':'none';
+  ['influencias','rutas'].forEach(t=>{
+    const btn=document.getElementById('mapa-tab-'+t);
+    if(btn){ btn.style.color=t===tab?'var(--gold)':'var(--ink4)'; btn.style.borderBottom=t===tab?'2px solid var(--gold)':'2px solid transparent'; }
+  });
+  if (tab==='influencias') renderMapaInfluencias();
+  else renderMapaRutas();
+}
+
+// ── Colors ──
+const INF_COLORS = { cita_directa:'#e67e22', cita_indirecta:'#f1c40f', uso_personaje:'#2980b9', contexto_historico:'#27ae60', continuacion:'#8e44ad' };
+const RUTA_COLORS = { referencia:'#c8952a', recomendacion:'#2980b9', curiosidad:'#27ae60', mismo_autor:'#8e44ad', contexto_vital:'#e74c3c' };
+const INF_LABELS  = { cita_directa:'Cita directa', cita_indirecta:'Cita indirecta', uso_personaje:'Uso de personaje', contexto_historico:'Contexto histórico', continuacion:'Continuación' };
+const RUTA_LABELS = { referencia:'Referencia', recomendacion:'Recomendación', curiosidad:'Curiosidad temática', mismo_autor:'Mismo autor', contexto_vital:'Contexto vital' };
+
+// ── Autocomplete helpers ──
+function fillDatalist(id, values) {
+  const dl=document.getElementById(id); if(!dl) return;
+  dl.innerHTML=values.map(v=>`<option value="${v}">`).join('');
+}
+function getAutoresYLibros() {
+  const s=new Set();
+  db.entries.forEach(e=>{ if(e.titulo) s.add(e.titulo); if(e.autor) s.add(e.autor); });
+  return [...s].sort();
+}
+function getTitulosLibros() { return db.entries.map(e=>e.titulo).filter(Boolean).sort(); }
+
+// ══════════════════════════
+//  INFLUENCIAS — CRUD
+// ══════════════════════════
+function openModalInfluencia(editId) {
+  const vals=getAutoresYLibros();
+  fillDatalist('inf-fuente-list', vals);
+  fillDatalist('inf-destino-list', vals);
+  fillDatalist('inf-libro-list', getTitulosLibros());
+  document.getElementById('inf-edit-id').value=editId||'';
+  if (editId) {
+    const inf=mapas.influencias.find(x=>x.id===editId);
+    if (inf) {
+      document.getElementById('inf-fuente').value   =inf.fuente||'';
+      document.getElementById('inf-destino').value  =inf.destino||'';
+      document.getElementById('inf-tipo').value     =inf.tipo||'cita_directa';
+      document.getElementById('inf-libro-ref').value=inf.libro_ref||'';
+      document.getElementById('inf-pagina').value   =inf.pagina||'';
+      document.getElementById('inf-texto').value    =inf.texto||'';
+    }
+  } else {
+    ['inf-fuente','inf-destino','inf-libro-ref','inf-pagina','inf-texto'].forEach(id=>{
+      const el=document.getElementById(id); if(el) el.value='';
+    });
+    document.getElementById('inf-tipo').value='cita_directa';
+  }
+  openModal('modal-influencia');
+}
+
+function saveInfluencia() {
+  const fuente =document.getElementById('inf-fuente').value.trim();
+  const destino=document.getElementById('inf-destino').value.trim();
+  if (!fuente||!destino) { showToast('Ingresa fuente y destino'); return; }
+  const editId=document.getElementById('inf-edit-id').value;
+  const obj={
+    id:       editId||'inf_'+Date.now(),
+    fuente, destino,
+    tipo:     document.getElementById('inf-tipo').value,
+    libro_ref:document.getElementById('inf-libro-ref').value.trim(),
+    pagina:   parseInt(document.getElementById('inf-pagina').value)||null,
+    texto:    document.getElementById('inf-texto').value.trim(),
+    createdAt:editId?(mapas.influencias.find(x=>x.id===editId)?.createdAt||Date.now()):Date.now()
+  };
+  if (editId) { const i=mapas.influencias.findIndex(x=>x.id===editId); if(i>=0) mapas.influencias[i]=obj; }
+  else mapas.influencias.push(obj);
+  saveMapas();
+  closeModal('modal-influencia');
+  showToast('✓ Relación guardada');
+  renderMapaInfluencias();
+}
+
+function deleteInfluencia(id) {
+  if (!confirm('¿Eliminar esta relación?')) return;
+  mapas.influencias=mapas.influencias.filter(x=>x.id!==id);
+  saveMapas(); renderMapaInfluencias(); showToast('Relación eliminada');
+}
+
+// ══════════════════════════
+//  RUTAS — CRUD
+// ══════════════════════════
+let rutaFuenteTipo='libro';
+
+function selectRutaFuenteTipo(tipo, btn) {
+  rutaFuenteTipo=tipo;
+  document.querySelectorAll('.ruta-tipo-btn').forEach(b=>{
+    b.style.borderColor='var(--border)'; b.style.background='#fff'; b.style.color='var(--ink3)';
+  });
+  if(btn){ btn.style.borderColor='var(--gold)'; btn.style.background='#fff8e8'; btn.style.color='var(--gold)'; }
+  document.getElementById('ruta-fuente-libro-field').style.display =tipo==='libro'?'block':'none';
+  document.getElementById('ruta-fuente-evento-field').style.display=tipo==='evento'?'block':'none';
+  document.getElementById('ruta-fuente-origen-field').style.display=tipo==='origen'?'block':'none';
+}
+
+function openModalRuta(editId) {
+  fillDatalist('ruta-fuente-list', getTitulosLibros());
+  fillDatalist('ruta-destino-list', getTitulosLibros());
+  document.getElementById('ruta-edit-id').value=editId||'';
+  rutaFuenteTipo='libro';
+  selectRutaFuenteTipo('libro', document.querySelector('.ruta-tipo-btn[data-tipo="libro"]'));
+  if (editId) {
+    const ruta=mapas.rutas.find(x=>x.id===editId);
+    if (ruta) {
+      document.getElementById('ruta-destino').value=ruta.destino||'';
+      document.getElementById('ruta-tipo').value   =ruta.tipo||'referencia';
+      document.getElementById('ruta-nota').value   =ruta.nota||'';
+      if (ruta.fuente_tipo==='libro') {
+        document.getElementById('ruta-fuente-libro').value=ruta.fuente||'';
+      } else if (ruta.fuente_tipo==='evento') {
+        selectRutaFuenteTipo('evento', document.querySelector('.ruta-tipo-btn[data-tipo="evento"]'));
+        document.getElementById('ruta-evento-tipo').value=ruta.evento_tipo||'charla';
+        document.getElementById('ruta-evento-desc').value=ruta.fuente||'';
+      } else {
+        selectRutaFuenteTipo('origen', document.querySelector('.ruta-tipo-btn[data-tipo="origen"]'));
+      }
+    }
+  } else {
+    ['ruta-fuente-libro','ruta-evento-desc','ruta-destino','ruta-nota'].forEach(id=>{
+      const el=document.getElementById(id); if(el) el.value='';
+    });
+  }
+  openModal('modal-ruta');
+}
+
+function saveRuta() {
+  const destino=document.getElementById('ruta-destino').value.trim();
+  if (!destino) { showToast('Indica el libro destino'); return; }
+  let fuente='', evento_tipo='';
+  if (rutaFuenteTipo==='libro') {
+    fuente=document.getElementById('ruta-fuente-libro').value.trim();
+    if (!fuente) { showToast('Indica el libro fuente'); return; }
+  } else if (rutaFuenteTipo==='evento') {
+    fuente     =document.getElementById('ruta-evento-desc').value.trim();
+    evento_tipo=document.getElementById('ruta-evento-tipo').value;
+    if (!fuente) { showToast('Describe el evento'); return; }
+  } else {
+    fuente='⭐ Origen';
+  }
+  const editId=document.getElementById('ruta-edit-id').value;
+  const obj={
+    id:         editId||'ruta_'+Date.now(),
+    fuente_tipo:rutaFuenteTipo, fuente, evento_tipo,
+    destino,
+    tipo:       document.getElementById('ruta-tipo').value,
+    nota:       document.getElementById('ruta-nota').value.trim(),
+    createdAt:  editId?(mapas.rutas.find(x=>x.id===editId)?.createdAt||Date.now()):Date.now()
+  };
+  if (editId) { const i=mapas.rutas.findIndex(x=>x.id===editId); if(i>=0) mapas.rutas[i]=obj; }
+  else mapas.rutas.push(obj);
+  saveMapas();
+  closeModal('modal-ruta');
+  showToast('✓ Conexión guardada');
+  renderMapaRutas();
+}
+
+function deleteRuta(id) {
+  if (!confirm('¿Eliminar esta conexión?')) return;
+  mapas.rutas=mapas.rutas.filter(x=>x.id!==id);
+  saveMapas(); renderMapaRutas(); showToast('Conexión eliminada');
+}
+
+// ══════════════════════════
+//  D3 GRAPH ENGINE
+// ══════════════════════════
+function buildD3Graph(containerId, nodes, links, colorFn, tooltipEdgeFn) {
+  const container=document.getElementById(containerId); if(!container) return;
+  d3.select('#'+containerId).selectAll('*').remove();
+  const W=container.clientWidth||360, H=container.clientHeight||480;
+  const svg=d3.select('#'+containerId).append('svg').attr('width',W).attr('height',H);
+  const g=svg.append('g');
+  svg.call(d3.zoom().scaleExtent([0.15,4]).on('zoom',e=>g.attr('transform',e.transform)));
+
+  // Arrow markers per tipo
+  const defs=svg.append('defs');
+  [...new Set(links.map(l=>l.tipo))].forEach(tipo=>{
+    defs.append('marker').attr('id','arr-'+tipo)
+      .attr('viewBox','0 -5 10 10').attr('refX',22).attr('refY',0)
+      .attr('markerWidth',6).attr('markerHeight',6).attr('orient','auto')
+      .append('path').attr('d','M0,-5L10,0L0,5').attr('fill',colorFn(tipo));
+  });
+
+  const simulation=d3.forceSimulation(nodes)
+    .force('link', d3.forceLink(links).id(d=>d.id).distance(130))
+    .force('charge', d3.forceManyBody().strength(-350))
+    .force('center', d3.forceCenter(W/2, H/2))
+    .force('collision', d3.forceCollide(38));
+
+  // Links
+  const link=g.append('g').selectAll('line').data(links).join('line')
+    .attr('stroke', d=>colorFn(d.tipo))
+    .attr('stroke-width', 2).attr('stroke-opacity', 0.75)
+    .attr('marker-end', d=>`url(#arr-${d.tipo})`);
+  link.append('title').text(d=>tooltipEdgeFn(d));
+
+  // Nodes
+  const node=g.append('g').selectAll('g').data(nodes).join('g').attr('cursor','pointer')
+    .call(d3.drag()
+      .on('start',(e,d)=>{ if(!e.active) simulation.alphaTarget(0.3).restart(); d.fx=d.x; d.fy=d.y; })
+      .on('drag', (e,d)=>{ d.fx=e.x; d.fy=e.y; })
+      .on('end',  (e,d)=>{ if(!e.active) simulation.alphaTarget(0); d.fx=null; d.fy=null; })
+    );
+
+  node.append('circle')
+    .attr('r', d=>d.isEvent?14:20)
+    .attr('fill', d=>d.inLibrary?'var(--ink)':(d.isEvent?'#e8e0d0':'#fff'))
+    .attr('stroke', d=>d.inLibrary?'var(--gold)':'var(--border)')
+    .attr('stroke-width', 2);
+
+  node.append('text').attr('text-anchor','middle').attr('dy',5)
+    .attr('font-size', d=>d.isEvent?11:10).attr('fill', d=>d.inLibrary?'var(--gold)':'var(--ink3)')
+    .text(d=>d.icon||'●');
+
+  node.append('text').attr('text-anchor','middle').attr('dy',35)
+    .attr('font-size',10).attr('fill','var(--ink2)').attr('font-weight','700')
+    .text(d=>d.label.length>22?d.label.slice(0,20)+'…':d.label);
+
+  node.append('title').text(d=>d.tooltip||d.label);
+
+  simulation.on('tick',()=>{
+    link.attr('x1',d=>d.source.x).attr('y1',d=>d.source.y)
+        .attr('x2',d=>d.target.x).attr('y2',d=>d.target.y);
+    node.attr('transform',d=>`translate(${d.x},${d.y})`);
+  });
+}
+
+// ══════════════════════════
+//  RENDER INFLUENCIAS
+// ══════════════════════════
+function renderMapaInfluencias() {
+  const data=mapas.influencias;
+  document.getElementById('inf-count').textContent=`${data.length} relación${data.length!==1?'es':''}`;
+  document.getElementById('inf-empty').style.display=data.length===0?'flex':'none';
+  document.getElementById('inf-legend').style.display=data.length===0?'none':'flex';
+  if (data.length===0) { d3.select('#mapa-influencias-svg').selectAll('svg').remove(); return; }
+
+  const libTitles =new Set(db.entries.map(e=>e.titulo));
+  const libAutores=new Set(db.entries.map(e=>e.autor).filter(Boolean));
+  const nodeSet=new Set(); data.forEach(d=>{nodeSet.add(d.fuente);nodeSet.add(d.destino);});
+  const nodes=[...nodeSet].map(name=>({
+    id:name, label:name,
+    inLibrary:libTitles.has(name)||libAutores.has(name),
+    icon:libTitles.has(name)?'📚':(libAutores.has(name)?'✍':'◉'),
+    tooltip:name
+  }));
+  const links=data.map(d=>({ source:d.fuente, target:d.destino, tipo:d.tipo, id:d.id,
+    pagina:d.pagina, texto:d.texto, libro_ref:d.libro_ref }));
+
+  buildD3Graph('mapa-influencias-svg', nodes, links,
+    tipo=>INF_COLORS[tipo]||'#999',
+    d=>`${INF_LABELS[d.tipo]||d.tipo}${d.libro_ref?' · '+d.libro_ref:''}${d.pagina?' p.'+d.pagina:''}${d.texto?'\n"'+d.texto+'"':''}`
+  );
+}
+
+// ══════════════════════════
+//  RENDER RUTAS
+// ══════════════════════════
+function renderMapaRutas() {
+  const data=mapas.rutas;
+  document.getElementById('ruta-count').textContent=`${data.length} conexión${data.length!==1?'es':''}`;
+  document.getElementById('ruta-empty').style.display=data.length===0?'flex':'none';
+  document.getElementById('ruta-legend').style.display=data.length===0?'none':'flex';
+  if (data.length===0) { d3.select('#mapa-rutas-svg').selectAll('svg').remove(); return; }
+
+  const libTitles=new Set(db.entries.map(e=>e.titulo));
+  const nodeSet=new Set(); data.forEach(d=>{nodeSet.add(d.fuente);nodeSet.add(d.destino);});
+  const nodes=[...nodeSet].map(name=>({
+    id:name, label:name,
+    inLibrary:libTitles.has(name),
+    isEvent:!libTitles.has(name)&&name!=='⭐ Origen',
+    icon:name==='⭐ Origen'?'⭐':(libTitles.has(name)?'📚':'🎙'),
+    tooltip:name
+  }));
+  const links=data.map(d=>({ source:d.fuente, target:d.destino, tipo:d.tipo, id:d.id, nota:d.nota }));
+
+  buildD3Graph('mapa-rutas-svg', nodes, links,
+    tipo=>RUTA_COLORS[tipo]||'#999',
+    d=>`${RUTA_LABELS[d.tipo]||d.tipo}${d.nota?'\n'+d.nota:''}`
+  );
+}
+
+// ── Wire Habitos screen ──
+function initHabitos() {
+  renderHabitos();
+}
 document.getElementById('tab-login')?.addEventListener('click', () => authTab('login'));
 document.getElementById('tab-register')?.addEventListener('click', () => authTab('register'));
 document.getElementById('btn-login-email')?.addEventListener('click', () => loginEmail());
