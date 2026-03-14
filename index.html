@@ -423,7 +423,7 @@ select.input { cursor: pointer; }
   margin: 0 20px 12px;
   background: var(--ink); color: var(--cream);
   border-radius: 8px; padding: 14px 16px;
-  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;
 }
 .ritmo-hero-main { display: flex; flex-direction: column; justify-content: center; }
 .ritmo-hero-num { font-family: var(--font-serif); font-size: 32px; font-weight: 700; font-style: italic; line-height: 1; color: var(--gold); }
@@ -832,7 +832,6 @@ select.input { cursor: pointer; }
         <div class="chart-section-title">Por mes</div>
         <div class="chart-mode-pills" id="sr-chart-mode-pills">
           <button class="chart-mode-pill active" onclick="setSrChartMode('cantidad',this)">Cantidad</button>
-          <button class="chart-mode-pill" onclick="setSrChartMode('minutos',this)">Minutos</button>
         </div>
       </div>
       <div class="chart-wrap"><canvas id="sr-chart-mes"></canvas></div>
@@ -862,8 +861,8 @@ select.input { cursor: pointer; }
       <div id="sr-pagination" class="table-pagination"></div>
 
       <div class="divider"></div>
-      <div class="chart-section-title" style="margin-bottom:4px;">Series en el tiempo (estreno)</div>
-      <p style="font-size:11px;color:var(--ink4);margin-bottom:8px;">Cada punto es una serie. Eje Y = duración total.</p>
+      <div class="chart-section-title" style="margin-bottom:4px;">Series por año de estreno</div>
+      <p style="font-size:11px;color:var(--ink4);margin-bottom:8px;">Cada punto es una serie. Eje Y = temporadas. Hover para ver título.</p>
       <div style="position:relative;height:240px;margin-bottom:8px;"><canvas id="sr-chart-scatter"></canvas></div>
       <div class="divider"></div>
       <div id="sr-curiosidades"></div>
@@ -1245,10 +1244,10 @@ select.input { cursor: pointer; }
         <div class="field"><label>Año estreno</label><input class="input" type="number" id="watching-anio-est"></div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-        <div class="field"><label>Temporada actual</label>
+        <div class="field"><label>Temporada viendo</label>
           <input class="input" type="number" id="watching-temporada-actual" min="1" value="1" placeholder="1">
         </div>
-        <div class="field"><label>Total temporadas</label>
+        <div class="field"><label>Total de temporadas</label>
           <input class="input" type="number" id="watching-temporadas" min="1" value="1">
         </div>
       </div>
@@ -1279,7 +1278,7 @@ select.input { cursor: pointer; }
         <input type="file" id="watching-cover-file" accept="image/*" style="display:none;" onchange="handleWatchingCoverFile(event)">
         <div id="watching-cover-preview" style="margin-top:8px;"></div>
       </div>
-      <button class="btn btn-primary" onclick="saveWatchingEntry()">Empezar a seguir</button>
+      <button class="btn btn-primary" onclick="saveWatchingEntry()">Añadir serie en curso</button>
     </div>
   </div>
 </div>
@@ -1446,8 +1445,16 @@ let unsubscribeSnapshot = null;
 let isSyncing = false;
 
 function loadDB() {
-  try { const r = localStorage.getItem(DB_KEY); return r ? JSON.parse(r) : { entries: [] }; }
-  catch { return { entries: [] }; }
+  try {
+    const r = localStorage.getItem(DB_KEY);
+    if (!r) return { entries: [] };
+    const parsed = JSON.parse(r);
+    // Normalizar tipos a minúscula (fix para CSV importados con "Serie", "Pelicula", etc.)
+    (parsed.entries || []).forEach(e => {
+      if (e.type) e.type = e.type.toLowerCase().trim();
+    });
+    return parsed;
+  } catch { return { entries: [] }; }
 }
 
 // ═══════════════════════════════════
@@ -1462,17 +1469,16 @@ function stampEntry(entry) {
 
 function mergeEntries(local, remote) {
   const map = {};
-  // Primero cargamos locales
-  local.forEach(e => { map[e.id] = e; });
-  // Luego remotos — gana el más reciente por timestamp
+  const normalize = e => { if (e.type) e.type = e.type.toLowerCase().trim(); return e; };
+  local.forEach(e => { map[e.id] = normalize(e); });
   remote.forEach(e => {
+    normalize(e);
     if (!map[e.id]) {
-      map[e.id] = e; // nuevo remoto que no tenemos
+      map[e.id] = e;
     } else {
       const localTs = map[e.id]._updatedAt || 0;
       const remoteTs = e._updatedAt || 0;
-      if (remoteTs > localTs) map[e.id] = e; // remoto más nuevo gana
-      // si local es más nuevo, lo mantenemos
+      if (remoteTs > localTs) map[e.id] = e;
     }
   });
   return Object.values(map);
@@ -2037,37 +2043,64 @@ function renderHome() {
   const pagsEsteAnio = pagsHastaDia(yr);
   const ritmoActual = dayOfYear > 0 ? pagsEsteAnio / dayOfYear : 0;
 
-  // Histórico: mismos días del año (hasta mismo mes/día) para cada año pasado
+  // Histórico: calcular ritmo para todos los años pasados
   const allYears = [...new Set(db.entries.filter(e=>e.type==='libro'&&e.anio&&e.anio<yr).map(e=>e.anio))];
-  let bestHistRitmo = 0, bestHistYear = null;
-  allYears.forEach(y => {
-    const pags = pagsHastaDia(y);
-    const dias = diasHastaHoyEnAnio(y);
-    const r = dias > 0 ? pags / dias : 0;
-    if (r > bestHistRitmo) { bestHistRitmo = r; bestHistYear = y; }
-  });
+  const prevYear = yr - 1;
+  
+  // Año anterior (fijo: yr-1)
+  const prevPags = pagsHastaDia(prevYear);
+  const prevDias = diasHastaHoyEnAnio(prevYear);
+  const ritmoPrev = prevDias > 0 && prevPags > 0 ? prevPags / prevDias : 0;
 
-  const ritmoCmp = bestHistRitmo > 0 ? bestHistRitmo : 0;
-  const cmpYear = bestHistYear;
-  const diff = ritmoCmp > 0 ? ritmoActual - ritmoCmp : 0;
-  const pctDiff = ritmoCmp > 0 ? Math.round((diff/ritmoCmp)*100) : 0;
-  const up = diff >= 0;
-  const diffColor = up ? '#7ec98f' : '#f08080';
+  // Mejor año histórico (excluyendo año actual y anterior)
+  let bestRitmo = 0, bestYear = null;
+  allYears.filter(y => y !== prevYear).forEach(y => {
+    const p = pagsHastaDia(y);
+    const d = diasHastaHoyEnAnio(y);
+    const r = d > 0 ? p / d : 0;
+    if (r > bestRitmo) { bestRitmo = r; bestYear = y; }
+  });
+  // Si no hay mejor año distinto al anterior, usar el mejor de todos
+  if (!bestYear) {
+    allYears.forEach(y => {
+      const p = pagsHastaDia(y); const d = diasHastaHoyEnAnio(y);
+      const r = d > 0 ? p / d : 0;
+      if (r > bestRitmo) { bestRitmo = r; bestYear = y; }
+    });
+  }
+
+  const diffPrev = ritmoPrev > 0 ? ritmoActual - ritmoPrev : 0;
+  const pctPrev  = ritmoPrev > 0 ? Math.round((diffPrev/ritmoPrev)*100) : 0;
+  const upPrev   = diffPrev >= 0;
+  const colorPrev = upPrev ? '#7ec98f' : '#f08080';
+
+  const diffBest = bestRitmo > 0 ? ritmoActual - bestRitmo : 0;
+  const pctBest  = bestRitmo > 0 ? Math.round((diffBest/bestRitmo)*100) : 0;
+  const upBest   = diffBest >= 0;
+  const colorBest = upBest ? '#7ec98f' : '#f08080';
 
   document.getElementById('ritmo-hero-card').innerHTML = pagsEsteAnio > 0 ? `
-    <div class="ritmo-hero">
+    <div class="ritmo-hero" style="grid-template-columns:1fr 1fr 1fr;">
       <div class="ritmo-hero-main">
         <div class="ritmo-hero-num">${ritmoActual.toFixed(1)}</div>
         <div class="ritmo-hero-label">págs / día · ${yr}</div>
         <div class="ritmo-hero-sub">${pagsEsteAnio.toLocaleString()} págs<br>en ${dayOfYear} días</div>
       </div>
       <div class="ritmo-hero-vs">
-        ${cmpYear ? `
-          <div class="ritmo-hero-vs-label">vs ${cmpYear}</div>
-          <div class="ritmo-hero-vs-num" style="color:${diffColor};">${ritmoCmp.toFixed(1)}</div>
-          <div class="ritmo-hero-vs-pct" style="color:${diffColor};">${up?'▲':'▼'} ${Math.abs(pctDiff)}%</div>
-          <div class="ritmo-hero-vs-context">${up?'+':''}${diff.toFixed(1)} págs/día<br>hasta mismo día</div>
-        ` : `<div class="ritmo-hero-vs-label" style="font-size:12px;color:rgba(245,240,232,0.4);">Sin datos<br>históricos aún</div>`}
+        ${ritmoPrev > 0 ? `
+          <div class="ritmo-hero-vs-label">vs ${prevYear}</div>
+          <div class="ritmo-hero-vs-num" style="color:${colorPrev};">${ritmoPrev.toFixed(1)}</div>
+          <div class="ritmo-hero-vs-pct" style="color:${colorPrev};">${upPrev?'▲':'▼'} ${Math.abs(pctPrev)}%</div>
+          <div class="ritmo-hero-vs-context">${upPrev?'+':''}${diffPrev.toFixed(1)} págs/día</div>
+        ` : `<div class="ritmo-hero-vs-label" style="font-size:11px;color:rgba(245,240,232,0.4);">Sin datos<br>${prevYear}</div>`}
+      </div>
+      <div class="ritmo-hero-vs">
+        ${bestYear ? `
+          <div class="ritmo-hero-vs-label">mejor · ${bestYear}</div>
+          <div class="ritmo-hero-vs-num" style="color:${colorBest};">${bestRitmo.toFixed(1)}</div>
+          <div class="ritmo-hero-vs-pct" style="color:${colorBest};">${upBest?'▲':'▼'} ${Math.abs(pctBest)}%</div>
+          <div class="ritmo-hero-vs-context">${upBest?'+':''}${diffBest.toFixed(1)} págs/día</div>
+        ` : `<div class="ritmo-hero-vs-label" style="font-size:11px;color:rgba(245,240,232,0.4);">Sin histórico<br>aún</div>`}
       </div>
     </div>` : '';
 
@@ -2180,6 +2213,9 @@ function renderLibrary() {
   let items = db.entries.filter(e => {
     if (libFilter === 'todos') return true;
     if (libFilter === 'leyendo') return e.type === 'libro' && e.estado === 'leyendo';
+    if (libFilter === 'serie') return e.type === 'serie';
+    if (libFilter === 'pelicula') return e.type === 'pelicula';
+    if (libFilter === 'libro') return e.type === 'libro';
     return e.type === libFilter;
   }).filter(e => !q || e.titulo.toLowerCase().includes(q) || (e.autor||'').toLowerCase().includes(q) || (e.director||'').toLowerCase().includes(q));
 
@@ -2978,17 +3014,20 @@ function renderScatterSeries(allSeries) {
     ? allSeries.filter(e => e[statsState.series.filterField] === statsState.series.filter)
     : allSeries;
   const data = filtered.filter(e=>e.anio_est).map(e=>({
-    x:parseInt(e.anio_est), y:e.duracion||0, label:e.titulo, dir:e.director||'—', temp:e.temporadas||1
+    x: parseInt(e.anio_est),
+    y: parseInt(e.temporadas) || 1,
+    label: e.titulo,
+    dir: e.director||'—'
   }));
   setTimeout(()=>{
     new Chart(ctx.getContext('2d'), {
       type:'scatter',
       data:{datasets:[{data, backgroundColor:'rgba(26,58,92,0.6)', pointRadius:6, pointHoverRadius:9, borderColor:'rgba(26,58,92,0.9)', borderWidth:1}]},
       options:{responsive:true,maintainAspectRatio:false,
-        plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.raw.label} · ${c.raw.dir} (${c.raw.x}, ${fmtMin(c.raw.y)}, ${c.raw.temp} temp.)`}}},
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.raw.label} · ${c.raw.dir} · ${c.raw.y} temp.`}}},
         scales:{
-          x:{title:{display:true,text:'Año estreno',color:'#8a7a68',font:{size:10}},ticks:{color:'#8a7a68',font:{size:10}},grid:{color:'#ede7d9'}},
-          y:{title:{display:true,text:'Duración total',color:'#8a7a68',font:{size:10}},ticks:{color:'#8a7a68',font:{size:10},callback:v=>fmtMin(v)},grid:{color:'#ede7d9'}}
+          x:{title:{display:true,text:'Año estreno',color:'#8a7a68',font:{size:10}},ticks:{color:'#8a7a68',font:{size:10},stepSize:1},grid:{color:'#ede7d9'}},
+          y:{title:{display:true,text:'Temporadas',color:'#8a7a68',font:{size:10}},ticks:{color:'#8a7a68',font:{size:10},stepSize:1,precision:0},min:0,grid:{color:'#ede7d9'}}
         }
       }
     });
@@ -3188,7 +3227,7 @@ function renderCuriosidadesLibros(libros) {
   const topAutor = topField(libros, 'autor');
   const topEdit  = topField(libros, 'editorial');
   const topIdioma= topField(libros, 'idioma');
-  const traducidos = libros.filter(e=>e.idioma && e.idioma.toLowerCase()!=='español'&&e.idioma.toLowerCase()!=='es'&&e.idioma.toLowerCase()!=='spanish');
+  const traducidos = libros.filter(e => e.traductor && e.traductor.trim() && e.traductor.trim() !== '-');
   const anios = [...new Set(libros.filter(e=>e.anio_pub).map(e=>parseInt(e.anio_pub)))].sort((a,b)=>a-b);
   const spanAnios = anios.length>=2 ? `${anios[0]}–${anios[anios.length-1]}` : null;
   el.innerHTML = `<div class="card" style="margin-bottom:20px;">
@@ -3266,7 +3305,6 @@ function renderCuriosidadesSeries(series) {
       ${topComp ? `🎵 Compositor más frecuente: <b>${topComp[0]}</b>.<br>` : ''}
       ${masTemporadas ? `📺 Serie con más temporadas: <b>${masTemporadas.titulo}</b> (${masTemporadas.temp} temp.).<br>` : ''}
       ${franquicias.length > 1 ? `🔢 <b>${franquicias.length}</b> series tienen más de una temporada registrada.<br>` : ''}
-      ${avgTemp > 0 ? `📋 Media de temporadas por serie: <b>${avgTemp}</b>.<br>` : ''}
       ${mejorAnio ? `📅 Año con más series vistas: <b>${mejorAnio[0]}</b> (${mejorAnio[1]} series).<br>` : ''}
       ${basadas.length > 0 ? `🔗 El <b>${Math.round((basadas.length/series.length)*100)}%</b> de tus series está basado en otra obra.<br>` : ''}
     </div></div>`;
