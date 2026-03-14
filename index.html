@@ -371,7 +371,24 @@ select.input { cursor: pointer; }
 .pag-btn:not(:disabled):hover { background: var(--ink); color: var(--cream); border-color: var(--ink); }
 .pag-info { font-size: 12px; color: var(--ink3); font-weight: 700; min-width: 80px; text-align: center; }
 
-/* ── HOME RECENT SECTIONS — full width cards ── */
+/* ── NOTAS ── */
+.notas-section { margin-top:16px; border-top:1px solid var(--cream3); padding-top:12px; }
+.notas-toggle { display:flex;align-items:center;gap:6px;cursor:pointer;background:none;border:none;padding:0;font-family:var(--font-sans);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink3);width:100%; }
+.notas-toggle:hover { color:var(--ink); }
+.notas-toggle-chevron { transition:transform 0.2s; }
+.notas-toggle-chevron.open { transform:rotate(180deg); }
+.notas-list { margin-top:12px; display:flex; flex-direction:column; gap:10px; }
+.nota-card { background:#fff; border:1px solid var(--border); border-radius:6px; padding:12px 14px; position:relative; }
+.nota-num { position:absolute;top:10px;right:12px;font-family:var(--font-serif);font-size:11px;color:var(--ink4);font-style:italic; }
+.nota-titulo { font-family:var(--font-serif);font-weight:700;font-size:14px;color:var(--ink);margin-bottom:4px;padding-right:30px; }
+.nota-fecha { font-size:10px;color:var(--ink4);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px; }
+.nota-texto { font-size:13px;color:var(--ink2);line-height:1.7;white-space:pre-wrap; }
+.nota-actions { display:flex;gap:6px;margin-top:10px; }
+.nota-btn { font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:4px 10px;border-radius:4px;cursor:pointer;font-family:var(--font-sans);border:1.5px solid var(--border);background:#fff;color:var(--ink3); }
+.nota-btn:hover { background:var(--ink);color:var(--cream);border-color:var(--ink); }
+.nota-btn.danger:hover { background:var(--red);color:var(--cream);border-color:var(--red); }
+.nota-add-btn { width:100%;padding:10px;border:1.5px dashed var(--border);border-radius:6px;background:transparent;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--ink4);cursor:pointer;font-family:var(--font-sans);margin-top:8px; }
+.nota-add-btn:hover { border-color:var(--gold);color:var(--gold); }
 .home-recent-list .entry-card { margin-bottom: 0; }
 
 /* ── READING CAROUSEL ── */
@@ -1417,6 +1434,34 @@ select.input { cursor: pointer; }
   </div>
 </div>
 
+<!-- ══════ MODAL: NOTA ══════ -->
+<div id="modal-nota" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title" id="nota-modal-title">Nueva nota</div>
+      <button class="btn-icon" onclick="closeModal('modal-nota')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="nota-entry-id">
+      <input type="hidden" id="nota-nota-id">
+      <div class="field">
+        <label>Título</label>
+        <input class="input" type="text" id="nota-titulo" placeholder="Ej: Reflexión sobre el capítulo 3">
+      </div>
+      <div class="field">
+        <label>Fecha</label>
+        <input class="input" type="date" id="nota-fecha">
+      </div>
+      <div class="field">
+        <label>Nota</label>
+        <textarea class="input" id="nota-texto" rows="7" placeholder="Escribe o pega tu apunte aquí..." style="resize:vertical;line-height:1.6;font-family:var(--font-serif);font-size:14px;"></textarea>
+      </div>
+      <button class="btn btn-primary" onclick="saveNota()">Guardar nota</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -2269,6 +2314,8 @@ function entryCardHTML(e) {
 
   const progress = e.type === 'libro' && e.estado === 'leyendo'
     ? `<div class="progress-wrap"><div class="progress-fill" style="width:${e.progreso||0}%"></div></div>` : '';
+  const notasBadge = (e.notas_lista && e.notas_lista.length > 0)
+    ? `<span style="font-size:10px;color:var(--ink4);margin-left:4px;">📝 ${e.notas_lista.length}</span>` : '';
   const badge = `<span class="badge badge-${e.estado==='leyendo'?'leyendo':e.type}">${e.estado==='leyendo'?'Leyendo':e.type==='libro'?'Libro':e.type==='pelicula'?'Película':'Serie'}</span>`;
   const metaLine = `${e.mes ? e.mes + ' ' : ''}${e.anio || ''}`;
   return `
@@ -2284,6 +2331,7 @@ function entryCardHTML(e) {
           ${badge}
           ${metaLine ? `<span style="font-size:10px;color:var(--ink4);">${metaLine}</span>` : ''}
           ${stars ? `<span class="entry-card-rating">${stars}</span>` : ''}
+          ${notasBadge}
         </div>
       </div>
     </div>`;
@@ -2323,8 +2371,123 @@ function showDetail(id) {
     <button class="btn btn-secondary btn-sm" onclick="editEntry('${e.id}')">✏ Editar</button>
     <button class="btn btn-sm" style="background:var(--red);color:var(--cream);width:auto;" onclick="deleteEntry('${e.id}')">🗑 Eliminar</button>
   </div>`;
+
+  // ── NOTAS ──
+  const notas = e.notas_lista || [];
+  const notasCount = notas.length;
+  html += `
+  <div class="notas-section">
+    <button class="notas-toggle" onclick="toggleNotasSection('${e.id}')">
+      <svg viewBox="0 0 24 24" class="notas-toggle-chevron" id="notas-chevron-${e.id}" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.5;"><polyline points="6 9 12 15 18 9"/></svg>
+      Notas${notasCount > 0 ? ` (${notasCount})` : ''}
+    </button>
+    <div id="notas-body-${e.id}" style="display:none;">
+      <div class="notas-list" id="notas-list-${e.id}">
+        ${notasCount === 0 ? '<div style="font-size:13px;color:var(--ink4);font-style:italic;padding:8px 0;">Sin notas aún.</div>' : notas.map((n,i) => notaCardHTML(n, i+1, e.id)).join('')}
+      </div>
+      <button class="nota-add-btn" onclick="openNotaModal('${e.id}')">+ Agregar nota</button>
+    </div>
+  </div>`;
+
   document.getElementById('detail-body').innerHTML = html;
   openModal('modal-detail');
+}
+
+// ═══════════════════════════════════
+//  NOTAS
+// ═══════════════════════════════════
+function notaCardHTML(n, num, entryId) {
+  const fecha = n.fecha ? new Date(n.fecha).toLocaleDateString('es', {day:'2-digit',month:'short',year:'numeric'}) : '';
+  return `
+    <div class="nota-card" id="nota-card-${n.id}">
+      <div class="nota-num">#${num}</div>
+      <div class="nota-titulo">${n.titulo||'Sin título'}</div>
+      ${fecha ? `<div class="nota-fecha">${fecha}</div>` : ''}
+      <div class="nota-texto">${n.texto||''}</div>
+      <div class="nota-actions">
+        <button class="nota-btn" onclick="openNotaModal('${entryId}','${n.id}')">✏ Editar</button>
+        <button class="nota-btn danger" onclick="deleteNota('${entryId}','${n.id}')">🗑 Eliminar</button>
+      </div>
+    </div>`;
+}
+
+function toggleNotasSection(entryId) {
+  const body = document.getElementById(`notas-body-${entryId}`);
+  const chevron = document.getElementById(`notas-chevron-${entryId}`);
+  const open = body.style.display === 'none';
+  body.style.display = open ? 'block' : 'none';
+  chevron.classList.toggle('open', open);
+}
+
+function openNotaModal(entryId, notaId) {
+  document.getElementById('nota-entry-id').value = entryId;
+  document.getElementById('nota-nota-id').value = notaId || '';
+  // Default date = today
+  const today = new Date().toISOString().split('T')[0];
+  if (notaId) {
+    const e = db.entries.find(x => x.id === entryId);
+    const n = (e?.notas_lista || []).find(x => x.id === notaId);
+    if (n) {
+      document.getElementById('nota-titulo').value = n.titulo || '';
+      document.getElementById('nota-fecha').value = n.fecha || today;
+      document.getElementById('nota-texto').value = n.texto || '';
+      document.getElementById('nota-modal-title').textContent = 'Editar nota';
+    }
+  } else {
+    document.getElementById('nota-titulo').value = '';
+    document.getElementById('nota-fecha').value = today;
+    document.getElementById('nota-texto').value = '';
+    document.getElementById('nota-modal-title').textContent = 'Nueva nota';
+  }
+  openModal('modal-nota');
+}
+
+function saveNota() {
+  const entryId = document.getElementById('nota-entry-id').value;
+  const notaId  = document.getElementById('nota-nota-id').value;
+  const titulo  = document.getElementById('nota-titulo').value.trim();
+  const fecha   = document.getElementById('nota-fecha').value;
+  const texto   = document.getElementById('nota-texto').value.trim();
+  if (!texto) { showToast('Escribe algo en la nota'); return; }
+
+  const e = db.entries.find(x => x.id === entryId);
+  if (!e) return;
+  if (!e.notas_lista) e.notas_lista = [];
+
+  if (notaId) {
+    const idx = e.notas_lista.findIndex(x => x.id === notaId);
+    if (idx >= 0) e.notas_lista[idx] = { ...e.notas_lista[idx], titulo, fecha, texto };
+  } else {
+    e.notas_lista.push({ id: 'n_' + Date.now(), titulo, fecha, texto });
+  }
+  e._updatedAt = Date.now();
+  saveDB();
+  closeModal('modal-nota');
+  showToast(notaId ? '✓ Nota actualizada' : '✓ Nota guardada');
+  // Refresh detail modal in place
+  showDetail(entryId);
+  // Re-open notes section
+  setTimeout(() => {
+    const body = document.getElementById(`notas-body-${entryId}`);
+    const chevron = document.getElementById(`notas-chevron-${entryId}`);
+    if (body) { body.style.display = 'block'; chevron?.classList.add('open'); }
+  }, 50);
+}
+
+function deleteNota(entryId, notaId) {
+  if (!confirm('¿Eliminar esta nota?')) return;
+  const e = db.entries.find(x => x.id === entryId);
+  if (!e) return;
+  e.notas_lista = (e.notas_lista || []).filter(x => x.id !== notaId);
+  e._updatedAt = Date.now();
+  saveDB();
+  showToast('Nota eliminada');
+  showDetail(entryId);
+  setTimeout(() => {
+    const body = document.getElementById(`notas-body-${entryId}`);
+    const chevron = document.getElementById(`notas-chevron-${entryId}`);
+    if (body) { body.style.display = 'block'; chevron?.classList.add('open'); }
+  }, 50);
 }
 
 function editEntry(id) {
