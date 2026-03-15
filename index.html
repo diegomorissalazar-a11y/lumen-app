@@ -1792,6 +1792,23 @@ select.input { cursor: pointer; }
   </div>
 </div>
 
+<!-- ══════ MODAL: SINCRONIZACIÓN ══════ -->
+<div id="modal-sync-warning" class="modal-overlay" style="z-index:10000;">
+  <div class="modal" style="max-width:340px;">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title" id="sync-warning-title">Sincronizar datos</div>
+    </div>
+    <div class="modal-body">
+      <div id="sync-warning-body" style="font-size:14px;color:var(--ink2);line-height:1.6;margin-bottom:16px;"></div>
+      <div style="display:flex;gap:10px;">
+        <button class="btn btn-primary" id="sync-warning-ok" style="flex:2;">Sincronizar ahora</button>
+        <button class="btn btn-secondary" id="sync-warning-cancel" style="flex:1;">Ignorar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -1988,12 +2005,33 @@ async function syncToFirestore() {
   }
 }
 
-async function pullAndMerge(uid) {
+async function pullAndMerge(uid, silent) {
   try {
     const snap = await firestore.collection('users').doc(uid).collection('data').doc('library').get();
     if (snap.exists) {
       const remote = snap.data();
-      const merged = mergeEntries(db.entries, remote.entries || []);
+      const remoteEntries = remote.entries || [];
+      const localCount  = db.entries.length;
+      const remoteCount = remoteEntries.length;
+
+      // Si Firestore tiene más datos que local → hay pérdida local → avisar
+      if (!silent && remoteCount > localCount + 2) {
+        showSyncWarning(
+          '📱 Datos desincronizados',
+          `La nube tiene <b>${remoteCount} registros</b> pero este dispositivo solo tiene <b>${localCount}</b>.<br><br>¿Quieres descargar los datos de la nube?`,
+          async () => {
+            const merged = mergeEntries(db.entries, remoteEntries);
+            db.entries = merged;
+            localStorage.setItem(DB_KEY, JSON.stringify(db));
+            await syncToFirestore();
+            refreshCurrentScreen();
+            showToast(`✓ Sincronizado · ${merged.length} registros`);
+          }
+        );
+        return;
+      }
+
+      const merged = mergeEntries(db.entries, remoteEntries);
       const changed = merged.length !== db.entries.length ||
         merged.some((e,i) => e._updatedAt !== db.entries[i]?._updatedAt);
       db.entries = merged;
@@ -2004,6 +2042,22 @@ async function pullAndMerge(uid) {
       await syncToFirestore();
     }
   } catch(e) { /* offline — work with local */ }
+}
+
+function showSyncWarning(title, body, onOk, onCancel) {
+  document.getElementById('sync-warning-title').textContent = title;
+  document.getElementById('sync-warning-body').innerHTML = body;
+  const modal = document.getElementById('modal-sync-warning');
+  modal.style.display = 'flex';
+  const btnOk     = document.getElementById('sync-warning-ok');
+  const btnCancel = document.getElementById('sync-warning-cancel');
+  // Clone to remove old listeners
+  const newOk     = btnOk.cloneNode(true);
+  const newCancel = btnCancel.cloneNode(true);
+  btnOk.parentNode.replaceChild(newOk, btnOk);
+  btnCancel.parentNode.replaceChild(newCancel, btnCancel);
+  newOk.addEventListener('click', () => { modal.style.display='none'; if(onOk) onOk(); });
+  newCancel.addEventListener('click', () => { modal.style.display='none'; if(onCancel) onCancel(); });
 }
 
 function subscribeToFirestore(uid) {
@@ -4912,9 +4966,11 @@ async function logOut() {
 async function forcSync() {
   closeUserMenu();
   setSyncStatus('syncing');
-  if (currentUser) await pullAndMerge(currentUser.uid);
-  showToast('✓ Sincronizado con la nube');
-  refreshCurrentScreen();
+  if (currentUser) {
+    await pullAndMerge(currentUser.uid, true); // silencioso — el usuario ya lo pidió explícitamente
+    showToast(`✓ Sincronizado · ${db.entries.length} registros`);
+    refreshCurrentScreen();
+  }
 }
 
 function setSyncStatus(state) {
@@ -4982,7 +5038,7 @@ auth.onAuthStateChanged(async user => {
     overlay.style.display = 'none';
     updateUserUI(user);
     setSyncStatus('syncing');
-    await pullAndMerge(user.uid);
+    await pullAndMerge(user.uid, false); // false = mostrar aviso si hay discrepancia
     subscribeToFirestore(user.uid);
     loadLastSync();
     renderHome();
@@ -4991,6 +5047,39 @@ auth.onAuthStateChanged(async user => {
     if (unsubscribeSnapshot) { unsubscribeSnapshot(); unsubscribeSnapshot = null; }
     overlay.style.display = 'flex';
     authTab('login');
+  }
+});
+
+// ── Al cerrar / salir: forzar sync si hay usuario activo ──
+window.addEventListener('beforeunload', (e) => {
+  if (currentUser) {
+    // Intento silencioso de sync al salir
+    syncToFirestore().catch(()=>{});
+  }
+});
+
+// ── Visibilidad: al volver a la app (desde otra pestaña o al desbloquear móvil) ──
+document.addEventListener('visibilitychange', async () => {
+  if (document.visibilityState === 'visible' && currentUser) {
+    // Verificar si hay datos más nuevos en la nube sin bloquear la UI
+    try {
+      const snap = await firestore.collection('users').doc(currentUser.uid).collection('data').doc('library').get();
+      if (snap.exists) {
+        const remoteCount = (snap.data().entries || []).length;
+        const localCount  = db.entries.length;
+        if (remoteCount > localCount + 2) {
+          showSyncWarning(
+            '🔄 Hay datos más recientes',
+            `La nube tiene <b>${remoteCount} registros</b>.<br>Este dispositivo tiene <b>${localCount}</b>.<br><br>¿Sincronizar ahora?`,
+            async () => {
+              await pullAndMerge(currentUser.uid, true);
+              refreshCurrentScreen();
+              showToast('✓ Sincronizado');
+            }
+          );
+        }
+      }
+    } catch(e) { /* sin conexión */ }
   }
 });
 
