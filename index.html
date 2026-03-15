@@ -372,6 +372,26 @@ select.input { cursor: pointer; }
 .pag-btn:not(:disabled):hover { background: var(--ink); color: var(--cream); border-color: var(--ink); }
 .pag-info { font-size: 12px; color: var(--ink3); font-weight: 700; min-width: 80px; text-align: center; }
 
+/* ── DESAFÍO LECTOR ── */
+.desafio-card {
+  background: linear-gradient(135deg, #1a3a5c 0%, #0d2035 100%);
+  border-radius: 8px; padding: 14px 16px; color: var(--cream);
+}
+.desafio-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px; }
+.desafio-title { font-size:10px; letter-spacing:2px; text-transform:uppercase; color:rgba(245,240,232,0.55); }
+.desafio-year  { font-size:10px; letter-spacing:1px; color:rgba(245,240,232,0.4); }
+.desafio-nums  { display:flex; align-items:baseline; gap:6px; margin-bottom:8px; }
+.desafio-leidos{ font-family:var(--font-serif); font-size:38px; font-weight:700; font-style:italic; color:#7ec98f; line-height:1; }
+.desafio-meta-txt { font-size:14px; color:rgba(245,240,232,0.5); }
+.desafio-bar-wrap { background:rgba(255,255,255,0.12); border-radius:4px; height:6px; margin-bottom:8px; }
+.desafio-bar-fill { height:6px; border-radius:4px; background:#7ec98f; transition:width 0.6s ease; }
+.desafio-footer { display:flex; justify-content:space-between; align-items:center; }
+.desafio-pct   { font-family:var(--font-serif); font-size:13px; font-weight:700; color:#7ec98f; }
+.desafio-faltan{ font-size:11px; color:rgba(245,240,232,0.55); }
+.desafio-edit  { font-size:10px; letter-spacing:1px; text-transform:uppercase; font-weight:700; color:rgba(245,240,232,0.4); background:none; border:none; cursor:pointer; font-family:var(--font-sans); padding:0; }
+.desafio-edit:hover { color:var(--gold); }
+.desafio-completado { color: var(--gold) !important; }
+
 /* ── GÉNEROS ── */
 .genero-chip {
   padding:5px 11px; border-radius:20px; border:1.5px solid var(--border);
@@ -628,11 +648,14 @@ select.input { cursor: pointer; }
   <!-- RITMO HERO CARD -->
   <div id="ritmo-hero-card"></div>
 
+  <!-- DESAFÍO LECTOR -->
+  <div id="desafio-card" style="margin:0 20px 12px;display:none;"></div>
+
   <!-- LEYENDO AHORA -->
   <div style="padding:0 20px 4px;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
       <div class="cr-title" style="margin:0;">— Leyendo ahora —</div>
-      <button class="btn btn-secondary btn-sm" onclick="openModal('modal-add-reading')" style="font-size:10px;letter-spacing:1px;">+ Lectura en curso</button>
+      <button class="btn btn-secondary btn-sm" onclick="openReadingModal()" style="font-size:10px;letter-spacing:1px;">+ Lectura en curso</button>
     </div>
     <div class="reading-carousel-wrap">
       <div id="currently-reading-list" class="reading-carousel"></div>
@@ -1241,7 +1264,11 @@ select.input { cursor: pointer; }
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
           <div class="field"><label>Traductor</label><input class="input" type="text" id="f-traductor"></div>
-          <div class="field"><label>Idioma original</label><input class="input" type="text" id="f-idioma"></div>
+          <div class="field"><label>Idioma original</label>
+            <select class="input" id="f-idioma" onchange="onIdiomaChange(this)">
+            </select>
+            <input class="input" type="text" id="f-idioma-otro" placeholder="Escribe el idioma..." style="display:none;margin-top:6px;" oninput="normalizeIdiomaOtroInput(this)">
+          </div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
           <div class="field"><label>Mes lectura</label>
@@ -1742,6 +1769,29 @@ select.input { cursor: pointer; }
   </div>
 </div>
 
+<!-- ══════ MODAL: DESAFÍO LECTOR ══════ -->
+<div id="modal-desafio" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title" id="desafio-modal-title">Nuevo desafío lector</div>
+      <button class="btn-icon" onclick="closeModal('modal-desafio')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div id="desafio-sugerencias" style="margin-bottom:16px;"></div>
+      <div class="field">
+        <label id="desafio-year-label">Año del desafío</label>
+        <div id="desafio-year-display" style="font-family:var(--font-serif);font-size:22px;font-weight:700;color:var(--gold);margin-bottom:12px;"></div>
+      </div>
+      <div class="field">
+        <label>¿Cuántos libros quieres leer?</label>
+        <input class="input" type="number" id="desafio-meta" min="1" max="500" placeholder="Ej: 24">
+      </div>
+      <button class="btn btn-primary" onclick="saveDesafio()">Fijar desafío</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -1774,12 +1824,93 @@ function loadDB() {
     const r = localStorage.getItem(DB_KEY);
     if (!r) return { entries: [] };
     const parsed = JSON.parse(r);
-    // Normalizar tipos a minúscula (fix para CSV importados con "Serie", "Pelicula", etc.)
     (parsed.entries || []).forEach(e => {
       if (e.type) e.type = e.type.toLowerCase().trim();
+      if (e.idioma) e.idioma = normalizeIdioma(e.idioma);
     });
     return parsed;
   } catch { return { entries: [] }; }
+}
+
+const IDIOMA_MAP = {
+  // Códigos comunes
+  'esp':'Español','es':'Español','spa':'Español','castellano':'Español',
+  'eng':'Inglés','en':'Inglés','ing':'Inglés','english':'Inglés',
+  'deu':'Alemán','de':'Alemán','ger':'Alemán','aleman':'Alemán','alemán':'Alemán',
+  'fra':'Francés','fr':'Francés','fre':'Francés','frances':'Francés','francés':'Francés',
+  'ita':'Italiano','it':'Italiano','italiano':'Italiano',
+  'por':'Portugués','pt':'Portugués','portugues':'Portugués','portugués':'Portugués',
+  'chi':'Chino','zh':'Chino','zho':'Chino','chino':'Chino',
+  'jap':'Japonés','ja':'Japonés','jpn':'Japonés','japones':'Japonés','japonés':'Japonés',
+  'kor':'Coreano','ko':'Coreano','coreano':'Coreano',
+  'rus':'Ruso','ru':'Ruso','ruso':'Ruso',
+  'ara':'Árabe','ar':'Árabe','arabe':'Árabe','árabe':'Árabe',
+  'pol':'Polaco','pl':'Polaco','polaco':'Polaco',
+  'swe':'Sueco','sv':'Sueco','sueco':'Sueco',
+  'nor':'Noruego','no':'Noruego','noruego':'Noruego',
+  'dan':'Danés','da':'Danés','danes':'Danés','danés':'Danés',
+  'nld':'Holandés','nl':'Holandés','holandés':'Holandés','holandes':'Holandés',
+  'ces':'Checo','cs':'Checo','checo':'Checo',
+  'tur':'Turco','tr':'Turco','turco':'Turco',
+  'heb':'Hebreo','he':'Hebreo','hebreo':'Hebreo',
+  'fas':'Persa','fa':'Persa','persa':'Persa',
+  'ell':'Griego','el':'Griego','griego':'Griego',
+  'cat':'Catalán','catalan':'Catalán','catalán':'Catalán',
+};
+
+function normalizeIdioma(raw) {
+  if (!raw) return '';
+  const key = raw.trim().toLowerCase();
+  return IDIOMA_MAP[key] || (raw.trim().charAt(0).toUpperCase() + raw.trim().slice(1));
+}
+
+// Base idiomas siempre disponibles
+const IDIOMAS_BASE = [
+  'Alemán','Árabe','Catalán','Checo','Chino','Coreano','Danés','Español',
+  'Francés','Griego','Hebreo','Holandés','Inglés','Italiano','Japonés',
+  'Noruego','Persa','Polaco','Portugués','Ruso','Sueco','Turco'
+];
+
+function getIdiomasDisponibles() {
+  // Combinar base + idiomas únicos ya registrados en la biblioteca
+  const custom = db.entries
+    .filter(e => e.idioma && e.idioma.trim())
+    .map(e => normalizeIdioma(e.idioma));
+  const all = [...new Set([...IDIOMAS_BASE, ...custom])].sort((a,b) => a.localeCompare(b, 'es'));
+  return all;
+}
+
+function populateIdiomaSelect(selectedValue) {
+  const sel = document.getElementById('f-idioma'); if(!sel) return;
+  const idiomas = getIdiomasDisponibles();
+  sel.innerHTML = `<option value="">— Seleccionar —</option>` +
+    idiomas.map(i => `<option value="${i}"${i===selectedValue?' selected':''}>${i}</option>`).join('') +
+    `<option value="__otro__"${selectedValue==='__otro__'?' selected':''}>Otro (escribir a mano)</option>`;
+}
+
+function onIdiomaChange(sel) {
+  const otroCampo = document.getElementById('f-idioma-otro');
+  if (sel.value === '__otro__') {
+    otroCampo.style.display = 'block';
+    otroCampo.focus();
+  } else {
+    otroCampo.style.display = 'none';
+    otroCampo.value = '';
+  }
+}
+
+function normalizeIdiomaOtroInput(input) {
+  // Capitaliza primera letra en tiempo real
+  if (input.value) input.value = input.value.charAt(0).toUpperCase() + input.value.slice(1);
+}
+
+function getIdiomaValueFromForm() {
+  const sel = document.getElementById('f-idioma');
+  if (sel.value === '__otro__') {
+    const otro = document.getElementById('f-idioma-otro').value.trim();
+    return otro ? normalizeIdioma(otro) : '';
+  }
+  return sel.value;
 }
 
 // ═══════════════════════════════════
@@ -1794,7 +1925,11 @@ function stampEntry(entry) {
 
 function mergeEntries(local, remote) {
   const map = {};
-  const normalize = e => { if (e.type) e.type = e.type.toLowerCase().trim(); return e; };
+  const normalize = e => {
+    if (e.type)  e.type  = e.type.toLowerCase().trim();
+    if (e.idioma) e.idioma = normalizeIdioma(e.idioma);
+    return e;
+  };
   local.forEach(e => { map[e.id] = normalize(e); });
   remote.forEach(e => {
     normalize(e);
@@ -1960,6 +2095,9 @@ function resetForm() {
   document.getElementById('prog-pct').textContent = '0';
   document.getElementById('abandono-field').style.display = 'none';
   document.getElementById('f-abandono').value = '';
+  populateIdiomaSelect('');
+  document.getElementById('f-idioma-otro').style.display = 'none';
+  document.getElementById('f-idioma-otro').value = '';
   resetGeneros();
   document.getElementById('fp-basada').value = '';
   document.getElementById('fs-basada').value = '';
@@ -2063,7 +2201,7 @@ function fillBookForm(data) {
   document.getElementById('f-editorial').value = data.publisher;
   document.getElementById('f-paginas').value = data.pages;
   document.getElementById('f-anio-pub').value = data.pubYear;
-  document.getElementById('f-idioma').value = data.language;
+  populateIdiomaSelect(normalizeIdioma(data.language));
   document.getElementById('f-cover').value = data.cover;
   document.getElementById('add-search-results').style.display = 'none';
   document.getElementById('add-search').value = data.title;
@@ -2235,7 +2373,7 @@ function saveEntry() {
       paginas: parseInt(document.getElementById('f-paginas').value) || 0,
       anio_pub: parseInt(document.getElementById('f-anio-pub').value) || null,
       traductor: document.getElementById('f-traductor').value,
-      idioma: document.getElementById('f-idioma').value,
+      idioma: getIdiomaValueFromForm(),
       mes: document.getElementById('f-mes').value,
       anio: parseInt(document.getElementById('f-anio-lect').value) || new Date().getFullYear(),
       estado: document.getElementById('f-estado').value,
@@ -2359,6 +2497,151 @@ function pagsHastaDia(year) {
 // ═══════════════════════════════════
 //  HOME
 // ═══════════════════════════════════
+// ═══════════════════════════════════
+//  DESAFÍO LECTOR
+// ═══════════════════════════════════
+const DESAFIO_KEY = 'lumen_desafios_v1';
+
+function loadDesafios() {
+  try { const r=localStorage.getItem(DESAFIO_KEY); return r?JSON.parse(r):{}; }
+  catch { return {}; }
+}
+function saveDesafios(d) { localStorage.setItem(DESAFIO_KEY, JSON.stringify(d)); }
+
+function librosLeidosEnAnio(yr) {
+  return db.entries.filter(e => e.type==='libro' && e.estado==='leido' && parseInt(e.anio)===yr).length;
+}
+
+function mejorAnioLibros() {
+  const years = [...new Set(db.entries.filter(e=>e.type==='libro'&&e.estado==='leido'&&e.anio).map(e=>parseInt(e.anio)))];
+  let best=0, bestYr=null;
+  years.forEach(y => { const n=librosLeidosEnAnio(y); if(n>best){best=n;bestYr=y;} });
+  return { year:bestYr, count:best };
+}
+
+function openDesafioModal() {
+  const yr = new Date().getFullYear();
+  const mes = new Date().getMonth(); // 0-11
+  const desafios = loadDesafios();
+
+  // Determinar año del desafío
+  let targetYr = yr;
+  // Si ya hay desafío activo este año y estamos antes de diciembre, proponer año siguiente
+  if (desafios[yr] && mes < 11) {
+    targetYr = yr + 1;
+  }
+
+  document.getElementById('desafio-modal-title').textContent = `Desafío ${targetYr}`;
+  document.getElementById('desafio-year-display').textContent = targetYr;
+  document.getElementById('desafio-meta').dataset.year = targetYr;
+
+  // Sugerencias
+  const prevCount = librosLeidosEnAnio(targetYr - 1);
+  const { year: bestYr, count: bestCount } = mejorAnioLibros();
+  const existente = desafios[targetYr];
+
+  let sugs = '';
+  if (existente) {
+    sugs += `<div style="padding:10px 12px;background:var(--cream2);border-radius:6px;margin-bottom:12px;font-size:12px;color:var(--ink3);">
+      Ya tienes un desafío activo: <b>${existente.meta} libros</b>. Puedes modificarlo abajo.
+    </div>`;
+    document.getElementById('desafio-meta').value = existente.meta;
+  } else {
+    document.getElementById('desafio-meta').value = '';
+  }
+
+  if (prevCount > 0 || bestCount > 0) {
+    sugs += `<div style="font-size:11px;color:var(--ink4);font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;">Sugerencias</div>`;
+    sugs += `<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px;">`;
+    if (prevCount > 0) {
+      sugs += `<button onclick="document.getElementById('desafio-meta').value=${prevCount+1};document.getElementById('desafio-meta').focus();" style="text-align:left;padding:9px 12px;border:1.5px solid var(--border);border-radius:6px;background:#fff;cursor:pointer;font-family:var(--font-sans);font-size:12px;color:var(--ink2);">
+        📈 <b>${prevCount+1} libros</b> — igual que ${targetYr-1} (${prevCount}) + 1
+      </button>`;
+      sugs += `<button onclick="document.getElementById('desafio-meta').value=${prevCount+2};document.getElementById('desafio-meta').focus();" style="text-align:left;padding:9px 12px;border:1.5px solid var(--border);border-radius:6px;background:#fff;cursor:pointer;font-family:var(--font-sans);font-size:12px;color:var(--ink2);">
+        🚀 <b>${prevCount+2} libros</b> — igual que ${targetYr-1} + 2
+      </button>`;
+    }
+    if (bestYr && bestYr !== targetYr-1 && bestCount > 0) {
+      sugs += `<button onclick="document.getElementById('desafio-meta').value=${bestCount};document.getElementById('desafio-meta').focus();" style="text-align:left;padding:9px 12px;border:1.5px solid var(--border);border-radius:6px;background:linear-gradient(135deg,#fff8e8,#fff);cursor:pointer;font-family:var(--font-sans);font-size:12px;color:var(--ink2);border-color:var(--gold);">
+        🏆 <b>${bestCount} libros</b> — tu mejor año fue ${bestYr} (${bestCount} libros)
+      </button>`;
+    }
+    sugs += `</div>`;
+  }
+
+  document.getElementById('desafio-sugerencias').innerHTML = sugs;
+  openModal('modal-desafio');
+}
+
+function saveDesafio() {
+  const meta = parseInt(document.getElementById('desafio-meta').value);
+  const targetYr = parseInt(document.getElementById('desafio-meta').dataset.year) || new Date().getFullYear();
+  if (!meta || meta < 1) { showToast('Ingresa una meta válida'); return; }
+  const desafios = loadDesafios();
+  desafios[targetYr] = { meta, createdAt: Date.now() };
+  saveDesafios(desafios);
+  closeModal('modal-desafio');
+  showToast(`✓ Desafío ${targetYr}: ${meta} libros`);
+  renderDesafioCard();
+}
+
+function renderDesafioCard() {
+  const el = document.getElementById('desafio-card'); if(!el) return;
+  const yr = new Date().getFullYear();
+  const desafios = loadDesafios();
+
+  // Mostrar desafío del año actual si existe, sino del próximo si está configurado
+  const desafio = desafios[yr] || desafios[yr+1];
+  const desafioYr = desafios[yr] ? yr : (desafios[yr+1] ? yr+1 : null);
+
+  if (!desafio) {
+    // Sin desafío — mostrar botón de invitación
+    el.style.display = 'block';
+    el.innerHTML = `
+      <button onclick="openDesafioModal()" style="width:100%;padding:12px 16px;border:1.5px dashed var(--border);border-radius:8px;background:transparent;font-family:var(--font-sans);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink4);cursor:pointer;text-align:center;">
+        🎯 Fijar desafío lector ${yr}
+      </button>`;
+    return;
+  }
+
+  const leidos  = librosLeidosEnAnio(desafioYr === yr ? yr : yr); // si es año futuro mostramos 0
+  const leidosReal = desafioYr === yr ? leidos : 0;
+  const meta    = desafio.meta;
+  const pct     = Math.min(100, Math.round((leidosReal / meta) * 100));
+  const faltan  = Math.max(0, meta - leidosReal);
+  const completado = leidosReal >= meta;
+  const esFuturo = desafioYr > yr;
+
+  el.style.display = 'block';
+  el.innerHTML = `
+    <div class="desafio-card">
+      <div class="desafio-header">
+        <div>
+          <div class="desafio-title">🎯 Desafío lector ${desafioYr}</div>
+          ${esFuturo ? `<div style="font-size:10px;color:rgba(245,240,232,0.4);margin-top:2px;">Empieza en ${desafioYr}</div>` : ''}
+        </div>
+        <button class="desafio-edit" onclick="openDesafioModal()">✎ Editar</button>
+      </div>
+      ${!esFuturo ? `
+      <div class="desafio-nums">
+        <span class="desafio-leidos ${completado?'desafio-completado':''}">${leidosReal}</span>
+        <span class="desafio-meta-txt">de ${meta} libros</span>
+        ${completado ? '<span style="font-size:18px;margin-left:4px;">🏆</span>' : ''}
+      </div>
+      <div class="desafio-bar-wrap">
+        <div class="desafio-bar-fill" style="width:${pct}%;${completado?'background:var(--gold);':''}"></div>
+      </div>
+      <div class="desafio-footer">
+        <span class="desafio-pct ${completado?'desafio-completado':''}">${pct}%</span>
+        <span class="desafio-faltan">
+          ${completado ? '¡Desafío completado! 🎉' : `Faltan ${faltan} libro${faltan!==1?'s':''}`}
+        </span>
+      </div>` : `
+      <div style="font-size:13px;color:rgba(245,240,232,0.6);margin-top:4px;">Meta: <b style="color:var(--gold);">${meta} libros</b> para ${desafioYr}</div>
+      `}
+    </div>`;
+}
+
 function renderHome() {
   const yr = new Date().getFullYear();
   document.getElementById('hero-year-label').textContent = yr;
@@ -2370,6 +2653,8 @@ function renderHome() {
 
   document.getElementById('hero-title').textContent = pags > 0 ? `${pags.toLocaleString()} páginas\neste año` : 'Mi Biblioteca\nCultural';
   document.getElementById('hero-sub').textContent = `${libros.length} libros · ${peliculas.length} películas · ${series.length} series`;
+
+  renderDesafioCard();
 
   document.getElementById('year-summary').innerHTML = `
     <div class="ys-box">
@@ -2566,12 +2851,14 @@ function renderLibrary() {
     if (libFilter === 'leyendo') return e.type === 'libro' && e.estado === 'leyendo';
     if (libFilter === 'serie') return e.type === 'serie';
     if (libFilter === 'pelicula') return e.type === 'pelicula';
-    if (libFilter === 'libro') return e.type === 'libro';
+    if (libFilter === 'libro') return e.type === 'libro'; // includes leyendo
     return e.type === libFilter;
   }).filter(e => !q || e.titulo.toLowerCase().includes(q) || (e.autor||'').toLowerCase().includes(q) || (e.director||'').toLowerCase().includes(q));
 
-  // Sort by date (anio+mes) desc, then id desc
+  // Sort: leyendo first, then by date desc, then id desc
   items = items.sort((a, b) => {
+    if (a.estado === 'leyendo' && b.estado !== 'leyendo') return -1;
+    if (b.estado === 'leyendo' && a.estado !== 'leyendo') return 1;
     const mi = MESES.indexOf(a.mes), mj = MESES.indexOf(b.mes);
     const ai = (a.anio||0)*100 + (mi>=0?mi:0);
     const bi = (b.anio||0)*100 + (mj>=0?mj:0);
@@ -2816,7 +3103,11 @@ function editEntry(id) {
     updateStars(currentRating);
     document.getElementById('f-notas').value = e.notas || '';
     if (e.type === 'libro') {
-      ['titulo','autor','editorial','paginas','anio_pub','traductor','idioma','cover'].forEach(k => { const el=document.getElementById('f-'+k); if(el) el.value=e[k]||''; });
+      ['titulo','autor','editorial','paginas','anio_pub','traductor','cover'].forEach(k => { const el=document.getElementById('f-'+k); if(el) el.value=e[k]||''; });
+      // Idioma: populate dynamic select
+      const normalizedIdioma = normalizeIdioma(e.idioma||'');
+      populateIdiomaSelect(normalizedIdioma);
+      document.getElementById('f-idioma-otro').style.display = 'none';
       document.getElementById('f-mes').value = e.mes||'';
       document.getElementById('f-anio-lect').value = e.anio||'';
       document.getElementById('f-estado').value = e.estado||'leido';
@@ -4303,6 +4594,30 @@ function saveProgressCover() {
   document.getElementById('edit-cover-chevron').style.transform = 'rotate(0deg)';
   showToast('✓ Portada actualizada');
   renderHome();
+}
+
+function openReadingModal() {
+  // Limpiar todos los campos antes de abrir
+  ['reading-search','reading-titulo','reading-autor','reading-editorial',
+   'reading-paginas','reading-anio-pub','reading-traductor','reading-idioma','reading-cover']
+    .forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  document.getElementById('reading-search-results').style.display = 'none';
+  document.getElementById('reading-cover-preview').innerHTML = '';
+  document.getElementById('reading-cover-google-results').style.display = 'none';
+  document.getElementById('reading-prog-pct').value = 0;
+  document.getElementById('reading-pct-display').textContent = '0';
+  document.getElementById('reading-prog-pag').value = '';
+  document.getElementById('reading-prog-pct-field').style.display = 'block';
+  document.getElementById('reading-prog-pag-field').style.display = 'none';
+  // Reset modo lectura a pct
+  readingMode = 'pct';
+  document.querySelectorAll('.reading-mode-btn').forEach(b => {
+    const isPct = b.dataset.mode === 'pct';
+    b.style.borderColor  = isPct ? 'var(--gold)' : 'var(--border)';
+    b.style.background   = isPct ? '#fff8e8'     : '#fff';
+    b.style.color        = isPct ? 'var(--gold)'  : 'var(--ink3)';
+  });
+  openModal('modal-add-reading');
 }
 
 function saveReadingEntry() {
