@@ -1184,16 +1184,23 @@ select.input { cursor: pointer; }
     <div id="menu-sync-dot" style="width:7px;height:7px;border-radius:50%;background:#7ec98f;flex-shrink:0;"></div>
     <span id="menu-sync-text">Sincronizado</span>
   </div>
-  <div style="font-size:10px;color:var(--ink4);padding:4px 16px 8px;border-bottom:1px solid var(--border);" id="menu-last-sync">—</div>
-  <button class="user-menu-item" onclick="forcSync()">
-    <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;"><polyline points="1 4 1 10 7 10"/><polyline points="23 20 23 14 17 14"/><path d="M20.49 9A9 9 0 005.64 5.64L1 10M23 14l-4.64 4.36A9 9 0 013.51 15"/></svg>
-    Forzar sincronización
+  <div style="font-size:10px;color:var(--ink4);padding:4px 16px 10px;border-bottom:1px solid var(--border);line-height:1.6;" id="menu-last-sync">—</div>
+
+  <!-- Guardar / Cargar -->
+  <button class="user-menu-item" onclick="manualSaveToCloud()">
+    <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0018 9h-1.26A8 8 0 103 16.3"/></svg>
+    📤 Guardar en nube
   </button>
+  <button class="user-menu-item" onclick="manualLoadFromCloud()">
+    <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0018 9h-1.26A8 8 0 103 16.11"/></svg>
+    📥 Cargar desde nube
+  </button>
+
   <button class="user-menu-item" onclick="closeUserMenu();openModal('modal-import')">
     <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0018 9h-1.26A8 8 0 103 16.3"/></svg>
-    Importar / Exportar
+    Importar / Exportar CSV
   </button>
-  <button class="user-menu-item danger" onclick="logOut()">
+  <button class="user-menu-item danger" onclick="confirmLogOut()">
     <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
     Cerrar sesión
   </button>
@@ -1808,6 +1815,33 @@ select.input { cursor: pointer; }
   </div>
 </div>
 
+<!-- ══════ MODAL: CONFIRMAR CIERRE SESIÓN ══════ -->
+<div id="modal-logout-confirm" class="modal-overlay">
+  <div class="modal" style="max-width:340px;">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title">Cerrar sesión</div>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:14px;color:var(--ink2);line-height:1.6;margin-bottom:6px;">
+        ¿Deseas guardar tus datos en la nube antes de salir?
+      </p>
+      <div id="logout-sync-status" style="font-size:12px;color:var(--ink4);margin-bottom:16px;min-height:16px;"></div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <button class="btn btn-primary" id="btn-save-and-logout" onclick="saveAndLogOut()">
+          📤 Guardar y cerrar sesión
+        </button>
+        <button class="btn btn-secondary" onclick="logOut()">
+          Cerrar sesión sin guardar
+        </button>
+        <button class="btn btn-secondary" onclick="closeModal('modal-logout-confirm')" style="color:var(--ink4);">
+          Cancelar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ══════ MODAL: SINCRONIZACIÓN ══════ -->
 <div id="modal-sync-warning" class="modal-overlay" style="z-index:10000;">
   <div class="modal" style="max-width:340px;">
@@ -1842,7 +1876,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const firestore = firebase.firestore();
-firestore.enablePersistence().catch(() => {});
+// enablePersistence() removido — incompatible con Safari iOS
 
 // ═══════════════════════════════════
 //  DATA — local + cloud
@@ -1994,18 +2028,24 @@ function mergeEntries(local, remote) {
 
 function setLastSync() {
   const now = new Date();
+  const ts = now.toLocaleTimeString('es', {hour:'2-digit', minute:'2-digit'}) + ' · ' + now.toLocaleDateString('es', {day:'2-digit', month:'short'});
   localStorage.setItem(LAST_SYNC_KEY, now.toISOString());
   const el = document.getElementById('menu-last-sync');
-  if (el) el.textContent = 'Sincronizado: ' + now.toLocaleTimeString('es', {hour:'2-digit', minute:'2-digit'}) + ' · ' + now.toLocaleDateString('es', {day:'2-digit', month:'short'});
+  if (el) el.innerHTML = `Última sync: ${ts}<br><span style="color:var(--ink2);font-weight:700;">${db.entries.length} registros</span>`;
 }
 
 function loadLastSync() {
   const el = document.getElementById('menu-last-sync');
   if (!el) return;
   const s = localStorage.getItem(LAST_SYNC_KEY);
-  if (!s) { el.textContent = 'Sin sincronización reciente'; return; }
+  const count = db.entries.length;
+  if (!s) {
+    el.innerHTML = `Sin sincronización reciente<br><span style="color:var(--ink2);font-weight:700;">${count} registros locales</span>`;
+    return;
+  }
   const d = new Date(s);
-  el.textContent = 'Última sync: ' + d.toLocaleTimeString('es', {hour:'2-digit', minute:'2-digit'}) + ' · ' + d.toLocaleDateString('es', {day:'2-digit', month:'short'});
+  const ts = d.toLocaleTimeString('es', {hour:'2-digit', minute:'2-digit'}) + ' · ' + d.toLocaleDateString('es', {day:'2-digit', month:'short'});
+  el.innerHTML = `Última sync: ${ts}<br><span style="color:var(--ink2);font-weight:700;">${count} registros</span>`;
 }
 
 function saveDB() {
@@ -2025,6 +2065,7 @@ function saveDB() {
 async function syncToFirestore() {
   if (!currentUser) return;
   try {
+    await auth.currentUser.getIdToken(false);
     await firestore.collection('users').doc(currentUser.uid).collection('data').doc('library').set({
       entries: db.entries, updatedAt: Date.now()
     });
@@ -2032,7 +2073,7 @@ async function syncToFirestore() {
     setLastSync();
   } catch(e) {
     setSyncStatus('offline');
-    console.warn('sync offline:', e.message);
+    console.warn('sync error:', e.message);
   }
 }
 
@@ -5063,18 +5104,107 @@ async function resetPassword() {
 }
 
 async function logOut() {
+  closeModal('modal-logout-confirm');
   closeUserMenu();
   if (unsubscribeSnapshot) { unsubscribeSnapshot(); unsubscribeSnapshot = null; }
   await auth.signOut();
 }
 
+async function confirmLogOut() {
+  closeUserMenu();
+  // Mostrar estado actual en el modal
+  const statusEl = document.getElementById('logout-sync-status');
+  statusEl.textContent = `Tienes ${db.entries.length} registros locales.`;
+  openModal('modal-logout-confirm');
+}
+
+async function saveAndLogOut() {
+  const statusEl = document.getElementById('logout-sync-status');
+  const btn = document.getElementById('btn-save-and-logout');
+  btn.textContent = '⏳ Guardando...';
+  btn.disabled = true;
+  statusEl.textContent = 'Subiendo datos a la nube...';
+  try {
+    await getValidToken();
+    await firestore.collection('users').doc(currentUser.uid).collection('data').doc('library').set({
+      entries: db.entries, updatedAt: Date.now()
+    });
+    statusEl.textContent = `✓ ${db.entries.length} registros guardados. Cerrando sesión...`;
+    setTimeout(() => logOut(), 1200);
+  } catch(e) {
+    statusEl.textContent = `⚠ Error al guardar: ${e.message}. ¿Cerrar de todas formas?`;
+    btn.textContent = '📤 Reintentar';
+    btn.disabled = false;
+  }
+}
+
+// Obtener token válido — resuelve el problema de Safari
+async function getValidToken() {
+  if (!auth.currentUser) throw new Error('No hay sesión activa');
+  await auth.currentUser.getIdToken(true); // true = forzar refresh
+}
+
+async function manualSaveToCloud() {
+  closeUserMenu();
+  if (!currentUser) { showToast('Inicia sesión primero'); return; }
+  setSyncStatus('syncing');
+  showToast('⏳ Guardando en nube...', 2000);
+  try {
+    await getValidToken();
+    await firestore.collection('users').doc(currentUser.uid).collection('data').doc('library').set({
+      entries: db.entries, updatedAt: Date.now()
+    });
+    setLastSync();
+    setSyncStatus('ok');
+    showToast(`✓ ${db.entries.length} registros guardados en la nube`, 3000);
+  } catch(e) {
+    setSyncStatus('offline');
+    showToast(`⚠ Error: ${e.message}`, 4000);
+    console.error('manualSave error:', e);
+  }
+}
+
+async function manualLoadFromCloud() {
+  closeUserMenu();
+  if (!currentUser) { showToast('Inicia sesión primero'); return; }
+  setSyncStatus('syncing');
+  showToast('⏳ Cargando desde nube...', 2000);
+  try {
+    await getValidToken();
+    const snap = await firestore.collection('users').doc(currentUser.uid).collection('data').doc('library').get();
+    if (!snap.exists) {
+      setSyncStatus('ok');
+      showToast('La nube no tiene datos aún. Usa 📤 Guardar primero.', 3500);
+      return;
+    }
+    const remote = snap.data();
+    const remoteEntries = remote.entries || [];
+    // Merge con datos locales — gana el más reciente por timestamp
+    const merged = mergeEntries(db.entries, remoteEntries);
+    db.entries = merged;
+    localStorage.setItem(DB_KEY, JSON.stringify(db));
+    setLastSync();
+    setSyncStatus('ok');
+    refreshCurrentScreen();
+    showToast(`✓ ${merged.length} registros cargados desde la nube`, 3000);
+  } catch(e) {
+    setSyncStatus('offline');
+    showToast(`⚠ Error: ${e.message}`, 4000);
+    console.error('manualLoad error:', e);
+  }
+}
+
 async function forcSync() {
   closeUserMenu();
+  if (!currentUser) { showToast('Inicia sesión primero'); return; }
   setSyncStatus('syncing');
-  if (currentUser) {
-    await pullAndMerge(currentUser.uid, true); // silencioso — el usuario ya lo pidió explícitamente
-    showToast(`✓ Sincronizado · ${db.entries.length} registros`);
+  try {
+    await getValidToken();
+    await pullAndMerge(currentUser.uid, true);
     refreshCurrentScreen();
+  } catch(e) {
+    setSyncStatus('offline');
+    showToast(`⚠ Error de sincronización: ${e.message}`, 4000);
   }
 }
 
@@ -5082,8 +5212,8 @@ function setSyncStatus(state) {
   const dot = document.getElementById('sync-dot');
   const mdot = document.getElementById('menu-sync-dot');
   const mtxt = document.getElementById('menu-sync-text');
-  const colors = { ok: '#7ec98f', syncing: '#c8952a', offline: '#f08080' };
-  const labels = { ok: 'Sincronizado', syncing: 'Sincronizando…', offline: 'Sin conexión' };
+  const colors = { ok: '#7ec98f', syncing: '#c8952a', offline: '#f08080', error: '#f08080' };
+  const labels = { ok: 'Sincronizado', syncing: 'Sincronizando…', offline: 'Sin conexión', error: 'Error de auth' };
   const c = colors[state] || colors.ok;
   if (dot) dot.style.background = c;
   if (mdot) mdot.style.background = c;
@@ -5142,11 +5272,22 @@ auth.onAuthStateChanged(async user => {
     currentUser = user;
     overlay.style.display = 'none';
     updateUserUI(user);
-    setSyncStatus('syncing');
-    await pullAndMerge(user.uid, false); // false = mostrar aviso si hay discrepancia
-    subscribeToFirestore(user.uid);
     loadLastSync();
+
+    // Mostrar datos locales INMEDIATAMENTE — no esperar a Firestore
     renderHome();
+
+    // Sincronizar con Firestore en background
+    setSyncStatus('syncing');
+    try {
+      await pullAndMerge(user.uid, false);
+      subscribeToFirestore(user.uid);
+      // Re-renderizar si la pantalla activa es biblioteca o home
+      refreshCurrentScreen();
+    } catch(e) {
+      setSyncStatus('offline');
+      console.warn('Auth sync error:', e.message);
+    }
   } else {
     currentUser = null;
     if (unsubscribeSnapshot) { unsubscribeSnapshot(); unsubscribeSnapshot = null; }
