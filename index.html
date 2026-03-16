@@ -3011,11 +3011,15 @@ function entryCardHTML(e) {
     ? `<div class="progress-wrap"><div class="progress-fill" style="width:${e.progreso||0}%"></div></div>` : '';
   const notasBadge = (e.notas_lista && e.notas_lista.length > 0)
     ? `<span style="font-size:10px;color:var(--ink4);margin-left:4px;">📝 ${e.notas_lista.length}</span>` : '';
-  const generosBadge = (e.generos && e.generos.length > 0)
-    ? `<span style="font-size:9px;background:var(--cream2);border:1px solid var(--border);border-radius:10px;padding:1px 6px;color:var(--ink3);">${e.generos[0]}</span>` : '';
-  const generosBtn = e.type === 'libro'
-    ? `<button onclick="event.stopPropagation();openGeneroQuick('${e.id}')" style="font-size:9px;background:none;border:1px dashed var(--border);border-radius:10px;padding:1px 6px;color:var(--ink4);cursor:pointer;font-family:var(--font-sans);">🏷 Etiquetar</button>`
-    : '';
+  // Géneros: mostrar todos como chips clicables + botón añadir si no hay
+  const generosHtml = e.type === 'libro' ? (() => {
+    const gs = e.generos && e.generos.length > 0 ? e.generos : [];
+    const chips = gs.map(g =>
+      `<span onclick="event.stopPropagation();openGeneroQuick('${e.id}')" style="font-size:9px;background:var(--cream2);border:1px solid var(--border);border-radius:10px;padding:2px 7px;color:var(--ink3);cursor:pointer;">${g}</span>`
+    ).join('');
+    const addBtn = `<button onclick="event.stopPropagation();openGeneroQuick('${e.id}')" style="font-size:9px;background:none;border:1px dashed var(--border);border-radius:10px;padding:2px 7px;color:var(--ink4);cursor:pointer;font-family:var(--font-sans);">🏷${gs.length>0?' +':' Etiquetar'}</button>`;
+    return chips + addBtn;
+  })() : '';
   const badge = `<span class="badge badge-${e.estado==='leyendo'?'leyendo':e.type}">${e.estado==='leyendo'?'Leyendo':e.type==='libro'?'Libro':e.type==='pelicula'?'Película':'Serie'}</span>`;
   const metaLine = `${e.mes ? e.mes + ' ' : ''}${e.anio || ''}`;
   return `
@@ -3031,8 +3035,7 @@ function entryCardHTML(e) {
           ${badge}
           ${metaLine ? `<span style="font-size:10px;color:var(--ink4);">${metaLine}</span>` : ''}
           ${stars ? `<span class="entry-card-rating">${stars}</span>` : ''}
-          ${generosBadge}
-          ${generosBtn}
+          ${generosHtml}
           ${notasBadge}
         </div>
       </div>
@@ -4108,6 +4111,26 @@ function renderCuriosidadesLibros(libros) {
   const traducidos = libros.filter(e => e.traductor && e.traductor.trim() && e.traductor.trim() !== '-');
   const anios = [...new Set(libros.filter(e=>e.anio_pub).map(e=>parseInt(e.anio_pub)))].sort((a,b)=>a-b);
   const spanAnios = anios.length>=2 ? `${anios[0]}–${anios[anios.length-1]}` : null;
+
+  // Géneros
+  const generoCount = {};
+  libros.forEach(e => (e.generos||[]).forEach(g => { generoCount[g]=(generoCount[g]||0)+1; }));
+  const generosSorted = Object.entries(generoCount).sort((a,b)=>b[1]-a[1]);
+  const topGenero = generosSorted[0];
+  const librosConGenero = libros.filter(e=>e.generos&&e.generos.length>0).length;
+  const generosBar = generosSorted.length > 0 ? `
+    <div style="margin:8px 0 4px;">
+      <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink4);font-weight:700;margin-bottom:6px;">Distribución por género</div>
+      ${generosSorted.map(([g,n])=>`
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+          <div style="font-size:12px;color:var(--ink2);width:100px;flex-shrink:0;">${g}</div>
+          <div style="flex:1;background:var(--cream3);border-radius:3px;height:8px;">
+            <div style="width:${Math.round((n/librosConGenero)*100)}%;background:var(--gold);height:8px;border-radius:3px;"></div>
+          </div>
+          <div style="font-size:11px;color:var(--ink4);width:30px;text-align:right;">${n}</div>
+        </div>`).join('')}
+    </div>` : '';
+
   el.innerHTML = `<div class="card" style="margin-bottom:20px;">
     <div style="font-family:var(--font-serif);font-size:15px;font-weight:700;margin-bottom:10px;">Curiosidades de tus lecturas</div>
     <div style="font-size:13px;color:var(--ink2);line-height:2.1;">
@@ -4119,7 +4142,11 @@ function renderCuriosidadesLibros(libros) {
       ${masCorto&&masCorto.id!==masLargo?.id?`📗 Libro más corto: <b>${masCorto.titulo}</b> (${masCorto.paginas} págs).<br>`:''}
       ${traducidos.length>0?`🔤 ${Math.round((traducidos.length/libros.length)*100)}% de tus libros son traducciones.<br>`:''}
       ${spanAnios?`📅 Tus libros abarcan desde <b>${anios[0]}</b> hasta <b>${anios[anios.length-1]}</b>.<br>`:''}
-    </div></div>`;
+      ${topGenero?`🏷 Género más leído: <b>${topGenero[0]}</b> (${topGenero[1]} libro${topGenero[1]>1?'s':''}).<br>`:''}
+      ${librosConGenero>0?`<span style="font-size:11px;color:var(--ink4);">${librosConGenero} de ${libros.length} libros tienen género etiquetado.</span><br>`:''}
+    </div>
+    ${generosBar}
+  </div>`;
 }
 
 function renderCuriosidadesPeliculas(pels) {
