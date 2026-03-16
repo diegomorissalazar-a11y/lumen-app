@@ -1858,7 +1858,15 @@ function loadDB() {
     if (!r) return { entries: [] };
     const parsed = JSON.parse(r);
     (parsed.entries || []).forEach(e => {
-      if (e.type) e.type = e.type.toLowerCase().trim();
+      // Normalizar type — cubre todos los casos posibles de CSV importados
+      if (e.type) {
+        const t = e.type.toLowerCase().trim()
+          .normalize('NFD').replace(/[\u0300-\u036f]/g,''); // quita tildes
+        if (t.includes('libro')) e.type = 'libro';
+        else if (t.includes('pelicula') || t.includes('movie') || t.includes('film')) e.type = 'pelicula';
+        else if (t.includes('serie') || t.includes('series') || t.includes('tv')) e.type = 'serie';
+        else e.type = t;
+      }
       if (e.idioma) e.idioma = normalizeIdioma(e.idioma);
     });
     return parsed;
@@ -1959,7 +1967,14 @@ function stampEntry(entry) {
 function mergeEntries(local, remote) {
   const map = {};
   const normalize = e => {
-    if (e.type)  e.type  = e.type.toLowerCase().trim();
+    if (e.type) {
+      const t = e.type.toLowerCase().trim()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+      if (t.includes('libro')) e.type = 'libro';
+      else if (t.includes('pelicula') || t.includes('movie') || t.includes('film')) e.type = 'pelicula';
+      else if (t.includes('serie') || t.includes('series') || t.includes('tv')) e.type = 'serie';
+      else e.type = t;
+    }
     if (e.idioma) e.idioma = normalizeIdioma(e.idioma);
     return e;
   };
@@ -2030,34 +2045,37 @@ async function pullAndMerge(uid, silent) {
       const localCount  = db.entries.length;
       const remoteCount = remoteEntries.length;
 
-      // Si Firestore tiene más datos que local → hay pérdida local → avisar
-      if (!silent && remoteCount > localCount + 2) {
-        showSyncWarning(
-          '📱 Datos desincronizados',
-          `La nube tiene <b>${remoteCount} registros</b> pero este dispositivo solo tiene <b>${localCount}</b>.<br><br>¿Quieres descargar los datos de la nube?`,
-          async () => {
-            const merged = mergeEntries(db.entries, remoteEntries);
-            db.entries = merged;
-            localStorage.setItem(DB_KEY, JSON.stringify(db));
-            await syncToFirestore();
-            refreshCurrentScreen();
-            showToast(`✓ Sincronizado · ${merged.length} registros`);
-          }
-        );
-        return;
-      }
-
+      // SIEMPRE hacer el merge primero — nunca quedarse sin datos
       const merged = mergeEntries(db.entries, remoteEntries);
-      const changed = merged.length !== db.entries.length ||
-        merged.some((e,i) => e._updatedAt !== db.entries[i]?._updatedAt);
       db.entries = merged;
       localStorage.setItem(DB_KEY, JSON.stringify(db));
-      if (changed) await syncToFirestore();
-      else { setSyncStatus('ok'); setLastSync(); }
+
+      // Si había una diferencia grande y no es silencioso, avisar DESPUÉS de tener los datos
+      if (!silent && remoteCount > localCount + 5) {
+        showToast(`✓ Sincronizado · ${merged.length} registros descargados`, 3500);
+      }
+
+      // Subir si hubo cambios locales que la nube no tenía
+      const localHasNewer = db.entries.some(e => {
+        const remoteEntry = remoteEntries.find(r => r.id === e.id);
+        return !remoteEntry || (e._updatedAt || 0) > (remoteEntry._updatedAt || 0);
+      });
+      if (localHasNewer || merged.length !== remoteCount) {
+        await syncToFirestore();
+      } else {
+        setSyncStatus('ok');
+        setLastSync();
+      }
     } else if (db.entries.length > 0) {
+      // Firestore vacío pero tenemos datos locales → subir
       await syncToFirestore();
+    } else {
+      setSyncStatus('ok');
     }
-  } catch(e) { /* offline — work with local */ }
+  } catch(e) {
+    setSyncStatus('offline');
+    console.warn('pullAndMerge offline:', e.message);
+  }
 }
 
 function showSyncWarning(title, body, onOk, onCancel) {
@@ -5140,22 +5158,17 @@ window.addEventListener('beforeunload', (e) => {
 // ── Visibilidad: al volver a la app (desde otra pestaña o al desbloquear móvil) ──
 document.addEventListener('visibilitychange', async () => {
   if (document.visibilityState === 'visible' && currentUser) {
-    // Verificar si hay datos más nuevos en la nube sin bloquear la UI
     try {
       const snap = await firestore.collection('users').doc(currentUser.uid).collection('data').doc('library').get();
       if (snap.exists) {
-        const remoteCount = (snap.data().entries || []).length;
+        const remoteEntries = snap.data().entries || [];
+        const remoteCount = remoteEntries.length;
         const localCount  = db.entries.length;
-        if (remoteCount > localCount + 2) {
-          showSyncWarning(
-            '🔄 Hay datos más recientes',
-            `La nube tiene <b>${remoteCount} registros</b>.<br>Este dispositivo tiene <b>${localCount}</b>.<br><br>¿Sincronizar ahora?`,
-            async () => {
-              await pullAndMerge(currentUser.uid, true);
-              refreshCurrentScreen();
-              showToast('✓ Sincronizado');
-            }
-          );
+        // Si la nube tiene más datos que local → sincronizar automáticamente
+        if (remoteCount > localCount) {
+          setSyncStatus('syncing');
+          await pullAndMerge(currentUser.uid, true);
+          refreshCurrentScreen();
         }
       }
     } catch(e) { /* sin conexión */ }
