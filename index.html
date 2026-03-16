@@ -694,7 +694,7 @@ select.input { cursor: pointer; }
     <div id="recent-series" class="home-recent-list"></div>
   </div>
   <div style="padding:0 20px 12px;">
-    <button class="btn btn-primary" onclick="openModal('modal-add')">+ Registrar estímulo</button>
+    <button class="btn btn-primary" onclick="openAddModal()">+ Registrar estímulo</button>
   </div>
 </div>
 
@@ -705,7 +705,7 @@ select.input { cursor: pointer; }
       <div class="topbar-logo">LUMEN</div>
       <div class="topbar-sub">Biblioteca</div>
     </div>
-    <button class="btn btn-sm" style="background:var(--red);color:var(--cream);width:auto;font-size:11px;letter-spacing:1px;" onclick="openModal('modal-add')">+ Añadir</button>
+    <button class="btn btn-sm" style="background:var(--red);color:var(--cream);width:auto;font-size:11px;letter-spacing:1px;" onclick="openAddModal()">+ Añadir</button>
   </div>
   <div style="padding:12px 20px 8px;">
     <div class="stats-seg" id="lib-seg">
@@ -1792,6 +1792,22 @@ select.input { cursor: pointer; }
   </div>
 </div>
 
+<!-- ══════ MODAL: GÉNEROS RÁPIDO ══════ -->
+<div id="modal-genero-quick" class="modal-overlay">
+  <div class="modal" style="max-width:360px;">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title" id="genero-quick-title">Etiquetar libro</div>
+      <button class="btn-icon" onclick="closeModal('modal-genero-quick')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="genero-quick-id">
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px;" id="genero-quick-chips"></div>
+      <button class="btn btn-primary" onclick="saveGeneroQuick()">Guardar etiquetas</button>
+    </div>
+  </div>
+</div>
+
 <!-- ══════ MODAL: SINCRONIZACIÓN ══════ -->
 <div id="modal-sync-warning" class="modal-overlay" style="z-index:10000;">
   <div class="modal" style="max-width:340px;">
@@ -2101,10 +2117,42 @@ function gotoScreen(s) {
   if (s === 'mapas') switchMapaTab('influencias');
 }
 
+function openGeneroQuick(entryId) {
+  const e = db.entries.find(x => x.id === entryId); if(!e) return;
+  document.getElementById('genero-quick-id').value = entryId;
+  document.getElementById('genero-quick-title').textContent = e.titulo;
+  const current = e.generos || [];
+  const generos = [
+    'Novela','Cuento','Poesía','Ensayo','Historia','Biografía',
+    'Crónica','Ciencia ficción','Filosofía','Teatro','Infantil','Manga'
+  ];
+  document.getElementById('genero-quick-chips').innerHTML = generos.map(g => `
+    <button type="button" class="genero-chip${current.includes(g)?' active':''}"
+      data-g="${g}" onclick="toggleGenero(this)"
+      style="padding:7px 14px;font-size:12px;">${g}</button>
+  `).join('');
+  openModal('modal-genero-quick');
+}
+
+function saveGeneroQuick() {
+  const entryId = document.getElementById('genero-quick-id').value;
+  const e = db.entries.find(x => x.id === entryId); if(!e) return;
+  e.generos = [...document.querySelectorAll('#genero-quick-chips .genero-chip.active')].map(b=>b.dataset.g);
+  e._updatedAt = Date.now();
+  saveDB();
+  closeModal('modal-genero-quick');
+  showToast('✓ Etiquetas guardadas');
+  renderLibrary();
+}
+
+function openAddModal() {
+  editingId = null;
+  openModal('modal-add');
+}
+
 function openModal(id) {
   document.getElementById(id).classList.add('open');
-  if (id === 'modal-add') {
-    editingId = null;
+  if (id === 'modal-add' && !editingId) {
     resetForm();
     document.getElementById('f-anio-lect').value = new Date().getFullYear();
     document.getElementById('fp-anio-visto').value = new Date().getFullYear();
@@ -2965,6 +3013,9 @@ function entryCardHTML(e) {
     ? `<span style="font-size:10px;color:var(--ink4);margin-left:4px;">📝 ${e.notas_lista.length}</span>` : '';
   const generosBadge = (e.generos && e.generos.length > 0)
     ? `<span style="font-size:9px;background:var(--cream2);border:1px solid var(--border);border-radius:10px;padding:1px 6px;color:var(--ink3);">${e.generos[0]}</span>` : '';
+  const generosBtn = e.type === 'libro'
+    ? `<button onclick="event.stopPropagation();openGeneroQuick('${e.id}')" style="font-size:9px;background:none;border:1px dashed var(--border);border-radius:10px;padding:1px 6px;color:var(--ink4);cursor:pointer;font-family:var(--font-sans);">🏷 Etiquetar</button>`
+    : '';
   const badge = `<span class="badge badge-${e.estado==='leyendo'?'leyendo':e.type}">${e.estado==='leyendo'?'Leyendo':e.type==='libro'?'Libro':e.type==='pelicula'?'Película':'Serie'}</span>`;
   const metaLine = `${e.mes ? e.mes + ' ' : ''}${e.anio || ''}`;
   return `
@@ -2981,6 +3032,7 @@ function entryCardHTML(e) {
           ${metaLine ? `<span style="font-size:10px;color:var(--ink4);">${metaLine}</span>` : ''}
           ${stars ? `<span class="entry-card-rating">${stars}</span>` : ''}
           ${generosBadge}
+          ${generosBtn}
           ${notasBadge}
         </div>
       </div>
