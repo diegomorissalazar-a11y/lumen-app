@@ -2038,6 +2038,10 @@ async function syncToFirestore() {
 
 async function pullAndMerge(uid, silent) {
   try {
+    // Esperar a que el token de auth esté listo antes de acceder a Firestore
+    if (auth.currentUser) {
+      await auth.currentUser.getIdToken(false);
+    }
     const snap = await firestore.collection('users').doc(uid).collection('data').doc('library').get();
     if (snap.exists) {
       const remote = snap.data();
@@ -2995,7 +2999,11 @@ function renderLibrary() {
 
 function entryCardHTML(e) {
   const stars = e.rating ? '★'.repeat(e.rating) + '☆'.repeat(5-e.rating) : '';
-  const ok = v => v && v.trim() && v.trim().toLowerCase() !== 'no aplica' && v.trim() !== '-';
+  const ok = v => {
+    if (v === null || v === undefined || v === '' || v === 0) return false;
+    const s = String(v).trim();
+    return s !== '' && s.toLowerCase() !== 'no aplica' && s !== '-' && s !== '—';
+  };
 
   let sub = '';
   if (e.type === 'libro') {
@@ -4006,7 +4014,7 @@ function renderPeliculasTabla() {
   const total = items.length;
   const page = items.slice(s.page*PAGE_SIZE, (s.page+1)*PAGE_SIZE);
   const el = document.getElementById('pl-tabla');
-  const ok = v => v && v.trim() && v.toLowerCase() !== 'no aplica';
+  const ok = v => { if (!v && v !== 0) return false; const s=String(v).trim(); return s !== '' && s.toLowerCase() !== 'no aplica' && s !== '-'; };
   if (!total) { el.innerHTML='<div style="color:var(--ink4);font-size:13px;padding:8px 0;">Sin películas para mostrar.</div>'; document.getElementById('pl-pagination').innerHTML=''; return; }
   el.innerHTML = `<table class="data-table">
     <thead><tr><th>Título</th><th>Director</th><th>Guión</th><th>Música</th><th>Foto</th><th>Año</th><th>Min</th></tr></thead>
@@ -4055,7 +4063,7 @@ function renderStatsSeries() {
 
   renderSeriesChart(series);
 
-  const ok = v => v && v.trim() && v.toLowerCase() !== 'no aplica';
+  const ok = v => { if (!v && v !== 0) return false; const s=String(v).trim(); return s !== '' && s.toLowerCase() !== 'no aplica' && s !== '-'; };
   const clean = (arr, f) => arr.filter(e => ok(e[f]));
   renderTopInteractive('sr-top-director',    clean(series,'director'),    'director',    'var(--blue)',  'series','director');
   renderTopInteractive('sr-top-guion',       clean(series,'guionista'),   'guionista',   'var(--gold)',  'series','guionista');
@@ -4088,7 +4096,7 @@ function sortSeries(field, btn) {
 
 function renderSeriesTabla() {
   const s = statsState.series;
-  const ok = v => v && v.trim() && v.toLowerCase() !== 'no aplica';
+  const ok = v => { if (!v && v !== 0) return false; const s=String(v).trim(); return s !== '' && s.toLowerCase() !== 'no aplica' && s !== '-'; };
   let items = getFilteredWithActive('serie','series');
   items = items.sort((a,b)=>String(a[s.sortField]||'').localeCompare(String(b[s.sortField]||''),undefined,{numeric:true})*s.sortDir);
   const total = items.length;
