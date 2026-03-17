@@ -4,8 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#f5f0e8">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1a1510">
 <title>LUMEN — Biblioteca Personal</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231a1510'/><text x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' font-family='Georgia,serif' font-size='14' font-weight='900' font-style='italic' fill='%23c8952a' letter-spacing='0.5'>L</text><rect x='6' y='23' width='20' height='2' rx='1' fill='%238b2020'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -1307,15 +1309,18 @@ select.input { cursor: pointer; }
         <div class="field">
           <label>Géneros</label>
           <div style="display:flex;flex-wrap:wrap;gap:6px;" id="generos-chips">
-            <button type="button" class="genero-chip" data-g="Novela"     onclick="toggleGenero(this)">Novela</button>
-            <button type="button" class="genero-chip" data-g="Cuento"     onclick="toggleGenero(this)">Cuento</button>
-            <button type="button" class="genero-chip" data-g="Poesía"     onclick="toggleGenero(this)">Poesía</button>
-            <button type="button" class="genero-chip" data-g="Ensayo"     onclick="toggleGenero(this)">Ensayo</button>
-            <button type="button" class="genero-chip" data-g="Historia"   onclick="toggleGenero(this)">Historia</button>
-            <button type="button" class="genero-chip" data-g="Biografía"  onclick="toggleGenero(this)">Biografía</button>
-            <button type="button" class="genero-chip" data-g="Crónica"    onclick="toggleGenero(this)">Crónica</button>
+            <button type="button" class="genero-chip" data-g="Novela"          onclick="toggleGenero(this)">Novela</button>
+            <button type="button" class="genero-chip" data-g="Cuento"          onclick="toggleGenero(this)">Cuento</button>
+            <button type="button" class="genero-chip" data-g="Poesía"          onclick="toggleGenero(this)">Poesía</button>
+            <button type="button" class="genero-chip" data-g="Ensayo"          onclick="toggleGenero(this)">Ensayo</button>
+            <button type="button" class="genero-chip" data-g="Historia"        onclick="toggleGenero(this)">Historia</button>
+            <button type="button" class="genero-chip" data-g="Biografía"       onclick="toggleGenero(this)">Biografía</button>
+            <button type="button" class="genero-chip" data-g="Crónica"         onclick="toggleGenero(this)">Crónica</button>
             <button type="button" class="genero-chip" data-g="Ciencia ficción" onclick="toggleGenero(this)">Ciencia ficción</button>
-            <button type="button" class="genero-chip" data-g="Filosofía"  onclick="toggleGenero(this)">Filosofía</button>
+            <button type="button" class="genero-chip" data-g="Filosofía"       onclick="toggleGenero(this)">Filosofía</button>
+            <button type="button" class="genero-chip" data-g="Entrevista"      onclick="toggleGenero(this)">Entrevista</button>
+            <button type="button" class="genero-chip" data-g="Religión"        onclick="toggleGenero(this)">Religión</button>
+            <button type="button" class="genero-chip" data-g="Mitología"       onclick="toggleGenero(this)">Mitología</button>
           </div>
         </div>
         <div class="field"><label>URL portada (opcional)</label><input class="input" type="text" id="f-cover" placeholder="https://..."></div>
@@ -1380,9 +1385,14 @@ select.input { cursor: pointer; }
           <div class="field"><label>Año estreno</label><input class="input" type="number" id="fs-anio-est"></div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-          <div class="field"><label>Temporadas</label><input class="input" type="number" id="fs-temporadas" min="1" value="1"></div>
-          <div class="field"><label>Duración total (min)</label><input class="input" type="number" id="fs-duracion"></div>
+          <div class="field"><label>Temporadas</label><input class="input" type="number" id="fs-temporadas" min="1" value="1" oninput="calcSeriesDuracion()"></div>
+          <div class="field"><label>Caps por temporada (prom.)</label><input class="input" type="number" id="fs-caps-por-temp" min="1" placeholder="Ej: 10" oninput="calcSeriesDuracion()"></div>
         </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="field"><label>Minutos por episodio</label><input class="input" type="number" id="fs-min-episodio" min="1" placeholder="Ej: 45" oninput="calcSeriesDuracion()"></div>
+          <div class="field"><label>Duración total (min)</label><input class="input" type="number" id="fs-duracion" placeholder="Se calcula solo"></div>
+        </div>
+        <div id="fs-duracion-calc" style="font-size:11px;color:var(--ink4);margin-top:-8px;margin-bottom:8px;"></div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
           <div class="field"><label>Música / B.S.O.</label><input class="input" type="text" id="fs-musica"></div>
           <div class="field"><label>Protagonista</label><input class="input" type="text" id="fs-protagonista"></div>
@@ -2187,7 +2197,8 @@ function openGeneroQuick(entryId) {
   const current = e.generos || [];
   const generos = [
     'Novela','Cuento','Poesía','Ensayo','Historia','Biografía',
-    'Crónica','Ciencia ficción','Filosofía','Teatro','Infantil','Manga'
+    'Crónica','Ciencia ficción','Filosofía','Teatro','Infantil',
+    'Entrevista','Religión','Mitología'
   ];
   document.getElementById('genero-quick-chips').innerHTML = generos.map(g => `
     <button type="button" class="genero-chip${current.includes(g)?' active':''}"
@@ -2253,8 +2264,10 @@ function selectType(type, btn) {
 function resetForm() {
   ['f-titulo','f-autor','f-editorial','f-paginas','f-anio-pub','f-traductor','f-idioma','f-cover','f-notas',
    'fp-titulo','fp-director','fp-anio-est','fp-duracion','fp-foto','fp-musica','fp-protagonista','fp-guionista','fp-cover',
-   'fs-titulo','fs-director','fs-anio-est','fs-duracion','fs-musica','fs-protagonista','fs-guionista','fs-cover']
+   'fs-titulo','fs-director','fs-anio-est','fs-duracion','fs-caps-por-temp','fs-min-episodio','fs-musica','fs-protagonista','fs-guionista','fs-cover']
     .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  const calcEl = document.getElementById('fs-duracion-calc');
+  if (calcEl) calcEl.textContent = '';
   document.getElementById('f-estado').value = 'leido';
   document.getElementById('f-progreso').value = 0;
   document.getElementById('prog-pct').textContent = '0';
@@ -2269,6 +2282,22 @@ function resetForm() {
   currentRating = 0;
   updateStars(0);
   selectType('libro', document.querySelector('.type-btn[data-type="libro"]'));
+}
+
+function calcSeriesDuracion() {
+  const temps   = parseInt(document.getElementById('fs-temporadas')?.value) || 0;
+  const caps    = parseInt(document.getElementById('fs-caps-por-temp')?.value) || 0;
+  const minEp   = parseInt(document.getElementById('fs-min-episodio')?.value) || 0;
+  const totalCaps = temps * caps;
+  const totalMin  = totalCaps * minEp;
+  const durInput  = document.getElementById('fs-duracion');
+  const calcEl    = document.getElementById('fs-duracion-calc');
+  if (totalMin > 0 && durInput) {
+    durInput.value = totalMin;
+    if (calcEl) calcEl.textContent = `${temps} temp × ${caps} caps × ${minEp} min = ${totalCaps} caps · ${fmtMin(totalMin)} total`;
+  } else if (calcEl) {
+    calcEl.textContent = '';
+  }
 }
 
 document.getElementById('fp-basada').addEventListener('change', function() {
@@ -2567,6 +2596,8 @@ function saveEntry() {
     entry = { ...entry, titulo, director: document.getElementById('fs-director').value,
       anio_est: parseInt(document.getElementById('fs-anio-est').value) || null,
       temporadas: parseInt(document.getElementById('fs-temporadas').value) || 1,
+      capsPorTemp: parseInt(document.getElementById('fs-caps-por-temp').value) || null,
+      minEpisodio: parseInt(document.getElementById('fs-min-episodio').value) || null,
       duracion: parseInt(document.getElementById('fs-duracion').value) || 0,
       musica: document.getElementById('fs-musica').value,
       protagonista: document.getElementById('fs-protagonista').value,
@@ -2812,7 +2843,9 @@ function renderHome() {
   document.getElementById('hero-year-label').textContent = yr;
   const thisYear = db.entries.filter(e => e.anio === yr);
   const libros = thisYear.filter(e => e.type === 'libro' && e.estado !== 'pendiente');
-  const pags = libros.reduce((a, b) => a + (b.paginas || 0), 0);
+  // pagsHastaDia incluye libros en curso — mismo criterio que el ritmo card
+  const pags = pagsHastaDia(yr);
+  const pagsTerminados = libros.filter(e=>e.estado==='leido').reduce((a,b)=>a+(b.paginas||0),0);
   const peliculas = thisYear.filter(e => e.type === 'pelicula');
   const series = thisYear.filter(e => e.type === 'serie');
 
@@ -3136,7 +3169,7 @@ function showDetail(id) {
   } else { // serie
     const capInfo = (e.capActual || e.capTotal) ? `Cap. ${e.capActual||0} / ${e.capTotal||'?'}` : null;
     const pctCap = e.capTotal > 0 ? `${Math.round((e.capActual||0)/e.capTotal*100)}%` : null;
-    html += row('Director', e.director) + row('Estreno', e.anio_est) + row('Temporadas', e.temporadas) + row('Protagonista', e.protagonista) + row('Música', e.musica) + row('Guionista', e.guionista);
+    html += row('Director', e.director) + row('Estreno', e.anio_est) + row('Temporadas', e.temporadas) + row('Caps/temporada', e.capsPorTemp) + row('Min/episodio', e.minEpisodio ? e.minEpisodio+' min' : '') + row('Duración total', e.duracion ? fmtMin(e.duracion) : '') + row('Protagonista', e.protagonista) + row('Música', e.musica) + row('Guionista', e.guionista);
     if (e.basada) html += row('Basada en', e.basada + (e.autor_original ? ' — ' + e.autor_original : ''));
     if (e.estado === 'viendo') {
       html += row('Progreso', capInfo ? `${capInfo}${pctCap?' · '+pctCap:''}` : 'Viendo');
@@ -3301,6 +3334,9 @@ function editEntry(id) {
       document.getElementById('fp-basada').value = e.basada||'';
     } else {
       ['titulo','director','anio_est','temporadas','duracion','musica','protagonista','guionista','cover'].forEach(k=>{ const el=document.getElementById('fs-'+k); if(el) el.value=e[k]||''; });
+      document.getElementById('fs-caps-por-temp').value = e.capsPorTemp || '';
+      document.getElementById('fs-min-episodio').value  = e.minEpisodio  || '';
+      if (e.capsPorTemp || e.minEpisodio) calcSeriesDuracion();
       document.getElementById('fs-mes').value = e.mes||'';
       document.getElementById('fs-anio-visto').value = e.anio||'';
       document.getElementById('fs-basada').value = e.basada||'';
@@ -4219,27 +4255,64 @@ function renderCuriosidadesLibros(libros) {
 function renderCuriosidadesPeliculas(pels) {
   const el = document.getElementById('pl-curiosidades'); if(!el) return;
   if (!pels.length) { el.innerHTML=''; return; }
-  const totalMin = pels.reduce((a,b)=>a+(b.duracion||0),0);
-  const avg = pels.length ? Math.round(totalMin/pels.length) : 0;
-  const masLarga = pels.reduce((a,b)=>(b.duracion||0)>(a.duracion||0)?b:a, pels[0]);
-  const topDir  = topField(pels, 'director');
-  const topComp = topField(pels, 'musica');
-  const topFoto = topField(pels, 'fotografia');
-  const basadas = pels.filter(e=>e.basada&&e.basada!=='');
+
+  const totalMin  = pels.reduce((a,b)=>a+(b.duracion||0),0);
+  const avg       = pels.length ? Math.round(totalMin/pels.length) : 0;
+  const conDur    = pels.filter(e=>e.duracion>0);
+  const masLarga  = conDur.length ? conDur.reduce((a,b)=>b.duracion>a.duracion?b:a) : null;
+  const masCorta  = conDur.length ? conDur.reduce((a,b)=>b.duracion<a.duracion?b:a) : null;
+  const topDir    = topField(pels, 'director');
+  const topComp   = topField(pels, 'musica');
+  const topFoto   = topField(pels, 'fotografia');
+  const topIdioma = topField(pels, 'idioma');
+  const topProt   = topField(pels, 'protagonista');
+  const basadas   = pels.filter(e=>e.basada&&e.basada!=='');
+
+  // Décadas mejoradas — todas con conteo
   const decadas = {};
   pels.forEach(e=>{ if(e.anio_est){ const d=Math.floor(e.anio_est/10)*10; decadas[d]=(decadas[d]||0)+1; } });
-  const topDecada = Object.entries(decadas).sort((a,b)=>b[1]-a[1])[0];
+  const decadasSorted = Object.entries(decadas).sort((a,b)=>b[1]-a[1]);
+  const topDecada = decadasSorted[0] || null;
+  const decadasBar = decadasSorted.length > 1 ? `
+    <div style="margin:10px 0 4px;">
+      <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink4);font-weight:700;margin-bottom:6px;">Por década</div>
+      ${decadasSorted.map(([d,n])=>`
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+          <div style="font-size:12px;color:var(--ink2);width:48px;flex-shrink:0;">${d}s</div>
+          <div style="flex:1;background:var(--cream3);border-radius:3px;height:8px;">
+            <div style="width:${Math.round((n/decadasSorted[0][1])*100)}%;background:var(--red);height:8px;border-radius:3px;"></div>
+          </div>
+          <div style="font-size:11px;color:var(--ink4);width:20px;text-align:right;">${n}</div>
+        </div>`).join('')}
+    </div>` : '';
+
+  // Cruce con libros — películas basadas en libros que también tengo en biblioteca
+  const titulosLibros = new Set(db.entries.filter(e=>e.type==='libro').map(e=>e.titulo.toLowerCase().trim()));
+  const autoresLibros = new Set(db.entries.filter(e=>e.type==='libro'&&e.autor).map(e=>e.autor.toLowerCase().trim()));
+  const cruce = pels.filter(e => {
+    if (!e.basada || e.basada==='') return false;
+    const tit = (e.titulo||'').toLowerCase();
+    const autorOrig = (e.autor_original||'').toLowerCase();
+    return titulosLibros.has(tit) || (autorOrig && autoresLibros.has(autorOrig));
+  });
+
   el.innerHTML = `<div class="card" style="margin-bottom:20px;">
     <div style="font-family:var(--font-serif);font-size:15px;font-weight:700;margin-bottom:10px;">Curiosidades de tu cine</div>
     <div style="font-size:13px;color:var(--ink2);line-height:2.1;">
-      ${topDir ?`🎬 Director favorito: <b>${topDir[0]}</b> (${topDir[1]} película${topDir[1]>1?'s':''}).<br>`:''}
-      ${topComp?`🎵 Compositor más frecuente: <b>${topComp[0]}</b>.<br>`:''}
-      ${topFoto?`📷 Director de fotografía favorito: <b>${topFoto[0]}</b>.<br>`:''}
-      ${avg?`⏱ Duración media: <b>${fmtMin(avg)}</b> por película.<br>`:''}
-      ${masLarga?`🏆 Película más larga: <b>${masLarga.titulo}</b> (${fmtMin(masLarga.duracion)}).<br>`:''}
-      ${basadas.length>0?`🔗 El <b>${Math.round((basadas.length/pels.length)*100)}%</b> de tu cine está basado en otra obra.<br>`:''}
-      ${topDecada?`📅 Tu década favorita: <b>${topDecada[0]}s</b> (${topDecada[1]} películas).<br>`:''}
-    </div></div>`;
+      ${topDir   ?`🎬 Director favorito: <b>${topDir[0]}</b> (${topDir[1]} película${topDir[1]>1?'s':''}).<br>`:''}
+      ${topProt  ?`⭐ Protagonista más visto: <b>${topProt[0]}</b>.<br>`:''}
+      ${topIdioma?`🌍 Idioma más frecuente: <b>${topIdioma[0]}</b> (${topIdioma[1]} película${topIdioma[1]>1?'s':''}).<br>`:''}
+      ${topComp  ?`🎵 Compositor más frecuente: <b>${topComp[0]}</b>.<br>`:''}
+      ${topFoto  ?`📷 Fotografía favorita: <b>${topFoto[0]}</b>.<br>`:''}
+      ${avg      ?`⏱ Duración media: <b>${fmtMin(avg)}</b> por película.<br>`:''}
+      ${masLarga ?`🏆 Más larga: <b>${masLarga.titulo}</b> (${fmtMin(masLarga.duracion)}).<br>`:''}
+      ${masCorta && masCorta.id!==masLarga?.id?`⚡ Más corta: <b>${masCorta.titulo}</b> (${fmtMin(masCorta.duracion)}).<br>`:''}
+      ${topDecada?`📅 Década favorita: <b>${topDecada[0]}s</b> (${topDecada[1]} película${topDecada[1]>1?'s':''}).<br>`:''}
+      ${basadas.length>0?`🔗 El <b>${Math.round((basadas.length/pels.length)*100)}%</b> basado en otra obra.<br>`:''}
+      ${cruce.length>0?`📚 <b>${cruce.length}</b> película${cruce.length>1?'s':''} basada${cruce.length>1?'s':''} en libro${cruce.length>1?'s':''} que también tienes en tu biblioteca.<br>`:''}
+    </div>
+    ${decadasBar}
+  </div>`;
 }
 
 function renderCuriosidadesSeries(series) {
@@ -4251,35 +4324,50 @@ function renderCuriosidadesSeries(series) {
   const topProt = topField(series, 'protagonista');
   const basadas = series.filter(e=>e.basada&&e.basada!=='');
 
-  // Agrupar por título normalizado → contar temporadas máximas
-  const byTitle = {};
-  series.forEach(e => {
-    const key = e.titulo.trim().toLowerCase();
-    const temp = parseInt(e.temporadas) || 1;
-    if (!byTitle[key]) byTitle[key] = { titulo: e.titulo, temp };
-    else if (temp > byTitle[key].temp) byTitle[key].temp = temp;
-  });
-  const franquicias = Object.values(byTitle).filter(x => x.temp > 1).sort((a,b) => b.temp - a.temp);
-  const masTemporadas = franquicias[0] || null;
-  const totalTemp = Object.values(byTitle).reduce((a,b) => a + b.temp, 0);
-  const avgTemp = series.length ? (totalTemp / Object.keys(byTitle).length).toFixed(1) : 0;
+  // Series por temporadas
+  const conTemp = series.filter(e=>parseInt(e.temporadas)>0);
+  const masTemporadas = conTemp.length ? conTemp.reduce((a,b)=>(parseInt(b.temporadas)||0)>(parseInt(a.temporadas)||0)?b:a) : null;
+  const masCorta = conTemp.length ? conTemp.reduce((a,b)=>(parseInt(b.temporadas)||0)<(parseInt(a.temporadas)||0)?b:a) : null;
+  const unaSola = series.filter(e=>parseInt(e.temporadas)===1).length;
 
   // Año con más series
   const porAnio = {};
   series.forEach(e => { if(e.anio) porAnio[e.anio] = (porAnio[e.anio]||0)+1; });
   const mejorAnio = Object.entries(porAnio).sort((a,b)=>b[1]-a[1])[0];
 
+  // Décadas de estreno
+  const decadas = {};
+  series.forEach(e=>{ if(e.anio_est){ const d=Math.floor(e.anio_est/10)*10; decadas[d]=(decadas[d]||0)+1; } });
+  const decadasSorted = Object.entries(decadas).sort((a,b)=>b[1]-a[1]);
+  const topDecada = decadasSorted[0] || null;
+  const decadasBar = decadasSorted.length > 1 ? `
+    <div style="margin:10px 0 4px;">
+      <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink4);font-weight:700;margin-bottom:6px;">Por década de estreno</div>
+      ${decadasSorted.map(([d,n])=>`
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+          <div style="font-size:12px;color:var(--ink2);width:48px;flex-shrink:0;">${d}s</div>
+          <div style="flex:1;background:var(--cream3);border-radius:3px;height:8px;">
+            <div style="width:${Math.round((n/decadasSorted[0][1])*100)}%;background:var(--blue);height:8px;border-radius:3px;"></div>
+          </div>
+          <div style="font-size:11px;color:var(--ink4);width:20px;text-align:right;">${n}</div>
+        </div>`).join('')}
+    </div>` : '';
+
   el.innerHTML = `<div class="card" style="margin-bottom:20px;">
     <div style="font-family:var(--font-serif);font-size:15px;font-weight:700;margin-bottom:10px;">Curiosidades de tus series</div>
     <div style="font-size:13px;color:var(--ink2);line-height:2.1;">
-      ${topDir  ? `🎬 Creador favorito: <b>${topDir[0]}</b> (${topDir[1]} serie${topDir[1]>1?'s':''}).<br>` : ''}
-      ${topProt ? `⭐ Protagonista más visto: <b>${topProt[0]}</b>.<br>` : ''}
-      ${topComp ? `🎵 Compositor más frecuente: <b>${topComp[0]}</b>.<br>` : ''}
-      ${masTemporadas ? `📺 Serie con más temporadas: <b>${masTemporadas.titulo}</b> (${masTemporadas.temp} temp.).<br>` : ''}
-      ${franquicias.length > 1 ? `🔢 <b>${franquicias.length}</b> series tienen más de una temporada registrada.<br>` : ''}
-      ${mejorAnio ? `📅 Año con más series vistas: <b>${mejorAnio[0]}</b> (${mejorAnio[1]} series).<br>` : ''}
-      ${basadas.length > 0 ? `🔗 El <b>${Math.round((basadas.length/series.length)*100)}%</b> de tus series está basado en otra obra.<br>` : ''}
-    </div></div>`;
+      ${topDir   ?`🎬 Creador favorito: <b>${topDir[0]}</b> (${topDir[1]} serie${topDir[1]>1?'s':''}).<br>`:''}
+      ${topProt  ?`⭐ Protagonista más visto: <b>${topProt[0]}</b>.<br>`:''}
+      ${topComp  ?`🎵 Compositor más frecuente: <b>${topComp[0]}</b>.<br>`:''}
+      ${masTemporadas?`📺 Serie más larga: <b>${masTemporadas.titulo}</b> (${masTemporadas.temporadas} temp.).<br>`:''}
+      ${masCorta && masCorta.id!==masTemporadas?.id?`⚡ Serie más corta: <b>${masCorta.titulo}</b> (${masCorta.temporadas} temp.).<br>`:''}
+      ${unaSola>0?`🎯 <b>${unaSola}</b> serie${unaSola>1?'s':''} de una sola temporada.<br>`:''}
+      ${topDecada?`📅 Década favorita: <b>${topDecada[0]}s</b> (${topDecada[1]} serie${topDecada[1]>1?'s':''}).<br>`:''}
+      ${mejorAnio?`🏆 Año con más series: <b>${mejorAnio[0]}</b> (${mejorAnio[1]} series).<br>`:''}
+      ${basadas.length>0?`🔗 El <b>${Math.round((basadas.length/series.length)*100)}%</b> basado en otra obra.<br>`:''}
+    </div>
+    ${decadasBar}
+  </div>`;
 }
 
 // ═══════════════════════════════════
