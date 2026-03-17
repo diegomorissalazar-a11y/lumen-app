@@ -5424,12 +5424,11 @@ document.addEventListener('visibilitychange', async () => {
 function getAllReadDates() {
   const dates = new Set();
   db.entries.forEach(e => {
-    // Dates from explicit readDates array (progress updates)
+    // Solo fechas explícitas de actividad registradas por el usuario
     if (e.readDates) e.readDates.forEach(d => dates.add(d));
-    // Infer from finishDate
-    if (e.finishDate) dates.add(e.finishDate.split('T')[0]);
-    // Infer from startDate
-    if (e.startDate) dates.add(e.startDate.split('T')[0]);
+    // finishDate solo si el libro fue terminado (no en curso)
+    if (e.finishDate && e.estado === 'leido') dates.add(e.finishDate.split('T')[0]);
+    // startDate NO se usa — no es actividad lectora real
   });
   return dates;
 }
@@ -5438,15 +5437,18 @@ function getAllReadDates() {
 function getActivityByDate() {
   const map = {}; // date → pages read
   db.entries.filter(e => e.type === 'libro').forEach(e => {
-    if (e.readDates && e.paginas) {
-      const pgsPerDay = e.readDates.length > 0 ? Math.round(((e.progreso||0)/100 * e.paginas) / e.readDates.length) : 0;
+    if (e.readDates && e.readDates.length > 0) {
+      // Si tenemos progresoPag, distribuir páginas entre los días registrados
+      const paginasLeidas = e.readingMode === 'pag'
+        ? (e.progresoPag || 0)
+        : Math.round(((e.progreso||0)/100) * (e.paginas||0));
+      const pgsPerDay = paginasLeidas > 0 ? Math.round(paginasLeidas / e.readDates.length) : 1;
       e.readDates.forEach(d => { map[d] = (map[d] || 0) + pgsPerDay; });
-    } else if (e.readDates) {
-      e.readDates.forEach(d => { map[d] = (map[d] || 0) + 1; }); // count as 1 activity
     }
-    if (e.finishDate) {
+    // finishDate solo si terminado
+    if (e.finishDate && e.estado === 'leido') {
       const d = e.finishDate.split('T')[0];
-      map[d] = (map[d] || 0) + (e.paginas ? Math.round(e.paginas * 0.1) : 1);
+      map[d] = (map[d] || 0) + (e.paginas ? Math.round(e.paginas * 0.05) : 1);
     }
   });
   return map;
