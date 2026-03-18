@@ -1904,16 +1904,23 @@ function loadDB() {
     if (!r) return { entries: [] };
     const parsed = JSON.parse(r);
     (parsed.entries || []).forEach(e => {
-      // Normalizar type — cubre todos los casos posibles de CSV importados
+      // Normalizar type
       if (e.type) {
         const t = e.type.toLowerCase().trim()
-          .normalize('NFD').replace(/[\u0300-\u036f]/g,''); // quita tildes
+          .normalize('NFD').replace(/[\u0300-\u036f]/g,'');
         if (t.includes('libro')) e.type = 'libro';
         else if (t.includes('pelicula') || t.includes('movie') || t.includes('film')) e.type = 'pelicula';
         else if (t.includes('serie') || t.includes('series') || t.includes('tv')) e.type = 'serie';
         else e.type = t;
       }
       if (e.idioma) e.idioma = normalizeIdioma(e.idioma);
+      // Migrar series sin estado — las importadas antes del fix tenían estado: undefined
+      if (e.type === 'serie' && !e.estado) e.estado = 'vista';
+      // Migrar temporadas desde coleccion para series importadas antes del fix
+      if (e.type === 'serie' && !e.temporadas && e.coleccion) {
+        const m = String(e.coleccion).match(/\d+/);
+        if (m) e.temporadas = parseInt(m[0]);
+      }
     });
     return parsed;
   } catch { return { entries: [] }; }
@@ -2022,6 +2029,13 @@ function mergeEntries(local, remote) {
       else e.type = t;
     }
     if (e.idioma) e.idioma = normalizeIdioma(e.idioma);
+    // Migrar series sin estado
+    if (e.type === 'serie' && !e.estado) e.estado = 'vista';
+    // Migrar temporadas desde coleccion
+    if (e.type === 'serie' && !e.temporadas && e.coleccion) {
+      const m = String(e.coleccion).match(/\d+/);
+      if (m) e.temporadas = parseInt(m[0]);
+    }
     return e;
   };
   local.forEach(e => { map[e.id] = normalize(e); });
@@ -3113,8 +3127,9 @@ function entryCardHTML(e) {
     const parts = [ok(e.director)?e.director:null, e.anio_est?String(e.anio_est):null, e.duracion?fmtMin(e.duracion):null];
     sub = parts.filter(Boolean).join(' · ');
   } else { // serie
-    // Mostrar "Temporada N" si tiene número, si no mostrar solo título
-    const temp = e.temporadas ? `Temporada ${e.temporadas}` : null;
+    // Mostrar "Temporada N" si tiene número de temporada
+    const tempNum = getTemporadaNum(e);
+    const temp = tempNum ? `Temporada ${tempNum}` : null;
     const dur  = e.duracion ? fmtMin(e.duracion) : null;
     sub = [ok(e.director)?e.director:null, e.anio_est?String(e.anio_est):null, temp, dur].filter(Boolean).join(' · ');
   }
@@ -3175,8 +3190,10 @@ function showDetail(id) {
   if (!e) return;
   document.getElementById('detail-title').textContent = e.titulo;
   let html = '';
-  const row = (label, val) => val ? `<div style="display:flex;gap:8px;padding:7px 0;border-bottom:1px solid var(--cream2);"><span style="font-size:10px;color:var(--ink4);letter-spacing:1.5px;text-transform:uppercase;font-weight:700;width:110px;flex-shrink:0;padding-top:2px;">${label}</span><span style="font-size:14px;color:var(--ink2);">${val}</span></div>` : '';
-  if (e.cover) html += `<img src="${e.cover}" style="width:80px;height:110px;object-fit:cover;border-radius:3px;float:right;margin:0 0 12px 12px;">`;
+  // Safe escape for text going into innerHTML
+  const esc = s => s ? String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') : '';
+  const row = (label, val) => val ? `<div style="display:flex;gap:8px;padding:7px 0;border-bottom:1px solid var(--cream2);"><span style="font-size:10px;color:var(--ink4);letter-spacing:1.5px;text-transform:uppercase;font-weight:700;width:110px;flex-shrink:0;padding-top:2px;">${label}</span><span style="font-size:14px;color:var(--ink2);">${esc(val)}</span></div>` : '';
+  if (e.cover) html += `<img src="${esc(e.cover)}" style="width:80px;height:110px;object-fit:cover;border-radius:3px;float:right;margin:0 0 12px 12px;">`;
   if (e.type === 'libro') {
     html += row('Autor', e.autor) + row('Editorial', e.editorial) + row('Páginas', e.paginas) + row('Publicado', e.anio_pub) + row('Traductor', e.traductor) + row('Idioma orig.', e.idioma) + row('Leído', `${e.mes||''} ${e.anio||''}`);
     if (e.estado === 'leyendo') html += row('Progreso', e.progreso + '%');
@@ -3193,7 +3210,7 @@ function showDetail(id) {
     const capInfo = (e.capActual || e.capTotal) ? `Cap. ${e.capActual||0} / ${e.capTotal||'?'}` : null;
     const pctCap = e.capTotal > 0 ? `${Math.round((e.capActual||0)/e.capTotal*100)}%` : null;
     // Mostrar "Temporada N" si tiene número de temporada
-    const tempLabel = e.temporadas ? `Temporada ${e.temporadas}` : null;
+    const tempLabel = getTemporadaNum(e) ? `Temporada ${getTemporadaNum(e)}` : null;
     html += row('Director', e.director) + row('Estreno', e.anio_est) + row('Temporada', tempLabel) + row('Capítulos', e.capsPorTemp) + row('Min/episodio', e.minEpisodio ? e.minEpisodio+' min' : '') + row('Duración total', e.duracion ? fmtMin(e.duracion) : '') + row('Protagonista', e.protagonista) + row('Música', e.musica) + row('Guionista', e.guionista);
     if (e.basada) html += row('Basada en', e.basada + (e.autor_original ? ' — ' + e.autor_original : ''));
     if (e.estado === 'viendo') {
@@ -3201,7 +3218,7 @@ function showDetail(id) {
     }
     html += row('Vista', `${e.mes||''} ${e.anio||''}`);
   }
-  if (e.notas) html += `<div style="margin-top:14px;padding:12px;background:var(--cream2);border-radius:4px;font-family:var(--font-serif);font-style:italic;font-size:14px;color:var(--ink2);line-height:1.5;">"${e.notas}"</div>`;
+  if (e.notas) html += `<div style="margin-top:14px;padding:12px;background:var(--cream2);border-radius:4px;font-family:var(--font-serif);font-style:italic;font-size:14px;color:var(--ink2);line-height:1.5;">${e.notas.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>`;
   html += `<div style="display:flex;gap:8px;margin-top:16px;">
     <button class="btn btn-secondary btn-sm" onclick="editEntry('${e.id}')">✏ Editar</button>
     <button class="btn btn-sm" style="background:var(--red);color:var(--cream);width:auto;" onclick="deleteEntry('${e.id}')">🗑 Eliminar</button>
@@ -3233,12 +3250,13 @@ function showDetail(id) {
 // ═══════════════════════════════════
 function notaCardHTML(n, num, entryId) {
   const fecha = n.fecha ? new Date(n.fecha).toLocaleDateString('es', {day:'2-digit',month:'short',year:'numeric'}) : '';
+  const escTxt = s => s ? String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') : '';
   return `
     <div class="nota-card" id="nota-card-${n.id}">
       <div class="nota-num">#${num}</div>
-      <div class="nota-titulo">${n.titulo||'Sin título'}</div>
+      <div class="nota-titulo">${escTxt(n.titulo)||'Sin título'}</div>
       ${fecha ? `<div class="nota-fecha">${fecha}</div>` : ''}
-      <div class="nota-texto">${n.texto||''}</div>
+      <div class="nota-texto">${escTxt(n.texto||'')}</div>
       <div class="nota-actions">
         <button class="nota-btn" onclick="openNotaModal('${entryId}','${n.id}')">✏ Editar</button>
         <button class="nota-btn danger" onclick="deleteNota('${entryId}','${n.id}')">🗑 Eliminar</button>
@@ -4173,16 +4191,16 @@ function renderStatsSeries() {
 
   const allSeries = db.entries.filter(e=>e.type==='serie' && e.estado!=='viendo' && e.estado!=='pendiente');
   const series = yr==='todos' ? allSeries : allSeries.filter(e=>e.anio===parseInt(yr)||e.anio===yr);
-
   // Agrupar por título para contar series únicas y temporadas totales
   const byTitle = {};
   series.forEach(e => {
     const key = e.titulo.trim().toLowerCase();
+    const tempNum = getTemporadaNum(e) || 1;
     if (!byTitle[key]) byTitle[key] = { titulo: e.titulo, temporadas: 0 };
-    byTitle[key].temporadas += (parseInt(e.temporadas)||1);
+    byTitle[key].temporadas += tempNum;
   });
   const seriesUnicas = Object.keys(byTitle).length;
-  const totalTemp = series.reduce((a,b)=>a+(parseInt(b.temporadas)||1),0);
+  const totalTemp = series.reduce((a,b)=>a+(getTemporadaNum(b)||1),0);
 
   document.getElementById('sr-kpis').innerHTML = `
     <div class="stat-box"><div class="stat-num">${seriesUnicas}</div><div class="stat-label">Series únicas</div></div>
@@ -4242,7 +4260,7 @@ function renderSeriesTabla() {
       <td class="clickable" data-key="series" data-field="director" data-name="${(e.director||'').replace(/"/g,'&quot;')}" onclick="toggleFilterFromEl(this)">${ok(e.director)?e.director:'—'}</td>
       <td class="clickable" data-key="series" data-field="guionista" data-name="${(e.guionista||'').replace(/"/g,'&quot;')}" onclick="toggleFilterFromEl(this)">${ok(e.guionista)?e.guionista:'—'}</td>
       <td class="clickable" data-key="series" data-field="musica" data-name="${(e.musica||'').replace(/"/g,'&quot;')}" onclick="toggleFilterFromEl(this)">${ok(e.musica)?e.musica:'—'}</td>
-      <td>${ok(e.temporadas)?e.temporadas:'—'}</td>
+      <td>${getTemporadaNum(e) || '—'}</td>
       <td>${e.anio_est||'—'}</td>
     </tr>`).join('')}</tbody></table>`;
   renderPagination('sr-pagination', total, 'series');
@@ -4251,6 +4269,18 @@ function renderSeriesTabla() {
 // ═══════════════════════════════════
 //  CURIOSIDADES por categoría
 // ═══════════════════════════════════
+// Obtiene el número de temporada de una entrada de serie
+// Soporta campo nuevo (temporadas) y campo legacy (coleccion = "1", "2", etc.)
+function getTemporadaNum(e) {
+  if (e.temporadas) return parseInt(e.temporadas) || null;
+  // Legacy: coleccion puede tener "1", "2", "Temporada 1", etc.
+  if (e.coleccion) {
+    const m = String(e.coleccion).match(/\d+/);
+    if (m) return parseInt(m[0]);
+  }
+  return null;
+}
+
 function topField(arr, field) {
   const c = {}; arr.forEach(e => { const v=(e[field]||'').trim(); if(isValidTopVal(v)) c[v]=(c[v]||0)+1; });
   const s = Object.entries(c).sort((a,b)=>b[1]-a[1]); return s[0] || null;
@@ -5686,7 +5716,7 @@ function renderComparador() {
   function statsForYear(yr) {
     const libros   = db.entries.filter(e=>e.type==='libro'&&e.estado==='leido'&&parseInt(e.anio)===yr);
     const peliculas= db.entries.filter(e=>e.type==='pelicula'&&parseInt(e.anio)===yr);
-    const series   = db.entries.filter(e=>e.type==='serie'&&e.estado==='vista'&&parseInt(e.anio)===yr);
+    const series   = db.entries.filter(e=>e.type==='serie'&&e.estado!=='viendo'&&e.estado!=='pendiente'&&parseInt(e.anio)===yr);
     // Usar pagsHastaDia para incluir libros en curso — igual que home y ritmo
     const paginas  = pagsHastaDia(yr);
     const autores  = new Set(libros.map(e=>e.autor).filter(Boolean)).size;
