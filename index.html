@@ -1355,6 +1355,8 @@ select.input { cursor: pointer; }
           <select class="input" id="fp-basada">
             <option value="">— Original —</option>
             <option value="libro">Libro</option>
+            <option value="novela-ligera">Novela ligera</option>
+            <option value="manga">Manga</option>
             <option value="comic">Cómic</option>
             <option value="pelicula">Película anterior</option>
             <option value="serie">Serie</option>
@@ -1411,6 +1413,8 @@ select.input { cursor: pointer; }
           <select class="input" id="fs-basada">
             <option value="">— Original —</option>
             <option value="libro">Libro</option>
+            <option value="novela-ligera">Novela ligera</option>
+            <option value="manga">Manga</option>
             <option value="comic">Cómic</option>
             <option value="hecho-real">Hecho real</option>
           </select>
@@ -1534,7 +1538,7 @@ select.input { cursor: pointer; }
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
           <button class="reading-mode-btn active" data-mode="pct" onclick="selectReadingMode('pct',this)"
             style="padding:10px;border:2px solid var(--gold);border-radius:4px;background:#fff8e8;font-family:var(--font-sans);font-size:12px;font-weight:700;color:var(--gold);cursor:pointer;letter-spacing:1px;">
-            📱 Kindle / %
+            📱 Ebook / %
           </button>
           <button class="reading-mode-btn" data-mode="pag" onclick="selectReadingMode('pag',this)"
             style="padding:10px;border:2px solid var(--border);border-radius:4px;background:#fff;font-family:var(--font-sans);font-size:12px;font-weight:700;color:var(--ink3);cursor:pointer;letter-spacing:1px;">
@@ -1642,16 +1646,20 @@ select.input { cursor: pointer; }
         <div id="progress-pag-pct-text" style="font-size:13px;color:var(--ink3);text-align:center;margin-bottom:12px;font-weight:600;"></div>
       </div>
 
-      <!-- Modo % — colapsado por defecto, para Kindle -->
+      <!-- Modo % Ebook — input numérico estilo Goodreads -->
       <div id="progress-pct-section" style="display:none;">
-        <div class="field">
-          <label>Progreso (<span id="progress-pct-label">0</span>%)</label>
-          <input type="range" id="progress-pct-slider" min="0" max="100" value="0"
-            style="width:100%;accent-color:var(--gold);margin-bottom:8px;"
-            oninput="onProgressSlider(this.value)">
-          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--ink4);">
-            <span>0%</span><span>50%</span><span>100%</span>
+        <div style="text-align:center;margin-bottom:16px;">
+          <div style="font-size:11px;color:var(--ink4);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">Porcentaje completado</div>
+          <div style="display:flex;align-items:center;justify-content:center;gap:10px;">
+            <input class="input" type="number" id="progress-pct-slider" min="0" max="100" value="0"
+              style="font-family:var(--font-serif);font-size:42px;font-weight:900;text-align:center;padding:16px;border-radius:12px;width:140px;"
+              oninput="onProgressSlider(this.value)">
+            <span style="font-family:var(--font-serif);font-size:36px;font-weight:700;color:var(--ink3);">%</span>
           </div>
+          <div id="progress-pct-label-text" style="font-size:13px;color:var(--ink3);margin-top:8px;font-weight:600;"></div>
+        </div>
+        <div class="progress-wrap" style="margin-bottom:6px;height:8px;border-radius:4px;">
+          <div class="progress-fill" id="progress-pct-bar" style="width:0%;border-radius:4px;"></div>
         </div>
       </div>
 
@@ -5181,7 +5189,7 @@ function openProgressModal(id) {
   document.getElementById('progress-mode-display').innerHTML = `
     <div style="display:flex;justify-content:center;gap:6px;margin-bottom:4px;">
       <button class="progress-mode-btn ${mode==='pag'?'active':''}" onclick="switchProgressMode('pag')" style="font-size:11px;padding:5px 12px;">📖 Página</button>
-      <button class="progress-mode-btn ${mode==='pct'?'active':''}" onclick="switchProgressMode('pct')" style="font-size:11px;padding:5px 12px;">% Kindle</button>
+      <button class="progress-mode-btn ${mode==='pct'?'active':''}" onclick="switchProgressMode('pct')" style="font-size:11px;padding:5px 12px;">% Ebook</button>
     </div>`;
 
   if (mode === 'pag') {
@@ -5199,7 +5207,10 @@ function openProgressModal(id) {
     document.getElementById('progress-pag-section').style.display = 'none';
     const val = e.progreso || 0;
     document.getElementById('progress-pct-slider').value = val;
-    document.getElementById('progress-pct-label').textContent = val;
+    const pctBar = document.getElementById('progress-pct-bar');
+    if (pctBar) pctBar.style.width = val + '%';
+    const pctTxt = document.getElementById('progress-pct-label-text');
+    if (pctTxt) pctTxt.textContent = val > 0 ? `${val}% completado` : '';
   }
 
   // Ritmo compacto
@@ -5213,7 +5224,11 @@ function openProgressModal(id) {
 }
 
 function onProgressSlider(val) {
-  document.getElementById('progress-pct-label').textContent = val;
+  const pct = Math.min(100, Math.max(0, parseInt(val)||0));
+  const bar = document.getElementById('progress-pct-bar');
+  if (bar) bar.style.width = pct + '%';
+  const txt = document.getElementById('progress-pct-label-text');
+  if (txt) txt.textContent = pct > 0 ? `${pct}% completado` : '';
 }
 
 function switchProgressMode(mode) {
@@ -5221,14 +5236,16 @@ function switchProgressMode(mode) {
   const e = db.entries.find(x => x.id === id);
   if (!e) return;
   e.readingMode = mode;
-  // Update button active state
-  document.querySelectorAll('.progress-mode-btn').forEach(b => b.classList.toggle('active', b.textContent.startsWith(mode==='pct'?'%':'#')));
+  document.querySelectorAll('.progress-mode-btn').forEach(b => b.classList.toggle('active', b.textContent.startsWith(mode==='pct'?'%':'📖')));
   if (mode === 'pct') {
     document.getElementById('progress-pct-section').style.display = 'block';
     document.getElementById('progress-pag-section').style.display = 'none';
     const val = e.progreso || 0;
     document.getElementById('progress-pct-slider').value = val;
-    document.getElementById('progress-pct-label').textContent = val;
+    const bar = document.getElementById('progress-pct-bar');
+    if (bar) bar.style.width = val + '%';
+    const txt = document.getElementById('progress-pct-label-text');
+    if (txt) txt.textContent = val > 0 ? `${val}% completado` : '';
   } else {
     document.getElementById('progress-pct-section').style.display = 'none';
     document.getElementById('progress-pag-section').style.display = 'block';
