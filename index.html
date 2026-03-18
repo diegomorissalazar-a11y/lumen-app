@@ -1198,7 +1198,7 @@ select.input { cursor: pointer; }
     📥 Cargar desde nube
   </button>
 
-  <button class="user-menu-item" onclick="closeUserMenu();openModal('modal-import')">
+  <button class="user-menu-item" onclick="closeUserMenu();setTimeout(()=>openModal('modal-import'),50)">
     <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0018 9h-1.26A8 8 0 103 16.3"/></svg>
     Importar / Exportar CSV
   </button>
@@ -5406,7 +5406,7 @@ function showUserMenu() {
   const menu = document.getElementById('user-menu');
   menu.classList.toggle('open');
   if (menu.classList.contains('open')) {
-    setTimeout(() => document.addEventListener('click', closeUserMenuOutside, {once:true}), 10);
+    setTimeout(() => document.addEventListener('click', closeUserMenuOutside, {once:true}), 150);
   }
 }
 function closeUserMenu() { document.getElementById('user-menu').classList.remove('open'); }
