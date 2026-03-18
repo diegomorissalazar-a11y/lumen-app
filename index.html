@@ -2083,17 +2083,27 @@ function loadLastSync() {
   el.innerHTML = `Última sync: ${ts}<br><span style="color:var(--ink2);font-weight:700;">${count} registros</span>`;
 }
 
+// Elimina campos undefined recursivamente — Firestore no los acepta
+function cleanForFirestore(obj) {
+  if (Array.isArray(obj)) return obj.map(cleanForFirestore);
+  if (obj !== null && typeof obj === 'object') {
+    const clean = {};
+    Object.entries(obj).forEach(([k, v]) => {
+      if (v !== undefined) clean[k] = cleanForFirestore(v);
+    });
+    return clean;
+  }
+  return obj;
+}
+
 function saveDB() {
-  // Stamp the most recently modified entry
   localStorage.setItem(DB_KEY, JSON.stringify(db));
   if (currentUser) {
     setSyncStatus('syncing');
-    firestore.collection('users').doc(currentUser.uid).collection('data').doc('library').set({
-      entries: db.entries, updatedAt: Date.now()
-    }).then(() => {
-      setSyncStatus('ok');
-      setLastSync();
-    }).catch(() => setSyncStatus('offline'));
+    const payload = cleanForFirestore({ entries: db.entries, updatedAt: Date.now() });
+    firestore.collection('users').doc(currentUser.uid).collection('data').doc('library').set(payload)
+    .then(() => { setSyncStatus('ok'); setLastSync(); })
+    .catch(() => setSyncStatus('offline'));
   }
 }
 
@@ -2101,9 +2111,8 @@ async function syncToFirestore() {
   if (!currentUser) return;
   try {
     await auth.currentUser.getIdToken(false);
-    await firestore.collection('users').doc(currentUser.uid).collection('data').doc('library').set({
-      entries: db.entries, updatedAt: Date.now()
-    });
+    const payload = cleanForFirestore({ entries: db.entries, updatedAt: Date.now() });
+    await firestore.collection('users').doc(currentUser.uid).collection('data').doc('library').set(payload);
     setSyncStatus('ok');
     setLastSync();
   } catch(e) {
@@ -4619,122 +4628,182 @@ function handleImport(e) {
     let count = 0, skipped = 0;
     const importedIds = new Set(db.entries.map(e => e.id));
 
+    let countLibros = 0, countPeliculas = 0, countSeries = 0;
+    let skipDuplicados = 0, skipSinCategoria = 0, skipSinTitulo = 0;
+    const duplicadosList = [];
+
     for (let i = 1; i < lines.length; i++) {
       const cols = parseCSVLine(lines[i]);
       if (cols.length < 3) continue;
 
-      // Construir objeto fila con headers originales
       const row = {};
       rawHeaders.forEach((h, idx) => { row[h.trim()] = (cols[idx] || '').trim(); });
 
-      // ── Detectar tipo ──
-      // Tu planilla usa "Categoría" con valores: Serie, Película, Libro
       const catRaw = col(row, 'Categoría', 'Categoria', 'tipo', 'type', 'category') || '';
       const cat = catRaw.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
       let type = null;
       if (cat.includes('libro')) type = 'libro';
       else if (cat.includes('pelicula') || cat.includes('película') || cat.includes('movie') || cat.includes('film')) type = 'pelicula';
       else if (cat.includes('serie') || cat.includes('series') || cat.includes('tv')) type = 'serie';
-      if (!type) { skipped++; continue; }
+      if (!type) { skipSinCategoria++; skipped++; continue; }
 
-      // ── Título ──
       const titulo = col(row, 'Nombre', 'Título', 'Titulo', 'title', 'nombre');
-      if (!titulo) { skipped++; continue; }
+      if (!titulo) { skipSinTitulo++; skipped++; continue; }
 
-      // ── Año y mes de lectura/visionado ──
       const anioLecRaw = col(row, 'Año de Lec', 'Año de Lec.', 'Anio de Lec', 'año lectura', 'año visto', 'anio', 'year');
       const anio = parseInt(anioLecRaw) || null;
       const mesRaw = col(row, 'Mes de Lec', 'Mes de Lec.', 'mes lectura', 'mes visto', 'mes', 'month');
-      // También puede venir como número en "N° Mes"
       const mesNum = col(row, 'N° Mes', 'N Mes', 'Nro Mes', 'num mes');
       const mes = normMes(mesRaw) || normMes(mesNum);
 
-      // ── Autor / Director ──
       const autorDir = col(row, 'Autor/Director', 'Autor / Director', 'autor', 'director', 'author', 'director');
-
-      // ── Páginas / Minutos ──
       const pagsMin = parseInt(col(row, 'Páginas / Minutos totales', 'Paginas / Minutos totales', 'Páginas', 'Minutos', 'paginas', 'duracion', 'pages', 'minutes', 'duration')) || 0;
-
-      // ── Año publicación / estreno ──
       const anioPub = parseInt(col(row, 'Publicación', 'Publicacion', 'Año publicación', 'año estreno', 'estreno', 'year published')) || null;
-
-      // ── Idioma original ──
       const idioma = col(row, 'LEN', 'Idioma', 'Idioma original', 'language', 'lang');
-
-      // ── Datos libro ──
       const editorial = col(row, 'Editorial', 'editorial', 'publisher');
       const traductor = col(row, 'Traductor', 'traductor', 'translator');
       const coleccion = col(row, 'Colección', 'Coleccion', 'collection', 'saga', 'Temporada/ Saga', 'Temporada/Saga');
-
-      // ── Datos cine ──
       const musica = col(row, 'Música', 'Musica', 'music', 'bso', 'soundtrack');
       const fotografia = col(row, 'Fotografía', 'Fotografia', 'photography', 'cinematography');
       const guion = col(row, 'Guion', 'Guión', 'script', 'writer', 'screenplay');
       const protagonista = col(row, 'Protagonista', 'protagonista', 'actor', 'lead');
       const dirigidaPor = col(row, 'Dirigida por', 'Dirigido por', 'director film');
-
-      // Basado en
       const basadaEn = col(row, 'Basado en', 'basado en', 'based on');
-      const tituloOrig = col(row, 'Título', 'Titulo original', 'title original'); // columna "Título" en tu planilla es el título de la obra original
+      const tituloOrig = col(row, 'Título', 'Titulo original', 'title original');
       const ideaOrig = col(row, 'Idea Original', 'idea original', 'original idea', 'autor original');
-
-      // Para series: la columna "Temporada/Saga" tiene el número de temporada
       const numTemporada = type === 'serie' ? (parseInt(coleccion) || null) : null;
 
-      // Crear entrada única — para series incluir temporada en el ID para evitar duplicados
       const uid = `imp_${type}_${titulo}_${numTemporada||''}_${anio || ''}`.replace(/\s+/g,'_').toLowerCase();
-      if (importedIds.has(uid)) { skipped++; continue; }
+      if (importedIds.has(uid)) {
+        skipDuplicados++;
+        skipped++;
+        duplicadosList.push({ titulo, type, temporada: numTemporada });
+        continue;
+      }
 
       const entry = {
-        id: uid,
-        type,
-        titulo,
-        anio,
-        mes,
-        notas: '',
-        estado: type === 'libro' ? 'leido' : type === 'serie' ? 'vista' : undefined,
-        progreso: type === 'libro' ? 100 : undefined,
-
-        // Libro
+        id: uid, type, titulo, anio, mes, notas: '',
+        estado: type === 'libro' ? 'leido' : type === 'serie' ? 'vista' : null,
+        progreso: type === 'libro' ? 100 : null,
         autor: type === 'libro' ? autorDir : '',
-        editorial,
-        traductor,
-        idioma,
+        editorial, traductor, idioma,
         paginas: type === 'libro' ? pagsMin : 0,
         anio_pub: anioPub,
         coleccion: type !== 'serie' ? coleccion : null,
-
-        // Cine / Serie
         director: type !== 'libro' ? (autorDir || dirigidaPor) : '',
         duracion: type !== 'libro' ? pagsMin : 0,
-        musica,
-        fotografia,
-        guionista: guion,
-        protagonista,
-        anio_est: anioPub,  // "Publicación" en planilla = año de estreno
-        temporadas: numTemporada,  // número de temporada para series
+        musica, fotografia, guionista: guion, protagonista,
+        anio_est: anioPub,
+        temporadas: numTemporada,
         basada: basadaEn ? basadaEn.toLowerCase() : '',
         autor_original: ideaOrig || tituloOrig,
-
         cover: ''
       };
 
       db.entries.push(entry);
       importedIds.add(uid);
       count++;
+      if (type === 'libro') countLibros++;
+      else if (type === 'pelicula') countPeliculas++;
+      else if (type === 'serie') countSeries++;
     }
 
     saveDB();
     closeModal('modal-import');
-    const msg = skipped > 0
-      ? `✓ ${count} importadas · ${skipped} omitidas (sin categoría o duplicadas)`
-      : `✓ ${count} entradas importadas correctamente`;
-    showToast(msg, 3500);
     renderHome();
+
+    // Mostrar resumen detallado en modal
+    showImportResult({ count, countLibros, countPeliculas, countSeries,
+      skipped, skipDuplicados, skipSinCategoria, skipSinTitulo, duplicadosList });
   };
 
   // Intentar UTF-8 primero, luego latin1 si hay error
   reader.readAsText(file, 'UTF-8');
+}
+
+function showImportResult({ count, countLibros, countPeliculas, countSeries,
+    skipped, skipDuplicados, skipSinCategoria, skipSinTitulo, duplicadosList }) {
+
+  const totalRows = count + skipped;
+  const icon = count > 0 ? '✅' : '⚠️';
+
+  let html = `
+    <div style="text-align:center;margin-bottom:16px;">
+      <div style="font-size:36px;margin-bottom:8px;">${icon}</div>
+      <div style="font-family:var(--font-serif);font-size:22px;font-weight:700;">${count} entrada${count!==1?'s':''} importada${count!==1?'s':''}</div>
+      <div style="font-size:12px;color:var(--ink4);margin-top:4px;">${totalRows} filas procesadas en total</div>
+    </div>`;
+
+  // Desglose de importadas
+  if (count > 0) {
+    html += `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;">`;
+    if (countLibros > 0) html += `<div class="stat-box"><div class="stat-num" style="font-size:24px;">${countLibros}</div><div class="stat-label">📚 Libros</div></div>`;
+    if (countPeliculas > 0) html += `<div class="stat-box"><div class="stat-num" style="font-size:24px;">${countPeliculas}</div><div class="stat-label">🎬 Películas</div></div>`;
+    if (countSeries > 0) html += `<div class="stat-box"><div class="stat-num" style="font-size:24px;">${countSeries}</div><div class="stat-label">📺 Series</div></div>`;
+    html += `</div>`;
+  }
+
+  // Desglose de omitidas
+  if (skipped > 0) {
+    html += `<div style="background:var(--cream2);border-radius:8px;padding:12px 14px;margin-bottom:14px;">
+      <div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink3);margin-bottom:8px;">⚠ ${skipped} omitida${skipped!==1?'s':''}</div>`;
+
+    if (skipDuplicados > 0)
+      html += `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--cream3);font-size:13px;">
+        <span style="color:var(--ink2);">🔁 Duplicadas (ya existían)</span>
+        <span style="font-weight:700;color:var(--ink);">${skipDuplicados}</span>
+      </div>`;
+    if (skipSinCategoria > 0)
+      html += `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--cream3);font-size:13px;">
+        <span style="color:var(--ink2);">❓ Sin categoría reconocida</span>
+        <span style="font-weight:700;color:var(--ink);">${skipSinCategoria}</span>
+      </div>`;
+    if (skipSinTitulo > 0)
+      html += `<div style="display:flex;justify-content:space-between;padding:5px 0;font-size:13px;">
+        <span style="color:var(--ink2);">📭 Sin título</span>
+        <span style="font-weight:700;color:var(--ink);">${skipSinTitulo}</span>
+      </div>`;
+    html += `</div>`;
+
+    // Lista de duplicados (máx 5)
+    if (duplicadosList.length > 0) {
+      html += `<div style="margin-bottom:14px;">
+        <div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink4);margin-bottom:6px;">Duplicados detectados</div>`;
+      duplicadosList.slice(0, 5).forEach(d => {
+        const typeLabel = d.type==='libro'?'📚':d.type==='pelicula'?'🎬':'📺';
+        const temp = d.temporada ? ` T${d.temporada}` : '';
+        html += `<div style="font-size:12px;color:var(--ink3);padding:3px 0;border-bottom:1px solid var(--cream2);">${typeLabel} ${d.titulo}${temp}</div>`;
+      });
+      if (duplicadosList.length > 5)
+        html += `<div style="font-size:11px;color:var(--ink4);margin-top:4px;">…y ${duplicadosList.length - 5} más</div>`;
+      html += `</div>`;
+    }
+  }
+
+  html += `<button class="btn btn-primary" onclick="closeModal('modal-import-result')">Entendido</button>`;
+
+  // Crear o reutilizar modal de resultado
+  let modal = document.getElementById('modal-import-result');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'modal-import-result';
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+      <div class="modal" style="max-width:360px;">
+        <div class="modal-handle"></div>
+        <div class="modal-header">
+          <div class="modal-title">Resultado de importación</div>
+          <button class="btn-icon" onclick="closeModal('modal-import-result')">
+            <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="modal-body" id="import-result-body"></div>
+      </div>`;
+    modal.addEventListener('click', function(e) { if (e.target === this) closeModal('modal-import-result'); });
+    document.body.appendChild(modal);
+  }
+  document.getElementById('import-result-body').innerHTML = html;
+  openModal('modal-import-result');
 }
 
 function exportJSON() {
@@ -5316,9 +5385,9 @@ async function saveAndLogOut() {
   statusEl.textContent = 'Subiendo datos a la nube...';
   try {
     await getValidToken();
-    await firestore.collection('users').doc(currentUser.uid).collection('data').doc('library').set({
-      entries: db.entries, updatedAt: Date.now()
-    });
+    await firestore.collection('users').doc(currentUser.uid).collection('data').doc('library').set(
+      cleanForFirestore({ entries: db.entries, updatedAt: Date.now() })
+    );
     statusEl.textContent = `✓ ${db.entries.length} registros guardados. Cerrando sesión...`;
     setTimeout(() => logOut(), 1200);
   } catch(e) {
@@ -5341,9 +5410,9 @@ async function manualSaveToCloud() {
   showToast('⏳ Guardando en nube...', 2000);
   try {
     await getValidToken();
-    await firestore.collection('users').doc(currentUser.uid).collection('data').doc('library').set({
-      entries: db.entries, updatedAt: Date.now()
-    });
+    await firestore.collection('users').doc(currentUser.uid).collection('data').doc('library').set(
+      cleanForFirestore({ entries: db.entries, updatedAt: Date.now() })
+    );
     setLastSync();
     setSyncStatus('ok');
     showToast(`✓ ${db.entries.length} registros guardados en la nube`, 3000);
