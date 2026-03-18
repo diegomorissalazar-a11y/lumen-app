@@ -3190,7 +3190,7 @@ function entryCardHTML(e) {
   })() : '';
   const badge = `<span class="badge badge-${e.estado==='leyendo'?'leyendo':e.type}">${e.estado==='leyendo'?'Leyendo':e.type==='libro'?'Libro':e.type==='pelicula'?'Película':'Serie'}</span>`;
   const metaLine = `${e.mes ? esc(e.mes)+' ' : ''}${e.anio||''}`;
-  // Escapar el ID para uso seguro en onclick (por si tiene apóstrofes de imports viejos)
+  const coverSrc = e.cover ? e.cover.replace(/"/g,'&quot;') : '';
   const safeId = e.id.replace(/'/g, "\\'");
   return `
     <div class="entry-card" onclick="showDetail('${safeId}')">
