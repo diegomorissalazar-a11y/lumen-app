@@ -2096,14 +2096,19 @@ function cleanForFirestore(obj) {
   return obj;
 }
 
+// Debounce para evitar demasiadas escrituras a Firestore
+let _saveDebounceTimer = null;
 function saveDB() {
   localStorage.setItem(DB_KEY, JSON.stringify(db));
   if (currentUser) {
-    setSyncStatus('syncing');
-    const payload = cleanForFirestore({ entries: db.entries, updatedAt: Date.now() });
-    firestore.collection('users').doc(currentUser.uid).collection('data').doc('library').set(payload)
-    .then(() => { setSyncStatus('ok'); setLastSync(); })
-    .catch(() => setSyncStatus('offline'));
+    clearTimeout(_saveDebounceTimer);
+    _saveDebounceTimer = setTimeout(() => {
+      setSyncStatus('syncing');
+      const payload = cleanForFirestore({ entries: db.entries, updatedAt: Date.now() });
+      firestore.collection('users').doc(currentUser.uid).collection('data').doc('library').set(payload)
+        .then(() => { setSyncStatus('ok'); setLastSync(); })
+        .catch(e => { setSyncStatus('offline'); console.warn('saveDB error:', e.message); });
+    }, 2000); // esperar 2s antes de escribir — agrupa múltiples cambios rápidos
   }
 }
 
@@ -4015,7 +4020,7 @@ function renderLibrosTabla() {
   el.innerHTML = `<table class="data-table">
     <thead><tr><th>Título</th><th>Autor</th><th>Pub.</th><th>Págs</th><th>Leído</th></tr></thead>
     <tbody>${page.map(e=>`<tr>
-      <td style="font-family:var(--font-serif);font-weight:700;max-width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${e.titulo}">${e.titulo}</td>
+      <td style="font-family:var(--font-serif);font-weight:700;max-width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${e.titulo.replace(/'/g,'&#39;').replace(/"/g,'&quot;')}">${e.titulo}</td>
       <td class="clickable" data-key="libros" data-field="autor" data-name="${(e.autor||'').replace(/"/g,'&quot;')}" onclick="toggleFilterFromEl(this)">${e.autor||'—'}</td>
       <td>${e.anio_pub||'—'}</td>
       <td>${(e.paginas||0).toLocaleString()}</td>
@@ -4177,7 +4182,7 @@ function renderPeliculasTabla() {
   el.innerHTML = `<table class="data-table">
     <thead><tr><th>Título</th><th>Director</th><th>Guión</th><th>Música</th><th>Foto</th><th>Año</th><th>Min</th></tr></thead>
     <tbody>${page.map(e=>`<tr>
-      <td style="font-family:var(--font-serif);font-weight:700;max-width:110px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${e.titulo}">${e.titulo}</td>
+      <td style="font-family:var(--font-serif);font-weight:700;max-width:110px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${e.titulo.replace(/'/g,'&#39;').replace(/"/g,'&quot;')}">${e.titulo}</td>
       <td class="clickable" data-key="peliculas" data-field="director" data-name="${(e.director||'').replace(/"/g,'&quot;')}" onclick="toggleFilterFromEl(this)">${ok(e.director)?e.director:'—'}</td>
       <td class="clickable" data-key="peliculas" data-field="guionista" data-name="${(e.guionista||'').replace(/"/g,'&quot;')}" onclick="toggleFilterFromEl(this)">${ok(e.guionista)?e.guionista:'—'}</td>
       <td class="clickable" data-key="peliculas" data-field="musica" data-name="${(e.musica||'').replace(/"/g,'&quot;')}" onclick="toggleFilterFromEl(this)">${ok(e.musica)?e.musica:'—'}</td>
@@ -4273,7 +4278,7 @@ function renderSeriesTabla() {
   el.innerHTML = `<table class="data-table">
     <thead><tr><th>Título</th><th>Creador</th><th>Guión</th><th>Música</th><th>Temp.</th><th>Año</th></tr></thead>
     <tbody>${page.map(e=>`<tr>
-      <td style="font-family:var(--font-serif);font-weight:700;max-width:110px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${e.titulo}">${e.titulo}</td>
+      <td style="font-family:var(--font-serif);font-weight:700;max-width:110px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${e.titulo.replace(/'/g,'&#39;').replace(/"/g,'&quot;')}">${e.titulo}</td>
       <td class="clickable" data-key="series" data-field="director" data-name="${(e.director||'').replace(/"/g,'&quot;')}" onclick="toggleFilterFromEl(this)">${ok(e.director)?e.director:'—'}</td>
       <td class="clickable" data-key="series" data-field="guionista" data-name="${(e.guionista||'').replace(/"/g,'&quot;')}" onclick="toggleFilterFromEl(this)">${ok(e.guionista)?e.guionista:'—'}</td>
       <td class="clickable" data-key="series" data-field="musica" data-name="${(e.musica||'').replace(/"/g,'&quot;')}" onclick="toggleFilterFromEl(this)">${ok(e.musica)?e.musica:'—'}</td>
