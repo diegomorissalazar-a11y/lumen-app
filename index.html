@@ -2039,8 +2039,7 @@ function stampEntry(entry) {
 }
 
 function mergeEntries(local, remote) {
-  const map = {};
-  const normalize = e => {
+  const normalizeEntry = e => {
     if (e.type) {
       const t = e.type.toLowerCase().trim()
         .normalize('NFD').replace(/[\u0300-\u036f]/g,'');
@@ -2050,29 +2049,110 @@ function mergeEntries(local, remote) {
       else e.type = t;
     }
     if (e.idioma) e.idioma = normalizeIdioma(e.idioma);
-    // Migrar IDs con apóstrofes
     if (e.id && e.id.includes("'")) e.id = e.id.replace(/'/g, '');
-    // Migrar series sin estado
     if (e.type === 'serie' && !e.estado) e.estado = 'vista';
-    // Migrar temporadas desde coleccion
     if (e.type === 'serie' && !e.temporadas && e.coleccion) {
       const m = String(e.coleccion).match(/\d+/);
       if (m) e.temporadas = parseInt(m[0]);
     }
     return e;
   };
-  local.forEach(e => { map[e.id] = normalize(e); });
+
+  // Normalizar ambos arrays
+  local  = local.map(normalizeEntry);
+  remote = remote.map(normalizeEntry);
+
+  // Clave canónica para detectar duplicados semánticos (mismo contenido, distinto ID)
+  const canonicalKey = e => `${e.type}||${(e.titulo||'').trim().toLowerCase().replace(/['"]/g,'')}||${e.anio||''}`;
+
+  // Merge incremental: solo sobreescribir campos que cambiaron en la entrada más reciente
+  // Campos que siempre toma el ganador completo vs campos que se fusionan
+  const MERGE_FIELDS = ['generos','notas_lista','readDates','progresoPag','progreso',
+    'readingMode','estado','capActual','capTotal','temporadas','temporadaActual',
+    'cover','musica','guionista','protagonista','fotografia','duracion','capsPorTemp',
+    'minEpisodio','basada','autor_original','coleccion','anio_est','anio_pub',
+    'traductor','idioma','editorial','notas'];
+
+  const mergeTwo = (winner, loser) => {
+    const result = { ...loser };
+    MERGE_FIELDS.forEach(f => {
+      const wv = winner[f], lv = loser[f];
+      // Tomar el valor del ganador si es más informativo (no null/undefined/vacío)
+      const hasValue = v => v !== null && v !== undefined && v !== '' && v !== 0;
+      if (hasValue(wv)) result[f] = wv;
+      // readDates: unir arrays sin duplicar
+      if (f === 'readDates' && Array.isArray(wv) && Array.isArray(lv)) {
+        result[f] = [...new Set([...lv, ...wv])].sort();
+      }
+      // notas_lista: unir por id de nota
+      if (f === 'notas_lista' && Array.isArray(wv) && Array.isArray(lv)) {
+        const notasMap = {};
+        [...lv, ...wv].forEach(n => { notasMap[n.id] = n; });
+        result[f] = Object.values(notasMap);
+      }
+    });
+    result._updatedAt = Math.max(winner._updatedAt||0, loser._updatedAt||0);
+    result.id = winner.id; // usar el ID del ganador
+    return result;
+  };
+
+  // Paso 1: merge por ID exacto
+  const byId = {};
+  local.forEach(e  => { byId[e.id] = e; });
   remote.forEach(e => {
-    normalize(e);
-    if (!map[e.id]) {
-      map[e.id] = e;
+    if (!byId[e.id]) {
+      byId[e.id] = e;
     } else {
-      const localTs = map[e.id]._updatedAt || 0;
+      const localTs  = byId[e.id]._updatedAt || 0;
       const remoteTs = e._updatedAt || 0;
-      if (remoteTs > localTs) map[e.id] = e;
+      const winner = remoteTs >= localTs ? e : byId[e.id];
+      const loser  = remoteTs >= localTs ? byId[e.id] : e;
+      byId[e.id] = mergeTwo(winner, loser);
     }
   });
-  return Object.values(map);
+
+  // Paso 2: deduplicar por clave canónica (mismo título+tipo+año, IDs diferentes)
+  const byCanon = {};
+  Object.values(byId).forEach(e => {
+    const key = canonicalKey(e);
+    if (!byCanon[key]) {
+      byCanon[key] = e;
+    } else {
+      const existing = byCanon[key];
+      const existTs = existing._updatedAt || 0;
+      const thisTs  = e._updatedAt || 0;
+      const winner = thisTs >= existTs ? e : existing;
+      const loser  = thisTs >= existTs ? existing : e;
+      byCanon[key] = mergeTwo(winner, loser);
+    }
+  });
+
+  return Object.values(byCanon);
+}
+
+// Analiza diferencias entre dos arrays de entradas para mostrar resumen
+function diffEntries(local, remote) {
+  const localMap = {};
+  local.forEach(e => { localMap[e.id] = e; });
+
+  const nuevas = [], actualizadas = [], sinCambios = [];
+
+  remote.forEach(e => {
+    const loc = localMap[e.id];
+    if (!loc) {
+      nuevas.push(e);
+    } else {
+      const remoteTs = e._updatedAt || 0;
+      const localTs  = loc._updatedAt || 0;
+      if (remoteTs > localTs) {
+        actualizadas.push({ remote: e, local: loc });
+      } else {
+        sinCambios.push(e);
+      }
+    }
+  });
+
+  return { nuevas, actualizadas, sinCambios };
 }
 
 function setLastSync() {
@@ -4742,6 +4822,94 @@ function handleImport(e) {
   reader.readAsText(file, 'UTF-8');
 }
 
+function showSyncPreview({ nuevas, actualizadas, sinCambios, remote, onConfirm }) {
+  const typeIcon = t => t==='libro'?'📚':t==='pelicula'?'🎬':'📺';
+  const fieldLabel = f => ({
+    generos:'géneros', notas_lista:'notas', readDates:'días lectura',
+    progresoPag:'página actual', progreso:'progreso %', estado:'estado',
+    cover:'portada', temporadas:'temporada', capActual:'capítulo actual',
+    capTotal:'total caps', musica:'música', guionista:'guionista',
+    protagonista:'protagonista', duracion:'duración', idioma:'idioma', notas:'nota'
+  }[f] || f);
+
+  let html = `<div style="text-align:center;margin-bottom:16px;">
+    <div style="font-size:11px;color:var(--ink4);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px;">Resumen de cambios en la nube</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px;">
+      <div class="stat-box"><div class="stat-num" style="font-size:22px;color:var(--green);">${nuevas.length}</div><div class="stat-label">Nuevas</div></div>
+      <div class="stat-box"><div class="stat-num" style="font-size:22px;color:var(--gold);">${actualizadas.length}</div><div class="stat-label">Actualizadas</div></div>
+      <div class="stat-box"><div class="stat-num" style="font-size:22px;color:var(--ink4);">${sinCambios.length}</div><div class="stat-label">Sin cambios</div></div>
+    </div>
+  </div>`;
+
+  if (nuevas.length === 0 && actualizadas.length === 0) {
+    html += `<div style="text-align:center;padding:12px;background:var(--cream2);border-radius:8px;font-size:13px;color:var(--ink3);margin-bottom:16px;">
+      ✅ Tu biblioteca local ya está al día. No hay nada nuevo que descargar.
+    </div>`;
+  } else {
+    // Entradas nuevas (máx 5)
+    if (nuevas.length > 0) {
+      html += `<div style="margin-bottom:12px;">
+        <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--green);margin-bottom:6px;">✚ Entradas nuevas</div>`;
+      nuevas.slice(0,5).forEach(e => {
+        html += `<div style="font-size:12px;color:var(--ink2);padding:4px 0;border-bottom:1px solid var(--cream2);">${typeIcon(e.type)} ${e.titulo||'Sin título'}</div>`;
+      });
+      if (nuevas.length > 5) html += `<div style="font-size:11px;color:var(--ink4);margin-top:2px;">…y ${nuevas.length-5} más</div>`;
+      html += `</div>`;
+    }
+
+    // Entradas actualizadas (máx 5)
+    if (actualizadas.length > 0) {
+      html += `<div style="margin-bottom:12px;">
+        <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold);margin-bottom:6px;">↑ Entradas actualizadas</div>`;
+      actualizadas.slice(0,5).forEach(({remote: e, fields}) => {
+        const fieldStr = fields.map(fieldLabel).join(', ');
+        html += `<div style="font-size:12px;color:var(--ink2);padding:4px 0;border-bottom:1px solid var(--cream2);">
+          ${typeIcon(e.type)} ${e.titulo||'Sin título'}
+          <span style="font-size:10px;color:var(--ink4);display:block;">${fieldStr}</span>
+        </div>`;
+      });
+      if (actualizadas.length > 5) html += `<div style="font-size:11px;color:var(--ink4);margin-top:2px;">…y ${actualizadas.length-5} más</div>`;
+      html += `</div>`;
+    }
+  }
+
+  html += `<div style="display:flex;gap:8px;margin-top:4px;">`;
+  if (nuevas.length > 0 || actualizadas.length > 0) {
+    html += `<button class="btn btn-primary" style="flex:2;" onclick="
+      closeModal('modal-sync-preview');
+      if(window._syncConfirmFn) window._syncConfirmFn();
+    ">Aplicar cambios</button>`;
+  }
+  html += `<button class="btn btn-secondary" style="flex:1;" onclick="closeModal('modal-sync-preview')">Cancelar</button>
+  </div>`;
+
+  // Guardar callback
+  window._syncConfirmFn = onConfirm;
+
+  // Crear o reutilizar modal
+  let modal = document.getElementById('modal-sync-preview');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'modal-sync-preview';
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+      <div class="modal" style="max-width:400px;">
+        <div class="modal-handle"></div>
+        <div class="modal-header">
+          <div class="modal-title">📥 Vista previa sincronización</div>
+          <button class="btn-icon" onclick="closeModal('modal-sync-preview')">
+            <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="modal-body" id="sync-preview-body"></div>
+      </div>`;
+    modal.addEventListener('click', function(e) { if (e.target===this) closeModal('modal-sync-preview'); });
+    document.body.appendChild(modal);
+  }
+  document.getElementById('sync-preview-body').innerHTML = html;
+  openModal('modal-sync-preview');
+}
+
 function showImportResult({ count, countLibros, countPeliculas, countSeries,
     skipped, skipDuplicados, skipSinCategoria, skipSinTitulo, duplicadosList }) {
 
@@ -5457,7 +5625,7 @@ async function manualLoadFromCloud() {
   closeUserMenu();
   if (!currentUser) { showToast('Inicia sesión primero'); return; }
   setSyncStatus('syncing');
-  showToast('⏳ Cargando desde nube...', 2000);
+  showToast('⏳ Leyendo nube...', 2000);
   try {
     await getValidToken();
     const snap = await firestore.collection('users').doc(currentUser.uid).collection('data').doc('library').get();
@@ -5466,16 +5634,73 @@ async function manualLoadFromCloud() {
       showToast('La nube no tiene datos aún. Usa 📤 Guardar primero.', 3500);
       return;
     }
-    const remote = snap.data();
-    const remoteEntries = remote.entries || [];
-    // Merge con datos locales — gana el más reciente por timestamp
-    const merged = mergeEntries(db.entries, remoteEntries);
-    db.entries = merged;
-    localStorage.setItem(DB_KEY, JSON.stringify(db));
-    setLastSync();
-    setSyncStatus('ok');
-    refreshCurrentScreen();
-    showToast(`✓ ${merged.length} registros cargados desde la nube`, 3000);
+    const remoteRaw = snap.data().entries || [];
+
+    // Normalizar entradas remotas igual que mergeEntries
+    const normalizeEntry = e => {
+      if (e.type) {
+        const t = e.type.toLowerCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+        if (t.includes('libro')) e.type = 'libro';
+        else if (t.includes('pelicula')||t.includes('movie')||t.includes('film')) e.type = 'pelicula';
+        else if (t.includes('serie')||t.includes('series')||t.includes('tv')) e.type = 'serie';
+      }
+      if (e.id && e.id.includes("'")) e.id = e.id.replace(/'/g,'');
+      if (e.type==='serie' && !e.estado) e.estado='vista';
+      return e;
+    };
+    const remote = remoteRaw.map(normalizeEntry);
+
+    // Analizar diferencias
+    const localMap = {};
+    db.entries.forEach(e => { localMap[e.id] = e; });
+
+    const nuevas = [], actualizadas = [], sinCambios = [];
+    remote.forEach(e => {
+      const loc = localMap[e.id];
+      if (!loc) {
+        // Verificar si es un duplicado semántico (mismo título+tipo, distinto ID)
+        const isDupTitle = db.entries.some(l =>
+          l.type === e.type &&
+          (l.titulo||'').trim().toLowerCase().replace(/['"]/g,'') ===
+          (e.titulo||'').trim().toLowerCase().replace(/['"]/g,'') &&
+          l.id !== e.id
+        );
+        if (!isDupTitle) nuevas.push(e);
+        // si es duplicado semántico, se ignora (el merge lo resolverá)
+      } else {
+        const remoteTs = e._updatedAt || 0;
+        const localTs  = loc._updatedAt || 0;
+        if (remoteTs > localTs) {
+          // Detectar qué campos cambiaron
+          const changedFields = [];
+          ['generos','notas_lista','readDates','progresoPag','progreso','estado',
+           'cover','temporadas','capActual','capTotal','musica','guionista',
+           'protagonista','duracion','idioma','notas'].forEach(f => {
+            const rv = JSON.stringify(e[f]||null);
+            const lv = JSON.stringify(loc[f]||null);
+            if (rv !== lv) changedFields.push(f);
+          });
+          if (changedFields.length > 0) actualizadas.push({ remote: e, local: loc, fields: changedFields });
+          else sinCambios.push(e);
+        } else {
+          sinCambios.push(e);
+        }
+      }
+    });
+
+    // Mostrar resumen con confirmación
+    showSyncPreview({ nuevas, actualizadas, sinCambios, remote, onConfirm: async () => {
+      const merged = mergeEntries(db.entries, remote);
+      db.entries = merged;
+      localStorage.setItem(DB_KEY, JSON.stringify(db));
+      setLastSync();
+      setSyncStatus('ok');
+      // Si local tenía datos más recientes, subir también
+      await syncToFirestore();
+      refreshCurrentScreen();
+      showToast(`✓ Sincronización completa · ${merged.length} registros`, 3000);
+    }});
+
   } catch(e) {
     setSyncStatus('offline');
     showToast(`⚠ Error: ${e.message}`, 4000);
