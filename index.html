@@ -1198,7 +1198,7 @@ select.input { cursor: pointer; }
     📥 Cargar desde nube
   </button>
 
-  <button class="user-menu-item" onclick="closeUserMenu();setTimeout(()=>openModal('modal-import'),50)">
+  <button class="user-menu-item" onclick="openMenuAction('modal-import')">
     <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0018 9h-1.26A8 8 0 103 16.3"/></svg>
     Importar / Exportar CSV
   </button>
@@ -5294,10 +5294,9 @@ async function logOut() {
 
 async function confirmLogOut() {
   closeUserMenu();
-  // Mostrar estado actual en el modal
   const statusEl = document.getElementById('logout-sync-status');
   statusEl.textContent = `Tienes ${db.entries.length} registros locales.`;
-  openModal('modal-logout-confirm');
+  requestAnimationFrame(() => openModal('modal-logout-confirm'));
 }
 
 async function saveAndLogOut() {
@@ -5402,15 +5401,31 @@ function setSyncStatus(state) {
   if (mtxt) mtxt.textContent = labels[state] || labels.ok;
 }
 
+function openMenuAction(modalId) {
+  closeUserMenu();
+  requestAnimationFrame(() => openModal(modalId));
+}
+
 function showUserMenu() {
   const menu = document.getElementById('user-menu');
-  menu.classList.toggle('open');
-  if (menu.classList.contains('open')) {
-    setTimeout(() => document.addEventListener('click', closeUserMenuOutside, {once:true}), 150);
-  }
+  const isOpen = menu.classList.contains('open');
+  // Cerrar todos los otros menús primero
+  menu.classList.toggle('open', !isOpen);
 }
-function closeUserMenu() { document.getElementById('user-menu').classList.remove('open'); }
-function closeUserMenuOutside(e) { if (!document.getElementById('user-menu').contains(e.target)) closeUserMenu(); }
+
+function closeUserMenu() {
+  document.getElementById('user-menu').classList.remove('open');
+}
+
+// Click outside — usando mousedown en document para capturar antes del click
+document.addEventListener('mousedown', function(e) {
+  const menu = document.getElementById('user-menu');
+  const btn  = document.getElementById('user-initials') || document.getElementById('user-avatar');
+  if (!menu) return;
+  if (!menu.contains(e.target) && !e.target.closest('#user-initials') && !e.target.closest('#user-avatar')) {
+    menu.classList.remove('open');
+  }
+});
 
 function updateUserUI(user) {
   if (!user) return;
