@@ -3113,7 +3113,7 @@ function renderLibrary() {
 }
 
 function entryCardHTML(e) {
-  const stars = e.rating ? '★'.repeat(e.rating) + '☆'.repeat(5-e.rating) : '';
+  const esc = s => s ? String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') : '';
   const ok = v => {
     if (v === null || v === undefined || v === '' || v === 0) return false;
     const s = String(v).trim();
@@ -3122,19 +3122,17 @@ function entryCardHTML(e) {
 
   let sub = '';
   if (e.type === 'libro') {
-    sub = [e.autor, e.paginas ? e.paginas+' págs' : null, e.editorial].filter(ok).join(' · ');
+    sub = [e.autor, e.paginas ? e.paginas+' págs' : null, e.editorial].filter(ok).map(esc).join(' · ');
   } else if (e.type === 'pelicula') {
     const parts = [ok(e.director)?e.director:null, e.anio_est?String(e.anio_est):null, e.duracion?fmtMin(e.duracion):null];
-    sub = parts.filter(Boolean).join(' · ');
-  } else { // serie
-    // Mostrar "Temporada N" si tiene número de temporada
+    sub = parts.filter(Boolean).map(esc).join(' · ');
+  } else {
     const tempNum = getTemporadaNum(e);
     const temp = tempNum ? `Temporada ${tempNum}` : null;
     const dur  = e.duracion ? fmtMin(e.duracion) : null;
-    sub = [ok(e.director)?e.director:null, e.anio_est?String(e.anio_est):null, temp, dur].filter(Boolean).join(' · ');
+    sub = [ok(e.director)?e.director:null, e.anio_est?String(e.anio_est):null, temp, dur].filter(Boolean).map(esc).join(' · ');
   }
 
-  // Extra chips for películas & series
   let chips = '';
   if (e.type === 'pelicula' || e.type === 'serie') {
     const extras = [];
@@ -3144,7 +3142,7 @@ function entryCardHTML(e) {
     if (ok(e.fotografia))   extras.push({ icon: '◉', val: e.fotografia });
     if (extras.length) {
       chips = `<div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:4px;">` +
-        extras.map(x => `<span style="font-size:10px;color:var(--ink3);background:var(--cream2);padding:2px 7px;border-radius:10px;">${x.icon} ${x.val}</span>`).join('') +
+        extras.map(x => `<span style="font-size:10px;color:var(--ink3);background:var(--cream2);padding:2px 7px;border-radius:10px;">${x.icon} ${esc(x.val)}</span>`).join('') +
         `</div>`;
     }
   }
@@ -3155,20 +3153,21 @@ function entryCardHTML(e) {
     ? `<span style="font-size:10px;color:var(--ink4);margin-left:4px;">📝 ${e.notas_lista.length}</span>` : '';
   const generosHtml = e.type === 'libro' ? (() => {
     const gs = e.generos && e.generos.length > 0 ? e.generos : [];
-    const chips = gs.map(g =>
-      `<span onclick="event.stopPropagation();openGeneroQuick('${e.id}')" style="font-size:9px;background:var(--cream2);border:1px solid var(--border);border-radius:10px;padding:2px 7px;color:var(--ink3);cursor:pointer;">${g}</span>`
+    const genChips = gs.map(g =>
+      `<span onclick="event.stopPropagation();openGeneroQuick('${e.id}')" style="font-size:9px;background:var(--cream2);border:1px solid var(--border);border-radius:10px;padding:2px 7px;color:var(--ink3);cursor:pointer;">${esc(g)}</span>`
     ).join('');
     const addBtn = `<button onclick="event.stopPropagation();openGeneroQuick('${e.id}')" style="font-size:9px;background:none;border:1px dashed var(--border);border-radius:10px;padding:2px 7px;color:var(--ink4);cursor:pointer;font-family:var(--font-sans);">🏷${gs.length>0?' +':' Etiquetar'}</button>`;
-    return chips + addBtn;
+    return genChips + addBtn;
   })() : '';
   const badge = `<span class="badge badge-${e.estado==='leyendo'?'leyendo':e.type}">${e.estado==='leyendo'?'Leyendo':e.type==='libro'?'Libro':e.type==='pelicula'?'Película':'Serie'}</span>`;
-  const metaLine = `${e.mes ? e.mes + ' ' : ''}${e.anio || ''}`;
+  const metaLine = `${e.mes ? esc(e.mes)+' ' : ''}${e.anio||''}`;
+  const coverSrc = e.cover ? e.cover.replace(/"/g,'&quot;') : '';
   return `
     <div class="entry-card" onclick="showDetail('${e.id}')">
       <div class="entry-card-spine ${e.estado==='leyendo'?'libro':e.type}"></div>
-      ${e.cover ? `<img src="${e.cover}" class="entry-card-cover">` : `<div class="entry-card-cover" style="display:flex;align-items:center;justify-content:center;font-size:22px;">${e.type==='libro'?'📚':e.type==='pelicula'?'🎬':'📺'}</div>`}
+      ${coverSrc ? `<img src="${coverSrc}" class="entry-card-cover">` : `<div class="entry-card-cover" style="display:flex;align-items:center;justify-content:center;font-size:22px;">${e.type==='libro'?'📚':e.type==='pelicula'?'🎬':'📺'}</div>`}
       <div class="entry-card-info">
-        <div class="entry-card-title">${e.titulo}</div>
+        <div class="entry-card-title">${esc(e.titulo)}</div>
         <div class="entry-card-sub">${sub}</div>
         ${chips}
         ${progress}
