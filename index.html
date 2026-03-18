@@ -1885,9 +1885,20 @@ const firebaseConfig = {
   messagingSenderId: "473887918286",
   appId: "1:473887918286:web:e3ee5a38f52e9aa107e89f"
 };
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const firestore = firebase.firestore();
+let auth, firestore;
+try {
+  firebase.initializeApp(firebaseConfig);
+  auth = firebase.auth();
+  firestore = firebase.firestore();
+} catch(err) {
+  console.warn('Firebase no disponible (bloqueado por navegador):', err.message);
+  // Modo offline — ocultar overlay de auth y continuar con datos locales
+  const overlay = document.getElementById('auth-overlay');
+  if (overlay) overlay.style.display = 'none';
+  // Stub para que el resto del código no crashee
+  auth = { onAuthStateChanged: () => {}, signOut: () => Promise.resolve() };
+  firestore = { collection: () => ({ doc: () => ({ get: () => Promise.reject('offline'), set: () => Promise.reject('offline'), collection: () => ({ doc: () => ({ get: () => Promise.reject('offline'), set: () => Promise.reject('offline') }) }) }) }) };
+}
 // enablePersistence() removido — incompatible con Safari iOS
 
 // ═══════════════════════════════════
@@ -5459,6 +5470,17 @@ window.addEventListener('online', () => {
   syncToFirestore().then(() => setSyncStatus('ok'));
 });
 window.addEventListener('offline', () => setSyncStatus('offline'));
+
+// Fallback: si Firebase no responde en 5s, ocultar overlay y continuar offline
+setTimeout(() => {
+  const overlay = document.getElementById('auth-overlay');
+  if (overlay && overlay.style.display !== 'none') {
+    console.warn('Firebase timeout — modo offline');
+    overlay.style.display = 'none';
+    db = loadDB();
+    renderHome();
+  }
+}, 5000);
 
 // ═══════════════════════════════════
 //  AUTH STATE OBSERVER — main entry point
