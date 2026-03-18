@@ -1385,8 +1385,8 @@ select.input { cursor: pointer; }
           <div class="field"><label>Año estreno</label><input class="input" type="number" id="fs-anio-est"></div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-          <div class="field"><label>Temporadas</label><input class="input" type="number" id="fs-temporadas" min="1" value="1" oninput="calcSeriesDuracion()"></div>
-          <div class="field"><label>Caps por temporada (prom.)</label><input class="input" type="number" id="fs-caps-por-temp" min="1" placeholder="Ej: 10" oninput="calcSeriesDuracion()"></div>
+          <div class="field"><label>N° Temporada</label><input class="input" type="number" id="fs-temporadas" min="1" placeholder="Ej: 1" oninput="calcSeriesDuracion()"></div>
+          <div class="field"><label>Capítulos de la temporada</label><input class="input" type="number" id="fs-caps-por-temp" min="1" placeholder="Ej: 13" oninput="calcSeriesDuracion()"></div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
           <div class="field"><label>Minutos por episodio</label><input class="input" type="number" id="fs-min-episodio" min="1" placeholder="Ej: 45" oninput="calcSeriesDuracion()"></div>
@@ -1430,15 +1430,6 @@ select.input { cursor: pointer; }
 
       <!-- RATING -->
       <div class="field">
-        <label>Mi valoración</label>
-        <div class="stars" id="rating-stars">
-          <span class="star" onclick="setRating(1)">★</span>
-          <span class="star" onclick="setRating(2)">★</span>
-          <span class="star" onclick="setRating(3)">★</span>
-          <span class="star" onclick="setRating(4)">★</span>
-          <span class="star" onclick="setRating(5)">★</span>
-        </div>
-      </div>
       <div class="field"><label>Notas personales</label><textarea class="input" id="f-notas" rows="2" placeholder="Impresiones, citas..."></textarea></div>
       <button class="btn btn-primary" onclick="saveEntry()" style="margin-top:6px;">Guardar en biblioteca</button>
     </div>
@@ -1634,12 +1625,48 @@ select.input { cursor: pointer; }
     </div>
     <div class="modal-body">
       <input type="hidden" id="progress-entry-id">
-      <!-- Book cover + info + editar portada -->
-      <div id="progress-book-info" style="display:flex;gap:12px;margin-bottom:10px;padding:12px;background:var(--cream2);border-radius:var(--radius);align-items:center;"></div>
-      <!-- Editar portada (colapsable) -->
+
+      <!-- Book info compacto -->
+      <div id="progress-book-info" style="display:flex;gap:12px;margin-bottom:16px;align-items:center;"></div>
+
+      <!-- INPUT PRINCIPAL — grande para móvil -->
+      <div id="progress-pag-section">
+        <div style="text-align:center;margin-bottom:16px;">
+          <div style="font-size:11px;color:var(--ink4);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">Página actual</div>
+          <input class="input" type="number" id="progress-pag-input" min="0"
+            style="font-family:var(--font-serif);font-size:42px;font-weight:900;text-align:center;padding:16px;border-radius:12px;width:100%;"
+            oninput="onProgressPagInput(this.value)">
+          <div id="progress-pag-of" style="font-size:13px;color:var(--ink4);margin-top:6px;"></div>
+        </div>
+        <div class="progress-wrap" style="margin-bottom:6px;height:8px;border-radius:4px;">
+          <div class="progress-fill" id="progress-pag-bar" style="width:0%;border-radius:4px;"></div>
+        </div>
+        <div id="progress-pag-pct-text" style="font-size:13px;color:var(--ink3);text-align:center;margin-bottom:12px;font-weight:600;"></div>
+      </div>
+
+      <!-- Modo % — colapsado por defecto, para Kindle -->
+      <div id="progress-pct-section" style="display:none;">
+        <div class="field">
+          <label>Progreso (<span id="progress-pct-label">0</span>%)</label>
+          <input type="range" id="progress-pct-slider" min="0" max="100" value="0"
+            style="width:100%;accent-color:var(--gold);margin-bottom:8px;"
+            oninput="onProgressSlider(this.value)">
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--ink4);">
+            <span>0%</span><span>50%</span><span>100%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Toggle modo — pequeño, secundario -->
+      <div id="progress-mode-display" style="margin-bottom:12px;"></div>
+
+      <!-- Ritmo compacto -->
+      <div id="progress-ritmo-info" style="margin-bottom:14px;"></div>
+
+      <!-- Editar portada colapsable -->
       <div style="margin-bottom:14px;">
-        <button onclick="toggleEditCover()" style="background:none;border:none;font-size:11px;color:var(--ink3);cursor:pointer;font-family:var(--font-sans);font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:0;display:flex;align-items:center;gap:4px;">
-          <svg viewBox="0 0 24 24" id="edit-cover-chevron" style="width:12px;height:12px;stroke:var(--ink3);fill:none;stroke-width:2.5;transition:transform 0.2s;"><polyline points="6 9 12 15 18 9"/></svg>
+        <button onclick="toggleEditCover()" style="background:none;border:none;font-size:11px;color:var(--ink4);cursor:pointer;font-family:var(--font-sans);font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:0;display:flex;align-items:center;gap:4px;">
+          <svg viewBox="0 0 24 24" id="edit-cover-chevron" style="width:12px;height:12px;stroke:var(--ink4);fill:none;stroke-width:2.5;transition:transform 0.2s;"><polyline points="6 9 12 15 18 9"/></svg>
           Editar portada
         </button>
         <div id="edit-cover-panel" style="display:none;margin-top:10px;padding:12px;background:#fff;border:1px solid var(--border);border-radius:var(--radius);">
@@ -1659,36 +1686,11 @@ select.input { cursor: pointer; }
           <button class="btn btn-primary btn-sm" onclick="saveProgressCover()" style="margin-top:10px;font-size:11px;">Guardar portada</button>
         </div>
       </div>
-      <div id="progress-mode-display" style="margin-bottom:12px;"></div>
-      <!-- Pct mode -->
-      <div id="progress-pct-section">
-        <div class="field">
-          <label>Progreso (<span id="progress-pct-label">0</span>%)</label>
-          <input type="range" id="progress-pct-slider" min="0" max="100" value="0"
-            style="width:100%;accent-color:var(--gold);margin-bottom:8px;"
-            oninput="onProgressSlider(this.value)">
-          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--ink4);">
-            <span>0%</span><span>50%</span><span>100%</span>
-          </div>
-        </div>
-      </div>
-      <!-- Pag mode -->
-      <div id="progress-pag-section" style="display:none;">
-        <div class="field">
-          <label>Página actual <span id="progress-pag-of" style="color:var(--ink4);"></span></label>
-          <input class="input" type="number" id="progress-pag-input" min="0" oninput="onProgressPagInput(this.value)">
-        </div>
-        <div class="progress-wrap" style="margin-top:4px;margin-bottom:8px;height:8px;">
-          <div class="progress-fill" id="progress-pag-bar" style="width:0%;"></div>
-        </div>
-        <div id="progress-pag-pct-text" style="font-size:12px;color:var(--ink3);text-align:right;"></div>
-      </div>
-      <!-- Ritmo info -->
-      <div id="progress-ritmo-info" style="margin-bottom:14px;"></div>
-      <!-- Finish button -->
+
+      <!-- Botones acción -->
       <div style="display:flex;gap:10px;margin-top:4px;">
-        <button class="btn btn-primary" onclick="saveProgress()" style="flex:2;">Guardar progreso</button>
-        <button class="btn" onclick="finishBook()" style="flex:1;background:var(--green);color:var(--cream);font-size:12px;">✓ Terminé</button>
+        <button class="btn btn-primary" onclick="saveProgress()" style="flex:2;padding:14px;">Guardar</button>
+        <button class="btn" onclick="finishBook()" style="flex:1;background:var(--green);color:var(--cream);font-size:12px;padding:14px;">✓ Terminé</button>
       </div>
     </div>
   </div>
@@ -2279,8 +2281,6 @@ function resetForm() {
   resetGeneros();
   document.getElementById('fp-basada').value = '';
   document.getElementById('fs-basada').value = '';
-  currentRating = 0;
-  updateStars(0);
   selectType('libro', document.querySelector('.type-btn[data-type="libro"]'));
 }
 
@@ -2559,7 +2559,7 @@ function updateStars(n) {
 //  SAVE ENTRY
 // ═══════════════════════════════════
 function saveEntry() {
-  let entry = { id: editingId || 'e_' + Date.now(), type: currentType, rating: currentRating, notas: document.getElementById('f-notas').value };
+  let entry = { id: editingId || 'e_' + Date.now(), type: currentType, notas: document.getElementById('f-notas').value };
   if (currentType === 'libro') {
     const titulo = document.getElementById('f-titulo').value.trim();
     if (!titulo) { showToast('Ingresa el título del libro'); return; }
@@ -2614,6 +2614,25 @@ function saveEntry() {
     if (idx >= 0) db.entries[idx] = entry;
   } else {
     entry._updatedAt = Date.now();
+    // Detectar duplicados — mismo título, mismo tipo
+    const dupSameType = db.entries.find(e =>
+      e.id !== entry.id &&
+      e.type === entry.type &&
+      e.titulo.trim().toLowerCase() === entry.titulo.trim().toLowerCase()
+    );
+    // Detectar mismo título pero distinto tipo
+    const dupOtherType = db.entries.find(e =>
+      e.id !== entry.id &&
+      e.type !== entry.type &&
+      e.titulo.trim().toLowerCase() === entry.titulo.trim().toLowerCase()
+    );
+    if (dupSameType) {
+      const typeLabel = entry.type==='libro'?'libro':entry.type==='pelicula'?'película':'serie';
+      if (!confirm(`Ya tienes un ${typeLabel} con el título "${entry.titulo}". ¿Añadir de todas formas?`)) return;
+    } else if (dupOtherType) {
+      const typeOtro = dupOtherType.type==='libro'?'libro':dupOtherType.type==='pelicula'?'película':'serie';
+      showToast(`ℹ También tienes este título como ${typeOtro}`, 3000);
+    }
     db.entries.push(entry);
   }
   saveDB();
@@ -2948,12 +2967,17 @@ function renderHome() {
       const pct = e.readingMode === 'pag' && e.paginas
         ? Math.round(((e.progresoPag||0) / e.paginas) * 100)
         : (e.progreso || 0);
-      const progresoText = e.readingMode === 'pag'
-        ? `Pág ${e.progresoPag||0} / ${e.paginas||'?'}`
+      const pagActual = e.readingMode === 'pag'
+        ? (e.progresoPag||0)
+        : Math.round(((e.progreso||0)/100)*(e.paginas||0));
+      // Siempre mostrar: "Pág X / total · Y%"
+      const progresoText = e.paginas
+        ? `Pág ${pagActual} / ${e.paginas} · ${pct}%`
         : `${pct}%`;
       const coverHTML = e.cover
         ? `<img src="${e.cover}" class="reading-mini-cover">`
         : `<div class="reading-mini-cover" style="display:flex;align-items:center;justify-content:center;font-size:28px;">📚</div>`;
+      const notasCount = (e.notas_lista||[]).length;
       return `
         <div class="reading-mini-card">
           ${coverHTML}
@@ -2965,7 +2989,10 @@ function renderHome() {
             </div>
             <div class="reading-mini-pct">${progresoText}</div>
           </div>
-          <button class="reading-mini-btn" onclick="openProgressModal('${e.id}')">↑ Actualizar</button>
+          <div style="display:flex;gap:0;border-top:1px solid var(--cream3);">
+            <button class="reading-mini-btn" style="flex:1;border-right:1px solid var(--cream3);" onclick="openProgressModal('${e.id}')">↑ Actualizar</button>
+            <button class="reading-mini-btn" style="flex:0 0 auto;padding:5px 10px;" onclick="openNotasDirectas('${e.id}')" title="Ver notas">📝${notasCount>0?`<span style='font-size:9px;color:var(--ink3);margin-left:2px;'>${notasCount}</span>`:''}</button>
+          </div>
         </div>`;
     }).join('');
   }
@@ -3086,7 +3113,8 @@ function entryCardHTML(e) {
     const parts = [ok(e.director)?e.director:null, e.anio_est?String(e.anio_est):null, e.duracion?fmtMin(e.duracion):null];
     sub = parts.filter(Boolean).join(' · ');
   } else { // serie
-    const temp = ok(e.temporadas) ? `${e.temporadas} temp.` : null;
+    // Mostrar "Temporada N" si tiene número, si no mostrar solo título
+    const temp = e.temporadas ? `Temporada ${e.temporadas}` : null;
     const dur  = e.duracion ? fmtMin(e.duracion) : null;
     sub = [ok(e.director)?e.director:null, e.anio_est?String(e.anio_est):null, temp, dur].filter(Boolean).join(' · ');
   }
@@ -3099,7 +3127,6 @@ function entryCardHTML(e) {
     if (ok(e.protagonista)) extras.push({ icon: '★', val: e.protagonista });
     if (ok(e.musica))       extras.push({ icon: '♪', val: e.musica });
     if (ok(e.fotografia))   extras.push({ icon: '◉', val: e.fotografia });
-    if (e.type === 'serie' && ok(e.temporadas)) {} // already in sub
     if (extras.length) {
       chips = `<div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:4px;">` +
         extras.map(x => `<span style="font-size:10px;color:var(--ink3);background:var(--cream2);padding:2px 7px;border-radius:10px;">${x.icon} ${x.val}</span>`).join('') +
@@ -3111,7 +3138,6 @@ function entryCardHTML(e) {
     ? `<div class="progress-wrap"><div class="progress-fill" style="width:${e.progreso||0}%"></div></div>` : '';
   const notasBadge = (e.notas_lista && e.notas_lista.length > 0)
     ? `<span style="font-size:10px;color:var(--ink4);margin-left:4px;">📝 ${e.notas_lista.length}</span>` : '';
-  // Géneros: mostrar todos como chips clicables + botón añadir si no hay
   const generosHtml = e.type === 'libro' ? (() => {
     const gs = e.generos && e.generos.length > 0 ? e.generos : [];
     const chips = gs.map(g =>
@@ -3134,7 +3160,6 @@ function entryCardHTML(e) {
         <div class="entry-card-meta">
           ${badge}
           ${metaLine ? `<span style="font-size:10px;color:var(--ink4);">${metaLine}</span>` : ''}
-          ${stars ? `<span class="entry-card-rating">${stars}</span>` : ''}
           ${generosHtml}
           ${notasBadge}
         </div>
@@ -3152,8 +3177,6 @@ function showDetail(id) {
   let html = '';
   const row = (label, val) => val ? `<div style="display:flex;gap:8px;padding:7px 0;border-bottom:1px solid var(--cream2);"><span style="font-size:10px;color:var(--ink4);letter-spacing:1.5px;text-transform:uppercase;font-weight:700;width:110px;flex-shrink:0;padding-top:2px;">${label}</span><span style="font-size:14px;color:var(--ink2);">${val}</span></div>` : '';
   if (e.cover) html += `<img src="${e.cover}" style="width:80px;height:110px;object-fit:cover;border-radius:3px;float:right;margin:0 0 12px 12px;">`;
-  const stars = e.rating ? `<div class="stars" style="margin-bottom:12px;">${'<span class="star filled">★</span>'.repeat(e.rating) + '<span class="star">★</span>'.repeat(5-e.rating)}</div>` : '';
-  html += stars;
   if (e.type === 'libro') {
     html += row('Autor', e.autor) + row('Editorial', e.editorial) + row('Páginas', e.paginas) + row('Publicado', e.anio_pub) + row('Traductor', e.traductor) + row('Idioma orig.', e.idioma) + row('Leído', `${e.mes||''} ${e.anio||''}`);
     if (e.estado === 'leyendo') html += row('Progreso', e.progreso + '%');
@@ -3169,7 +3192,9 @@ function showDetail(id) {
   } else { // serie
     const capInfo = (e.capActual || e.capTotal) ? `Cap. ${e.capActual||0} / ${e.capTotal||'?'}` : null;
     const pctCap = e.capTotal > 0 ? `${Math.round((e.capActual||0)/e.capTotal*100)}%` : null;
-    html += row('Director', e.director) + row('Estreno', e.anio_est) + row('Temporadas', e.temporadas) + row('Caps/temporada', e.capsPorTemp) + row('Min/episodio', e.minEpisodio ? e.minEpisodio+' min' : '') + row('Duración total', e.duracion ? fmtMin(e.duracion) : '') + row('Protagonista', e.protagonista) + row('Música', e.musica) + row('Guionista', e.guionista);
+    // Mostrar "Temporada N" si tiene número de temporada
+    const tempLabel = e.temporadas ? `Temporada ${e.temporadas}` : null;
+    html += row('Director', e.director) + row('Estreno', e.anio_est) + row('Temporada', tempLabel) + row('Capítulos', e.capsPorTemp) + row('Min/episodio', e.minEpisodio ? e.minEpisodio+' min' : '') + row('Duración total', e.duracion ? fmtMin(e.duracion) : '') + row('Protagonista', e.protagonista) + row('Música', e.musica) + row('Guionista', e.guionista);
     if (e.basada) html += row('Basada en', e.basada + (e.autor_original ? ' — ' + e.autor_original : ''));
     if (e.estado === 'viendo') {
       html += row('Progreso', capInfo ? `${capInfo}${pctCap?' · '+pctCap:''}` : 'Viendo');
@@ -3227,6 +3252,20 @@ function toggleNotasSection(entryId) {
   const open = body.style.display === 'none';
   body.style.display = open ? 'block' : 'none';
   chevron.classList.toggle('open', open);
+}
+
+// Abre la ficha directamente con las notas expandidas — desde carrusel
+function openNotasDirectas(entryId) {
+  showDetail(entryId);
+  // Expandir notas automáticamente después de renderizar
+  setTimeout(() => {
+    const body    = document.getElementById(`notas-body-${entryId}`);
+    const chevron = document.getElementById(`notas-chevron-${entryId}`);
+    if (body && body.style.display === 'none') {
+      body.style.display = 'block';
+      chevron?.classList.add('open');
+    }
+  }, 80);
 }
 
 function openNotaModal(entryId, notaId) {
@@ -3308,8 +3347,6 @@ function editEntry(id) {
   openModal('modal-add');
   setTimeout(() => {
     selectType(e.type, document.querySelector(`.type-btn[data-type="${e.type}"]`));
-    currentRating = e.rating || 0;
-    updateStars(currentRating);
     document.getElementById('f-notas').value = e.notas || '';
     if (e.type === 'libro') {
       ['titulo','autor','editorial','paginas','anio_pub','traductor','cover'].forEach(k => { const el=document.getElementById('f-'+k); if(el) el.value=e[k]||''; });
@@ -3786,14 +3823,23 @@ function renderTopInteractive(containerId, items, field, color, key, filterField
   el.innerHTML = sorted.map(([name,count],i) => {
     const sel = s.filterField===filterField && s.filter===name;
     const dim = s.filterField===filterField && !sel;
+    // Use data attributes to avoid apostrophe/quote issues in onclick
     return `<div class="top-int-item ${sel?'selected':''} ${dim?'dimmed':''}"
-      onclick="toggleFilter('${key}','${filterField}','${name.replace(/'/g,"\\'")}')">
+      data-key="${key}" data-field="${filterField}" data-name="${name.replace(/"/g,'&quot;')}"
+      onclick="toggleFilterFromEl(this)">
       <div class="top-int-rank" style="color:${i===0?'var(--gold)':'var(--ink4)'};">${i+1}</div>
       <div class="top-int-name">${name}</div>
       <div class="top-int-count">${count}</div>
       <div class="top-int-bar"><div class="top-int-bar-fill" style="width:${Math.round((count/max)*100)}%;background:${color};"></div></div>
     </div>`;
   }).join('');
+}
+
+function toggleFilterFromEl(el) {
+  const key   = el.dataset.key;
+  const field = el.dataset.field;
+  const value = el.dataset.name;
+  toggleFilter(key, field, value);
 }
 
 function toggleFilter(key, field, value) {
@@ -3935,7 +3981,7 @@ function renderLibrosTabla() {
     <thead><tr><th>Título</th><th>Autor</th><th>Pub.</th><th>Págs</th><th>Leído</th></tr></thead>
     <tbody>${page.map(e=>`<tr>
       <td style="font-family:var(--font-serif);font-weight:700;max-width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${e.titulo}">${e.titulo}</td>
-      <td class="clickable" onclick="toggleFilter('libros','autor','${(e.autor||'').replace(/'/g,"\\'")}')">${e.autor||'—'}</td>
+      <td class="clickable" data-key="libros" data-field="autor" data-name="${(e.autor||'').replace(/"/g,'&quot;')}" onclick="toggleFilterFromEl(this)">${e.autor||'—'}</td>
       <td>${e.anio_pub||'—'}</td>
       <td>${(e.paginas||0).toLocaleString()}</td>
       <td style="white-space:nowrap;font-size:11px;">${e.mes||'—'} ${e.anio||''}</td>
@@ -4097,10 +4143,10 @@ function renderPeliculasTabla() {
     <thead><tr><th>Título</th><th>Director</th><th>Guión</th><th>Música</th><th>Foto</th><th>Año</th><th>Min</th></tr></thead>
     <tbody>${page.map(e=>`<tr>
       <td style="font-family:var(--font-serif);font-weight:700;max-width:110px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${e.titulo}">${e.titulo}</td>
-      <td class="clickable" onclick="toggleFilter('peliculas','director','${(e.director||'').replace(/'/g,"\\'")}')">${ok(e.director)?e.director:'—'}</td>
-      <td class="clickable" onclick="toggleFilter('peliculas','guionista','${(e.guionista||'').replace(/'/g,"\\'")}')">${ok(e.guionista)?e.guionista:'—'}</td>
-      <td class="clickable" onclick="toggleFilter('peliculas','musica','${(e.musica||'').replace(/'/g,"\\'")}')">${ok(e.musica)?e.musica:'—'}</td>
-      <td class="clickable" onclick="toggleFilter('peliculas','fotografia','${(e.fotografia||'').replace(/'/g,"\\'")}')">${ok(e.fotografia)?e.fotografia:'—'}</td>
+      <td class="clickable" data-key="peliculas" data-field="director" data-name="${(e.director||'').replace(/"/g,'&quot;')}" onclick="toggleFilterFromEl(this)">${ok(e.director)?e.director:'—'}</td>
+      <td class="clickable" data-key="peliculas" data-field="guionista" data-name="${(e.guionista||'').replace(/"/g,'&quot;')}" onclick="toggleFilterFromEl(this)">${ok(e.guionista)?e.guionista:'—'}</td>
+      <td class="clickable" data-key="peliculas" data-field="musica" data-name="${(e.musica||'').replace(/"/g,'&quot;')}" onclick="toggleFilterFromEl(this)">${ok(e.musica)?e.musica:'—'}</td>
+      <td class="clickable" data-key="peliculas" data-field="fotografia" data-name="${(e.fotografia||'').replace(/"/g,'&quot;')}" onclick="toggleFilterFromEl(this)">${ok(e.fotografia)?e.fotografia:'—'}</td>
       <td>${e.anio_est||'—'}</td>
       <td>${e.duracion||'—'}</td>
     </tr>`).join('')}</tbody></table>`;
@@ -4128,9 +4174,18 @@ function renderStatsSeries() {
   const allSeries = db.entries.filter(e=>e.type==='serie' && e.estado!=='viendo' && e.estado!=='pendiente');
   const series = yr==='todos' ? allSeries : allSeries.filter(e=>e.anio===parseInt(yr)||e.anio===yr);
 
-  const totalTemp = series.reduce((a,b)=>a+(parseInt(b.temporadas)||0),0);
+  // Agrupar por título para contar series únicas y temporadas totales
+  const byTitle = {};
+  series.forEach(e => {
+    const key = e.titulo.trim().toLowerCase();
+    if (!byTitle[key]) byTitle[key] = { titulo: e.titulo, temporadas: 0 };
+    byTitle[key].temporadas += (parseInt(e.temporadas)||1);
+  });
+  const seriesUnicas = Object.keys(byTitle).length;
+  const totalTemp = series.reduce((a,b)=>a+(parseInt(b.temporadas)||1),0);
+
   document.getElementById('sr-kpis').innerHTML = `
-    <div class="stat-box"><div class="stat-num">${series.length}</div><div class="stat-label">Series</div></div>
+    <div class="stat-box"><div class="stat-num">${seriesUnicas}</div><div class="stat-label">Series únicas</div></div>
     <div class="stat-box"><div class="stat-num">${totalTemp}</div><div class="stat-label">Temporadas</div></div>`;
 
   const bestC = bestYear('serie', items=>items.length);
@@ -4184,9 +4239,9 @@ function renderSeriesTabla() {
     <thead><tr><th>Título</th><th>Creador</th><th>Guión</th><th>Música</th><th>Temp.</th><th>Año</th></tr></thead>
     <tbody>${page.map(e=>`<tr>
       <td style="font-family:var(--font-serif);font-weight:700;max-width:110px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${e.titulo}">${e.titulo}</td>
-      <td class="clickable" onclick="toggleFilter('series','director','${(e.director||'').replace(/'/g,"\\'")}')">${ok(e.director)?e.director:'—'}</td>
-      <td class="clickable" onclick="toggleFilter('series','guionista','${(e.guionista||'').replace(/'/g,"\\'")}')">${ok(e.guionista)?e.guionista:'—'}</td>
-      <td class="clickable" onclick="toggleFilter('series','musica','${(e.musica||'').replace(/'/g,"\\'")}')">${ok(e.musica)?e.musica:'—'}</td>
+      <td class="clickable" data-key="series" data-field="director" data-name="${(e.director||'').replace(/"/g,'&quot;')}" onclick="toggleFilterFromEl(this)">${ok(e.director)?e.director:'—'}</td>
+      <td class="clickable" data-key="series" data-field="guionista" data-name="${(e.guionista||'').replace(/"/g,'&quot;')}" onclick="toggleFilterFromEl(this)">${ok(e.guionista)?e.guionista:'—'}</td>
+      <td class="clickable" data-key="series" data-field="musica" data-name="${(e.musica||'').replace(/"/g,'&quot;')}" onclick="toggleFilterFromEl(this)">${ok(e.musica)?e.musica:'—'}</td>
       <td>${ok(e.temporadas)?e.temporadas:'—'}</td>
       <td>${e.anio_est||'—'}</td>
     </tr>`).join('')}</tbody></table>`;
@@ -4585,8 +4640,11 @@ function handleImport(e) {
       const tituloOrig = col(row, 'Título', 'Titulo original', 'title original'); // columna "Título" en tu planilla es el título de la obra original
       const ideaOrig = col(row, 'Idea Original', 'idea original', 'original idea', 'autor original');
 
-      // Crear entrada única ID basada en contenido para evitar duplicados al reimportar
-      const uid = `imp_${type}_${titulo}_${anio || ''}`.replace(/\s+/g,'_').toLowerCase();
+      // Para series: la columna "Temporada/Saga" tiene el número de temporada
+      const numTemporada = type === 'serie' ? (parseInt(coleccion) || null) : null;
+
+      // Crear entrada única — para series incluir temporada en el ID para evitar duplicados
+      const uid = `imp_${type}_${titulo}_${numTemporada||''}_${anio || ''}`.replace(/\s+/g,'_').toLowerCase();
       if (importedIds.has(uid)) { skipped++; continue; }
 
       const entry = {
@@ -4595,9 +4653,8 @@ function handleImport(e) {
         titulo,
         anio,
         mes,
-        rating: 0,
         notas: '',
-        estado: type === 'libro' ? 'leido' : undefined,
+        estado: type === 'libro' ? 'leido' : type === 'serie' ? 'vista' : undefined,
         progreso: type === 'libro' ? 100 : undefined,
 
         // Libro
@@ -4607,16 +4664,17 @@ function handleImport(e) {
         idioma,
         paginas: type === 'libro' ? pagsMin : 0,
         anio_pub: anioPub,
-        coleccion,
+        coleccion: type !== 'serie' ? coleccion : null,
 
-        // Cine
+        // Cine / Serie
         director: type !== 'libro' ? (autorDir || dirigidaPor) : '',
         duracion: type !== 'libro' ? pagsMin : 0,
         musica,
         fotografia,
         guionista: guion,
         protagonista,
-        anio_est: anioPub,
+        anio_est: anioPub,  // "Publicación" en planilla = año de estreno
+        temporadas: numTemporada,  // número de temporada para series
         basada: basadaEn ? basadaEn.toLowerCase() : '',
         autor_original: ideaOrig || tituloOrig,
 
@@ -4987,43 +5045,50 @@ function openProgressModal(id) {
   if (!e) return;
   document.getElementById('progress-entry-id').value = id;
   document.getElementById('progress-modal-title').textContent = e.titulo;
-  // Book info header
+  // Book info header — compact sin fondo para móvil
   document.getElementById('progress-book-info').innerHTML = `
     ${e.cover?`<img src="${e.cover}" style="width:44px;height:62px;object-fit:cover;border-radius:3px;flex-shrink:0;">`:'<div style="width:44px;height:62px;background:var(--cream3);border-radius:3px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:20px;">📚</div>'}
-    <div>
-      <div style="font-family:var(--font-serif);font-size:14px;font-weight:700;">${e.titulo}</div>
-      <div style="font-size:11px;color:var(--ink3);">${e.autor||''}</div>
+    <div style="flex:1;">
+      <div style="font-family:var(--font-serif);font-size:15px;font-weight:700;line-height:1.2;">${e.titulo}</div>
+      <div style="font-size:11px;color:var(--ink3);margin-top:2px;">${e.autor||''}</div>
       ${e.paginas?`<div style="font-size:11px;color:var(--ink4);margin-top:2px;">${e.paginas} páginas</div>`:''}
     </div>`;
-  const mode = e.readingMode || 'pct';
+
+  // Si tiene páginas, siempre abrir en modo página — es más preciso
+  const mode = e.paginas ? 'pag' : (e.readingMode || 'pct');
+
+  // Toggle modo — pequeño y secundario
   document.getElementById('progress-mode-display').innerHTML = `
-    <div class="progress-mode-toggle">
-      <button class="progress-mode-btn ${mode==='pct'?'active':''}" onclick="switchProgressMode('pct')">% Porcentaje</button>
-      <button class="progress-mode-btn ${mode==='pag'?'active':''}" onclick="switchProgressMode('pag')"># Página</button>
+    <div style="display:flex;justify-content:center;gap:6px;margin-bottom:4px;">
+      <button class="progress-mode-btn ${mode==='pag'?'active':''}" onclick="switchProgressMode('pag')" style="font-size:11px;padding:5px 12px;">📖 Página</button>
+      <button class="progress-mode-btn ${mode==='pct'?'active':''}" onclick="switchProgressMode('pct')" style="font-size:11px;padding:5px 12px;">% Kindle</button>
     </div>`;
-  if (mode === 'pct') {
+
+  if (mode === 'pag') {
+    document.getElementById('progress-pct-section').style.display = 'none';
+    document.getElementById('progress-pag-section').style.display = 'block';
+    const pag = e.progresoPag || Math.round(((e.progreso||0)/100)*(e.paginas||0));
+    document.getElementById('progress-pag-input').value = pag || '';
+    document.getElementById('progress-pag-input').max = e.paginas || 9999;
+    document.getElementById('progress-pag-of').textContent = e.paginas ? `de ${e.paginas} páginas` : '';
+    const pct = e.paginas ? Math.round((pag/e.paginas)*100) : 0;
+    document.getElementById('progress-pag-bar').style.width = pct + '%';
+    document.getElementById('progress-pag-pct-text').textContent = pag ? `${pct}% completado` : '';
+  } else {
     document.getElementById('progress-pct-section').style.display = 'block';
     document.getElementById('progress-pag-section').style.display = 'none';
     const val = e.progreso || 0;
     document.getElementById('progress-pct-slider').value = val;
     document.getElementById('progress-pct-label').textContent = val;
-  } else {
-    document.getElementById('progress-pct-section').style.display = 'none';
-    document.getElementById('progress-pag-section').style.display = 'block';
-    document.getElementById('progress-pag-of').textContent = e.paginas ? `de ${e.paginas}` : '';
-    const pag = e.progresoPag || 0;
-    document.getElementById('progress-pag-input').value = pag;
-    document.getElementById('progress-pag-input').max = e.paginas || 9999;
-    const pct = e.paginas ? Math.round((pag/e.paginas)*100) : 0;
-    document.getElementById('progress-pag-bar').style.width = pct + '%';
-    document.getElementById('progress-pag-pct-text').textContent = `${pct}% completado`;
   }
-  // Ritmo
+
+  // Ritmo compacto
   const startDays = e.startDate ? Math.max(1,Math.floor((Date.now()-new Date(e.startDate))/86400000)) : 1;
-  const pagsLeidas = mode === 'pag' ? (e.progresoPag||0) : Math.round(((e.progreso||0)/100)*(e.paginas||0));
+  const pagsLeidas = e.progresoPag || Math.round(((e.progreso||0)/100)*(e.paginas||0));
   const ritmo = pagsLeidas > 0 ? (pagsLeidas/startDays).toFixed(1) : null;
   document.getElementById('progress-ritmo-info').innerHTML = ritmo
-    ? `<div class="ritmo-box" style="padding:10px 14px;"><div style="display:flex;gap:12px;align-items:center;"><div><div class="ritmo-num" style="font-size:24px;">${ritmo}</div><div class="ritmo-label">págs/día</div></div><div style="font-size:12px;color:var(--ink4);">${pagsLeidas} págs leídas en ${startDays} días</div></div></div>` : '';
+    ? `<div style="text-align:center;padding:8px;background:var(--cream2);border-radius:8px;font-size:13px;color:var(--ink3);">📖 <b style="color:var(--ink);">${ritmo} págs/día</b> · ${pagsLeidas} págs en ${startDays} días</div>`
+    : '';
   openModal('modal-progress');
 }
 
@@ -5622,7 +5687,8 @@ function renderComparador() {
     const libros   = db.entries.filter(e=>e.type==='libro'&&e.estado==='leido'&&parseInt(e.anio)===yr);
     const peliculas= db.entries.filter(e=>e.type==='pelicula'&&parseInt(e.anio)===yr);
     const series   = db.entries.filter(e=>e.type==='serie'&&e.estado==='vista'&&parseInt(e.anio)===yr);
-    const paginas  = libros.reduce((a,b)=>a+(parseInt(b.paginas)||0),0);
+    // Usar pagsHastaDia para incluir libros en curso — igual que home y ritmo
+    const paginas  = pagsHastaDia(yr);
     const autores  = new Set(libros.map(e=>e.autor).filter(Boolean)).size;
     const directores = new Set([...peliculas,...series].map(e=>e.director).filter(Boolean)).size;
     const idiomas  = new Set(libros.map(e=>e.idioma).filter(Boolean)).size;
