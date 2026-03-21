@@ -3505,7 +3505,8 @@ function editEntry(id) {
       document.getElementById('fp-anio-visto').value = e.anio||'';
       document.getElementById('fp-basada').value = e.basada||'';
     } else {
-      ['titulo','director','anio_est','temporadas','duracion','musica','protagonista','guionista','cover'].forEach(k=>{ const el=document.getElementById('fs-'+k); if(el) el.value=e[k]||''; });
+      ['titulo','director','temporadas','duracion','musica','protagonista','guionista','cover'].forEach(k=>{ const el=document.getElementById('fs-'+k); if(el) el.value=e[k]||''; });
+      document.getElementById('fs-anio-est').value = e.anio_est || '';
       document.getElementById('fs-caps-por-temp').value = e.capsPorTemp || '';
       document.getElementById('fs-min-episodio').value  = e.minEpisodio  || '';
       if (e.capsPorTemp || e.minEpisodio) calcSeriesDuracion();
