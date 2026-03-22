@@ -1224,7 +1224,7 @@ select.input { cursor: pointer; }
   </button>
   <button class="nav-btn" id="nav-stats" onclick="gotoScreen('stats')">
     <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-    Stats
+    Estadíst.
   </button>
   <button class="nav-btn" id="nav-habitos" onclick="gotoScreen('habitos')">
     <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 9h18"/><circle cx="8" cy="14" r="1" fill="currentColor"/><circle cx="12" cy="14" r="1" fill="currentColor"/><circle cx="16" cy="14" r="1" fill="currentColor"/><circle cx="8" cy="18" r="1" fill="currentColor"/></svg>
@@ -4046,7 +4046,7 @@ function setLbChartMode(mode, btn) {
   lbChartMode = mode;
   document.querySelectorAll('#lb-chart-mode-pills .chart-mode-pill').forEach(b=>b.classList.toggle('active',b===btn));
   const yr = statsState.libros.year;
-  const libros = getFiltered('libro','libros').filter(e=>e.estado!=='pendiente');
+  const libros = getFiltered('libro','libros').filter(e=>e.estado==='leido');
   renderLibrosChart(libros);
 }
 
@@ -4055,7 +4055,7 @@ function renderStatsLibros() {
   const yLabel = yr==='todos' ? 'Todos los años' : String(yr);
   document.getElementById('lb-year-label').textContent = yLabel;
 
-  const allLibros = db.entries.filter(e=>e.type==='libro'&&e.estado!=='pendiente');
+  const allLibros = db.entries.filter(e=>e.type==='libro'&&e.estado==='leido');
   const libros = yr==='todos' ? allLibros : allLibros.filter(e=>e.anio===parseInt(yr)||e.anio===yr);
 
   // KPIs
@@ -4115,7 +4115,7 @@ function sortLibros(field, btn) {
 
 function renderLibrosTabla() {
   const s = statsState.libros;
-  let items = getFilteredWithActive('libro','libros').filter(e=>e.estado!=='pendiente');
+  let items = getFilteredWithActive('libro','libros').filter(e=>e.estado==='leido');
   items = items.sort((a,b)=>String(a[s.sortField]||'').localeCompare(String(b[s.sortField]||''),undefined,{numeric:true})*s.sortDir);
   const total = items.length;
   const page = items.slice(s.page*PAGE_SIZE, (s.page+1)*PAGE_SIZE);
@@ -4586,7 +4586,7 @@ function renderCuriosidadesSeries(series) {
 // ═══════════════════════════════════
 function renderStatsGlobal() {
   const allYears = [...new Set(db.entries.filter(e=>e.anio).map(e=>e.anio))].sort((a,b)=>a-b);
-  const libros = db.entries.filter(e=>e.type==='libro'&&e.estado!=='pendiente');
+  const libros = db.entries.filter(e=>e.type==='libro'&&e.estado==='leido');
   const pels   = db.entries.filter(e=>e.type==='pelicula');
   const series = db.entries.filter(e=>e.type==='serie' && e.estado!=='viendo' && e.estado!=='pendiente');
   const totalPags = libros.reduce((a,b)=>a+(b.paginas||0),0);
