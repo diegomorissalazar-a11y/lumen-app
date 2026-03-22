@@ -2063,7 +2063,15 @@ function mergeEntries(local, remote) {
   remote = remote.map(normalizeEntry);
 
   // Clave canónica para detectar duplicados semánticos (mismo contenido, distinto ID)
-  const canonicalKey = e => `${e.type}||${(e.titulo||'').trim().toLowerCase().replace(/['"]/g,'')}||${e.anio||''}`;
+  // Para series: incluir número de temporada para NO colapsar temporadas distintas
+  const canonicalKey = e => {
+    const base = `${e.type}||${(e.titulo||'').trim().toLowerCase().replace(/['"]/g,'')}`;
+    if (e.type === 'serie') {
+      const temp = e.temporadas || e.coleccion || '';
+      return `${base}||T${temp}||${e.anio||''}`;
+    }
+    return `${base}||${e.anio||''}`;
+  };
 
   // Merge incremental: solo sobreescribir campos que cambiaron en la entrada más reciente
   // Campos que siempre toma el ganador completo vs campos que se fusionan
@@ -5659,11 +5667,13 @@ async function manualLoadFromCloud() {
     remote.forEach(e => {
       const loc = localMap[e.id];
       if (!loc) {
-        // Verificar si es un duplicado semántico (mismo título+tipo, distinto ID)
+        // Verificar si es un duplicado semántico (mismo título+tipo+temporada, distinto ID)
         const isDupTitle = db.entries.some(l =>
           l.type === e.type &&
           (l.titulo||'').trim().toLowerCase().replace(/['"]/g,'') ===
           (e.titulo||'').trim().toLowerCase().replace(/['"]/g,'') &&
+          // Para series: también debe coincidir la temporada
+          (e.type !== 'serie' || String(l.temporadas||'') === String(e.temporadas||'')) &&
           l.id !== e.id
         );
         if (!isDupTitle) nuevas.push(e);
