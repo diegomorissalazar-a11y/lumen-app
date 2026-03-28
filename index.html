@@ -2064,12 +2064,11 @@ function mergeEntries(local, remote) {
 
   // Clave canónica para detectar duplicados semánticos (mismo contenido, distinto ID)
   // Para series: incluir temporada pero NO el año — el año puede diferir entre
-  // dispositivos (registrado en un equipo antes de marcarse como visto en otro)
-  // lo que generaría duplicados en lugar de hacer merge correcto
+  // dispositivos (registrado antes de marcarse como visto en otro equipo)
+  // lo que crearía duplicados en lugar de hacer merge correcto
   const canonicalKey = e => {
     const norm = s => (s||'').trim().toLowerCase()
-      .replace(/['"]/g,'')
-      .normalize('NFD').replace(/[̀-ͯ]/g,'');
+      .replace(/['"]/g,'').normalize('NFD').replace(/[̀-ͯ]/g,'');
     const base = `${e.type}||${norm(e.titulo)}`;
     if (e.type === 'serie') {
       const temp = e.temporadas || e.coleccion || '';
@@ -2275,7 +2274,7 @@ async function pullAndMerge(uid, silent) {
     }
   } catch(e) {
     setSyncStatus('offline');
-    console.warn('pullAndMerge offline:', e.message);
+    console.warn('pullAndMerge error:', e.code || e.message, e);
   }
 }
 
@@ -2307,7 +2306,7 @@ function subscribeToFirestore(uid) {
     setSyncStatus('ok');
     setLastSync();
     refreshCurrentScreen();
-  }, () => setSyncStatus('offline'));
+  }, err => { console.warn('Firestore snapshot error:', err); setSyncStatus('offline'); });
 }
 
 let db = loadDB();
@@ -3009,7 +3008,7 @@ function renderHome() {
   const pags = pagsHastaDia(yr);
   const pagsTerminados = libros.filter(e=>e.estado==='leido').reduce((a,b)=>a+(b.paginas||0),0);
   const peliculas = thisYear.filter(e => e.type === 'pelicula');
-  // Solo series terminadas (vista) — excluye viendo y pendiente, igual que Stats
+  // Solo series terminadas — excluye viendo/pendiente, igual que Stats
   const series = thisYear.filter(e => e.type === 'serie' && e.estado === 'vista');
 
   document.getElementById('hero-title').textContent = pags > 0 ? `${pags.toLocaleString()} páginas\neste año` : 'Mi Biblioteca\nCultural';
@@ -5841,9 +5840,12 @@ auth.onAuthStateChanged(async user => {
       subscribeToFirestore(user.uid);
       // Re-renderizar si la pantalla activa es biblioteca o home
       refreshCurrentScreen();
+      setSyncStatus('ok');
     } catch(e) {
+      // Aunque falle el sync, mostrar datos locales con estado offline
       setSyncStatus('offline');
-      console.warn('Auth sync error:', e.message);
+      console.warn('Auth sync error:', e.code || e.message, e);
+      refreshCurrentScreen();
     }
   } else {
     currentUser = null;
