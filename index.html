@@ -2424,16 +2424,14 @@ function resetForm() {
 }
 
 function calcSeriesDuracion() {
-  const temps   = parseInt(document.getElementById('fs-temporadas')?.value) || 0;
   const caps    = parseInt(document.getElementById('fs-caps-por-temp')?.value) || 0;
   const minEp   = parseInt(document.getElementById('fs-min-episodio')?.value) || 0;
-  const totalCaps = temps * caps;
-  const totalMin  = totalCaps * minEp;
+  const totalMin  = caps * minEp;
   const durInput  = document.getElementById('fs-duracion');
   const calcEl    = document.getElementById('fs-duracion-calc');
   if (totalMin > 0 && durInput) {
     durInput.value = totalMin;
-    if (calcEl) calcEl.textContent = `${temps} temp × ${caps} caps × ${minEp} min = ${totalCaps} caps · ${fmtMin(totalMin)} total`;
+    if (calcEl) calcEl.textContent = `${caps} caps × ${minEp} min = ${fmtMin(totalMin)} esta temporada`;
   } else if (calcEl) {
     calcEl.textContent = '';
   }
