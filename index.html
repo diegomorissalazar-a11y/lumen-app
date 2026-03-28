@@ -2063,12 +2063,17 @@ function mergeEntries(local, remote) {
   remote = remote.map(normalizeEntry);
 
   // Clave canónica para detectar duplicados semánticos (mismo contenido, distinto ID)
-  // Para series: incluir número de temporada para NO colapsar temporadas distintas
+  // Para series: incluir temporada pero NO el año — el año puede diferir entre
+  // dispositivos (registrado en un equipo antes de marcarse como visto en otro)
+  // lo que generaría duplicados en lugar de hacer merge correcto
   const canonicalKey = e => {
-    const base = `${e.type}||${(e.titulo||'').trim().toLowerCase().replace(/['"]/g,'')}`;
+    const norm = s => (s||'').trim().toLowerCase()
+      .replace(/['"]/g,'')
+      .normalize('NFD').replace(/[̀-ͯ]/g,'');
+    const base = `${e.type}||${norm(e.titulo)}`;
     if (e.type === 'serie') {
       const temp = e.temporadas || e.coleccion || '';
-      return `${base}||T${temp}||${e.anio||''}`;
+      return `${base}||T${temp}`;
     }
     return `${base}||${e.anio||''}`;
   };
@@ -2299,6 +2304,7 @@ function subscribeToFirestore(uid) {
     const merged = mergeEntries(db.entries, remote.entries || []);
     db.entries = merged;
     localStorage.setItem(DB_KEY, JSON.stringify(db));
+    setSyncStatus('ok');
     setLastSync();
     refreshCurrentScreen();
   }, () => setSyncStatus('offline'));
@@ -2997,13 +3003,14 @@ function renderDesafioCard() {
 function renderHome() {
   const yr = new Date().getFullYear();
   document.getElementById('hero-year-label').textContent = yr;
-  const thisYear = db.entries.filter(e => e.anio === yr);
+  const thisYear = db.entries.filter(e => parseInt(e.anio) === yr);
   const libros = thisYear.filter(e => e.type === 'libro' && e.estado !== 'pendiente');
   // pagsHastaDia incluye libros en curso — mismo criterio que el ritmo card
   const pags = pagsHastaDia(yr);
   const pagsTerminados = libros.filter(e=>e.estado==='leido').reduce((a,b)=>a+(b.paginas||0),0);
   const peliculas = thisYear.filter(e => e.type === 'pelicula');
-  const series = thisYear.filter(e => e.type === 'serie');
+  // Solo series terminadas (vista) — excluye viendo y pendiente, igual que Stats
+  const series = thisYear.filter(e => e.type === 'serie' && e.estado === 'vista');
 
   document.getElementById('hero-title').textContent = pags > 0 ? `${pags.toLocaleString()} páginas\neste año` : 'Mi Biblioteca\nCultural';
   document.getElementById('hero-sub').textContent = `${libros.length} libros · ${peliculas.length} películas · ${series.length} series`;
@@ -3670,10 +3677,10 @@ let yearChartMode = { libros: 'pags', peliculas: 'cantidad', series: 'cantidad' 
 
 function renderYear() {
   document.getElementById('year-display').textContent = currentYear;
-  const yr = db.entries.filter(e => e.anio === currentYear);
+  const yr = db.entries.filter(e => parseInt(e.anio) === currentYear);
   const libros = yr.filter(e => e.type === 'libro' && e.estado !== 'pendiente');
   const peliculas = yr.filter(e => e.type === 'pelicula');
-  const series = yr.filter(e => e.type === 'serie');
+  const series = yr.filter(e => e.type === 'serie' && e.estado === 'vista');
   const pags = libros.reduce((a,b) => a+(b.paginas||0), 0);
   const minPels = peliculas.reduce((a,b)=>a+(b.duracion||0),0);
   const minSeries = series.reduce((a,b)=>a+(b.duracion||0),0);
