@@ -2083,7 +2083,8 @@ function mergeEntries(local, remote) {
     'readingMode','estado','capActual','capTotal','temporadas','temporadaActual',
     'cover','musica','guionista','protagonista','fotografia','duracion','capsPorTemp',
     'minEpisodio','basada','autor_original','coleccion','anio_est','anio_pub',
-    'traductor','idioma','editorial','notas'];
+    'traductor','idioma','editorial','notas',
+    'anio','mes'];  // año y mes de lectura/vista — crítico para el contador del Home
 
   const mergeTwo = (winner, loser) => {
     const result = { ...loser };
@@ -4856,7 +4857,8 @@ function showSyncPreview({ nuevas, actualizadas, sinCambios, remote, onConfirm }
 
   if (nuevas.length === 0 && actualizadas.length === 0) {
     html += `<div style="text-align:center;padding:12px;background:var(--cream2);border-radius:8px;font-size:13px;color:var(--ink3);margin-bottom:16px;">
-      ✅ Tu biblioteca local ya está al día. No hay nada nuevo que descargar.
+      ✅ Los registros de la nube están al día según timestamps.<br>
+      <span style="font-size:11px;color:var(--ink4);">Si algo no aparece, usa "Re-merge" para forzar la sincronización de campos.</span>
     </div>`;
   } else {
     // Entradas nuevas (máx 5)
@@ -4887,12 +4889,11 @@ function showSyncPreview({ nuevas, actualizadas, sinCambios, remote, onConfirm }
   }
 
   html += `<div style="display:flex;gap:8px;margin-top:4px;">`;
-  if (nuevas.length > 0 || actualizadas.length > 0) {
-    html += `<button class="btn btn-primary" style="flex:2;" onclick="
-      closeModal('modal-sync-preview');
-      if(window._syncConfirmFn) window._syncConfirmFn();
-    ">Aplicar cambios</button>`;
-  }
+  const btnLabel = (nuevas.length > 0 || actualizadas.length > 0) ? 'Aplicar cambios' : '🔄 Re-merge (forzar)';
+  html += `<button class="btn btn-primary" style="flex:2;" onclick="
+    closeModal('modal-sync-preview');
+    if(window._syncConfirmFn) window._syncConfirmFn();
+  ">${btnLabel}</button>`;
   html += `<button class="btn btn-secondary" style="flex:1;" onclick="closeModal('modal-sync-preview')">Cancelar</button>
   </div>`;
 
