@@ -2252,6 +2252,13 @@ function isBase64Image(s) {
   return typeof s === 'string' && s.startsWith('data:image');
 }
 
+// Devuelve URL de portada válida, o null si es placeholder/vacía/base64-remota
+function coverUrl(e) {
+  const c = e && e.cover;
+  if (!c || c === '__local_image__') return null;
+  return c;
+}
+
 // Prepara un entry para Firestore: excluye imágenes base64
 // que solo viven en localStorage (demasiado grandes para Firestore)
 function entryForFirestore(entry) {
@@ -3297,7 +3304,7 @@ function renderHome() {
         ? `Pág ${pagActual} / ${e.paginas} · ${pct}%`
         : `${pct}%`;
       const coverHTML = e.cover
-        ? `<img src="${e.cover}" class="reading-mini-cover">`
+        ? `<img src="${coverUrl(e)}" class="reading-mini-cover" onerror="this.style.display='none'">`
         : `<div class="reading-mini-cover" style="display:flex;align-items:center;justify-content:center;font-size:28px;">📚</div>`;
       const notasCount = (e.notas_lista||[]).length;
       return `
@@ -3333,7 +3340,7 @@ function renderHome() {
       const progresoText = capTotal > 0 ? `Cap. ${capActual} / ${capTotal}` : '📺 Viendo';
       const tempText = e.temporadaActual ? `Temp. ${e.temporadaActual}${e.temporadas?' / '+e.temporadas:''}` : (e.temporadas ? `${e.temporadas} temp.` : '');
       const coverHTML = e.cover
-        ? `<img src="${e.cover}" class="reading-mini-cover">`
+        ? `<img src="${coverUrl(e)}" class="reading-mini-cover" onerror="this.style.display='none'">`
         : `<div class="reading-mini-cover" style="display:flex;align-items:center;justify-content:center;font-size:28px;">📺</div>`;
       return `
         <div class="reading-mini-card" onclick="showDetail('${e.id}')">
@@ -3469,7 +3476,7 @@ function entryCardHTML(e) {
   })() : '';
   const badge = `<span class="badge badge-${e.estado==='leyendo'?'leyendo':e.type}">${e.estado==='leyendo'?'Leyendo':e.type==='libro'?'Libro':e.type==='pelicula'?'Película':'Serie'}</span>`;
   const metaLine = `${e.mes ? esc(e.mes)+' ' : ''}${e.anio||''}`;
-  const coverSrc = e.cover ? e.cover.replace(/"/g,'&quot;') : '';
+  const coverSrc = coverUrl(e) ? coverUrl(e).replace(/"/g,'&quot;') : '';
   const safeId = e.id.replace(/'/g, "\\'");
   return `
     <div class="entry-card" onclick="showDetail('${safeId}')">
@@ -3501,7 +3508,7 @@ function showDetail(id) {
   // Safe escape for text going into innerHTML
   const esc = s => s ? String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') : '';
   const row = (label, val) => val ? `<div style="display:flex;gap:8px;padding:7px 0;border-bottom:1px solid var(--cream2);"><span style="font-size:10px;color:var(--ink4);letter-spacing:1.5px;text-transform:uppercase;font-weight:700;width:110px;flex-shrink:0;padding-top:2px;">${label}</span><span style="font-size:14px;color:var(--ink2);">${esc(val)}</span></div>` : '';
-  if (e.cover) html += `<img src="${esc(e.cover)}" style="width:80px;height:110px;object-fit:cover;border-radius:3px;float:right;margin:0 0 12px 12px;">`;
+  if (coverUrl(e)) html += `<img src="${esc(coverUrl(e))}" style="width:80px;height:110px;object-fit:cover;border-radius:3px;float:right;margin:0 0 12px 12px;" onerror="this.style.display='none'">`;
   if (e.type === 'libro') {
     html += row('Autor', e.autor) + row('Editorial', e.editorial) + row('Páginas', e.paginas) + row('Publicado', e.anio_pub) + row('Traductor', e.traductor) + row('Idioma orig.', e.idioma) + row('Leído', `${e.mes||''} ${e.anio||''}`);
     if (e.estado === 'leyendo') html += row('Progreso', e.progreso + '%');
@@ -3680,7 +3687,7 @@ function editEntry(id) {
         if(el) el.value = (e[k] !== null && e[k] !== undefined && e[k] !== 0) ? e[k] : '';
       });
       // Mostrar preview de portada si existe
-      if (e.cover) previewMainCover('f-cover','f-cover-preview');
+      if (coverUrl(e)) { document.getElementById('f-cover').value = coverUrl(e); previewMainCover('f-cover','f-cover-preview'); }
       // Idioma: populate dynamic select
       const normalizedIdioma = normalizeIdioma(e.idioma||'');
       populateIdiomaSelect(normalizedIdioma);
@@ -3729,7 +3736,7 @@ function openSerieProgressModal(id) {
   document.getElementById('serie-progress-id').value = id;
   document.getElementById('serie-progress-title').textContent = e.titulo;
   const cover = e.cover
-    ? `<img src="${e.cover}" style="width:50px;height:70px;object-fit:cover;border-radius:4px;flex-shrink:0;">`
+    ? `<img src="${coverUrl(e)}" style="width:50px;height:70px;object-fit:cover;border-radius:4px;flex-shrink:0;" onerror="this.style.display='none'">`
     : `<div style="width:50px;height:70px;background:var(--cream3);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">📺</div>`;
   document.getElementById('serie-progress-info').innerHTML = `
     ${cover}
@@ -3746,7 +3753,7 @@ function openSerieProgressModal(id) {
   document.getElementById('serie-cover-chevron').style.transform = '';
   document.getElementById('serie-cover-url').value = e.cover || '';
   const prev = document.getElementById('serie-cover-preview');
-  prev.innerHTML = e.cover ? `<img src="${e.cover}" style="width:60px;height:84px;object-fit:cover;border-radius:4px;">` : '';
+  prev.innerHTML = coverUrl(e) ? `<img src="${coverUrl(e)}" style="width:60px;height:84px;object-fit:cover;border-radius:4px;" onerror="this.style.display='none'">` : '';
   updateSerieProgressBar();
   openModal('modal-serie-progress');
 }
@@ -3788,7 +3795,7 @@ function saveSerieCover() {
   e._updatedAt = Date.now();
   saveDB();
   // Update info header
-  const img = e.cover ? `<img src="${e.cover}" style="width:50px;height:70px;object-fit:cover;border-radius:4px;flex-shrink:0;">` : '';
+  const img = coverUrl(e) ? `<img src="${coverUrl(e)}" style="width:50px;height:70px;object-fit:cover;border-radius:4px;flex-shrink:0;" onerror="this.style.display='none'">` : '';
   const info = document.getElementById('serie-progress-info');
   if (info && img) info.querySelector('div,img')?.replaceWith?.(...new DOMParser().parseFromString(img,'text/html').body.childNodes);
   document.getElementById('serie-cover-panel').style.display = 'none';
@@ -3939,7 +3946,7 @@ function renderYear() {
     ${libros.length===0?'<div style="color:var(--ink4);font-style:italic;font-size:13px;">Ningún libro registrado.</div>':
       [...libros].sort((a,b)=>{return (MESES.indexOf(b.mes)||0)-(MESES.indexOf(a.mes)||0);}).map(e=>`
       <div style="display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--cream2);align-items:center;">
-        ${e.cover?`<img src="${e.cover}" style="width:32px;height:45px;object-fit:cover;border-radius:2px;flex-shrink:0;">`:'<div style="width:32px;height:45px;background:var(--cream3);border-radius:2px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:16px;">📚</div>'}
+        ${coverUrl(e)?`<img src="${coverUrl(e)}" style="width:32px;height:45px;object-fit:cover;border-radius:2px;flex-shrink:0;" onerror="this.style.display='none'">`:'<div style="width:32px;height:45px;background:var(--cream3);border-radius:2px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:16px;">📚</div>'}
         <div style="flex:1;">
           <div style="font-family:var(--font-serif);font-size:14px;font-weight:700;">${e.titulo}</div>
           <div style="font-size:11px;color:var(--ink3);">${e.autor||''} · ${e.paginas||0} págs · ${e.mes||''}</div>
@@ -5343,9 +5350,9 @@ function toggleEditCover() {
     // Pre-fill with current cover
     const id = document.getElementById('progress-entry-id').value;
     const e = db.entries.find(x => x.id === id);
-    if (e && e.cover) {
-      document.getElementById('progress-cover-url').value = e.cover;
-      previewProgressCover(e.cover);
+    if (e && coverUrl(e)) {
+      document.getElementById('progress-cover-url').value = coverUrl(e);
+      previewProgressCover(coverUrl(e));
     }
   }
 }
@@ -5628,7 +5635,7 @@ function openProgressModal(id) {
   document.getElementById('progress-modal-title').textContent = e.titulo;
   // Book info header — compact sin fondo para móvil
   document.getElementById('progress-book-info').innerHTML = `
-    ${e.cover?`<img src="${e.cover}" style="width:44px;height:62px;object-fit:cover;border-radius:3px;flex-shrink:0;">`:'<div style="width:44px;height:62px;background:var(--cream3);border-radius:3px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:20px;">📚</div>'}
+    ${coverUrl(e)?`<img src="${coverUrl(e)}" style="width:44px;height:62px;object-fit:cover;border-radius:3px;flex-shrink:0;" onerror="this.style.display='none'">`:'<div style="width:44px;height:62px;background:var(--cream3);border-radius:3px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:20px;">📚</div>'}
     <div style="flex:1;">
       <div style="font-family:var(--font-serif);font-size:15px;font-weight:700;line-height:1.2;">${e.titulo}</div>
       <div style="font-size:11px;color:var(--ink3);margin-top:2px;">${e.autor||''}</div>
