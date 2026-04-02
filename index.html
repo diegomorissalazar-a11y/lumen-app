@@ -2248,14 +2248,33 @@ function loadLastSync() {
 
 // Elimina campos undefined recursivamente — Firestore no los acepta
 function cleanForFirestore(obj) {
-  if (Array.isArray(obj)) return obj.map(cleanForFirestore);
+  // Tipos inválidos para Firestore → null
+  if (obj === undefined) return null;
+  if (typeof obj === 'number' && (isNaN(obj) || !isFinite(obj))) return null;
+  if (typeof obj === 'function') return null;
+  if (obj instanceof Date) return obj.toISOString();
+
+  if (Array.isArray(obj)) {
+    // Filtrar elementos inválidos del array y limpiar recursivamente
+    return obj
+      .map(cleanForFirestore)
+      .filter(v => v !== null && v !== undefined);
+  }
+
   if (obj !== null && typeof obj === 'object') {
     const clean = {};
     Object.entries(obj).forEach(([k, v]) => {
-      if (v !== undefined) clean[k] = cleanForFirestore(v);
+      const cleaned = cleanForFirestore(v);
+      // Solo incluir el campo si el valor limpio no es null/undefined
+      // excepto si era explícitamente null en el original
+      if (cleaned !== undefined && (v === null || cleaned !== null)) {
+        clean[k] = cleaned;
+      }
     });
     return clean;
   }
+
+  // string, number finito, boolean, null → pasan directo
   return obj;
 }
 
