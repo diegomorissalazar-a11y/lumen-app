@@ -3785,12 +3785,13 @@ function clearSerieCover() {
 function handleSerieCoverFile(event) {
   const file = event.target.files[0];
   if (!file) return;
-  const reader = new FileReader();
-  reader.onload = ev => {
-    document.getElementById('serie-cover-url').value = ev.target.result;
-    previewSerieCover(ev.target.result);
-  };
-  reader.readAsDataURL(file);
+  showToast('⏳ Procesando imagen...');
+  compressImage(file, 600, 0.8).then(dataUrl => {
+    document.getElementById('serie-cover-url').value = dataUrl;
+    previewSerieCover(dataUrl);
+    showToast('✓ Imagen cargada');
+  }).catch(() => showToast('⚠ Error al cargar imagen'));
+  event.target.value = '';
 }
 
 function saveSerieCover() {
@@ -3813,13 +3814,14 @@ function saveSerieCover() {
 function handleWatchingCoverFile(event) {
   const file = event.target.files[0];
   if (!file) return;
-  const reader = new FileReader();
-  reader.onload = ev => {
-    document.getElementById('watching-cover').value = ev.target.result;
+  showToast('⏳ Procesando imagen...');
+  compressImage(file, 600, 0.8).then(dataUrl => {
+    document.getElementById('watching-cover').value = dataUrl;
     const prev = document.getElementById('watching-cover-preview');
-    prev.innerHTML = `<img src="${ev.target.result}" style="width:60px;height:84px;object-fit:cover;border-radius:4px;margin-top:4px;">`;
-  };
-  reader.readAsDataURL(file);
+    prev.innerHTML = `<img src="${dataUrl}" style="width:60px;height:84px;object-fit:cover;border-radius:4px;margin-top:4px;">`;
+    showToast('✓ Imagen cargada');
+  }).catch(() => showToast('⚠ Error al cargar imagen'));
+  event.target.value = '';
 }
 
 function updateSerieProgressBar() {
@@ -5284,6 +5286,44 @@ function fillReadingForm(data) {
   showToast('✓ Datos de Google Books');
 }
 
+// ── Compresión de imágenes antes de guardar ─────────────
+// Redimensiona y comprime cualquier imagen a JPEG ≤ 150KB
+// maxWidth: ancho máximo en px (alto se escala proporcional)
+// quality: 0-1 calidad JPEG
+function compressImage(file, maxWidth, quality) {
+  maxWidth  = maxWidth  || 800;
+  quality   = quality   || 0.75;
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = reject;
+    reader.onload = ev => {
+      const img = new Image();
+      img.onerror = reject;
+      img.onload = () => {
+        // Calcular dimensiones manteniendo aspecto
+        let w = img.width, h = img.height;
+        if (w > maxWidth) { h = Math.round(h * maxWidth / w); w = maxWidth; }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        // Intentar JPEG primero; si falla (PNG transparente), usar PNG con calidad reducida
+        let dataUrl = canvas.toDataURL('image/jpeg', quality);
+        // Si sigue siendo muy grande, reducir calidad
+        let attempts = 0;
+        while (dataUrl.length > 200000 && attempts < 4) {
+          quality = quality * 0.75;
+          dataUrl = canvas.toDataURL('image/jpeg', quality);
+          attempts++;
+        }
+        resolve(dataUrl);
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
 // ── PORTADA: modal lectura en curso ──────────────
 function previewReadingCover(url) {
   const el = document.getElementById('reading-cover-preview');
@@ -5305,13 +5345,13 @@ function clearReadingCover() {
 function handleReadingCoverFile(event) {
   const file = event.target.files[0];
   if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    document.getElementById('reading-cover').value = e.target.result;
-    previewReadingCover(e.target.result);
+  showToast('⏳ Procesando imagen...');
+  compressImage(file, 600, 0.8).then(dataUrl => {
+    document.getElementById('reading-cover').value = dataUrl;
+    previewReadingCover(dataUrl);
     showToast('✓ Imagen cargada');
-  };
-  reader.readAsDataURL(file);
+  }).catch(() => showToast('⚠ Error al cargar imagen'));
+  event.target.value = '';
 }
 
 async function searchReadingCoverGoogle() {
@@ -5383,13 +5423,13 @@ function clearProgressCover() {
 function handleProgressCoverFile(event) {
   const file = event.target.files[0];
   if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    document.getElementById('progress-cover-url').value = e.target.result;
-    previewProgressCover(e.target.result);
+  showToast('⏳ Procesando imagen...');
+  compressImage(file, 600, 0.8).then(dataUrl => {
+    document.getElementById('progress-cover-url').value = dataUrl;
+    previewProgressCover(dataUrl);
     showToast('✓ Imagen cargada');
-  };
-  reader.readAsDataURL(file);
+  }).catch(() => showToast('⚠ Error al cargar imagen'));
+  event.target.value = '';
 }
 
 async function searchProgressCoverGoogle() {
@@ -5462,16 +5502,13 @@ function previewMainCover(inputId, previewId) {
 function handleMainCoverFile(event, inputId, previewId) {
   const file = event.target.files[0];
   if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    const url = e.target.result;
+  showToast('⏳ Procesando imagen...');
+  compressImage(file, 600, 0.8).then(dataUrl => {
     const inp = document.getElementById(inputId);
-    if (inp) inp.value = url;
+    if (inp) inp.value = dataUrl;
     previewMainCover(inputId, previewId);
     showToast('✓ Imagen cargada');
-  };
-  reader.readAsDataURL(file);
-  // Reset input para permitir cargar el mismo archivo de nuevo
+  }).catch(() => showToast('⚠ Error al cargar imagen'));
   event.target.value = '';
 }
 
