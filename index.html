@@ -1991,6 +1991,8 @@ function loadDB() {
       if (e.id && e.id.includes("'")) {
         e.id = e.id.replace(/'/g, '');
       }
+      // Migrar cover null → '' para evitar src="null" en imágenes
+      if (e.cover === null || e.cover === 'null') e.cover = '';
       // Migrar series sin estado — las importadas antes del fix tenían estado: undefined
       if (e.type === 'serie' && !e.estado) e.estado = 'vista';
       // Migrar temporadas desde coleccion para series importadas antes del fix
@@ -3303,7 +3305,7 @@ function renderHome() {
       const progresoText = e.paginas
         ? `Pág ${pagActual} / ${e.paginas} · ${pct}%`
         : `${pct}%`;
-      const coverHTML = e.cover
+      const coverHTML = coverUrl(e)
         ? `<img src="${coverUrl(e)}" class="reading-mini-cover" onerror="this.style.display='none'">`
         : `<div class="reading-mini-cover" style="display:flex;align-items:center;justify-content:center;font-size:28px;">📚</div>`;
       const notasCount = (e.notas_lista||[]).length;
@@ -3339,7 +3341,7 @@ function renderHome() {
       const pct = capTotal > 0 ? Math.round((capActual / capTotal) * 100) : 0;
       const progresoText = capTotal > 0 ? `Cap. ${capActual} / ${capTotal}` : '📺 Viendo';
       const tempText = e.temporadaActual ? `Temp. ${e.temporadaActual}${e.temporadas?' / '+e.temporadas:''}` : (e.temporadas ? `${e.temporadas} temp.` : '');
-      const coverHTML = e.cover
+      const coverHTML = coverUrl(e)
         ? `<img src="${coverUrl(e)}" class="reading-mini-cover" onerror="this.style.display='none'">`
         : `<div class="reading-mini-cover" style="display:flex;align-items:center;justify-content:center;font-size:28px;">📺</div>`;
       return `
@@ -3682,10 +3684,14 @@ function editEntry(id) {
     selectType(e.type, document.querySelector(`.type-btn[data-type="${e.type}"]`));
     document.getElementById('f-notas').value = e.notas || '';
     if (e.type === 'libro') {
-      ['titulo','autor','editorial','paginas','anio_pub','traductor','cover'].forEach(k => {
+      ['titulo','autor','editorial','paginas','traductor','cover'].forEach(k => {
         const el=document.getElementById('f-'+k);
         if(el) el.value = (e[k] !== null && e[k] !== undefined && e[k] !== 0) ? e[k] : '';
       });
+      // anio_pub fuera del forEach — garantiza que nunca se pierda
+      // (parseInt evita mostrar null/undefined, pero preserva 0 como vacío)
+      const anioPublEl = document.getElementById('f-anio-pub');
+      if (anioPublEl) anioPublEl.value = (e.anio_pub && parseInt(e.anio_pub) > 0) ? parseInt(e.anio_pub) : '';
       // Mostrar preview de portada si existe
       if (coverUrl(e)) { document.getElementById('f-cover').value = coverUrl(e); previewMainCover('f-cover','f-cover-preview'); }
       // Idioma: populate dynamic select
@@ -3735,7 +3741,7 @@ function openSerieProgressModal(id) {
   if (!e) return;
   document.getElementById('serie-progress-id').value = id;
   document.getElementById('serie-progress-title').textContent = e.titulo;
-  const cover = e.cover
+  const cover = coverUrl(e)
     ? `<img src="${coverUrl(e)}" style="width:50px;height:70px;object-fit:cover;border-radius:4px;flex-shrink:0;" onerror="this.style.display='none'">`
     : `<div style="width:50px;height:70px;background:var(--cream3);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">📺</div>`;
   document.getElementById('serie-progress-info').innerHTML = `
