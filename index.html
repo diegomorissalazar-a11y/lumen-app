@@ -1264,8 +1264,16 @@ select.input { cursor: pointer; }
       <div id="form-libro">
         <div class="field"><label>Título</label><input class="input" type="text" id="f-titulo" placeholder="Título del libro"></div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-          <div class="field"><label>Autor</label><input class="input" type="text" id="f-autor"></div>
-          <div class="field"><label>Editorial</label><input class="input" type="text" id="f-editorial"></div>
+          <div class="field">
+          <label>Autor</label>
+          <input class="input" type="text" id="f-autor" list="f-autor-list" oninput="fillMainAutorList()">
+          <datalist id="f-autor-list"></datalist>
+        </div>
+          <div class="field">
+            <label>Editorial</label>
+            <input class="input" type="text" id="f-editorial" list="f-editorial-list" oninput="fillMainEditorialList()">
+            <datalist id="f-editorial-list"></datalist>
+          </div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
           <div class="field"><label>Páginas</label><input class="input" type="number" id="f-paginas" min="1"></div>
@@ -1323,7 +1331,22 @@ select.input { cursor: pointer; }
             <button type="button" class="genero-chip" data-g="Mitología"       onclick="toggleGenero(this)">Mitología</button>
           </div>
         </div>
-        <div class="field"><label>URL portada (opcional)</label><input class="input" type="text" id="f-cover" placeholder="https://..."></div>
+        <div class="field">
+          <label>Portada</label>
+          <div id="f-cover-preview" style="margin-bottom:8px;min-height:0;"></div>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <input class="input" type="text" id="f-cover" placeholder="https://..." style="flex:1;"
+              oninput="previewMainCover('f-cover','f-cover-preview')">
+            <button class="btn-icon" onclick="document.getElementById('f-cover').value='';document.getElementById('f-cover-preview').innerHTML='';"
+              title="Limpiar" style="padding:8px;border:1.5px solid var(--border);border-radius:4px;background:#fff;">
+              <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:var(--ink3);fill:none;stroke-width:2;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="document.getElementById('f-cover-file').click()"
+            style="width:100%;margin-top:8px;font-size:11px;">📁 Subir imagen desde dispositivo</button>
+          <input type="file" id="f-cover-file" accept="image/*" style="display:none;"
+            onchange="handleMainCoverFile(event,'f-cover','f-cover-preview')">
+        </div>
       </div>
 
       <div id="form-pelicula" style="display:none;">
@@ -1377,7 +1400,22 @@ select.input { cursor: pointer; }
           </div>
           <div class="field"><label>Año visto</label><input class="input" type="number" id="fp-anio-visto" placeholder="2025"></div>
         </div>
-        <div class="field"><label>URL poster (opcional)</label><input class="input" type="text" id="fp-cover" placeholder="https://..."></div>
+        <div class="field">
+          <label>Poster</label>
+          <div id="fp-cover-preview" style="margin-bottom:8px;min-height:0;"></div>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <input class="input" type="text" id="fp-cover" placeholder="https://..." style="flex:1;"
+              oninput="previewMainCover('fp-cover','fp-cover-preview')">
+            <button class="btn-icon" onclick="document.getElementById('fp-cover').value='';document.getElementById('fp-cover-preview').innerHTML='';"
+              title="Limpiar" style="padding:8px;border:1.5px solid var(--border);border-radius:4px;background:#fff;">
+              <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:var(--ink3);fill:none;stroke-width:2;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="document.getElementById('fp-cover-file').click()"
+            style="width:100%;margin-top:8px;font-size:11px;">📁 Subir imagen desde dispositivo</button>
+          <input type="file" id="fp-cover-file" accept="image/*" style="display:none;"
+            onchange="handleMainCoverFile(event,'fp-cover','fp-cover-preview')">
+        </div>
       </div>
 
       <div id="form-serie" style="display:none;">
@@ -1429,7 +1467,22 @@ select.input { cursor: pointer; }
           </div>
           <div class="field"><label>Año visto</label><input class="input" type="number" id="fs-anio-visto" placeholder="2025"></div>
         </div>
-        <div class="field"><label>URL poster (opcional)</label><input class="input" type="text" id="fs-cover" placeholder="https://..."></div>
+        <div class="field">
+          <label>Poster</label>
+          <div id="fs-cover-preview" style="margin-bottom:8px;min-height:0;"></div>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <input class="input" type="text" id="fs-cover" placeholder="https://..." style="flex:1;"
+              oninput="previewMainCover('fs-cover','fs-cover-preview')">
+            <button class="btn-icon" onclick="document.getElementById('fs-cover').value='';document.getElementById('fs-cover-preview').innerHTML='';"
+              title="Limpiar" style="padding:8px;border:1.5px solid var(--border);border-radius:4px;background:#fff;">
+              <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:var(--ink3);fill:none;stroke-width:2;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="document.getElementById('fs-cover-file').click()"
+            style="width:100%;margin-top:8px;font-size:11px;">📁 Subir imagen desde dispositivo</button>
+          <input type="file" id="fs-cover-file" accept="image/*" style="display:none;"
+            onchange="handleMainCoverFile(event,'fs-cover','fs-cover-preview')">
+        </div>
       </div>
 
       <div class="field"><label>Notas personales</label><textarea class="input" id="f-notas" rows="2" placeholder="Impresiones, citas..."></textarea></div>
@@ -2382,6 +2435,10 @@ function openModal(id) {
     document.getElementById('fp-anio-visto').value = new Date().getFullYear();
     document.getElementById('fs-anio-visto').value = new Date().getFullYear();
   }
+  if (id === 'modal-add') {
+    // Pre-poblar datalists con datos de la biblioteca
+    setTimeout(() => { fillMainAutorList(); fillMainEditorialList(); }, 50);
+  }
 }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 document.querySelectorAll('.modal-overlay').forEach(el => {
@@ -2416,6 +2473,10 @@ function resetForm() {
    'fp-titulo','fp-director','fp-anio-est','fp-duracion','fp-foto','fp-musica','fp-protagonista','fp-guionista','fp-cover',
    'fs-titulo','fs-director','fs-anio-est','fs-duracion','fs-caps-por-temp','fs-min-episodio','fs-musica','fs-protagonista','fs-guionista','fs-cover']
     .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  // Limpiar previews de portada
+  ['f-cover-preview','fp-cover-preview','fs-cover-preview'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.innerHTML = '';
+  });
   const calcEl = document.getElementById('fs-duracion-calc');
   if (calcEl) calcEl.textContent = '';
   document.getElementById('f-estado').value = 'leido';
@@ -3500,7 +3561,12 @@ function editEntry(id) {
     selectType(e.type, document.querySelector(`.type-btn[data-type="${e.type}"]`));
     document.getElementById('f-notas').value = e.notas || '';
     if (e.type === 'libro') {
-      ['titulo','autor','editorial','paginas','anio_pub','traductor','cover'].forEach(k => { const el=document.getElementById('f-'+k); if(el) el.value=e[k]||''; });
+      ['titulo','autor','editorial','paginas','anio_pub','traductor','cover'].forEach(k => {
+        const el=document.getElementById('f-'+k);
+        if(el) el.value = (e[k] !== null && e[k] !== undefined && e[k] !== 0) ? e[k] : '';
+      });
+      // Mostrar preview de portada si existe
+      if (e.cover) previewMainCover('f-cover','f-cover-preview');
       // Idioma: populate dynamic select
       const normalizedIdioma = normalizeIdioma(e.idioma||'');
       populateIdiomaSelect(normalizedIdioma);
@@ -5253,6 +5319,56 @@ function saveProgressCover() {
   document.getElementById('edit-cover-chevron').style.transform = 'rotate(0deg)';
   showToast('✓ Portada actualizada');
   renderHome();
+}
+
+// ── Portada en modal principal (Registrar estímulo) ──────
+function previewMainCover(inputId, previewId) {
+  const url = document.getElementById(inputId)?.value || '';
+  const el  = document.getElementById(previewId);
+  if (!el) return;
+  if (!url) { el.innerHTML = ''; return; }
+  el.innerHTML = `<img src="${url}" alt="Portada"
+    style="height:90px;border-radius:4px;box-shadow:0 2px 8px rgba(0,0,0,0.15);display:block;"
+    onerror="this.parentElement.innerHTML='<span style=\'font-size:11px;color:var(--red);\'>⚠ No se pudo cargar</span>'">`;
+}
+
+function handleMainCoverFile(event, inputId, previewId) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const url = e.target.result;
+    const inp = document.getElementById(inputId);
+    if (inp) inp.value = url;
+    previewMainCover(inputId, previewId);
+    showToast('✓ Imagen cargada');
+  };
+  reader.readAsDataURL(file);
+  // Reset input para permitir cargar el mismo archivo de nuevo
+  event.target.value = '';
+}
+
+// ── Datalists para modal principal (Registrar estímulo) ──
+function fillMainAutorList() {
+  const q = (document.getElementById('f-autor')?.value || '').toLowerCase();
+  const autores = [...new Set(
+    db.entries.filter(e => e.autor && e.autor.trim())
+      .map(e => e.autor.trim())
+      .filter(a => !q || a.toLowerCase().includes(q))
+  )].sort().slice(0, 10);
+  const dl = document.getElementById('f-autor-list');
+  if (dl) dl.innerHTML = autores.map(a => `<option value="${a}">`).join('');
+}
+
+function fillMainEditorialList() {
+  const q = (document.getElementById('f-editorial')?.value || '').toLowerCase();
+  const edits = [...new Set(
+    db.entries.filter(e => e.editorial && e.editorial.trim())
+      .map(e => e.editorial.trim())
+      .filter(ed => !q || ed.toLowerCase().includes(q))
+  )].sort().slice(0, 10);
+  const dl = document.getElementById('f-editorial-list');
+  if (dl) dl.innerHTML = edits.map(e => `<option value="${e}">`).join('');
 }
 
 // ── Datalists para modal lectura en curso ──────────────
