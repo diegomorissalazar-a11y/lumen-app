@@ -2271,7 +2271,7 @@ function saveDB() {
       firestore.collection('users').doc(currentUser.uid).collection('data').doc('library').set(payload)
         .then(() => { setSyncStatus('ok'); setLastSync(); })
         .catch(e => { setSyncStatus('offline'); console.warn('saveDB error:', e.message); });
-    }, 2000); // esperar 2s antes de escribir — agrupa múltiples cambios rápidos
+    }, 800); // 800ms — rápido pero agrupa cambios consecutivos
   }
 }
 
@@ -5523,6 +5523,8 @@ function openProgressModal(id) {
 
   // Si tiene páginas, siempre abrir en modo página — es más preciso
   const mode = e.paginas ? 'pag' : (e.readingMode || 'pct');
+  // Sincronizar readingMode en el entry para que saveProgress lo lea correctamente
+  e.readingMode = mode;
 
   // Toggle modo — pequeño y secundario
   document.getElementById('progress-mode-display').innerHTML = `
@@ -5611,9 +5613,13 @@ function saveProgress() {
   const id = document.getElementById('progress-entry-id').value;
   const e = db.entries.find(x => x.id === id);
   if (!e) return;
-  const mode = e.readingMode || 'pct';
+  // Leer el modo desde la UI (sección visible) — más fiable que e.readingMode
+  const pagSectionVisible = document.getElementById('progress-pag-section')?.style.display !== 'none';
+  const mode = pagSectionVisible ? 'pag' : 'pct';
+  e.readingMode = mode; // sincronizar siempre
   if (mode === 'pct') {
     e.progreso = parseInt(document.getElementById('progress-pct-slider').value) || 0;
+    e.progresoPag = null;
   } else {
     const pag = parseInt(document.getElementById('progress-pag-input').value) || 0;
     e.progresoPag = pag;
@@ -5863,12 +5869,17 @@ async function manualLoadFromCloud() {
 
     // Mostrar resumen con confirmación
     showSyncPreview({ nuevas, actualizadas, sinCambios, remote, onConfirm: async () => {
+      // Forzar merge completo — toma los campos más informados de cada versión
       const merged = mergeEntries(db.entries, remote);
+      // Si viene de re-merge forzado (0 cambios), actualizar timestamps para
+      // que la próxima sync detecte los cambios correctamente
+      const now = Date.now();
+      merged.forEach(e => { if (!e._updatedAt) e._updatedAt = now; });
       db.entries = merged;
       localStorage.setItem(DB_KEY, JSON.stringify(db));
       setLastSync();
       setSyncStatus('ok');
-      // Si local tenía datos más recientes, subir también
+      // Subir siempre — el merge puede haber completado campos faltantes
       await syncToFirestore();
       refreshCurrentScreen();
       showToast(`✓ Sincronización completa · ${merged.length} registros`, 3000);
