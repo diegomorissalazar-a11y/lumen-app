@@ -2266,8 +2266,8 @@ function coverUrl(e) {
 function entryForFirestore(entry) {
   const e = {};
   Object.entries(entry).forEach(([k, v]) => {
-    if (isBase64Image(v)) {
-      // Guardar solo un flag indicando que hay imagen local
+    // Imágenes base64 grandes (> ~500KB) → placeholder; pequeñas → pasan directo
+    if (isBase64Image(v) && v.length > 666666) {
       e[k] = '__local_image__';
     } else {
       e[k] = v;
@@ -2306,8 +2306,9 @@ function cleanForFirestore(obj, _depth) {
   if (typeof obj === 'boolean') return obj;
   if (typeof obj === 'number') return (isNaN(obj) || !isFinite(obj)) ? null : obj;
   if (typeof obj === 'string') {
-    // Imágenes base64 → placeholder (no van a Firestore)
-    if (isBase64Image(obj)) return '__local_image__';
+    // Imágenes base64 pequeñas (comprimidas) → van a Firestore directamente
+    // Solo bloquear si el string es muy grande (> ~500KB en base64 ≈ 666666 chars)
+    if (isBase64Image(obj) && obj.length > 666666) return '__local_image__';
     return obj;
   }
   if (typeof obj === 'function') return null;
@@ -2481,6 +2482,7 @@ function subscribeToFirestore(uid) {
     if (!snap.exists) return;
     const remote = snap.data();
     const merged = mergeEntries(db.entries, remote.entries || []);
+    restoreLocalImages(merged);  // recuperar imágenes base64 locales
     db.entries = merged;
     localStorage.setItem(DB_KEY, JSON.stringify(db));
     setSyncStatus('ok');
