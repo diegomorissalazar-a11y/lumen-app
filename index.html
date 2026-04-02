@@ -2247,35 +2247,107 @@ function loadLastSync() {
 }
 
 // Elimina campos undefined recursivamente — Firestore no los acepta
-function cleanForFirestore(obj) {
-  // Tipos inválidos para Firestore → null
+// Detecta si un string es una imagen base64 (data URI)
+function isBase64Image(s) {
+  return typeof s === 'string' && s.startsWith('data:image');
+}
+
+// Prepara un entry para Firestore: excluye imágenes base64
+// que solo viven en localStorage (demasiado grandes para Firestore)
+function entryForFirestore(entry) {
+  const e = {};
+  Object.entries(entry).forEach(([k, v]) => {
+    if (isBase64Image(v)) {
+      // Guardar solo un flag indicando que hay imagen local
+      e[k] = '__local_image__';
+    } else {
+      e[k] = v;
+    }
+  });
+  return e;
+}
+
+// Restaura imágenes base64 desde localStorage al hacer merge con Firestore
+// (el entry local tiene la imagen, el remoto tiene '__local_image__')
+function restoreLocalImages(merged) {
+  const localMap = {};
+  try {
+    const local = JSON.parse(localStorage.getItem('lumen_db_v1') || '{}');
+    (local.entries || []).forEach(e => { localMap[e.id] = e; });
+  } catch(e) {}
+
+  merged.forEach(entry => {
+    const local = localMap[entry.id];
+    if (!local) return;
+    Object.entries(entry).forEach(([k, v]) => {
+      if (v === '__local_image__' && isBase64Image(local[k])) {
+        entry[k] = local[k]; // restaurar imagen del localStorage
+      }
+    });
+  });
+  return merged;
+}
+
+function cleanForFirestore(obj, _depth) {
+  const depth = _depth || 0;
+  if (depth > 15) return null;
+
+  if (obj === null) return null;
   if (obj === undefined) return null;
-  if (typeof obj === 'number' && (isNaN(obj) || !isFinite(obj))) return null;
+  if (typeof obj === 'boolean') return obj;
+  if (typeof obj === 'number') return (isNaN(obj) || !isFinite(obj)) ? null : obj;
+  if (typeof obj === 'string') {
+    // Imágenes base64 → placeholder (no van a Firestore)
+    if (isBase64Image(obj)) return '__local_image__';
+    return obj;
+  }
   if (typeof obj === 'function') return null;
-  if (obj instanceof Date) return obj.toISOString();
 
   if (Array.isArray(obj)) {
-    // Filtrar elementos inválidos del array y limpiar recursivamente
     return obj
-      .map(cleanForFirestore)
+      .map(item => Array.isArray(item)
+        ? (item.length > 0 ? String(item[0]) : null) // aplanar array anidado
+        : cleanForFirestore(item, depth + 1)
+      )
       .filter(v => v !== null && v !== undefined);
   }
 
-  if (obj !== null && typeof obj === 'object') {
+  if (typeof obj === 'object') {
+    // JSON round-trip para eliminar prototipos y valores no serializables
+    let safe = obj;
+    try { safe = JSON.parse(JSON.stringify(obj)); } catch(e) {}
     const clean = {};
-    Object.entries(obj).forEach(([k, v]) => {
-      const cleaned = cleanForFirestore(v);
-      // Solo incluir el campo si el valor limpio no es null/undefined
-      // excepto si era explícitamente null en el original
-      if (cleaned !== undefined && (v === null || cleaned !== null)) {
-        clean[k] = cleaned;
+    Object.entries(safe).forEach(([k, v]) => {
+      if (v !== undefined) {
+        const cleaned = cleanForFirestore(v, depth + 1);
+        if (cleaned !== undefined) clean[k] = cleaned;
       }
     });
     return clean;
   }
 
-  // string, number finito, boolean, null → pasan directo
-  return obj;
+  return null;
+}
+
+// Diagnóstico: encontrar qué campo del entry falla con Firestore
+function diagnoseEntry(entry) {
+  const problems = [];
+  const check = (obj, path) => {
+    if (obj === undefined) { problems.push(path + ': undefined'); return; }
+    if (typeof obj === 'number' && (isNaN(obj)||!isFinite(obj))) { problems.push(path+': NaN/Inf'); return; }
+    if (Array.isArray(obj)) {
+      obj.forEach((item,i) => {
+        if (Array.isArray(item)) problems.push(path+'['+i+']: array anidado ('+JSON.stringify(item).slice(0,60)+')');
+        else check(item, path+'['+i+']');
+      });
+      return;
+    }
+    if (obj !== null && typeof obj === 'object') {
+      Object.entries(obj).forEach(([k,v]) => check(v, path+'.'+k));
+    }
+  };
+  check(entry, entry.titulo||entry.id||'?');
+  return problems;
 }
 
 // Debounce para evitar demasiadas escrituras a Firestore
@@ -2286,10 +2358,20 @@ function saveDB() {
     clearTimeout(_saveDebounceTimer);
     _saveDebounceTimer = setTimeout(() => {
       setSyncStatus('syncing');
-      const payload = cleanForFirestore({ entries: db.entries, updatedAt: Date.now() });
+      const entriesClean = db.entries.map(e => cleanForFirestore(entryForFirestore(e)));
+      const payload = { entries: entriesClean, updatedAt: Date.now() };
       firestore.collection('users').doc(currentUser.uid).collection('data').doc('library').set(payload)
         .then(() => { setSyncStatus('ok'); setLastSync(); })
-        .catch(e => { setSyncStatus('offline'); console.warn('saveDB error:', e.message); });
+        .catch(e => {
+          setSyncStatus('offline');
+          console.warn('saveDB error:', e.message);
+          if (e.message && e.message.includes('invalid nested entity')) {
+            db.entries.forEach(entry => {
+              const p = diagnoseEntry(entry);
+              if (p.length > 0) console.warn('❌', entry.titulo, p);
+            });
+          }
+        });
     }, 800); // 800ms — rápido pero agrupa cambios consecutivos
   }
 }
@@ -2298,13 +2380,24 @@ async function syncToFirestore() {
   if (!currentUser) return;
   try {
     await auth.currentUser.getIdToken(false);
-    const payload = cleanForFirestore({ entries: db.entries, updatedAt: Date.now() });
+    // Preparar entries: excluir base64, limpiar valores inválidos
+    const entriesClean = db.entries.map(e => cleanForFirestore(entryForFirestore(e)));
+    const payload = { entries: entriesClean, updatedAt: Date.now() };
     await firestore.collection('users').doc(currentUser.uid).collection('data').doc('library').set(payload);
     setSyncStatus('ok');
     setLastSync();
   } catch(e) {
     setSyncStatus('offline');
-    console.warn('sync error:', e.message);
+    console.warn('sync error:', e.code || e.message);
+    // Diagnóstico detallado
+    if (e.message && e.message.includes('invalid nested entity')) {
+      console.warn('=== DIAGNÓSTICO FIRESTORE ===');
+      db.entries.forEach(entry => {
+        const problems = diagnoseEntry(entry);
+        if (problems.length > 0) console.warn('❌', entry.titulo, '|', problems.join(' | '));
+      });
+      console.warn('=== FIN DIAGNÓSTICO ===');
+    }
   }
 }
 
@@ -2323,6 +2416,8 @@ async function pullAndMerge(uid, silent) {
 
       // SIEMPRE hacer el merge primero — nunca quedarse sin datos
       const merged = mergeEntries(db.entries, remoteEntries);
+      // Restaurar imágenes base64 locales que no van a Firestore
+      restoreLocalImages(merged);
       db.entries = merged;
       localStorage.setItem(DB_KEY, JSON.stringify(db));
 
