@@ -653,6 +653,9 @@ select.input { cursor: pointer; }
   <!-- DESAFÍO LECTOR -->
   <div id="desafio-card" style="margin:0 20px 12px;display:none;"></div>
 
+  <!-- LOGROS SEMANALES -->
+  <div id="logros-card" style="margin:0 20px 12px;"></div>
+
   <!-- LEYENDO AHORA -->
   <div style="padding:0 20px 4px;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
@@ -1993,6 +1996,10 @@ function loadDB() {
       }
       // Migrar cover null → '' para evitar src="null" en imágenes
       if (e.cover === null || e.cover === 'null') e.cover = '';
+      // Migrar readDates string[] → {date,pag}[] (compatibilidad hacia atrás)
+      if (Array.isArray(e.readDates) && e.readDates.length > 0 && typeof e.readDates[0] === 'string') {
+        e.readDates = e.readDates.map(d => ({ date: d, pag: null }));
+      }
       // Migrar series sin estado — las importadas antes del fix tenían estado: undefined
       if (e.type === 'serie' && !e.estado) e.estado = 'vista';
       // Migrar temporadas desde coleccion para series importadas antes del fix
@@ -2151,9 +2158,9 @@ function mergeEntries(local, remote) {
       // Tomar el valor del ganador si es más informativo (no null/undefined/vacío)
       const hasValue = v => v !== null && v !== undefined && v !== '' && v !== 0;
       if (hasValue(wv)) result[f] = wv;
-      // readDates: unir arrays sin duplicar
+      // readDates: merge por date, conservar pag más reciente
       if (f === 'readDates' && Array.isArray(wv) && Array.isArray(lv)) {
-        result[f] = [...new Set([...lv, ...wv])].sort();
+        result[f] = mergeReadDates(lv, wv);
       }
       // notas_lista: unir por id de nota
       if (f === 'notas_lista' && Array.isArray(wv) && Array.isArray(lv)) {
@@ -2252,6 +2259,80 @@ function loadLastSync() {
 // Detecta si un string es una imagen base64 (data URI)
 function isBase64Image(s) {
   return typeof s === 'string' && s.startsWith('data:image');
+}
+
+// ── readDates helpers ─────────────────────────────────────
+// Normaliza un readDates de cualquier formato a [{date, pag}]
+// Soporta: string[] (legado), {date,pag}[] (nuevo)
+function normalizeReadDates(arr) {
+  if (!Array.isArray(arr)) return [];
+  return arr.map(item => {
+    if (typeof item === 'string') return { date: item, pag: null };
+    if (item && item.date) return { date: item.date, pag: item.pag ?? null };
+    return null;
+  }).filter(Boolean);
+}
+
+// Extrae solo las fechas como strings para compatibilidad con heatmap/streaks
+function readDatesToStrings(arr) {
+  return normalizeReadDates(arr).map(r => r.date);
+}
+
+// Merge de readDates: deduplicar por date, conservar pag más reciente
+function mergeReadDates(a, b) {
+  const map = {};
+  [...normalizeReadDates(a), ...normalizeReadDates(b)].forEach(r => {
+    if (!map[r.date] || (r.pag !== null && map[r.date].pag === null)) {
+      map[r.date] = r;
+    }
+  });
+  return Object.values(map).sort((x,y) => x.date.localeCompare(y.date));
+}
+
+// Calcula páginas leídas por día desde readDates [{date,pag}]
+// Retorna {date → pags} usando diferencia entre marcas consecutivas
+function calcPagsByDay(readDates) {
+  const norm = normalizeReadDates(readDates).filter(r => r.pag !== null);
+  if (norm.length === 0) return {};
+  norm.sort((a,b) => a.date.localeCompare(b.date));
+  const map = {};
+  for (let i = 0; i < norm.length; i++) {
+    if (i === 0) {
+      // Primer registro: no tenemos referencia anterior, asignar 0
+      map[norm[i].date] = 0;
+    } else {
+      const diff = Math.max(0, norm[i].pag - norm[i-1].pag);
+      map[norm[i].date] = diff;
+    }
+  }
+  return map;
+}
+
+// Calcula ritmo reciente en páginas/día usando los últimos N registros con pag
+// Retorna {ritmo, dias, paginasLeidas} o null si no hay suficientes datos
+function calcRitmoReciente(readDates, nDias) {
+  nDias = nDias || 7;
+  const norm = normalizeReadDates(readDates).filter(r => r.pag !== null);
+  if (norm.length < 2) return null;
+  norm.sort((a,b) => a.date.localeCompare(b.date));
+  // Tomar los últimos N+1 registros para calcular N diferencias
+  const recent = norm.slice(-Math.min(nDias + 1, norm.length));
+  let totalPags = 0, totalDias = 0;
+  for (let i = 1; i < recent.length; i++) {
+    const diff = Math.max(0, recent[i].pag - recent[i-1].pag);
+    // Días calendario entre los dos registros
+    const d1 = new Date(recent[i-1].date), d2 = new Date(recent[i].date);
+    const dias = Math.max(1, Math.round((d2 - d1) / 86400000));
+    totalPags += diff;
+    totalDias += dias;
+  }
+  if (totalDias === 0) return null;
+  return {
+    ritmo: totalPags / totalDias,
+    dias: totalDias,
+    paginasLeidas: totalPags,
+    registros: recent.length - 1
+  };
 }
 
 // Devuelve URL de portada válida, o null si es placeholder/vacía/base64-remota
@@ -3132,6 +3213,117 @@ function saveDesafio() {
   renderDesafioCard();
 }
 
+// ── Semana ISO: lunes→domingo ─────────────────────────
+function getISOWeekKey(dateStr) {
+  const d = new Date(dateStr + 'T12:00:00');
+  const day = d.getDay() || 7; // lunes=1 … domingo=7
+  d.setDate(d.getDate() - day + 1); // ir al lunes
+  return d.toISOString().split('T')[0]; // YYYY-MM-DD del lunes
+}
+
+function calcLogrosSemana() {
+  const yr = new Date().getFullYear();
+  const hoy = new Date();
+  const semanaActualKey = getISOWeekKey(hoy.toISOString().split('T')[0]);
+
+  // Construir mapa semana → páginas
+  // Fuente 1: readDates con pag (nuevo formato)
+  // Fuente 2: finishDate de libros terminados este año (legado)
+  const semanas = {}; // weekKey → pages
+
+  const addToWeek = (dateStr, pags) => {
+    if (!dateStr || pags <= 0) return;
+    const wk = getISOWeekKey(dateStr);
+    semanas[wk] = (semanas[wk] || 0) + pags;
+  };
+
+  db.entries.filter(e => e.type === 'libro').forEach(e => {
+    // Solo datos con marca de página exacta (nuevo formato lumen-74+)
+    const norm = (e.readDates || []).map(r =>
+      typeof r === 'string' ? { date: r, pag: null } : r
+    ).filter(r => r.pag !== null && r.date.startsWith(yr));
+
+    if (norm.length >= 2) {
+      norm.sort((a, b) => a.date.localeCompare(b.date));
+      for (let i = 1; i < norm.length; i++) {
+        const diff = Math.max(0, norm[i].pag - norm[i-1].pag);
+        if (diff > 0) addToWeek(norm[i].date, diff);
+      }
+    }
+    // Datos legacy (sin pag) → ignorar para este cálculo
+  });
+
+  // Filtrar semanas con datos — excluir semana actual si recién empieza
+  const semanasValidas = Object.entries(semanas)
+    .filter(([wk]) => wk !== semanaActualKey || semanas[wk] >= 20)
+    .sort((a, b) => a[0].localeCompare(b[0]));
+
+  if (semanasValidas.length < 2) return null; // sin suficientes datos
+
+  // Mejor semana del año (excluye semana actual)
+  const pasadas = semanasValidas.filter(([wk]) => wk !== semanaActualKey);
+  if (pasadas.length === 0) return null;
+
+  const [mejorWk, mejorPags] = pasadas.reduce((a, b) => b[1] > a[1] ? b : a);
+  const semanaActualPags = semanas[semanaActualKey] || 0;
+
+  // Semana anterior
+  const anteriorDate = new Date(hoy);
+  anteriorDate.setDate(anteriorDate.getDate() - 7);
+  const anteriorWk = getISOWeekKey(anteriorDate.toISOString().split('T')[0]);
+  const anteriorPags = semanas[anteriorWk] || 0;
+
+  // Formatear fecha del lunes de la mejor semana
+  const fmtSemana = (wkKey) => {
+    const lunes = new Date(wkKey + 'T12:00:00');
+    const domingo = new Date(wkKey + 'T12:00:00');
+    domingo.setDate(domingo.getDate() + 6);
+    const opts = { day: 'numeric', month: 'short' };
+    return `${lunes.toLocaleDateString('es', opts)} – ${domingo.toLocaleDateString('es', opts)}`;
+  };
+
+  return {
+    mejorSemana: { key: mejorWk, pags: mejorPags, label: fmtSemana(mejorWk) },
+    semanaActual: { pags: semanaActualPags, esMejor: semanaActualPags >= mejorPags },
+    semanaAnterior: { pags: anteriorPags },
+    totalSemanas: semanasValidas.length,
+  };
+}
+
+function renderLogros() {
+  const el = document.getElementById('logros-card');
+  if (!el) return;
+  const data = calcLogrosSemana();
+  if (!data) { el.innerHTML = ''; return; }
+
+  const { mejorSemana, semanaActual, semanaAnterior } = data;
+  const lines = [];
+
+  // Línea 1: mejor semana del año
+  lines.push(`🏅 Mejor semana del año: <b>${mejorSemana.pags} págs</b> <span style="color:var(--ink4);font-weight:400;">(${mejorSemana.label})</span>`);
+
+  // Línea 2: semana actual vs mejor
+  if (semanaActual.pags > 0) {
+    if (semanaActual.esMejor) {
+      lines.push(`⭐ Esta semana: <b>${semanaActual.pags} págs</b> — nueva mejor semana del año`);
+    } else {
+      const faltan = mejorSemana.pags - semanaActual.pags;
+      lines.push(`Esta semana: <b>${semanaActual.pags} págs</b> · faltan ${faltan} para superar el récord`);
+    }
+  }
+
+  // Línea 3: semana anterior como referencia
+  if (semanaAnterior.pags > 0 && !semanaActual.esMejor) {
+    lines.push(`Semana anterior: <b>${semanaAnterior.pags} págs</b>`);
+  }
+
+  el.innerHTML = `
+    <div style="background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;box-shadow:var(--shadow);">
+      <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--ink4);font-weight:700;margin-bottom:8px;">Seguimiento semanal · ${new Date().getFullYear()}</div>
+      ${lines.map(l => `<div style="font-size:13px;color:var(--ink2);line-height:1.8;">${l}</div>`).join('')}
+    </div>`;
+}
+
 function renderDesafioCard() {
   const el = document.getElementById('desafio-card'); if(!el) return;
   const yr = new Date().getFullYear();
@@ -3205,6 +3397,7 @@ function renderHome() {
   document.getElementById('hero-sub').textContent = `${libros.length} libros · ${peliculas.length} películas · ${series.length} series`;
 
   renderDesafioCard();
+  renderLogros();
 
   document.getElementById('year-summary').innerHTML = `
     <div class="ys-box">
@@ -3311,6 +3504,23 @@ function renderHome() {
         ? `<img src="${coverUrl(e)}" class="reading-mini-cover" onerror="this.style.display='none'">`
         : `<div class="reading-mini-cover" style="display:flex;align-items:center;justify-content:center;font-size:28px;">📚</div>`;
       const notasCount = (e.notas_lista||[]).length;
+      // Estimación días restantes
+      const pagsRestantes = e.paginas ? e.paginas - (e.progresoPag || Math.round(((e.progreso||0)/100)*(e.paginas||0))) : null;
+      const ritmoInfo = calcRitmoReciente(e.readDates, 7);
+      let estimacionHTML = '';
+      if (pagsRestantes > 0 && ritmoInfo && ritmoInfo.ritmo > 0) {
+        const diasRestantes = Math.ceil(pagsRestantes / ritmoInfo.ritmo);
+        const fechaFin = new Date();
+        fechaFin.setDate(fechaFin.getDate() + diasRestantes);
+        const fechaStr = fechaFin.toLocaleDateString('es', {day:'numeric', month:'short'});
+        const nLabel = ritmoInfo.registros >= 7 ? '7d' : `${ritmoInfo.registros}d`;
+        estimacionHTML = `<div style="font-size:10px;color:var(--ink4);margin-top:3px;line-height:1.4;">
+          📅 ~${diasRestantes} días · ${fechaStr}
+          <span style="color:var(--ink4);opacity:0.7;">(${ritmoInfo.ritmo.toFixed(0)} p/d · ${nLabel})</span>
+        </div>`;
+      } else if (pagsRestantes > 0 && !ritmoInfo) {
+        estimacionHTML = `<div style="font-size:10px;color:var(--ink4);margin-top:3px;">📅 Actualiza el progreso para estimar</div>`;
+      }
       return `
         <div class="reading-mini-card">
           ${coverHTML}
@@ -3321,6 +3531,7 @@ function renderHome() {
               <div style="height:3px;background:var(--gold);border-radius:2px;width:${pct}%;"></div>
             </div>
             <div class="reading-mini-pct">${progresoText}</div>
+            ${estimacionHTML}
           </div>
           <div style="display:flex;gap:0;border-top:1px solid var(--cream3);">
             <button class="reading-mini-btn" style="flex:1;border-right:1px solid var(--cream3);" onclick="openProgressModal('${e.id}')">↑ Actualizar</button>
@@ -5720,13 +5931,35 @@ function openProgressModal(id) {
     if (pctTxt) pctTxt.textContent = val > 0 ? `${val}% completado` : '';
   }
 
-  // Ritmo compacto
-  const startDays = e.startDate ? Math.max(1,Math.floor((Date.now()-new Date(e.startDate))/86400000)) : 1;
+  // Ritmo reciente + estimación
+  const ritmoInfo = calcRitmoReciente(e.readDates, 7);
   const pagsLeidas = e.progresoPag || Math.round(((e.progreso||0)/100)*(e.paginas||0));
-  const ritmo = pagsLeidas > 0 ? (pagsLeidas/startDays).toFixed(1) : null;
-  document.getElementById('progress-ritmo-info').innerHTML = ritmo
-    ? `<div style="text-align:center;padding:8px;background:var(--cream2);border-radius:8px;font-size:13px;color:var(--ink3);">📖 <b style="color:var(--ink);">${ritmo} págs/día</b> · ${pagsLeidas} págs en ${startDays} días</div>`
-    : '';
+  const pagsRestantes = e.paginas ? e.paginas - pagsLeidas : null;
+  let ritmoHTML = '';
+  if (ritmoInfo && ritmoInfo.ritmo > 0) {
+    const nLabel = ritmoInfo.registros >= 7 ? 'últimos 7 registros' : `últimos ${ritmoInfo.registros} registros`;
+    const diasRest = pagsRestantes > 0 ? Math.ceil(pagsRestantes / ritmoInfo.ritmo) : null;
+    const fechaFin = diasRest ? (() => {
+      const f = new Date(); f.setDate(f.getDate() + diasRest);
+      return f.toLocaleDateString('es', {day:'numeric', month:'long'});
+    })() : null;
+    ritmoHTML = `<div style="background:var(--cream2);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--ink3);">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;">
+        <span>📖 Ritmo reciente</span>
+        <b style="color:var(--ink);font-size:14px;">${ritmoInfo.ritmo.toFixed(1)} págs/día</b>
+      </div>
+      <div style="font-size:11px;color:var(--ink4);">${nLabel} · ${ritmoInfo.paginasLeidas} págs en ${ritmoInfo.dias} días</div>
+      ${diasRest ? `<div style="margin-top:6px;padding-top:6px;border-top:1px solid var(--border);display:flex;justify-content:space-between;">
+        <span>📅 Estimación final</span>
+        <b style="color:var(--gold);">~${diasRest} días · ${fechaFin}</b>
+      </div>` : ''}
+    </div>`;
+  } else if (pagsLeidas > 0) {
+    ritmoHTML = `<div style="background:var(--cream2);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--ink4);">
+      Actualiza el progreso al menos 2 veces para calcular el ritmo.
+    </div>`;
+  }
+  document.getElementById('progress-ritmo-info').innerHTML = ritmoHTML;
   openModal('modal-progress');
 }
 
@@ -5791,10 +6024,20 @@ function saveProgress() {
     e.progresoPag = pag;
     e.progreso = e.paginas ? Math.round((pag/e.paginas)*100) : 0;
   }
-  // Stamp reading activity date for streak tracking
+  // Guardar marca de página del día — {date, pag}
   const today = new Date().toISOString().split('T')[0];
   if (!e.readDates) e.readDates = [];
-  if (!e.readDates.includes(today)) e.readDates.push(today);
+  // Normalizar al nuevo formato si viene del legado
+  e.readDates = normalizeReadDates(e.readDates);
+  const pagActual = mode === 'pag'
+    ? (parseInt(document.getElementById('progress-pag-input').value) || 0)
+    : Math.round(((e.progreso||0)/100)*(e.paginas||0));
+  const existing = e.readDates.find(r => r.date === today);
+  if (existing) {
+    existing.pag = pagActual; // actualizar si ya existe entrada de hoy
+  } else {
+    e.readDates.push({ date: today, pag: pagActual });
+  }
   e._updatedAt = Date.now();
   saveDB();
   closeModal('modal-progress');
@@ -6230,31 +6473,48 @@ document.addEventListener('visibilitychange', async () => {
 function getAllReadDates() {
   const dates = new Set();
   db.entries.forEach(e => {
-    // Solo fechas explícitas de actividad registradas por el usuario
-    if (e.readDates) e.readDates.forEach(d => dates.add(d));
+    // readDates soporta string[] (legado) y {date,pag}[] (nuevo)
+    if (e.readDates) readDatesToStrings(e.readDates).forEach(d => dates.add(d));
     // finishDate solo si el libro fue terminado (no en curso)
     if (e.finishDate && e.estado === 'leido') dates.add(e.finishDate.split('T')[0]);
-    // startDate NO se usa — no es actividad lectora real
   });
   return dates;
 }
 
-// Get all activity dates with page counts per day
+// Páginas leídas por día — combina todos los libros
 function getActivityByDate() {
   const map = {}; // date → pages read
   db.entries.filter(e => e.type === 'libro').forEach(e => {
-    if (e.readDates && e.readDates.length > 0) {
-      // Si tenemos progresoPag, distribuir páginas entre los días registrados
+    if (!e.readDates || e.readDates.length === 0) {
+      // Sin readDates: solo marcar finishDate si existe
+      if (e.finishDate && e.estado === 'leido') {
+        const d = e.finishDate.split('T')[0];
+        map[d] = (map[d] || 0) + (e.paginas ? Math.round(e.paginas * 0.05) : 1);
+      }
+      return;
+    }
+    const norm = normalizeReadDates(e.readDates);
+    const conPag = norm.filter(r => r.pag !== null);
+    if (conPag.length >= 2) {
+      // Nuevo formato: usar diferencias entre marcas de página
+      const byDay = calcPagsByDay(e.readDates);
+      Object.entries(byDay).forEach(([d, pags]) => {
+        if (pags > 0) map[d] = (map[d] || 0) + pags;
+      });
+    } else {
+      // Legado: distribuir páginas totales entre días con actividad
       const paginasLeidas = e.readingMode === 'pag'
         ? (e.progresoPag || 0)
         : Math.round(((e.progreso||0)/100) * (e.paginas||0));
-      const pgsPerDay = paginasLeidas > 0 ? Math.round(paginasLeidas / e.readDates.length) : 1;
-      e.readDates.forEach(d => { map[d] = (map[d] || 0) + pgsPerDay; });
+      const pgsPerDay = paginasLeidas > 0
+        ? Math.round(paginasLeidas / norm.length)
+        : 1;
+      norm.forEach(r => { map[r.date] = (map[r.date] || 0) + pgsPerDay; });
     }
-    // finishDate solo si terminado
+    // finishDate
     if (e.finishDate && e.estado === 'leido') {
       const d = e.finishDate.split('T')[0];
-      map[d] = (map[d] || 0) + (e.paginas ? Math.round(e.paginas * 0.05) : 1);
+      if (!map[d]) map[d] = (e.paginas ? Math.round(e.paginas * 0.05) : 1);
     }
   });
   return map;
