@@ -1200,6 +1200,10 @@ select.input { cursor: pointer; }
     <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0018 9h-1.26A8 8 0 103 16.11"/></svg>
     📥 Cargar desde nube
   </button>
+  <button class="user-menu-item" onclick="sincronizarPortadas()">
+    <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14"/><path d="M4.93 4.93a10 10 0 000 14.14"/></svg>
+    🖼 Reparar portadas
+  </button>
 
   <button class="user-menu-item" onclick="openMenuAction('modal-import')">
     <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0018 9h-1.26A8 8 0 103 16.3"/></svg>
@@ -1210,7 +1214,7 @@ select.input { cursor: pointer; }
     Cerrar sesión
   </button>
   <div style="padding:8px 16px 10px;border-top:1px solid var(--border);font-size:10px;color:var(--ink4);letter-spacing:1px;text-align:right;">
-    LUMEN v76
+    LUMEN v77
   </div>
 </div>
 
@@ -2338,11 +2342,19 @@ function calcRitmoReciente(readDates, nDias) {
   };
 }
 
-// Devuelve URL de portada válida, o null si es placeholder/vacía/base64-remota
+// Devuelve URL de portada válida, o null si vacía
+// '__local_image__' significa que hay imagen en otro dispositivo pero no aquí
 function coverUrl(e) {
   const c = e && e.cover;
-  if (!c || c === '__local_image__') return null;
+  if (!c) return null;
+  if (c === '__local_image__') return null; // sin imagen en este dispositivo
   return c;
+}
+
+// Detecta si un entry tiene portada pendiente de sincronizar
+// (otro dispositivo la subió pero esta sesión no la tiene)
+function hasPendingCover(e) {
+  return e && e.cover === '__local_image__';
 }
 
 // Prepara un entry para Firestore: excluye imágenes base64
@@ -3388,10 +3400,11 @@ function renderHome() {
   const yr = new Date().getFullYear();
   document.getElementById('hero-year-label').textContent = yr;
   const thisYear = db.entries.filter(e => parseInt(e.anio) === yr);
-  const libros = thisYear.filter(e => e.type === 'libro' && e.estado !== 'pendiente');
+  // Solo libros terminados para el contador — los en curso están en el carrusel
+  const libros = thisYear.filter(e => e.type === 'libro' && e.estado === 'leido');
   // pagsHastaDia incluye libros en curso — mismo criterio que el ritmo card
   const pags = pagsHastaDia(yr);
-  const pagsTerminados = libros.filter(e=>e.estado==='leido').reduce((a,b)=>a+(b.paginas||0),0);
+  const pagsTerminados = libros.reduce((a,b) => a+(b.paginas||0), 0);
   const peliculas = thisYear.filter(e => e.type === 'pelicula');
   // Solo series terminadas — excluye viendo/pendiente, igual que Stats
   const series = thisYear.filter(e => e.type === 'serie' && e.estado === 'vista');
@@ -3505,7 +3518,12 @@ function renderHome() {
         : `${pct}%`;
       const coverHTML = coverUrl(e)
         ? `<img src="${coverUrl(e)}" class="reading-mini-cover" onerror="this.style.display='none'">`
-        : `<div class="reading-mini-cover" style="display:flex;align-items:center;justify-content:center;font-size:28px;">📚</div>`;
+        : hasPendingCover(e)
+          ? `<div class="reading-mini-cover" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:var(--cream2);cursor:pointer;" onclick="openProgressModal('${e.id}')" title="Portada pendiente — sube la imagen desde este dispositivo">
+               <span style="font-size:20px;">📷</span>
+               <span style="font-size:8px;color:var(--ink4);text-align:center;letter-spacing:0.5px;line-height:1.3;">SUBIR<br>PORTADA</span>
+             </div>`
+          : `<div class="reading-mini-cover" style="display:flex;align-items:center;justify-content:center;font-size:28px;">📚</div>`;
       const notasCount = (e.notas_lista||[]).length;
       // Estimación días restantes
       const pagsRestantes = e.paginas ? e.paginas - (e.progresoPag || Math.round(((e.progreso||0)/100)*(e.paginas||0))) : null;
@@ -3699,7 +3717,11 @@ function entryCardHTML(e) {
   return `
     <div class="entry-card" onclick="showDetail('${safeId}')">
       <div class="entry-card-spine ${e.estado==='leyendo'?'libro':e.type}"></div>
-      ${coverSrc ? `<img src="${coverSrc}" class="entry-card-cover">` : `<div class="entry-card-cover" style="display:flex;align-items:center;justify-content:center;font-size:22px;">${e.type==='libro'?'📚':e.type==='pelicula'?'🎬':'📺'}</div>`}
+      ${coverSrc
+        ? `<img src="${coverSrc}" class="entry-card-cover">`
+        : hasPendingCover(e)
+          ? `<div class="entry-card-cover" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:var(--cream2);" title="Portada en otro dispositivo"><span style="font-size:18px;">📷</span><span style="font-size:7px;color:var(--ink4);letter-spacing:0.5px;">PENDIENTE</span></div>`
+          : `<div class="entry-card-cover" style="display:flex;align-items:center;justify-content:center;font-size:22px;">${e.type==='libro'?'📚':e.type==='pelicula'?'🎬':'📺'}</div>`}
       <div class="entry-card-info">
         <div class="entry-card-title">${esc(e.titulo)}</div>
         <div class="entry-card-sub">${sub}</div>
@@ -6188,6 +6210,46 @@ async function saveAndLogOut() {
 async function getValidToken() {
   if (!auth.currentUser) throw new Error('No hay sesión activa');
   await auth.currentUser.getIdToken(true); // true = forzar refresh
+}
+
+// Repara portadas: sube imágenes locales que Firestore tiene como __local_image__
+// Útil cuando subiste una imagen desde otro dispositivo y no se sincronizó
+async function sincronizarPortadas() {
+  closeUserMenu();
+  if (!currentUser) { showToast('Inicia sesión primero'); return; }
+
+  // Contar portadas locales que pueden subirse
+  const conImagenLocal = db.entries.filter(e =>
+    e.cover && isBase64Image(e.cover) && e.cover.length <= 666666
+  );
+
+  // Contar portadas pendientes (marcador de otro dispositivo)
+  const pendientes = db.entries.filter(e => e.cover === '__local_image__');
+
+  if (conImagenLocal.length === 0 && pendientes.length === 0) {
+    showToast('No hay portadas pendientes de sincronizar', 3000);
+    return;
+  }
+
+  setSyncStatus('syncing');
+  showToast(`⏳ Sincronizando ${conImagenLocal.length} portada${conImagenLocal.length!==1?'s':''}...`, 3000);
+
+  try {
+    await getValidToken();
+    // Subir todo — las imágenes locales pequeñas van en Firestore ahora
+    await syncToFirestore();
+    setSyncStatus('ok');
+    const msg = conImagenLocal.length > 0
+      ? `✓ ${conImagenLocal.length} portada${conImagenLocal.length!==1?'s':''} sincronizada${conImagenLocal.length!==1?'s':''}`
+      : pendientes.length > 0
+        ? `ℹ ${pendientes.length} portada${pendientes.length!==1?'s':''} pendiente${pendientes.length!==1?'s':''} — súbelas desde el dispositivo donde están`
+        : '✓ Portadas sincronizadas';
+    showToast(msg, 3500);
+    renderHome();
+  } catch(e) {
+    setSyncStatus('offline');
+    showToast('⚠ Error al sincronizar', 3000);
+  }
 }
 
 async function manualSaveToCloud() {
