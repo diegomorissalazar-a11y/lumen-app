@@ -1273,7 +1273,7 @@ select.input { cursor: pointer; }
     Cerrar sesión
   </button>
   <div style="padding:8px 16px 10px;border-top:1px solid var(--border);font-size:10px;color:var(--ink4);letter-spacing:1px;text-align:right;">
-    LUMEN v79
+    LUMEN v80
   </div>
 </div>
 
@@ -7268,9 +7268,12 @@ function buildD3Graph(containerId, nodes, links, colorFn, tooltipEdgeFn) {
 // ══════════════════════════
 function renderMapaInfluencias() {
   const data=mapas.influencias;
-  document.getElementById('inf-count').textContent=`${data.length} relación${data.length!==1?'es':''}`;
-  document.getElementById('inf-empty').style.display=data.length===0?'flex':'none';
-  document.getElementById('inf-legend').style.display=data.length===0?'none':'flex';
+  const elCount  = document.getElementById('inf-count');
+  const elEmpty  = document.getElementById('inf-empty');
+  const elLegend = document.getElementById('inf-legend');
+  if (elCount)  elCount.textContent=`${data.length} relación${data.length!==1?'es':''}`;
+  if (elEmpty)  elEmpty.style.display=data.length===0?'flex':'none';
+  if (elLegend) elLegend.style.display=data.length===0?'none':'flex';
   if (data.length===0) { d3.select('#mapa-influencias-svg').selectAll('svg').remove(); return; }
 
   const libTitles =new Set(db.entries.map(e=>e.titulo));
@@ -7296,9 +7299,12 @@ function renderMapaInfluencias() {
 // ══════════════════════════
 function renderMapaRutas() {
   const data=mapas.rutas;
-  document.getElementById('ruta-count').textContent=`${data.length} conexión${data.length!==1?'es':''}`;
-  document.getElementById('ruta-empty').style.display=data.length===0?'flex':'none';
-  document.getElementById('ruta-legend').style.display=data.length===0?'none':'flex';
+  const elCount  = document.getElementById('ruta-count');
+  const elEmpty  = document.getElementById('ruta-empty');
+  const elLegend = document.getElementById('ruta-legend');
+  if (elCount)  elCount.textContent=`${data.length} conexión${data.length!==1?'es':''}`;
+  if (elEmpty)  elEmpty.style.display=data.length===0?'flex':'none';
+  if (elLegend) elLegend.style.display=data.length===0?'none':'flex';
   if (data.length===0) { d3.select('#mapa-rutas-svg').selectAll('svg').remove(); return; }
 
   const libTitles=new Set(db.entries.map(e=>e.titulo));
