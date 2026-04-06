@@ -1273,7 +1273,7 @@ select.input { cursor: pointer; }
     Cerrar sesión
   </button>
   <div style="padding:8px 16px 10px;border-top:1px solid var(--border);font-size:10px;color:var(--ink4);letter-spacing:1px;text-align:right;">
-    LUMEN v80
+    LUMEN v81
   </div>
 </div>
 
@@ -2327,6 +2327,19 @@ function isBase64Image(s) {
   return typeof s === 'string' && s.startsWith('data:image');
 }
 
+// ── Array merge helpers ──────────────────────────────────────
+// Merge genérico de arrays por id — toma el más reciente por createdAt
+function mergeArrayById(local, remote) {
+  const map = {};
+  [...local, ...remote].forEach(item => {
+    const existing = map[item.id];
+    if (!existing || (item.createdAt||0) >= (existing.createdAt||0)) {
+      map[item.id] = item;
+    }
+  });
+  return Object.values(map);
+}
+
 // ── readDates helpers ─────────────────────────────────────
 // Normaliza un readDates de cualquier formato a [{date, pag}]
 // Soporta: string[] (legado), {date,pag}[] (nuevo)
@@ -2524,7 +2537,12 @@ function saveDB() {
     _saveDebounceTimer = setTimeout(() => {
       setSyncStatus('syncing');
       const entriesClean = db.entries.map(e => cleanForFirestore(entryForFirestore(e)));
-      const payload = { entries: entriesClean, updatedAt: Date.now() };
+      const payload = {
+        entries: entriesClean,
+        mapas: cleanForFirestore(loadMapas()),
+        desafios: cleanForFirestore(loadDesafios()),
+        updatedAt: Date.now()
+      };
       firestore.collection('users').doc(currentUser.uid).collection('data').doc('library').set(payload)
         .then(() => { setSyncStatus('ok'); setLastSync(); })
         .catch(e => {
@@ -2547,7 +2565,12 @@ async function syncToFirestore() {
     await auth.currentUser.getIdToken(false);
     // Preparar entries: excluir base64, limpiar valores inválidos
     const entriesClean = db.entries.map(e => cleanForFirestore(entryForFirestore(e)));
-    const payload = { entries: entriesClean, updatedAt: Date.now() };
+    const payload = {
+      entries: entriesClean,
+      mapas: cleanForFirestore(loadMapas()),
+      desafios: cleanForFirestore(loadDesafios()),
+      updatedAt: Date.now()
+    };
     await firestore.collection('users').doc(currentUser.uid).collection('data').doc('library').set(payload);
     setSyncStatus('ok');
     setLastSync();
@@ -2585,6 +2608,28 @@ async function pullAndMerge(uid, silent) {
       restoreLocalImages(merged);
       db.entries = merged;
       localStorage.setItem(DB_KEY, JSON.stringify(db));
+
+      // Restaurar mapas y desafíos desde Firestore
+      if (remote.mapas) {
+        const localMapas = loadMapas();
+        const mergedMapas = {
+          influencias: mergeArrayById(localMapas.influencias||[], remote.mapas.influencias||[]),
+          rutas:       mergeArrayById(localMapas.rutas||[],       remote.mapas.rutas||[])
+        };
+        localStorage.setItem(MAPAS_KEY, JSON.stringify(mergedMapas));
+        mapas = mergedMapas;
+      }
+      if (remote.desafios) {
+        // Desafíos: merge por año — conservar el más reciente
+        const localDes = loadDesafios();
+        const mergedDes = { ...localDes };
+        Object.entries(remote.desafios).forEach(([yr, val]) => {
+          if (!mergedDes[yr] || (val.createdAt||0) > (mergedDes[yr].createdAt||0)) {
+            mergedDes[yr] = val;
+          }
+        });
+        localStorage.setItem(DESAFIO_KEY, JSON.stringify(mergedDes));
+      }
 
       // Si había una diferencia grande y no es silencioso, avisar DESPUÉS de tener los datos
       if (!silent && remoteCount > localCount + 5) {
@@ -2640,6 +2685,28 @@ function subscribeToFirestore(uid) {
     restoreLocalImages(merged);  // recuperar imágenes base64 locales
     db.entries = merged;
     localStorage.setItem(DB_KEY, JSON.stringify(db));
+
+    // Sincronizar mapas y desafíos desde snapshot en tiempo real
+    if (remote.mapas) {
+      const localMapas = loadMapas();
+      const mergedMapas = {
+        influencias: mergeArrayById(localMapas.influencias||[], remote.mapas.influencias||[]),
+        rutas:       mergeArrayById(localMapas.rutas||[],       remote.mapas.rutas||[])
+      };
+      localStorage.setItem(MAPAS_KEY, JSON.stringify(mergedMapas));
+      mapas = mergedMapas;
+    }
+    if (remote.desafios) {
+      const localDes = loadDesafios();
+      const mergedDes = { ...localDes };
+      Object.entries(remote.desafios).forEach(([yr, val]) => {
+        if (!mergedDes[yr] || (val.createdAt||0) > (mergedDes[yr].createdAt||0)) {
+          mergedDes[yr] = val;
+        }
+      });
+      localStorage.setItem(DESAFIO_KEY, JSON.stringify(mergedDes));
+    }
+
     setSyncStatus('ok');
     setLastSync();
     refreshCurrentScreen();
@@ -3208,7 +3275,13 @@ function loadDesafios() {
   try { const r=localStorage.getItem(DESAFIO_KEY); return r?JSON.parse(r):{}; }
   catch { return {}; }
 }
-function saveDesafios(d) { localStorage.setItem(DESAFIO_KEY, JSON.stringify(d)); }
+function saveDesafios(d) {
+  localStorage.setItem(DESAFIO_KEY, JSON.stringify(d));
+  if (currentUser) {
+    clearTimeout(_saveDebounceTimer);
+    _saveDebounceTimer = setTimeout(() => syncToFirestore(), 800);
+  }
+}
 
 function librosLeidosEnAnio(yr) {
   return db.entries.filter(e => e.type==='libro' && e.estado==='leido' && parseInt(e.anio)===yr).length;
@@ -6441,6 +6514,27 @@ async function manualLoadFromCloud() {
       // Restaurar imágenes locales que el remoto tiene como placeholder
       restoreLocalImages(merged);
 
+      // Restaurar mapas y desafíos desde remoto
+      if (remote.mapas) {
+        const localMapas = loadMapas();
+        const mergedMapas = {
+          influencias: mergeArrayById(localMapas.influencias||[], remote.mapas.influencias||[]),
+          rutas:       mergeArrayById(localMapas.rutas||[],       remote.mapas.rutas||[])
+        };
+        localStorage.setItem(MAPAS_KEY, JSON.stringify(mergedMapas));
+        mapas = mergedMapas;
+      }
+      if (remote.desafios) {
+        const localDes = loadDesafios();
+        const mergedDes = { ...localDes };
+        Object.entries(remote.desafios).forEach(([yr, val]) => {
+          if (!mergedDes[yr] || (val.createdAt||0) > (mergedDes[yr].createdAt||0)) {
+            mergedDes[yr] = val;
+          }
+        });
+        localStorage.setItem(DESAFIO_KEY, JSON.stringify(mergedDes));
+      }
+
       const now = Date.now();
       merged.forEach(e => { if (!e._updatedAt) e._updatedAt = now; });
       db.entries = merged;
@@ -6894,7 +6988,14 @@ function loadMapas() {
   try { const r=localStorage.getItem(MAPAS_KEY); return r?JSON.parse(r):{influencias:[],rutas:[]}; }
   catch { return {influencias:[],rutas:[]}; }
 }
-function saveMapas() { localStorage.setItem(MAPAS_KEY, JSON.stringify(mapas)); }
+function saveMapas() {
+  localStorage.setItem(MAPAS_KEY, JSON.stringify(mapas));
+  // Subir a Firestore con debounce
+  if (currentUser) {
+    clearTimeout(_saveDebounceTimer);
+    _saveDebounceTimer = setTimeout(() => syncToFirestore(), 800);
+  }
+}
 let mapas = loadMapas();
 let currentMapaTab = 'influencias';
 
