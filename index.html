@@ -1036,14 +1036,7 @@ select.input { cursor: pointer; }
       </div>
     </div>
     <!-- Legend -->
-    <div id="inf-legend" style="display:none;padding:8px 16px;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:8px;flex-shrink:0;">
-      <span style="font-size:10px;color:var(--ink4);font-weight:700;letter-spacing:1px;text-transform:uppercase;width:100%;">Tipo de relación:</span>
-      <span style="font-size:10px;">🟠 Cita directa</span>
-      <span style="font-size:10px;">🟡 Cita indirecta</span>
-      <span style="font-size:10px;">🔵 Uso de personaje</span>
-      <span style="font-size:10px;">🟢 Contexto histórico</span>
-      <span style="font-size:10px;">🟣 Continuación</span>
-    </div>
+    <div id="inf-lista" style="overflow-y:auto;max-height:200px;border-top:1px solid var(--border);flex-shrink:0;display:none;"></div>
   </div>
 
   <!-- TAB: RUTAS -->
@@ -1273,7 +1266,7 @@ select.input { cursor: pointer; }
     Cerrar sesión
   </button>
   <div style="padding:8px 16px 10px;border-top:1px solid var(--border);font-size:10px;color:var(--ink4);letter-spacing:1px;text-align:right;">
-    LUMEN v81
+    LUMEN v82
   </div>
 </div>
 
@@ -7367,14 +7360,45 @@ function buildD3Graph(containerId, nodes, links, colorFn, tooltipEdgeFn) {
 // ══════════════════════════
 //  RENDER INFLUENCIAS
 // ══════════════════════════
+const INF_TIPO_LABELS = {
+  cita_directa:      '🟠 Cita directa',
+  cita_indirecta:    '🟡 Cita indirecta',
+  uso_personaje:     '🔵 Uso de personaje',
+  contexto_historico:'🟢 Contexto histórico',
+  continuacion:      '🟣 Continuación',
+};
+
+function renderListaInfluencias() {
+  const el = document.getElementById('inf-lista'); if (!el) return;
+  const data = mapas.influencias;
+  if (data.length === 0) { el.style.display = 'none'; return; }
+  el.style.display = 'block';
+  el.innerHTML = data.map(r => `
+    <div style="display:flex;align-items:center;gap:8px;padding:9px 14px;border-bottom:1px solid var(--cream2);">
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:12px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+          <span style="color:var(--ink3);">${r.fuente}</span> → <span>${r.destino}</span>
+        </div>
+        <div style="font-size:10px;color:var(--ink4);margin-top:2px;">${INF_TIPO_LABELS[r.tipo]||r.tipo}${r.libro_ref?' · '+r.libro_ref:''}${r.pagina?' p.'+r.pagina:''}</div>
+      </div>
+      <button onclick="openModalInfluencia('${r.id}')"
+        style="flex-shrink:0;padding:5px 10px;border:1.5px solid var(--border);border-radius:4px;background:#fff;font-size:10px;font-weight:700;cursor:pointer;font-family:var(--font-sans);color:var(--ink3);">
+        ✏ Editar
+      </button>
+      <button onclick="deleteInfluencia('${r.id}')"
+        style="flex-shrink:0;padding:5px 10px;border:1.5px solid var(--border);border-radius:4px;background:#fff;font-size:10px;font-weight:700;cursor:pointer;font-family:var(--font-sans);color:var(--red);">
+        🗑
+      </button>
+    </div>`).join('');
+}
+
 function renderMapaInfluencias() {
   const data=mapas.influencias;
-  const elCount  = document.getElementById('inf-count');
-  const elEmpty  = document.getElementById('inf-empty');
-  const elLegend = document.getElementById('inf-legend');
-  if (elCount)  elCount.textContent=`${data.length} relación${data.length!==1?'es':''}`;
-  if (elEmpty)  elEmpty.style.display=data.length===0?'flex':'none';
-  if (elLegend) elLegend.style.display=data.length===0?'none':'flex';
+  const elCount = document.getElementById('inf-count');
+  const elEmpty = document.getElementById('inf-empty');
+  if (elCount) elCount.textContent=`${data.length} relación${data.length!==1?'es':''}`;
+  if (elEmpty) elEmpty.style.display=data.length===0?'flex':'none';
+  renderListaInfluencias();
   if (data.length===0) { d3.select('#mapa-influencias-svg').selectAll('svg').remove(); return; }
 
   const libTitles =new Set(db.entries.map(e=>e.titulo));
