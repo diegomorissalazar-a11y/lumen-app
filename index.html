@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1a1510">
-<title>LUMEN — Biblioteca Personal</title>
+<title>LUMEN v83 — Biblioteca Personal</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231a1510'/><text x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' font-family='Georgia,serif' font-size='14' font-weight='900' font-style='italic' fill='%23c8952a' letter-spacing='0.5'>L</text><rect x='6' y='23' width='20' height='2' rx='1' fill='%238b2020'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
@@ -1052,14 +1052,7 @@ select.input { cursor: pointer; }
         <div style="font-size:13px;font-style:italic;">Sin conexiones aún.<br>¿Qué te llevó a tu último libro?</div>
       </div>
     </div>
-    <div id="ruta-legend" style="display:none;padding:8px 16px;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:8px;flex-shrink:0;">
-      <span style="font-size:10px;color:var(--ink4);font-weight:700;letter-spacing:1px;text-transform:uppercase;width:100%;">Tipo de conexión:</span>
-      <span style="font-size:10px;">📖 Referencia en libro</span>
-      <span style="font-size:10px;">👤 Recomendación</span>
-      <span style="font-size:10px;">🔍 Curiosidad temática</span>
-      <span style="font-size:10px;">✍ Mismo autor</span>
-      <span style="font-size:10px;">💫 Contexto vital</span>
-    </div>
+    <div id="ruta-lista" style="overflow-y:auto;max-height:220px;border-top:1px solid var(--border);flex-shrink:0;display:none;"></div>
   </div>
 </div>
 
@@ -1266,7 +1259,7 @@ select.input { cursor: pointer; }
     Cerrar sesión
   </button>
   <div style="padding:8px 16px 10px;border-top:1px solid var(--border);font-size:10px;color:var(--ink4);letter-spacing:1px;text-align:right;">
-    LUMEN v82
+    LUMEN v83
   </div>
 </div>
 
@@ -7422,14 +7415,47 @@ function renderMapaInfluencias() {
 // ══════════════════════════
 //  RENDER RUTAS
 // ══════════════════════════
+const RUTA_TIPO_LABELS = {
+  mismo_autor:   '✍ Mismo autor',
+  referencia:    '📖 Referencia',
+  recomendacion: '👤 Recomendación',
+  curiosidad:    '🔍 Curiosidad',
+  contexto_vital:'💫 Contexto vital',
+  origen:        '⭐ Origen',
+};
+
+function renderListaRutas() {
+  const el = document.getElementById('ruta-lista'); if (!el) return;
+  const data = mapas.rutas;
+  if (data.length === 0) { el.style.display = 'none'; return; }
+  el.style.display = 'block';
+  el.innerHTML = data.map(r => `
+    <div style="display:flex;align-items:center;gap:8px;padding:9px 14px;border-bottom:1px solid var(--cream2);">
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:12px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+          ${r.fuente === '⭐ Origen' ? '⭐' : `<span style="color:var(--ink3);">${r.fuente}</span> →`}
+          <span> ${r.destino}</span>
+        </div>
+        <div style="font-size:10px;color:var(--ink4);margin-top:2px;">${RUTA_TIPO_LABELS[r.tipo]||r.tipo}${r.nota?' · '+r.nota:''}</div>
+      </div>
+      <button onclick="openModalRuta('${r.id}')"
+        style="flex-shrink:0;padding:5px 10px;border:1.5px solid var(--border);border-radius:4px;background:#fff;font-size:10px;font-weight:700;cursor:pointer;font-family:var(--font-sans);color:var(--ink3);">
+        ✏
+      </button>
+      <button onclick="deleteRuta('${r.id}')"
+        style="flex-shrink:0;padding:5px 10px;border:1.5px solid var(--border);border-radius:4px;background:#fff;font-size:10px;font-weight:700;cursor:pointer;font-family:var(--font-sans);color:var(--red);">
+        🗑
+      </button>
+    </div>`).join('');
+}
+
 function renderMapaRutas() {
   const data=mapas.rutas;
-  const elCount  = document.getElementById('ruta-count');
-  const elEmpty  = document.getElementById('ruta-empty');
-  const elLegend = document.getElementById('ruta-legend');
-  if (elCount)  elCount.textContent=`${data.length} conexión${data.length!==1?'es':''}`;
-  if (elEmpty)  elEmpty.style.display=data.length===0?'flex':'none';
-  if (elLegend) elLegend.style.display=data.length===0?'none':'flex';
+  const elCount = document.getElementById('ruta-count');
+  const elEmpty = document.getElementById('ruta-empty');
+  if (elCount) elCount.textContent=`${data.length} conexión${data.length!==1?'es':''}`;
+  if (elEmpty) elEmpty.style.display=data.length===0?'flex':'none';
+  renderListaRutas();
   if (data.length===0) { d3.select('#mapa-rutas-svg').selectAll('svg').remove(); return; }
 
   const libTitles=new Set(db.entries.map(e=>e.titulo));
