@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1a1510">
-<title>LUMEN v85 — Biblioteca Personal</title>
+<title>LUMEN v88 — Biblioteca Personal</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231a1510'/><text x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' font-family='Georgia,serif' font-size='14' font-weight='900' font-style='italic' fill='%23c8952a' letter-spacing='0.5'>L</text><rect x='6' y='23' width='20' height='2' rx='1' fill='%238b2020'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
@@ -1117,45 +1117,50 @@ select.input { cursor: pointer; }
     <div class="modal-body">
       <input type="hidden" id="ruta-edit-id">
 
-      <!-- PASO 1: tipo de conexión — determina el resto del formulario -->
+      <!-- Tipo de conexión -->
       <div class="field">
-        <label>Tipo de conexión</label>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:4px;">
+        <label>¿Qué te llevó al libro?</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:4px;">
           <button class="ruta-tipo-conexion active" data-tipo="mismo_autor"
             onclick="selectRutaTipoConexion('mismo_autor',this)"
-            style="padding:10px 8px;border:2px solid var(--gold);border-radius:4px;background:#fff8e8;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font-sans);color:var(--gold);text-align:left;">
-            ✍ Mismo autor
+            style="padding:10px 6px;border:2px solid var(--gold);border-radius:4px;background:#fff8e8;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font-sans);color:var(--gold);text-align:center;">
+            ✍<br>Mismo autor
           </button>
-          <button class="ruta-tipo-conexion" data-tipo="referencia"
-            onclick="selectRutaTipoConexion('referencia',this)"
-            style="padding:10px 8px;border:2px solid var(--border);border-radius:4px;background:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font-sans);color:var(--ink3);text-align:left;">
-            📖 Referencia en libro
+          <button class="ruta-tipo-conexion" data-tipo="libro"
+            onclick="selectRutaTipoConexion('libro',this)"
+            style="padding:10px 6px;border:2px solid var(--border);border-radius:4px;background:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font-sans);color:var(--ink3);text-align:center;">
+            📚<br>Libro
           </button>
-          <button class="ruta-tipo-conexion" data-tipo="recomendacion"
-            onclick="selectRutaTipoConexion('recomendacion',this)"
-            style="padding:10px 8px;border:2px solid var(--border);border-radius:4px;background:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font-sans);color:var(--ink3);text-align:left;">
-            👤 Recomendación
+          <button class="ruta-tipo-conexion" data-tipo="charla"
+            onclick="selectRutaTipoConexion('charla',this)"
+            style="padding:10px 6px;border:2px solid var(--border);border-radius:4px;background:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font-sans);color:var(--ink3);text-align:center;">
+            🎙<br>Charla
           </button>
-          <button class="ruta-tipo-conexion" data-tipo="curiosidad"
-            onclick="selectRutaTipoConexion('curiosidad',this)"
-            style="padding:10px 8px;border:2px solid var(--border);border-radius:4px;background:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font-sans);color:var(--ink3);text-align:left;">
-            🔍 Curiosidad temática
+          <button class="ruta-tipo-conexion" data-tipo="serie"
+            onclick="selectRutaTipoConexion('serie',this)"
+            style="padding:10px 6px;border:2px solid var(--border);border-radius:4px;background:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font-sans);color:var(--ink3);text-align:center;">
+            📺<br>Serie
           </button>
-          <button class="ruta-tipo-conexion" data-tipo="contexto_vital"
-            onclick="selectRutaTipoConexion('contexto_vital',this)"
-            style="padding:10px 8px;border:2px solid var(--border);border-radius:4px;background:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font-sans);color:var(--ink3);text-align:left;">
-            💫 Contexto vital
+          <button class="ruta-tipo-conexion" data-tipo="pelicula"
+            onclick="selectRutaTipoConexion('pelicula',this)"
+            style="padding:10px 6px;border:2px solid var(--border);border-radius:4px;background:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font-sans);color:var(--ink3);text-align:center;">
+            🎬<br>Película
           </button>
-          <button class="ruta-tipo-conexion" data-tipo="origen"
-            onclick="selectRutaTipoConexion('origen',this)"
-            style="padding:10px 8px;border:2px solid var(--border);border-radius:4px;background:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font-sans);color:var(--ink3);text-align:left;">
-            ⭐ Punto de origen
+          <button class="ruta-tipo-conexion" data-tipo="persona"
+            onclick="selectRutaTipoConexion('persona',this)"
+            style="padding:10px 6px;border:2px solid var(--border);border-radius:4px;background:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font-sans);color:var(--ink3);text-align:center;">
+            👤<br>Persona
+          </button>
+          <button class="ruta-tipo-conexion" data-tipo="cancion"
+            onclick="selectRutaTipoConexion('cancion',this)"
+            style="padding:10px 6px;border:2px solid var(--border);border-radius:4px;background:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font-sans);color:var(--ink3);text-align:center;">
+            🎵<br>Canción
           </button>
         </div>
         <input type="hidden" id="ruta-tipo" value="mismo_autor">
       </div>
 
-      <!-- PANEL: mismo autor — selector de autor + autocomplete libros -->
+      <!-- PANEL: mismo autor -->
       <div id="ruta-panel-mismo-autor">
         <div class="field">
           <label>Autor</label>
@@ -1176,41 +1181,35 @@ select.input { cursor: pointer; }
         </div>
       </div>
 
-      <!-- PANEL: otros tipos — fuente + destino libre -->
-      <div id="ruta-panel-libre" style="display:none;">
-        <!-- Origen de la recomendación (para recomendacion/referencia/curiosidad) -->
-        <div id="ruta-fuente-wrap" class="field">
-          <label id="ruta-fuente-label">Libro o fuente de origen</label>
-          <div style="display:flex;gap:6px;margin-bottom:8px;" id="ruta-fuente-tipo-btns">
-            <button class="ruta-tipo-btn active" data-tipo="libro"
-              onclick="selectRutaFuenteTipo('libro',this)"
-              style="padding:6px 12px;border:2px solid var(--gold);border-radius:4px;background:#fff8e8;font-size:10px;font-weight:700;cursor:pointer;font-family:var(--font-sans);color:var(--gold);">📚 Libro</button>
-            <button class="ruta-tipo-btn" data-tipo="evento"
-              onclick="selectRutaFuenteTipo('evento',this)"
-              style="padding:6px 12px;border:2px solid var(--border);border-radius:4px;background:#fff;font-size:10px;font-weight:700;cursor:pointer;font-family:var(--font-sans);color:var(--ink3);">🎙 Evento/persona</button>
-          </div>
-          <div id="ruta-fuente-libro-field">
-            <input class="input" type="text" id="ruta-fuente-libro" placeholder="Título del libro de origen..." list="ruta-fuente-list">
-            <datalist id="ruta-fuente-list"></datalist>
-          </div>
-          <div id="ruta-fuente-evento-field" style="display:none;">
-            <select class="input" id="ruta-evento-tipo" style="margin-bottom:8px;">
-              <option value="charla">🎙 Charla / podcast / entrevista</option>
-              <option value="recomendacion">🎁 Recomendación o regalo</option>
-              <option value="serie">📺 Serie o película</option>
-            </select>
-            <input class="input" type="text" id="ruta-evento-desc" placeholder="Describe brevemente...">
-          </div>
-        </div>
+      <!-- PANEL: fuente dinámica -->
+      <div id="ruta-panel-fuente" style="display:none;">
         <div class="field">
-          <label>Libro al que llegué</label>
-          <input class="input" type="text" id="ruta-destino" placeholder="Título del libro destino..." list="ruta-destino-list">
-          <datalist id="ruta-destino-list"></datalist>
+          <label id="ruta-fuente-label">Fuente</label>
+          <select class="input" id="ruta-fuente-sel" onchange="onRutaFuenteSelChange()" style="margin-bottom:8px;">
+            <option value="">— Selecciona o escribe abajo —</option>
+          </select>
+          <input class="input" type="text" id="ruta-fuente-libre"
+            placeholder="No está en la lista, escribe aquí..."
+            style="display:none;"
+            oninput="onRutaFuenteLibreInput()">
+          <div id="ruta-fuente-libre-hint" style="display:none;font-size:11px;color:var(--gold);margin-top:4px;">
+            ✓ Se guardará como nodo reutilizable
+          </div>
         </div>
-        <!-- Origen puro — sin fuente -->
-        <div id="ruta-origen-info" style="display:none;background:var(--cream2);border-radius:6px;padding:10px 12px;margin-bottom:12px;font-size:12px;color:var(--ink3);">
-          Marca el libro de inicio de una cadena de lecturas. Solo necesitas el título destino.
+        <!-- Campo extra para canción -->
+        <div id="ruta-cancion-field" style="display:none;" class="field">
+          <label>Canción (opcional)</label>
+          <input class="input" type="text" id="ruta-cancion-titulo"
+            placeholder="Nombre de la canción...">
         </div>
+      </div>
+
+      <!-- Libro destino -->
+      <div class="field" id="ruta-destino-field" style="display:none;">
+        <label>Libro al que llegué</label>
+        <select class="input" id="ruta-destino-sel">
+          <option value="">— Selecciona el libro —</option>
+        </select>
       </div>
 
       <div class="field">
@@ -6998,7 +6997,7 @@ function switchMapaTab(tab) {
 
 // ── Colors ──
 const INF_COLORS = { cita_directa:'#e67e22', cita_indirecta:'#f1c40f', uso_personaje:'#2980b9', contexto_historico:'#27ae60', continuacion:'#8e44ad' };
-const RUTA_COLORS = { referencia:'#c8952a', recomendacion:'#2980b9', curiosidad:'#27ae60', mismo_autor:'#8e44ad', contexto_vital:'#e74c3c' };
+const RUTA_COLORS = { mismo_autor:'#8e44ad', libro:'#c8952a', charla:'#2980b9', serie:'#e74c3c', pelicula:'#e67e22', persona:'#27ae60', cancion:'#1a6e3c' };
 const INF_LABELS  = { cita_directa:'Cita directa', cita_indirecta:'Cita indirecta', uso_personaje:'Uso de personaje', contexto_historico:'Contexto histórico', continuacion:'Continuación' };
 const RUTA_LABELS = { referencia:'Referencia', recomendacion:'Recomendación', curiosidad:'Curiosidad temática', mismo_autor:'Mismo autor', contexto_vital:'Contexto vital' };
 
@@ -7073,66 +7072,163 @@ function deleteInfluencia(id) {
 // ══════════════════════════
 //  RUTAS — CRUD
 // ══════════════════════════
-let rutaFuenteTipo='libro';
+// ── localStorage key para nodos custom (charlas, personas, etc.) ──
+const RUTA_CUSTOM_KEY = 'lumen_ruta_custom_v1';
 
-function selectRutaFuenteTipo(tipo, btn) {
-  rutaFuenteTipo=tipo;
-  document.querySelectorAll('.ruta-tipo-btn').forEach(b=>{
-    b.style.borderColor='var(--border)'; b.style.background='#fff'; b.style.color='var(--ink3)';
-  });
-  if(btn){ btn.style.borderColor='var(--gold)'; btn.style.background='#fff8e8'; btn.style.color='var(--gold)'; }
-  document.getElementById('ruta-fuente-libro-field').style.display =tipo==='libro'?'block':'none';
-  document.getElementById('ruta-fuente-evento-field').style.display=tipo==='evento'?'block':'none';
-  document.getElementById('ruta-fuente-origen-field').style.display=tipo==='origen'?'block':'none';
+function loadRutaCustomNodes() {
+  try { return JSON.parse(localStorage.getItem(RUTA_CUSTOM_KEY) || '{}'); }
+  catch { return {}; }
+}
+function saveRutaCustomNode(tipo, titulo) {
+  if (!titulo) return;
+  const map = loadRutaCustomNodes();
+  if (!map[tipo]) map[tipo] = [];
+  if (!map[tipo].includes(titulo)) {
+    map[tipo].push(titulo);
+    localStorage.setItem(RUTA_CUSTOM_KEY, JSON.stringify(map));
+  }
+}
+function getRutaCustomNodes(tipo) {
+  return loadRutaCustomNodes()[tipo] || [];
 }
 
-// ── Helpers autores con múltiples libros ──────────────────
-function getAutoresConLibros() {
-  const map = {};
-  db.entries.filter(e => e.type === 'libro' && e.autor && e.autor.trim()).forEach(e => {
-    const a = e.autor.trim();
-    if (!map[a]) map[a] = [];
-    map[a].push(e);
+// También recolectar nodos de rutas ya guardadas
+function getRutaNodesFromHistory(tipo) {
+  const nodes = new Set();
+  mapas.rutas.forEach(r => {
+    if (r.tipo === tipo && r.fuente && r.fuente !== '⭐ Origen') nodes.add(r.fuente);
   });
-  // Retornar solo autores con 2+ libros, ordenados por cantidad desc
-  return Object.entries(map)
-    .sort((a,b) => b[1].length - a[1].length || a[0].localeCompare(b[0]));
+  getRutaCustomNodes(tipo).forEach(n => nodes.add(n));
+  return [...nodes].sort();
 }
 
+// Selecciona el tipo de conexión y actualiza paneles
 function selectRutaTipoConexion(tipo, btn) {
   document.getElementById('ruta-tipo').value = tipo;
-  // Estilos botones
+
   document.querySelectorAll('.ruta-tipo-conexion').forEach(b => {
     b.style.borderColor = 'var(--border)';
-    b.style.background = '#fff';
-    b.style.color = 'var(--ink3)';
+    b.style.background  = '#fff';
+    b.style.color       = 'var(--ink3)';
     b.classList.remove('active');
   });
   if (btn) {
     btn.style.borderColor = 'var(--gold)';
-    btn.style.background = '#fff8e8';
-    btn.style.color = 'var(--gold)';
+    btn.style.background  = '#fff8e8';
+    btn.style.color       = 'var(--gold)';
     btn.classList.add('active');
   }
-  // Mostrar panel correcto
+
   const esMismoAutor = tipo === 'mismo_autor';
-  const esOrigen = tipo === 'origen';
   document.getElementById('ruta-panel-mismo-autor').style.display = esMismoAutor ? 'block' : 'none';
-  document.getElementById('ruta-panel-libre').style.display = esMismoAutor ? 'none' : 'block';
-  // Dentro del panel libre: mostrar/ocultar fuente según tipo
-  const fuenteWrap = document.getElementById('ruta-fuente-wrap');
-  const origenInfo = document.getElementById('ruta-origen-info');
-  if (fuenteWrap) fuenteWrap.style.display = esOrigen ? 'none' : 'block';
-  if (origenInfo) origenInfo.style.display = esOrigen ? 'block' : 'none';
-  // Label dinámico
+  document.getElementById('ruta-panel-fuente').style.display      = esMismoAutor ? 'none'  : 'block';
+  document.getElementById('ruta-destino-field').style.display     = esMismoAutor ? 'none'  : 'block';
+
+  if (!esMismoAutor) {
+    rellenarRutaFuentePanel(tipo);
+    rellenarRutaDestinoLibros();
+  }
+}
+
+// Rellena el selector de fuente según el tipo
+function rellenarRutaFuentePanel(tipo) {
   const labels = {
-    referencia: 'Libro donde encontré la referencia',
-    recomendacion: 'Quién o qué me lo recomendó',
-    curiosidad: 'Qué despertó la curiosidad',
-    contexto_vital: 'Contexto o experiencia de origen',
+    libro:   '📚 Libro que me llevó aquí',
+    charla:  '🎙 Charla o conferencia',
+    serie:   '📺 Serie que me llevó aquí',
+    pelicula:'🎬 Película que me llevó aquí',
+    persona: '👤 Persona que me lo recomendó',
+    cancion: '🎵 Intérprete',
   };
   const lbl = document.getElementById('ruta-fuente-label');
-  if (lbl && labels[tipo]) lbl.textContent = labels[tipo];
+  if (lbl) lbl.textContent = labels[tipo] || 'Fuente';
+
+  const sel = document.getElementById('ruta-fuente-sel');
+  const libre = document.getElementById('ruta-fuente-libre');
+  const hint  = document.getElementById('ruta-fuente-libre-hint');
+
+  // Limpiar
+  sel.innerHTML = '<option value="">— Selecciona o escribe abajo —</option>';
+  libre.style.display = 'none';
+  libre.value = '';
+  hint.style.display = 'none';
+
+  let opciones = [];
+
+  if (tipo === 'libro') {
+    opciones = db.entries
+      .filter(e => e.type === 'libro' && (e.estado === 'leido' || e.estado === 'leyendo'))
+      .sort((a,b) => (b.anio||0)-(a.anio||0))
+      .map(e => e.titulo);
+  } else if (tipo === 'serie') {
+    const delDB = db.entries
+      .filter(e => e.type === 'serie' && (e.estado === 'vista' || e.estado === 'viendo'))
+      .sort((a,b) => (b.anio||0)-(a.anio||0))
+      .map(e => e.titulo);
+    const custom = getRutaNodesFromHistory('serie');
+    opciones = [...new Set([...delDB, ...custom])];
+  } else if (tipo === 'pelicula') {
+    const delDB = db.entries
+      .filter(e => e.type === 'pelicula')
+      .sort((a,b) => (b.anio||0)-(a.anio||0))
+      .map(e => e.titulo);
+    const custom = getRutaNodesFromHistory('pelicula');
+    opciones = [...new Set([...delDB, ...custom])];
+  } else if (tipo === 'charla' || tipo === 'persona' || tipo === 'cancion') {
+    opciones = getRutaNodesFromHistory(tipo);
+  }
+
+  opciones.forEach(t => {
+    const opt = document.createElement('option');
+    opt.value = t; opt.textContent = t;
+    sel.appendChild(opt);
+  });
+
+  // Siempre mostrar la opción "otro"
+  const optOtro = document.createElement('option');
+  optOtro.value = '__otro__'; optOtro.textContent = '✏ Escribir uno nuevo...';
+  sel.appendChild(optOtro);
+
+  // Mostrar campo canción solo para tipo cancion
+  const cancionField = document.getElementById('ruta-cancion-field');
+  if (cancionField) {
+    cancionField.style.display = tipo === 'cancion' ? 'block' : 'none';
+    const cancionInput = document.getElementById('ruta-cancion-titulo');
+    if (cancionInput) cancionInput.value = '';
+  }
+}
+
+function onRutaFuenteSelChange() {
+  const sel   = document.getElementById('ruta-fuente-sel');
+  const libre = document.getElementById('ruta-fuente-libre');
+  const hint  = document.getElementById('ruta-fuente-libre-hint');
+  if (sel.value === '__otro__') {
+    libre.style.display = 'block';
+    hint.style.display  = 'block';
+    libre.focus();
+  } else {
+    libre.style.display = 'none';
+    hint.style.display  = 'none';
+    libre.value = '';
+  }
+}
+
+function onRutaFuenteLibreInput() {
+  // nada — solo feedback visual via hint
+}
+
+// Rellena el selector de libro destino (solo libros leídos/leyendo)
+function rellenarRutaDestinoLibros() {
+  const sel = document.getElementById('ruta-destino-sel');
+  sel.innerHTML = '<option value="">— Selecciona el libro —</option>';
+  db.entries
+    .filter(e => e.type === 'libro' && (e.estado === 'leido' || e.estado === 'leyendo'))
+    .sort((a,b) => (b.anio||0)-(a.anio||0))
+    .forEach(e => {
+      const opt = document.createElement('option');
+      opt.value = e.titulo; opt.textContent = e.titulo;
+      sel.appendChild(opt);
+    });
 }
 
 function onRutaAutorChange() {
@@ -7140,14 +7236,13 @@ function onRutaAutorChange() {
   const wrap = document.getElementById('ruta-autor-libros');
   const list = document.getElementById('ruta-autor-libros-list');
   const fuenteSel = document.getElementById('ruta-mismo-fuente');
-  const destSel = document.getElementById('ruta-mismo-destino');
+  const destSel   = document.getElementById('ruta-mismo-destino');
   if (!autor) { wrap.style.display = 'none'; return; }
 
-  const libros = db.entries.filter(e =>
-    e.type === 'libro' && (e.autor||'').trim() === autor
-  ).sort((a,b) => (a.anio||0) - (b.anio||0));
+  const libros = db.entries
+    .filter(e => e.type === 'libro' && (e.autor||'').trim() === autor)
+    .sort((a,b) => (a.anio||0)-(b.anio||0));
 
-  // Lista visual de libros del autor
   list.innerHTML = libros.map(e => `
     <div style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--cream2);border-radius:4px;">
       <span style="font-size:11px;color:var(--ink4);min-width:36px;">${e.anio||'—'}</span>
@@ -7155,30 +7250,30 @@ function onRutaAutorChange() {
       <span style="font-size:10px;color:var(--ink4);margin-left:auto;">${e.estado==='leido'?'✓ Leído':e.estado==='leyendo'?'Leyendo':'—'}</span>
     </div>`).join('');
 
-  // Selectores fuente → destino
   const opts = libros.map(e => `<option value="${e.titulo.replace(/"/g,'&quot;')}">${e.titulo}</option>`).join('');
   fuenteSel.innerHTML = opts;
-  destSel.innerHTML = opts;
-  // Preseleccionar: fuente = primero (más antiguo), destino = último
+  destSel.innerHTML   = opts;
   if (libros.length >= 2) {
     fuenteSel.value = libros[0].titulo;
-    destSel.value = libros[libros.length-1].titulo;
+    destSel.value   = libros[libros.length-1].titulo;
   }
   wrap.style.display = 'block';
 }
 
-function openModalRuta(editId) {
-  // Llenar datalists con títulos + autores
-  const titulos = getTitulosLibros();
-  const autores = [...new Set(db.entries.filter(e=>e.autor).map(e=>e.autor.trim()))].sort();
-  const combined = [...new Set([...titulos, ...autores])].sort();
-  fillDatalist('ruta-fuente-list', combined);
-  fillDatalist('ruta-destino-list', titulos);
+// Helpers autores con múltiples libros
+function getAutoresConLibros() {
+  const map = {};
+  db.entries.filter(e => e.type === 'libro' && e.autor && e.autor.trim()).forEach(e => {
+    const a = e.autor.trim();
+    if (!map[a]) map[a] = [];
+    map[a].push(e);
+  });
+  return Object.entries(map).sort((a,b) => b[1].length - a[1].length || a[0].localeCompare(b[0]));
+}
 
-  // Llenar selector de autores con múltiples libros
+function openModalRuta(editId) {
+  // Poblar selector de autores
   const autorSel = document.getElementById('ruta-autor-sel');
-  const autoresConLibros = getAutoresConLibros();
-  // Todos los autores con al menos 1 libro (para flexibilidad)
   const todosAutores = [...new Set(db.entries.filter(e=>e.type==='libro'&&e.autor).map(e=>e.autor.trim()))].sort();
   autorSel.innerHTML = '<option value="">— Selecciona un autor —</option>' +
     todosAutores.map(a => {
@@ -7194,11 +7289,10 @@ function openModalRuta(editId) {
     const ruta = mapas.rutas.find(x => x.id === editId);
     if (ruta) {
       document.getElementById('ruta-nota').value = ruta.nota||'';
-      // Seleccionar tipo
-      const btn = document.querySelector(`.ruta-tipo-conexion[data-tipo="${ruta.tipo||'referencia'}"]`);
-      selectRutaTipoConexion(ruta.tipo||'referencia', btn);
+      const btn = document.querySelector(`.ruta-tipo-conexion[data-tipo="${ruta.tipo||'libro'}"]`);
+      selectRutaTipoConexion(ruta.tipo||'libro', btn);
+
       if (ruta.tipo === 'mismo_autor') {
-        // Intentar detectar autor desde fuente
         const libroFuente = db.entries.find(e => e.titulo === ruta.fuente);
         if (libroFuente && libroFuente.autor) {
           autorSel.value = libroFuente.autor.trim();
@@ -7209,66 +7303,87 @@ function openModalRuta(editId) {
           }, 50);
         }
       } else {
-        document.getElementById('ruta-destino').value = ruta.destino||'';
-        if (ruta.fuente_tipo === 'evento') {
-          selectRutaFuenteTipo('evento', document.querySelector('.ruta-tipo-btn[data-tipo="evento"]'));
-          document.getElementById('ruta-evento-tipo').value = ruta.evento_tipo||'charla';
-          document.getElementById('ruta-evento-desc').value = ruta.fuente||'';
-        } else {
-          document.getElementById('ruta-fuente-libro').value = ruta.fuente||'';
+        // Preseleccionar fuente
+        const sel = document.getElementById('ruta-fuente-sel');
+        if ([...sel.options].some(o => o.value === ruta.fuente)) {
+          sel.value = ruta.fuente;
+        } else if (ruta.fuente) {
+          // No está en lista — mostrar en campo libre
+          sel.value = '__otro__';
+          const libre = document.getElementById('ruta-fuente-libre');
+          libre.style.display = 'block';
+          libre.value = ruta.fuente;
+          document.getElementById('ruta-fuente-libre-hint').style.display = 'block';
+        }
+        // Preseleccionar destino
+        const destSel = document.getElementById('ruta-destino-sel');
+        if ([...destSel.options].some(o => o.value === ruta.destino)) {
+          destSel.value = ruta.destino;
+        }
+        // Si era canción, recuperar canción de la nota (primer segmento antes de ' · ')
+        if (ruta.tipo === 'cancion' && ruta.nota) {
+          const partes = ruta.nota.split(' · ');
+          const cancionInput = document.getElementById('ruta-cancion-titulo');
+          if (cancionInput) cancionInput.value = partes[0] || '';
+          // Quitar la canción de la nota del textarea
+          document.getElementById('ruta-nota').value = partes.slice(1).join(' · ');
         }
       }
     }
   } else {
-    // Nuevo — tipo por defecto: mismo_autor si hay autores con 2+ libros, sino referencia
-    const hayMultiples = autoresConLibros.length > 0;
-    const tipoDefault = hayMultiples ? 'mismo_autor' : 'referencia';
+    const hayMultiples = getAutoresConLibros().length > 0;
+    const tipoDefault  = hayMultiples ? 'mismo_autor' : 'libro';
     const btn = document.querySelector(`.ruta-tipo-conexion[data-tipo="${tipoDefault}"]`);
     selectRutaTipoConexion(tipoDefault, btn);
-    ['ruta-fuente-libro','ruta-evento-desc','ruta-destino'].forEach(id => {
-      const el = document.getElementById(id); if(el) el.value='';
-    });
   }
-  rutaFuenteTipo = 'libro';
+
   openModal('modal-ruta');
 }
 
 function saveRuta() {
-  const tipo = document.getElementById('ruta-tipo').value;
+  const tipo   = document.getElementById('ruta-tipo').value;
   const editId = document.getElementById('ruta-edit-id').value;
-  let fuente = '', destino = '', evento_tipo = '', fuente_tipo = 'libro';
+  let fuente = '', destino = '', fuente_tipo = tipo;
 
   if (tipo === 'mismo_autor') {
     fuente  = document.getElementById('ruta-mismo-fuente')?.value.trim() || '';
     destino = document.getElementById('ruta-mismo-destino')?.value.trim() || '';
     if (!fuente || !destino) { showToast('Selecciona los dos libros'); return; }
-    if (fuente === destino) { showToast('Los dos libros deben ser distintos'); return; }
-    fuente_tipo = 'libro';
-  } else if (tipo === 'origen') {
-    destino = document.getElementById('ruta-destino').value.trim();
-    if (!destino) { showToast('Indica el libro de inicio'); return; }
-    fuente = '⭐ Origen';
-    fuente_tipo = 'origen';
+    if (fuente === destino)  { showToast('Los dos libros deben ser distintos'); return; }
   } else {
-    destino = document.getElementById('ruta-destino').value.trim();
-    if (!destino) { showToast('Indica el libro al que llegaste'); return; }
-    if (rutaFuenteTipo === 'evento') {
-      fuente      = document.getElementById('ruta-evento-desc').value.trim();
-      evento_tipo = document.getElementById('ruta-evento-tipo').value;
-      if (!fuente) { showToast('Describe el evento o fuente'); return; }
-      fuente_tipo = 'evento';
+    // Fuente: tomar del select o del campo libre
+    const sel   = document.getElementById('ruta-fuente-sel');
+    const libre = document.getElementById('ruta-fuente-libre');
+    if (sel.value === '__otro__' || sel.value === '') {
+      fuente = libre.value.trim();
     } else {
-      fuente = document.getElementById('ruta-fuente-libro').value.trim();
-      fuente_tipo = 'libro';
-      // fuente puede estar vacía para curiosidad/contexto_vital
+      fuente = sel.value.trim();
+    }
+    // Guardar nodo custom si fue texto libre
+    if (sel.value === '__otro__' && fuente && (tipo === 'charla' || tipo === 'persona' || tipo === 'serie' || tipo === 'pelicula' || tipo === 'cancion')) {
+      saveRutaCustomNode(tipo, fuente);
+    }
+
+    destino = document.getElementById('ruta-destino-sel').value.trim();
+    if (!destino) { showToast('Selecciona el libro al que llegaste'); return; }
+    if (!fuente)  { showToast('Indica la fuente de la conexión'); return; }
+  }
+
+  // Para canción: agregar el título de la canción a la nota
+  let notaFinal = document.getElementById('ruta-nota').value.trim();
+  if (tipo === 'cancion') {
+    const cancionTitulo = document.getElementById('ruta-cancion-titulo')?.value.trim();
+    if (cancionTitulo) {
+      notaFinal = cancionTitulo + (notaFinal ? ' · ' + notaFinal : '');
     }
   }
 
   const obj = {
-    id:          editId || 'ruta_' + Date.now(),
-    fuente_tipo, fuente, evento_tipo, destino, tipo,
-    nota:        document.getElementById('ruta-nota').value.trim(),
-    createdAt:   editId ? (mapas.rutas.find(x=>x.id===editId)?.createdAt||Date.now()) : Date.now()
+    id:        editId || 'ruta_' + Date.now(),
+    tipo, fuente_tipo,
+    fuente, destino,
+    nota:      notaFinal,
+    createdAt: editId ? (mapas.rutas.find(x=>x.id===editId)?.createdAt||Date.now()) : Date.now()
   };
   if (editId) { const i = mapas.rutas.findIndex(x=>x.id===editId); if(i>=0) mapas.rutas[i]=obj; }
   else mapas.rutas.push(obj);
@@ -7414,12 +7529,13 @@ function renderMapaInfluencias() {
 //  RENDER RUTAS
 // ══════════════════════════
 const RUTA_TIPO_LABELS = {
-  mismo_autor:   '✍ Mismo autor',
-  referencia:    '📖 Referencia',
-  recomendacion: '👤 Recomendación',
-  curiosidad:    '🔍 Curiosidad',
-  contexto_vital:'💫 Contexto vital',
-  origen:        '⭐ Origen',
+  mismo_autor: '✍ Mismo autor',
+  libro:       '📚 Libro',
+  charla:      '🎙 Charla',
+  serie:       '📺 Serie',
+  pelicula:    '🎬 Película',
+  persona:     '👤 Persona',
+  cancion:     '🎵 Canción',
 };
 
 function renderListaRutas() {
