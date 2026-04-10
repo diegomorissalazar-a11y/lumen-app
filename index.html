@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1a1510">
-<title>LUMEN v88 — Biblioteca Personal</title>
+<title>LUMEN v89 — Biblioteca Personal</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231a1510'/><text x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' font-family='Georgia,serif' font-size='14' font-weight='900' font-style='italic' fill='%23c8952a' letter-spacing='0.5'>L</text><rect x='6' y='23' width='20' height='2' rx='1' fill='%238b2020'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
@@ -1134,7 +1134,7 @@ select.input { cursor: pointer; }
           <button class="ruta-tipo-conexion" data-tipo="charla"
             onclick="selectRutaTipoConexion('charla',this)"
             style="padding:10px 6px;border:2px solid var(--border);border-radius:4px;background:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font-sans);color:var(--ink3);text-align:center;">
-            🎙<br>Charla
+            🎙<br>Conferencia
           </button>
           <button class="ruta-tipo-conexion" data-tipo="serie"
             onclick="selectRutaTipoConexion('serie',this)"
@@ -1201,6 +1201,12 @@ select.input { cursor: pointer; }
           <label>Canción (opcional)</label>
           <input class="input" type="text" id="ruta-cancion-titulo"
             placeholder="Nombre de la canción...">
+        </div>
+        <!-- Campo extra para charla/conferencia -->
+        <div id="ruta-charla-field" style="display:none;" class="field">
+          <label>Nombre de la charla o entrevista (opcional)</label>
+          <input class="input" type="text" id="ruta-charla-titulo"
+            placeholder="Título de la charla, podcast, entrevista...">
         </div>
       </div>
 
@@ -7134,7 +7140,7 @@ function selectRutaTipoConexion(tipo, btn) {
 function rellenarRutaFuentePanel(tipo) {
   const labels = {
     libro:   '📚 Libro que me llevó aquí',
-    charla:  '🎙 Charla o conferencia',
+    charla:  '🎙 Conferencista / Entrevistado',
     serie:   '📺 Serie que me llevó aquí',
     pelicula:'🎬 Película que me llevó aquí',
     persona: '👤 Persona que me lo recomendó',
@@ -7195,6 +7201,13 @@ function rellenarRutaFuentePanel(tipo) {
     cancionField.style.display = tipo === 'cancion' ? 'block' : 'none';
     const cancionInput = document.getElementById('ruta-cancion-titulo');
     if (cancionInput) cancionInput.value = '';
+  }
+  // Mostrar campo charla solo para tipo charla
+  const charlaField = document.getElementById('ruta-charla-field');
+  if (charlaField) {
+    charlaField.style.display = tipo === 'charla' ? 'block' : 'none';
+    const charlaInput = document.getElementById('ruta-charla-titulo');
+    if (charlaInput) charlaInput.value = '';
   }
 }
 
@@ -7320,12 +7333,12 @@ function openModalRuta(editId) {
         if ([...destSel.options].some(o => o.value === ruta.destino)) {
           destSel.value = ruta.destino;
         }
-        // Si era canción, recuperar canción de la nota (primer segmento antes de ' · ')
-        if (ruta.tipo === 'cancion' && ruta.nota) {
+        // Si era canción o charla, recuperar del primer segmento de la nota
+        if ((ruta.tipo === 'cancion' || ruta.tipo === 'charla') && ruta.nota) {
           const partes = ruta.nota.split(' · ');
-          const cancionInput = document.getElementById('ruta-cancion-titulo');
-          if (cancionInput) cancionInput.value = partes[0] || '';
-          // Quitar la canción de la nota del textarea
+          const inputId = ruta.tipo === 'cancion' ? 'ruta-cancion-titulo' : 'ruta-charla-titulo';
+          const extraInput = document.getElementById(inputId);
+          if (extraInput) extraInput.value = partes[0] || '';
           document.getElementById('ruta-nota').value = partes.slice(1).join(' · ');
         }
       }
@@ -7370,11 +7383,17 @@ function saveRuta() {
   }
 
   // Para canción: agregar el título de la canción a la nota
+  // Para charla: agregar el nombre de la charla a la nota
   let notaFinal = document.getElementById('ruta-nota').value.trim();
   if (tipo === 'cancion') {
     const cancionTitulo = document.getElementById('ruta-cancion-titulo')?.value.trim();
     if (cancionTitulo) {
       notaFinal = cancionTitulo + (notaFinal ? ' · ' + notaFinal : '');
+    }
+  } else if (tipo === 'charla') {
+    const charlaTitulo = document.getElementById('ruta-charla-titulo')?.value.trim();
+    if (charlaTitulo) {
+      notaFinal = charlaTitulo + (notaFinal ? ' · ' + notaFinal : '');
     }
   }
 
@@ -7531,7 +7550,7 @@ function renderMapaInfluencias() {
 const RUTA_TIPO_LABELS = {
   mismo_autor: '✍ Mismo autor',
   libro:       '📚 Libro',
-  charla:      '🎙 Charla',
+  charla:      '🎙 Conferencia',
   serie:       '📺 Serie',
   pelicula:    '🎬 Película',
   persona:     '👤 Persona',
