@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1a1510">
-<title>LUMEN v89 — Biblioteca Personal</title>
+<title>LUMEN v92 — Biblioteca Personal</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231a1510'/><text x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' font-family='Georgia,serif' font-size='14' font-weight='900' font-style='italic' fill='%23c8952a' letter-spacing='0.5'>L</text><rect x='6' y='23' width='20' height='2' rx='1' fill='%238b2020'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
@@ -1156,6 +1156,11 @@ select.input { cursor: pointer; }
             style="padding:10px 6px;border:2px solid var(--border);border-radius:4px;background:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font-sans);color:var(--ink3);text-align:center;">
             🎵<br>Canción
           </button>
+          <button class="ruta-tipo-conexion" data-tipo="podcast"
+            onclick="selectRutaTipoConexion('podcast',this)"
+            style="padding:10px 6px;border:2px solid var(--border);border-radius:4px;background:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font-sans);color:var(--ink3);text-align:center;">
+            🎧<br>Podcast
+          </button>
         </div>
         <input type="hidden" id="ruta-tipo" value="mismo_autor">
       </div>
@@ -1207,6 +1212,29 @@ select.input { cursor: pointer; }
           <label>Nombre de la charla o entrevista (opcional)</label>
           <input class="input" type="text" id="ruta-charla-titulo"
             placeholder="Título de la charla, podcast, entrevista...">
+        </div>
+        <!-- Campo extra para podcast -->
+        <div id="ruta-podcast-field" style="display:none;" class="field">
+          <label>Host / Creador del podcast (opcional)</label>
+          <input class="input" type="text" id="ruta-podcast-host"
+            placeholder="Nombre de quien lo conduce o creó...">
+        </div>
+        <!-- Sub-opción para persona: regalo o recomendación -->
+        <div id="ruta-persona-field" style="display:none;" class="field">
+          <label>Tipo</label>
+          <div style="display:flex;gap:8px;">
+            <button type="button" class="ruta-persona-sub active" data-sub="recomendacion"
+              onclick="selectPersonaSub('recomendacion',this)"
+              style="flex:1;padding:8px;border:2px solid var(--gold);border-radius:4px;background:#fff8e8;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font-sans);color:var(--gold);">
+              💬 Recomendación
+            </button>
+            <button type="button" class="ruta-persona-sub" data-sub="regalo"
+              onclick="selectPersonaSub('regalo',this)"
+              style="flex:1;padding:8px;border:2px solid var(--border);border-radius:4px;background:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font-sans);color:var(--ink3);">
+              🎁 Regalo
+            </button>
+          </div>
+          <input type="hidden" id="ruta-persona-sub-val" value="recomendacion">
         </div>
       </div>
 
@@ -7003,7 +7031,7 @@ function switchMapaTab(tab) {
 
 // ── Colors ──
 const INF_COLORS = { cita_directa:'#e67e22', cita_indirecta:'#f1c40f', uso_personaje:'#2980b9', contexto_historico:'#27ae60', continuacion:'#8e44ad' };
-const RUTA_COLORS = { mismo_autor:'#8e44ad', libro:'#c8952a', charla:'#2980b9', serie:'#e74c3c', pelicula:'#e67e22', persona:'#27ae60', cancion:'#1a6e3c' };
+const RUTA_COLORS = { mismo_autor:'#8e44ad', libro:'#c8952a', charla:'#2980b9', serie:'#e74c3c', pelicula:'#e67e22', persona:'#27ae60', cancion:'#1a6e3c', podcast:'#8b2020' };
 const INF_LABELS  = { cita_directa:'Cita directa', cita_indirecta:'Cita indirecta', uso_personaje:'Uso de personaje', contexto_historico:'Contexto histórico', continuacion:'Continuación' };
 const RUTA_LABELS = { referencia:'Referencia', recomendacion:'Recomendación', curiosidad:'Curiosidad temática', mismo_autor:'Mismo autor', contexto_vital:'Contexto vital' };
 
@@ -7086,10 +7114,12 @@ function loadRutaCustomNodes() {
   catch { return {}; }
 }
 function saveRutaCustomNode(tipo, titulo) {
+  titulo = (titulo||'').trim();
   if (!titulo) return;
   const map = loadRutaCustomNodes();
   if (!map[tipo]) map[tipo] = [];
-  if (!map[tipo].includes(titulo)) {
+  // Comparar sin espacios para evitar duplicados por trim
+  if (!map[tipo].some(t => t.trim() === titulo)) {
     map[tipo].push(titulo);
     localStorage.setItem(RUTA_CUSTOM_KEY, JSON.stringify(map));
   }
@@ -7143,8 +7173,9 @@ function rellenarRutaFuentePanel(tipo) {
     charla:  '🎙 Conferencista / Entrevistado',
     serie:   '📺 Serie que me llevó aquí',
     pelicula:'🎬 Película que me llevó aquí',
-    persona: '👤 Persona que me lo recomendó',
+    persona: '👤 Persona',
     cancion: '🎵 Intérprete',
+    podcast: '🎧 Nombre del podcast',
   };
   const lbl = document.getElementById('ruta-fuente-label');
   if (lbl) lbl.textContent = labels[tipo] || 'Fuente';
@@ -7161,32 +7192,49 @@ function rellenarRutaFuentePanel(tipo) {
 
   let opciones = [];
 
+  // Helper: etiqueta con año entre paréntesis
+  const conAnio = (e, campoAnio) => {
+    const yr = e[campoAnio] || e.anio;
+    return yr ? `${e.titulo} (${yr})` : e.titulo;
+  };
+
+  // {label, value} para cada opción — value siempre es el título sin año
+  let opcionesObj = [];
+
   if (tipo === 'libro') {
-    opciones = db.entries
+    opcionesObj = db.entries
       .filter(e => e.type === 'libro' && (e.estado === 'leido' || e.estado === 'leyendo'))
-      .sort((a,b) => (b.anio||0)-(a.anio||0))
-      .map(e => e.titulo);
+      .sort((a,b) => a.titulo.localeCompare(b.titulo, 'es'))
+      .map(e => ({ value: e.titulo, label: conAnio(e, 'anio') }));
   } else if (tipo === 'serie') {
     const delDB = db.entries
       .filter(e => e.type === 'serie' && (e.estado === 'vista' || e.estado === 'viendo'))
-      .sort((a,b) => (b.anio||0)-(a.anio||0))
-      .map(e => e.titulo);
-    const custom = getRutaNodesFromHistory('serie');
-    opciones = [...new Set([...delDB, ...custom])];
+      .sort((a,b) => a.titulo.localeCompare(b.titulo, 'es'))
+      .map(e => ({ value: e.titulo, label: conAnio(e, 'anio') }));
+    const custom = getRutaNodesFromHistory('serie')
+      .filter(t => !delDB.some(o => o.value === t))
+      .sort((a,b) => a.localeCompare(b, 'es'))
+      .map(t => ({ value: t, label: t }));
+    opcionesObj = [...delDB, ...custom];
   } else if (tipo === 'pelicula') {
     const delDB = db.entries
       .filter(e => e.type === 'pelicula')
-      .sort((a,b) => (b.anio||0)-(a.anio||0))
-      .map(e => e.titulo);
-    const custom = getRutaNodesFromHistory('pelicula');
-    opciones = [...new Set([...delDB, ...custom])];
-  } else if (tipo === 'charla' || tipo === 'persona' || tipo === 'cancion') {
-    opciones = getRutaNodesFromHistory(tipo);
+      .sort((a,b) => a.titulo.localeCompare(b.titulo, 'es'))
+      .map(e => ({ value: e.titulo, label: conAnio(e, 'anio') }));
+    const custom = getRutaNodesFromHistory('pelicula')
+      .filter(t => !delDB.some(o => o.value === t))
+      .sort((a,b) => a.localeCompare(b, 'es'))
+      .map(t => ({ value: t, label: t }));
+    opcionesObj = [...delDB, ...custom];
+  } else if (tipo === 'charla' || tipo === 'persona' || tipo === 'cancion' || tipo === 'podcast') {
+    opcionesObj = getRutaNodesFromHistory(tipo)
+      .sort((a,b) => a.localeCompare(b, 'es'))
+      .map(t => ({ value: t, label: t }));
   }
 
-  opciones.forEach(t => {
+  opcionesObj.forEach(o => {
     const opt = document.createElement('option');
-    opt.value = t; opt.textContent = t;
+    opt.value = o.value; opt.textContent = o.label;
     sel.appendChild(opt);
   });
 
@@ -7208,6 +7256,34 @@ function rellenarRutaFuentePanel(tipo) {
     charlaField.style.display = tipo === 'charla' ? 'block' : 'none';
     const charlaInput = document.getElementById('ruta-charla-titulo');
     if (charlaInput) charlaInput.value = '';
+  }
+  // Mostrar campo podcast solo para tipo podcast
+  const podcastField = document.getElementById('ruta-podcast-field');
+  if (podcastField) {
+    podcastField.style.display = tipo === 'podcast' ? 'block' : 'none';
+    const podcastInput = document.getElementById('ruta-podcast-host');
+    if (podcastInput) podcastInput.value = '';
+  }
+  // Mostrar sub-opción regalo/recomendación solo para persona
+  const personaField = document.getElementById('ruta-persona-field');
+  if (personaField) {
+    personaField.style.display = tipo === 'persona' ? 'block' : 'none';
+    // Reset a recomendación por defecto
+    if (tipo === 'persona') selectPersonaSub('recomendacion', document.querySelector('.ruta-persona-sub[data-sub="recomendacion"]'));
+  }
+}
+
+function selectPersonaSub(sub, btn) {
+  document.getElementById('ruta-persona-sub-val').value = sub;
+  document.querySelectorAll('.ruta-persona-sub').forEach(b => {
+    b.style.borderColor = 'var(--border)';
+    b.style.background  = '#fff';
+    b.style.color       = 'var(--ink3)';
+  });
+  if (btn) {
+    btn.style.borderColor = 'var(--gold)';
+    btn.style.background  = '#fff8e8';
+    btn.style.color       = 'var(--gold)';
   }
 }
 
@@ -7236,10 +7312,11 @@ function rellenarRutaDestinoLibros() {
   sel.innerHTML = '<option value="">— Selecciona el libro —</option>';
   db.entries
     .filter(e => e.type === 'libro' && (e.estado === 'leido' || e.estado === 'leyendo'))
-    .sort((a,b) => (b.anio||0)-(a.anio||0))
+    .sort((a,b) => a.titulo.localeCompare(b.titulo, 'es'))
     .forEach(e => {
       const opt = document.createElement('option');
-      opt.value = e.titulo; opt.textContent = e.titulo;
+      opt.value = e.titulo;
+      opt.textContent = e.anio ? `${e.titulo} (${e.anio})` : e.titulo;
       sel.appendChild(opt);
     });
 }
@@ -7333,12 +7410,22 @@ function openModalRuta(editId) {
         if ([...destSel.options].some(o => o.value === ruta.destino)) {
           destSel.value = ruta.destino;
         }
-        // Si era canción o charla, recuperar del primer segmento de la nota
-        if ((ruta.tipo === 'cancion' || ruta.tipo === 'charla') && ruta.nota) {
+        // Recuperar campos extra desde la nota
+        if (ruta.tipo === 'cancion' || ruta.tipo === 'charla' || ruta.tipo === 'podcast') {
+          if (ruta.nota) {
+            const partes = ruta.nota.split(' · ');
+            const idMap = { cancion:'ruta-cancion-titulo', charla:'ruta-charla-titulo', podcast:'ruta-podcast-host' };
+            const extraInput = document.getElementById(idMap[ruta.tipo]);
+            if (extraInput) extraInput.value = partes[0] || '';
+            document.getElementById('ruta-nota').value = partes.slice(1).join(' · ');
+          }
+        } else if (ruta.tipo === 'persona' && ruta.nota) {
+          // Recuperar sub (primera parte: "💬 Recomendación" o "🎁 Regalo")
           const partes = ruta.nota.split(' · ');
-          const inputId = ruta.tipo === 'cancion' ? 'ruta-cancion-titulo' : 'ruta-charla-titulo';
-          const extraInput = document.getElementById(inputId);
-          if (extraInput) extraInput.value = partes[0] || '';
+          const sub = partes[0].includes('Regalo') ? 'regalo' : 'recomendacion';
+          document.getElementById('ruta-persona-sub-val').value = sub;
+          const subBtn = document.querySelector(`.ruta-persona-sub[data-sub="${sub}"]`);
+          selectPersonaSub(sub, subBtn);
           document.getElementById('ruta-nota').value = partes.slice(1).join(' · ');
         }
       }
@@ -7372,8 +7459,10 @@ function saveRuta() {
     } else {
       fuente = sel.value.trim();
     }
+    // Trim de espacios al inicio/fin
+    fuente = fuente.trim();
     // Guardar nodo custom si fue texto libre
-    if (sel.value === '__otro__' && fuente && (tipo === 'charla' || tipo === 'persona' || tipo === 'serie' || tipo === 'pelicula' || tipo === 'cancion')) {
+    if (sel.value === '__otro__' && fuente && (tipo === 'charla' || tipo === 'persona' || tipo === 'serie' || tipo === 'pelicula' || tipo === 'cancion' || tipo === 'podcast')) {
       saveRutaCustomNode(tipo, fuente);
     }
 
@@ -7382,19 +7471,21 @@ function saveRuta() {
     if (!fuente)  { showToast('Indica la fuente de la conexión'); return; }
   }
 
-  // Para canción: agregar el título de la canción a la nota
-  // Para charla: agregar el nombre de la charla a la nota
+  // Enriquecer la nota con campos extra según tipo
   let notaFinal = document.getElementById('ruta-nota').value.trim();
   if (tipo === 'cancion') {
-    const cancionTitulo = document.getElementById('ruta-cancion-titulo')?.value.trim();
-    if (cancionTitulo) {
-      notaFinal = cancionTitulo + (notaFinal ? ' · ' + notaFinal : '');
-    }
+    const extra = document.getElementById('ruta-cancion-titulo')?.value.trim();
+    if (extra) notaFinal = extra + (notaFinal ? ' · ' + notaFinal : '');
   } else if (tipo === 'charla') {
-    const charlaTitulo = document.getElementById('ruta-charla-titulo')?.value.trim();
-    if (charlaTitulo) {
-      notaFinal = charlaTitulo + (notaFinal ? ' · ' + notaFinal : '');
-    }
+    const extra = document.getElementById('ruta-charla-titulo')?.value.trim();
+    if (extra) notaFinal = extra + (notaFinal ? ' · ' + notaFinal : '');
+  } else if (tipo === 'podcast') {
+    const extra = document.getElementById('ruta-podcast-host')?.value.trim();
+    if (extra) notaFinal = extra + (notaFinal ? ' · ' + notaFinal : '');
+  } else if (tipo === 'persona') {
+    const sub = document.getElementById('ruta-persona-sub-val')?.value || 'recomendacion';
+    const subLabel = sub === 'regalo' ? '🎁 Regalo' : '💬 Recomendación';
+    notaFinal = subLabel + (notaFinal ? ' · ' + notaFinal : '');
   }
 
   const obj = {
@@ -7429,20 +7520,41 @@ function buildD3Graph(containerId, nodes, links, colorFn, tooltipEdgeFn) {
   const g=svg.append('g');
   svg.call(d3.zoom().scaleExtent([0.15,4]).on('zoom',e=>g.attr('transform',e.transform)));
 
+  // ── Ranking por grado: calcular entradas + salidas por nodo ──
+  const degree = {};
+  nodes.forEach(n => { degree[n.id] = 0; });
+  links.forEach(l => {
+    const s = typeof l.source === 'object' ? l.source.id : l.source;
+    const t = typeof l.target === 'object' ? l.target.id : l.target;
+    degree[s] = (degree[s]||0) + 1;
+    degree[t] = (degree[t]||0) + 1;
+  });
+  const maxDeg = Math.max(1, ...Object.values(degree));
+  // Radio: mínimo 12, máximo 32, escala lineal por grado
+  const nodeR = d => {
+    const base = d.isEvent ? 11 : 14;
+    const extra = Math.round(((degree[d.id]||0) / maxDeg) * 18);
+    return base + extra;
+  };
+
   // Arrow markers per tipo
   const defs=svg.append('defs');
   [...new Set(links.map(l=>l.tipo))].forEach(tipo=>{
     defs.append('marker').attr('id','arr-'+tipo)
-      .attr('viewBox','0 -5 10 10').attr('refX',22).attr('refY',0)
+      .attr('viewBox','0 -5 10 10').attr('refX',28).attr('refY',0)
       .attr('markerWidth',6).attr('markerHeight',6).attr('orient','auto')
       .append('path').attr('d','M0,-5L10,0L0,5').attr('fill',colorFn(tipo));
   });
 
   const simulation=d3.forceSimulation(nodes)
-    .force('link', d3.forceLink(links).id(d=>d.id).distance(130))
-    .force('charge', d3.forceManyBody().strength(-350))
+    .force('link', d3.forceLink(links).id(d=>d.id).distance(d => {
+      const s = typeof d.source === 'object' ? d.source.id : d.source;
+      const t = typeof d.target === 'object' ? d.target.id : d.target;
+      return 120 + (degree[s]||0)*4 + (degree[t]||0)*4;
+    }))
+    .force('charge', d3.forceManyBody().strength(d => -300 - (degree[d.id]||0)*30))
     .force('center', d3.forceCenter(W/2, H/2))
-    .force('collision', d3.forceCollide(38));
+    .force('collision', d3.forceCollide(d => nodeR(d) + 14));
 
   // Links
   const link=g.append('g').selectAll('line').data(links).join('line')
@@ -7460,20 +7572,24 @@ function buildD3Graph(containerId, nodes, links, colorFn, tooltipEdgeFn) {
     );
 
   node.append('circle')
-    .attr('r', d=>d.isEvent?14:20)
+    .attr('r', d=>nodeR(d))
     .attr('fill', d=>d.inLibrary?'var(--ink)':(d.isEvent?'#e8e0d0':'#fff'))
     .attr('stroke', d=>d.inLibrary?'var(--gold)':'var(--border)')
-    .attr('stroke-width', 2);
+    .attr('stroke-width', d => 1 + Math.min(3, (degree[d.id]||0)));
 
-  node.append('text').attr('text-anchor','middle').attr('dy',5)
-    .attr('font-size', d=>d.isEvent?11:10).attr('fill', d=>d.inLibrary?'var(--gold)':'var(--ink3)')
+  node.append('text').attr('text-anchor','middle').attr('dy',4)
+    .attr('font-size', d => Math.max(9, Math.min(13, 9 + (degree[d.id]||0))))
+    .attr('fill', d=>d.inLibrary?'var(--gold)':'var(--ink3)')
     .text(d=>d.icon||'●');
 
-  node.append('text').attr('text-anchor','middle').attr('dy',35)
-    .attr('font-size',10).attr('fill','var(--ink2)').attr('font-weight','700')
+  node.append('text').attr('text-anchor','middle')
+    .attr('dy', d => nodeR(d) + 12)
+    .attr('font-size', d => Math.max(9, Math.min(12, 9 + Math.floor((degree[d.id]||0)/2))))
+    .attr('fill','var(--ink2)').attr('font-weight','700')
     .text(d=>d.label.length>22?d.label.slice(0,20)+'…':d.label);
 
-  node.append('title').text(d=>d.tooltip||d.label);
+  node.append('title').text(d=>`${d.tooltip||d.label}
+Conexiones: ${degree[d.id]||0}`);
 
   simulation.on('tick',()=>{
     link.attr('x1',d=>d.source.x).attr('y1',d=>d.source.y)
@@ -7555,6 +7671,7 @@ const RUTA_TIPO_LABELS = {
   pelicula:    '🎬 Película',
   persona:     '👤 Persona',
   cancion:     '🎵 Canción',
+  podcast:     '🎧 Podcast',
 };
 
 function renderListaRutas() {
