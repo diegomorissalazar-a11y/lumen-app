@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1a1510">
-<title>LUMEN v102 — Biblioteca Personal</title>
+<title>LUMEN v103 — Biblioteca Personal</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231a1510'/><text x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' font-family='Georgia,serif' font-size='14' font-weight='900' font-style='italic' fill='%23c8952a' letter-spacing='0.5'>L</text><rect x='6' y='23' width='20' height='2' rx='1' fill='%238b2020'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
@@ -7417,10 +7417,17 @@ function openModalRuta(editId) {
           destSel.value = ruta.destino;
         }
         // Recuperar campos extra desde la nota
-        if (ruta.tipo === 'cancion' || ruta.tipo === 'charla' || ruta.tipo === 'podcast') {
+        if (ruta.tipo === 'cancion' || ruta.tipo === 'charla' || ruta.tipo === 'podcast' || ruta.tipo === 'entrevista') {
+          if (ruta.tipo === 'entrevista' && ruta.programa) {
+            rellenarProgramaSel();
+            setTimeout(() => {
+              const pSel = document.getElementById('ruta-programa-sel');
+              if (pSel) pSel.value = ruta.programa;
+            }, 50);
+          }
           if (ruta.nota) {
             const partes = ruta.nota.split(' · ');
-            const idMap = { cancion:'ruta-cancion-titulo', charla:'ruta-charla-titulo', podcast:'ruta-podcast-host' };
+            const idMap = { cancion:'ruta-cancion-titulo', charla:'ruta-charla-titulo', podcast:'ruta-podcast-host', entrevista:'ruta-entrevista-titulo' };
             const extraInput = document.getElementById(idMap[ruta.tipo]);
             if (extraInput) extraInput.value = partes[0] || '';
             document.getElementById('ruta-nota').value = partes.slice(1).join(' · ');
@@ -7721,7 +7728,7 @@ function buildD3Graph(containerId, nodes, links, colorFn, tooltipEdgeFn) {
     const tipoLabel = {
       charla:'Conferencia', cancion:'Canción', podcast:'Podcast',
       serie:'Serie', pelicula:'Película', persona:'Persona',
-      libro:'Libro', mismo_autor:'Mismo autor', entrevista:'Entrevista'
+      libro:'Libro', mismo_autor:'Mismo autor', entrevista:'Entrevista', programa:'Programa'
     }[tipoNodo] || '';
     const conDetalle = tipoNodo === 'charla' || tipoNodo === 'cancion' || tipoNodo === 'podcast' || tipoNodo === 'entrevista';
 
@@ -7875,6 +7882,8 @@ const RUTA_TIPO_LABELS = {
   mismo_autor: '✍ Mismo autor',
   libro:       '📚 Libro',
   charla:      '🎙 Conferencia',
+  entrevista:  '🎤 Entrevista',
+  programa:    '🎞 Programa',
   serie:       '📺 Serie',
   pelicula:    '🎬 Película',
   persona:     '👤 Persona',
@@ -7918,30 +7927,32 @@ function renderMapaRutas() {
   renderListaRutas();
   if (data.length===0) { d3.select('#mapa-rutas-svg').selectAll('svg').remove(); return; }
 
+
   const libTitles=new Set(db.entries.map(e=>e.titulo));
 
   // Determinar ícono por tipo de conexión del nodo fuente
   const iconByTipo = {
-    libro:    '📚',
-    serie:    '📺',
-    pelicula: '🎬',
-    charla:   '🎙',
-    podcast:  '🎧',
-    cancion:  '🎵',
-    persona:  '👤',
+    libro:     '📚',
+    serie:     '📺',
+    pelicula:  '🎬',
+    charla:    '🎙',
+    podcast:   '🎧',
+    cancion:   '🎵',
+    persona:   '👤',
+    entrevista:'🎤',
+    programa:  '🎞',
   };
 
-  // Mapa nombre → tipo de ruta donde aparece como fuente
+  // Mapa nombre → tipo (programa tiene su propio tipo)
   const fuenteTipo = {};
   data.forEach(d => {
     if (d.fuente && d.fuente !== '⭐ Origen') fuenteTipo[d.fuente] = d.tipo;
+    if (d.programa) fuenteTipo[d.programa] = 'programa';
   });
 
-  // Ícono para persona: si la nota empieza con 🎁 → persona+regalo
   const iconForNode = (name) => {
     if (name === '⭐ Origen') return '⭐';
     const tipo = fuenteTipo[name];
-    // Nodos fuente: el tipo de estímulo manda siempre
     if (tipo) {
       if (tipo === 'persona') {
         const esRegalo = data.some(d => d.fuente === name && d.tipo === 'persona' && (d.nota||'').startsWith('🎁'));
@@ -7949,19 +7960,37 @@ function renderMapaRutas() {
       }
       return iconByTipo[tipo] || '◉';
     }
-    // Nodo destino (libro al que se llegó)
     return '📖';
   };
 
-  const nodeSet=new Set(); data.forEach(d=>{nodeSet.add(d.fuente);nodeSet.add(d.destino);});
-  const nodes=[...nodeSet].map(name=>({
-    id:name, label:name,
-    inLibrary:libTitles.has(name),
-    isEvent:!libTitles.has(name)&&name!=='⭐ Origen',
-    icon:iconForNode(name),
-    tooltip:name
+  // Construir nodos y links — entrevistas con programa generan nodo extra
+  const nodeSet = new Set();
+  const links   = [];
+
+  data.forEach(d => {
+    if (d.programa && d.tipo === 'entrevista') {
+      nodeSet.add(d.programa);
+      nodeSet.add(d.fuente);
+      nodeSet.add(d.destino);
+      // link programa → entrevistado (solo uno por par)
+      if (!links.some(l => l.source === d.programa && l.target === d.fuente)) {
+        links.push({ source: d.programa, target: d.fuente, tipo: 'programa', id: 'prog_' + d.id, nota: '' });
+      }
+      links.push({ source: d.fuente, target: d.destino, tipo: d.tipo, id: d.id, nota: d.nota });
+    } else {
+      nodeSet.add(d.fuente);
+      nodeSet.add(d.destino);
+      links.push({ source: d.fuente, target: d.destino, tipo: d.tipo, id: d.id, nota: d.nota });
+    }
+  });
+
+  const nodes = [...nodeSet].map(name => ({
+    id: name, label: name,
+    inLibrary: libTitles.has(name),
+    isEvent:   !libTitles.has(name) && name !== '⭐ Origen',
+    icon:      iconForNode(name),
+    tooltip:   name
   }));
-  const links=data.map(d=>({ source:d.fuente, target:d.destino, tipo:d.tipo, id:d.id, nota:d.nota }));
 
   buildD3Graph('mapa-rutas-svg', nodes, links,
     tipo=>RUTA_COLORS[tipo]||'#999',
