@@ -1043,7 +1043,7 @@ select.input { cursor: pointer; }
   <div id="mapa-rutas-panel" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
     <div style="padding:10px 16px;display:flex;gap:8px;align-items:center;border-bottom:1px solid var(--border);flex-shrink:0;">
       <button class="btn btn-secondary btn-sm" style="width:auto;" onclick="openModalRuta()">+ Añadir conexión</button>
-      <button class="btn btn-secondary btn-sm" style="width:auto;" onclick="renderMapaRutas()">↻ Actualizar</button>
+      <button class="btn btn-secondary btn-sm" style="width:auto;" onclick="generarRutasMismoAutor()">↻ Actualizar</button>
       <span id="ruta-count" style="font-size:11px;color:var(--ink4);margin-left:auto;"></span>
     </div>
     <div id="mapa-rutas-svg" style="flex:1;overflow:hidden;position:relative;cursor:grab;">
@@ -7501,6 +7501,75 @@ function saveRuta() {
   closeModal('modal-ruta');
   showToast('✓ Conexión guardada');
   renderMapaRutas();
+}
+
+function generarRutasMismoAutor() {
+  // Índice de meses para ordenar cronológicamente
+  const MESES_IDX = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
+    'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+  // Función para convertir anio+mes a un número comparable
+  const toSortKey = e => {
+    const yr = parseInt(e.anio) || 0;
+    const mo = MESES_IDX.indexOf(e.mes || '');
+    return yr * 100 + (mo >= 0 ? mo : 0);
+  };
+
+  // Agrupar libros leídos por autor
+  const porAutor = {};
+  db.entries
+    .filter(e => e.type === 'libro' && e.estado === 'leido' && e.autor && e.autor.trim() && e.anio)
+    .forEach(e => {
+      const a = e.autor.trim();
+      if (!porAutor[a]) porAutor[a] = [];
+      porAutor[a].push(e);
+    });
+
+  let creadas = 0, reemplazadas = 0;
+
+  Object.entries(porAutor).forEach(([autor, libros]) => {
+    if (libros.length < 2) return;
+
+    // Ordenar cronológicamente
+    const ordenados = libros.slice().sort((a, b) => toSortKey(a) - toSortKey(b));
+
+    // Crear conexión en cadena: 0→1, 1→2, 2→3...
+    for (let i = 0; i < ordenados.length - 1; i++) {
+      const fuente  = ordenados[i].titulo;
+      const destino = ordenados[i + 1].titulo;
+
+      // Buscar si ya existe una conexión mismo_autor entre este par
+      const existeIdx = mapas.rutas.findIndex(r =>
+        r.tipo === 'mismo_autor' && r.fuente === fuente && r.destino === destino
+      );
+
+      const obj = {
+        id:         existeIdx >= 0 ? mapas.rutas[existeIdx].id : 'ruta_' + Date.now() + '_' + i,
+        tipo:       'mismo_autor',
+        fuente_tipo:'mismo_autor',
+        fuente, destino,
+        nota:       autor,
+        createdAt:  existeIdx >= 0 ? mapas.rutas[existeIdx].createdAt : Date.now()
+      };
+
+      if (existeIdx >= 0) {
+        mapas.rutas[existeIdx] = obj;
+        reemplazadas++;
+      } else {
+        mapas.rutas.push(obj);
+        creadas++;
+      }
+    }
+  });
+
+  if (creadas + reemplazadas === 0) {
+    showToast('No hay autores con 2+ libros leídos');
+    return;
+  }
+
+  saveMapas();
+  renderMapaRutas();
+  showToast(`✓ ${creadas} conexiones creadas${reemplazadas ? ', ' + reemplazadas + ' actualizadas' : ''}`);
 }
 
 function deleteRuta(id) {
