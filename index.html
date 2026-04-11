@@ -7500,10 +7500,10 @@ function saveRuta() {
   saveMapas();
   closeModal('modal-ruta');
   showToast('✓ Conexión guardada');
-  renderMapaRutas();
+  generarRutasMismoAutor(true);
 }
 
-function generarRutasMismoAutor() {
+function generarRutasMismoAutor(silencioso = false) {
   // Índice de meses para ordenar cronológicamente
   const MESES_IDX = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
     'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
@@ -7563,19 +7563,19 @@ function generarRutasMismoAutor() {
   });
 
   if (creadas + reemplazadas === 0) {
-    showToast('No hay autores con 2+ libros leídos');
+    if (!silencioso) showToast('No hay autores con 2+ libros leídos');
     return;
   }
 
   saveMapas();
   renderMapaRutas();
-  showToast(`✓ ${creadas} conexiones creadas${reemplazadas ? ', ' + reemplazadas + ' actualizadas' : ''}`);
+  if (!silencioso) showToast(`✓ ${creadas} conexiones creadas${reemplazadas ? ', ' + reemplazadas + ' actualizadas' : ''}`);
 }
 
 function deleteRuta(id) {
   if (!confirm('¿Eliminar esta conexión?')) return;
   mapas.rutas=mapas.rutas.filter(x=>x.id!==id);
-  saveMapas(); renderMapaRutas(); showToast('Conexión eliminada');
+  saveMapas(); generarRutasMismoAutor(true); showToast('Conexión eliminada');
 }
 
 // ══════════════════════════
