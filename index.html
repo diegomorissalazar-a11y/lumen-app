@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1a1510">
-<title>LUMEN v92 — Biblioteca Personal</title>
+<title>LUMEN v95 — Biblioteca Personal</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231a1510'/><text x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' font-family='Georgia,serif' font-size='14' font-weight='900' font-style='italic' fill='%23c8952a' letter-spacing='0.5'>L</text><rect x='6' y='23' width='20' height='2' rx='1' fill='%238b2020'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
@@ -7588,13 +7588,121 @@ function buildD3Graph(containerId, nodes, links, colorFn, tooltipEdgeFn) {
     .attr('fill','var(--ink2)').attr('font-weight','700')
     .text(d=>d.label.length>22?d.label.slice(0,20)+'…':d.label);
 
-  node.append('title').text(d=>`${d.tooltip||d.label}
-Conexiones: ${degree[d.id]||0}`);
+  node.append('title').text(d=>`${d.tooltip||d.label}\nConexiones: ${degree[d.id]||0}`);
+
+  // ── Popup flotante al hacer click en nodo fuente ──────────
+  const popup = g.append('g').attr('class','node-popup').style('display','none');
+  const PW = 220;
+  const popupRect = popup.append('rect')
+    .attr('rx', 7).attr('ry', 7)
+    .attr('width', PW)
+    .attr('fill', 'rgba(22,18,14,0.92)')
+    .attr('stroke', 'rgba(200,149,42,0.55)')
+    .attr('stroke-width', 1.5);
+
+  let activePopupNode = null;
+
+  node.on('click', function(event, d) {
+    event.stopPropagation();
+
+    // Toggle: cerrar si ya estaba abierto
+    if (activePopupNode === d.id) {
+      popup.style('display','none'); activePopupNode = null; return;
+    }
+
+    // Buscar conexiones salientes
+    const salientes = links.filter(l => {
+      const src = typeof l.source === 'object' ? l.source.id : l.source;
+      return src === d.id;
+    });
+    if (!salientes.length) return;
+    activePopupNode = d.id;
+
+    const tipoNodo = fuenteTipo ? fuenteTipo[d.id] : null;
+    const tipoLabel = {
+      charla:'Conferencia', cancion:'Canción', podcast:'Podcast',
+      serie:'Serie', pelicula:'Película', persona:'Persona',
+      libro:'Libro', mismo_autor:'Mismo autor'
+    }[tipoNodo] || '';
+    const conDetalle = tipoNodo === 'charla' || tipoNodo === 'cancion' || tipoNodo === 'podcast';
+
+    // Limpiar items anteriores
+    popup.selectAll('.popup-item,.popup-title,.popup-divider').remove();
+
+    // Calcular altura: título(22) + separador(1) + N * (linea destino 18 + detalle si hay 14) + padding
+    let totalH = 28;
+    salientes.forEach(l => {
+      const nota0 = ((l.nota||'').split(' · ')[0]);
+      totalH += conDetalle && nota0 ? 32 : 20;
+    });
+
+    popupRect.attr('height', totalH);
+
+    // Título del nodo
+    const labelTrunc = d.label.length > 24 ? d.label.slice(0,22)+'…' : d.label;
+    popup.append('text').attr('class','popup-title')
+      .attr('x', 10).attr('y', 16)
+      .attr('font-size', 9).attr('font-weight', 700)
+      .attr('letter-spacing', 1.3)
+      .attr('fill', 'rgba(200,149,42,0.95)')
+      .attr('font-family', 'Lato, sans-serif')
+      .text(labelTrunc.toUpperCase() + (tipoLabel ? '  ·  ' + tipoLabel.toUpperCase() : ''));
+
+    // Línea separadora
+    popup.append('line').attr('class','popup-divider')
+      .attr('x1', 8).attr('x2', PW - 8).attr('y1', 22).attr('y2', 22)
+      .attr('stroke', 'rgba(200,149,42,0.3)').attr('stroke-width', 0.5);
+
+    // Items
+    let curY = 28;
+    salientes.forEach(l => {
+      const destino = typeof l.target === 'object' ? l.target.id : l.target;
+      const nota0   = (l.nota||'').split(' · ')[0];
+      const detalle = conDetalle ? nota0 : '';
+      const dTrunc  = destino.length > 28 ? destino.slice(0,26)+'…' : destino;
+
+      popup.append('text').attr('class','popup-item')
+        .attr('x', 14).attr('y', curY + 12)
+        .attr('font-size', 10.5).attr('fill', '#f2ede6')
+        .attr('font-family', 'Lato, sans-serif')
+        .text('· ' + dTrunc);
+
+      curY += 18;
+
+      if (detalle) {
+        const deTrunc = detalle.length > 32 ? detalle.slice(0,30)+'…' : detalle;
+        popup.append('text').attr('class','popup-item')
+          .attr('x', 20).attr('y', curY + 6)
+          .attr('font-size', 9).attr('fill', 'rgba(200,149,42,0.75)')
+          .attr('font-style', 'italic')
+          .attr('font-family', 'Lato, sans-serif')
+          .text(deTrunc);
+        curY += 14;
+      }
+    });
+
+    // Posicionar debajo del nodo
+    const r = nodeR(d);
+    popup.attr('transform', `translate(${d.x - PW/2},${d.y + r + 6})`);
+    popup.style('display', null);
+    popup.raise();
+  });
+
+  // Click en fondo SVG → cerrar
+  svg.on('click', () => { popup.style('display','none'); activePopupNode = null; });
 
   simulation.on('tick',()=>{
     link.attr('x1',d=>d.source.x).attr('y1',d=>d.source.y)
         .attr('x2',d=>d.target.x).attr('y2',d=>d.target.y);
     node.attr('transform',d=>`translate(${d.x},${d.y})`);
+    // Mantener popup pegado al nodo activo durante la simulación
+    if (activePopupNode) {
+      const dn = nodes.find(n=>n.id===activePopupNode);
+      if (dn) {
+        const r = nodeR(dn);
+        popup.attr('transform', `translate(${dn.x - PW/2},${dn.y + r + 6})`);
+      }
+    }
   });
 }
 
@@ -7679,12 +7787,12 @@ function renderListaRutas() {
   const data = mapas.rutas;
   if (data.length === 0) { el.style.display = 'none'; return; }
   el.style.display = 'block';
+  const hayMas = data.length > 4;
   el.innerHTML = data.map(r => `
-    <div style="display:flex;align-items:center;gap:8px;padding:9px 14px;border-bottom:1px solid var(--cream2);">
+    <div style="display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid var(--cream2);scroll-snap-align:start;">
       <div style="flex:1;min-width:0;">
         <div style="font-size:12px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-          ${r.fuente === '⭐ Origen' ? '⭐' : `<span style="color:var(--ink3);">${r.fuente}</span> →`}
-          <span> ${r.destino}</span>
+          <span style="color:var(--ink3);">${r.fuente}</span> → <span>${r.destino}</span>
         </div>
         <div style="font-size:10px;color:var(--ink4);margin-top:2px;">${RUTA_TIPO_LABELS[r.tipo]||r.tipo}${r.nota?' · '+r.nota:''}</div>
       </div>
@@ -7696,8 +7804,10 @@ function renderListaRutas() {
         style="flex-shrink:0;padding:5px 10px;border:1.5px solid var(--border);border-radius:4px;background:#fff;font-size:10px;font-weight:700;cursor:pointer;font-family:var(--font-sans);color:var(--red);">
         🗑
       </button>
-    </div>`).join('');
+    </div>`).join('') +
+    (hayMas ? `<div style="text-align:center;padding:4px 0 5px;font-size:10px;color:var(--ink4);background:var(--cream2);letter-spacing:0.5px;">↕ ${data.length} conexiones · desliza para ver todas</div>` : '');
 }
+
 
 function renderMapaRutas() {
   const data=mapas.rutas;
@@ -7709,12 +7819,46 @@ function renderMapaRutas() {
   if (data.length===0) { d3.select('#mapa-rutas-svg').selectAll('svg').remove(); return; }
 
   const libTitles=new Set(db.entries.map(e=>e.titulo));
+
+  // Determinar ícono por tipo de conexión del nodo fuente
+  const iconByTipo = {
+    libro:    '📚',
+    serie:    '📺',
+    pelicula: '🎬',
+    charla:   '🎙',
+    podcast:  '🎧',
+    cancion:  '🎵',
+    persona:  '👤',
+  };
+
+  // Mapa nombre → tipo de ruta donde aparece como fuente
+  const fuenteTipo = {};
+  data.forEach(d => {
+    if (d.fuente && d.fuente !== '⭐ Origen') fuenteTipo[d.fuente] = d.tipo;
+  });
+
+  // Ícono para persona: si la nota empieza con 🎁 → persona+regalo
+  const iconForNode = (name) => {
+    if (name === '⭐ Origen') return '⭐';
+    const tipo = fuenteTipo[name];
+    // Nodos fuente: el tipo de estímulo manda siempre
+    if (tipo) {
+      if (tipo === 'persona') {
+        const esRegalo = data.some(d => d.fuente === name && d.tipo === 'persona' && (d.nota||'').startsWith('🎁'));
+        return esRegalo ? '👤🎁' : '👤';
+      }
+      return iconByTipo[tipo] || '◉';
+    }
+    // Nodo destino (libro al que se llegó)
+    return '📖';
+  };
+
   const nodeSet=new Set(); data.forEach(d=>{nodeSet.add(d.fuente);nodeSet.add(d.destino);});
   const nodes=[...nodeSet].map(name=>({
     id:name, label:name,
     inLibrary:libTitles.has(name),
     isEvent:!libTitles.has(name)&&name!=='⭐ Origen',
-    icon:name==='⭐ Origen'?'⭐':(libTitles.has(name)?'📚':'🎙'),
+    icon:iconForNode(name),
     tooltip:name
   }));
   const links=data.map(d=>({ source:d.fuente, target:d.destino, tipo:d.tipo, id:d.id, nota:d.nota }));
