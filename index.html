@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1a1510">
-<title>LUMEN v95 — Biblioteca Personal</title>
+<title>LUMEN v100 — Biblioteca Personal</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231a1510'/><text x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' font-family='Georgia,serif' font-size='14' font-weight='900' font-style='italic' fill='%23c8952a' letter-spacing='0.5'>L</text><rect x='6' y='23' width='20' height='2' rx='1' fill='%238b2020'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
@@ -1045,6 +1045,12 @@ select.input { cursor: pointer; }
       <button class="btn btn-secondary btn-sm" style="width:auto;" onclick="openModalRuta()">+ Añadir conexión</button>
       <button class="btn btn-secondary btn-sm" style="width:auto;" onclick="generarRutasMismoAutor()">↻ Actualizar</button>
       <span id="ruta-count" style="font-size:11px;color:var(--ink4);margin-left:auto;"></span>
+      <div style="position:relative;margin-left:6px;">
+        <input type="text" id="ruta-search" placeholder="🔍 Buscar nodo..." oninput="onRutaSearch(this.value)"
+          style="border:1.5px solid var(--border);border-radius:4px;padding:5px 28px 5px 8px;font-size:11px;font-family:var(--font-sans);background:#fff;color:var(--ink);width:130px;">
+        <button onclick="document.getElementById('ruta-search').value='';onRutaSearch('')"
+          style="position:absolute;right:4px;top:50%;transform:translateY(-50%);border:none;background:none;cursor:pointer;font-size:12px;color:var(--ink4);padding:0;line-height:1;">✕</button>
+      </div>
     </div>
     <div id="mapa-rutas-svg" style="flex:1;overflow:hidden;position:relative;cursor:grab;">
       <div id="ruta-empty" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;color:var(--ink4);">
@@ -1290,7 +1296,7 @@ select.input { cursor: pointer; }
     Cerrar sesión
   </button>
   <div style="padding:8px 16px 10px;border-top:1px solid var(--border);font-size:10px;color:var(--ink4);letter-spacing:1px;text-align:right;">
-    LUMEN v83
+    LUMEN v100
   </div>
 </div>
 
@@ -7572,6 +7578,29 @@ function generarRutasMismoAutor(silencioso = false) {
   if (!silencioso) showToast(`✓ ${creadas} conexiones creadas${reemplazadas ? ', ' + reemplazadas + ' actualizadas' : ''}`);
 }
 
+function onRutaSearch(q) {
+  q = q.trim().toLowerCase();
+  const svg = d3.select('#mapa-rutas-svg svg g');
+  if (!svg.node()) return;
+
+  svg.selectAll('g[cursor]').each(function(d) {
+    if (!d) return;
+    const match = !q || d.label.toLowerCase().includes(q);
+    d3.select(this).selectAll('circle')
+      .attr('opacity', match ? 1 : 0.15);
+    d3.select(this).selectAll('text')
+      .attr('opacity', match ? 1 : 0.15);
+  });
+
+  svg.selectAll('line')
+    .attr('opacity', function(d) {
+      if (!q) return 0.75;
+      const s = typeof d.source === 'object' ? d.source.label : d.source;
+      const t = typeof d.target === 'object' ? d.target.label : d.target;
+      return (s.toLowerCase().includes(q) || t.toLowerCase().includes(q)) ? 0.75 : 0.08;
+    });
+}
+
 function deleteRuta(id) {
   if (!confirm('¿Eliminar esta conexión?')) return;
   mapas.rutas=mapas.rutas.filter(x=>x.id!==id);
@@ -7687,7 +7716,7 @@ function buildD3Graph(containerId, nodes, links, colorFn, tooltipEdgeFn) {
     if (!salientes.length) return;
     activePopupNode = d.id;
 
-    const tipoNodo = fuenteTipo ? fuenteTipo[d.id] : null;
+    const tipoNodo = fuenteTipo[d.id] || null;
     const tipoLabel = {
       charla:'Conferencia', cancion:'Canción', podcast:'Podcast',
       serie:'Serie', pelicula:'Película', persona:'Persona',
@@ -7833,7 +7862,8 @@ function renderMapaInfluencias() {
 
   buildD3Graph('mapa-influencias-svg', nodes, links,
     tipo=>INF_COLORS[tipo]||'#999',
-    d=>`${INF_LABELS[d.tipo]||d.tipo}${d.libro_ref?' · '+d.libro_ref:''}${d.pagina?' p.'+d.pagina:''}${d.texto?'\n"'+d.texto+'"':''}`
+    d=>`${INF_LABELS[d.tipo]||d.tipo}${d.libro_ref?' · '+d.libro_ref:''}${d.pagina?' p.'+d.pagina:''}${d.texto?'\n"'+d.texto+'"':''}`,
+    {}
   );
 }
 
@@ -7934,7 +7964,8 @@ function renderMapaRutas() {
 
   buildD3Graph('mapa-rutas-svg', nodes, links,
     tipo=>RUTA_COLORS[tipo]||'#999',
-    d=>`${RUTA_LABELS[d.tipo]||d.tipo}${d.nota?'\n'+d.nota:''}`
+    d=>`${RUTA_LABELS[d.tipo]||d.tipo}${d.nota?'\n'+d.nota:''}`,
+    fuenteTipo
   );
 }
 
