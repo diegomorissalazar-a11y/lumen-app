@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1a1510">
-<title>LUMEN v111 — Biblioteca Personal</title>
+<title>LUMEN v112 — Biblioteca Personal</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231a1510'/><text x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' font-family='Georgia,serif' font-size='14' font-weight='900' font-style='italic' fill='%23c8952a' letter-spacing='0.5'>L</text><rect x='6' y='23' width='20' height='2' rx='1' fill='%238b2020'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
@@ -7572,6 +7572,53 @@ function loadRutaCustomNodes() {
   try { return JSON.parse(localStorage.getItem(RUTA_CUSTOM_KEY) || '{}'); }
   catch { return {}; }
 }
+const PROGRAMA_KEY = 'lumen_ruta_programas_v1';
+function loadProgramas() {
+  try { return JSON.parse(localStorage.getItem(PROGRAMA_KEY) || '[]'); } catch { return []; }
+}
+function saveProgramaCustom(nombre) {
+  nombre = (nombre||'').trim();
+  if (!nombre) return;
+  const arr = loadProgramas();
+  if (!arr.some(p => p.trim() === nombre)) { arr.push(nombre); localStorage.setItem(PROGRAMA_KEY, JSON.stringify(arr)); }
+}
+function rellenarProgramaSel() {
+  const sel      = document.getElementById('ruta-programa-sel');
+  const libre    = document.getElementById('ruta-programa-libre');
+  const hint     = document.getElementById('ruta-programa-hint');
+  const nodoWrap = document.getElementById('ruta-programa-nodo-wrap');
+  const nodoCb   = document.getElementById('ruta-programa-nodo');
+  if (!sel) return;
+  if (nodoWrap) nodoWrap.style.display = 'none';
+  if (nodoCb)   nodoCb.checked = false;
+  const fromRutas = [...new Set((mapas.rutas||[]).filter(r=>r.programa).map(r=>r.programa.trim()))];
+  const custom    = loadProgramas();
+  const todos     = [...new Set([...fromRutas,...custom])].sort((a,b)=>a.localeCompare(b,'es'));
+  sel.innerHTML = '<option value="">— Sin programa —</option>';
+  todos.forEach(p => { const o=document.createElement('option'); o.value=p; o.textContent=p; sel.appendChild(o); });
+  const oN=document.createElement('option'); oN.value='__nuevo__'; oN.textContent='✏ Agregar nuevo...'; sel.appendChild(oN);
+  if (libre) libre.style.display='none';
+  if (hint)  hint.style.display='none';
+}
+function onProgramaLibreInput() {
+  const libre    = document.getElementById('ruta-programa-libre');
+  const nodoWrap = document.getElementById('ruta-programa-nodo-wrap');
+  if (nodoWrap) nodoWrap.style.display = libre?.value.trim() ? 'flex' : 'none';
+}
+function onProgramaSelChange() {
+  const sel      = document.getElementById('ruta-programa-sel');
+  const libre    = document.getElementById('ruta-programa-libre');
+  const hint     = document.getElementById('ruta-programa-hint');
+  const nodoWrap = document.getElementById('ruta-programa-nodo-wrap');
+  if (!sel) return;
+  if (sel.value === '__nuevo__') {
+    libre.style.display = 'block'; hint.style.display = 'block'; libre.focus();
+  } else {
+    libre.style.display = 'none'; hint.style.display = 'none'; if(libre) libre.value = '';
+  }
+  if (nodoWrap) nodoWrap.style.display = (sel.value && sel.value !== '__nuevo__') ? 'flex' : 'none';
+}
+
 function saveRutaCustomNode(tipo, titulo) {
   titulo = (titulo||'').trim();
   if (!titulo) return;
@@ -7871,11 +7918,17 @@ function openModalRuta(editId) {
         }
         // Recuperar campos extra desde la nota
         if (ruta.tipo === 'cancion' || ruta.tipo === 'charla' || ruta.tipo === 'podcast' || ruta.tipo === 'entrevista') {
-          if (ruta.tipo === 'entrevista' && ruta.programa) {
+          if (ruta.tipo === 'entrevista') {
             rellenarProgramaSel();
             setTimeout(() => {
-              const pSel = document.getElementById('ruta-programa-sel');
-              if (pSel) pSel.value = ruta.programa;
+              const pSel  = document.getElementById('ruta-programa-sel');
+              const pNodo = document.getElementById('ruta-programa-nodo');
+              const pWrap = document.getElementById('ruta-programa-nodo-wrap');
+              if (pSel && ruta.programa) {
+                pSel.value = ruta.programa;
+                if (pWrap) pWrap.style.display = 'flex';
+                if (pNodo) pNodo.checked = !!(ruta.programaNodo);
+              }
             }, 50);
           }
           if (ruta.nota) {
@@ -7955,10 +8008,20 @@ function saveRuta() {
     notaFinal = subLabel + (notaFinal ? ' · ' + notaFinal : '');
   }
 
+  // Leer programa y flag nodo (solo para entrevista)
+  let programa = '', programaNodo = false;
+  if (tipo === 'entrevista') {
+    const pSel   = document.getElementById('ruta-programa-sel');
+    const pLibre = document.getElementById('ruta-programa-libre');
+    const pNodo  = document.getElementById('ruta-programa-nodo');
+    if (pSel?.value === '__nuevo__') { programa=(pLibre?.value||'').trim(); if(programa) saveProgramaCustom(programa); }
+    else { programa=(pSel?.value||'').trim(); }
+    programaNodo = !!(pNodo?.checked && programa);
+  }
   const obj = {
     id:        editId || 'ruta_' + Date.now(),
     tipo, fuente_tipo,
-    fuente, destino,
+    fuente, destino, programa, programaNodo,
     nota:      notaFinal,
     createdAt: editId ? (mapas.rutas.find(x=>x.id===editId)?.createdAt||Date.now()) : Date.now()
   };
@@ -8494,7 +8557,7 @@ function renderMapaRutas() {
   const links   = [];
 
   data.forEach(d => {
-    if (d.programa && d.tipo === 'entrevista') {
+    if (d.programa && d.programaNodo && d.tipo === 'entrevista') {
       nodeSet.add(d.programa);
       nodeSet.add(d.fuente);
       nodeSet.add(d.destino);
