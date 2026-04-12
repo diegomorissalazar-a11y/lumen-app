@@ -8058,8 +8058,11 @@ function actualizarBadgeSinConectar() {
   const listaEl  = document.getElementById('ruta-sin-lista');
   if (!btn) return;
 
-  // Libros leídos/leyendo que no aparecen en ninguna ruta como destino
-  const enRutas = new Set(mapas.rutas.map(r => r.destino).filter(Boolean));
+  // Libros leídos/leyendo que no aparecen en ninguna ruta como fuente NI como destino
+  const enRutas = new Set([
+    ...mapas.rutas.map(r => r.destino).filter(Boolean),
+    ...mapas.rutas.map(r => r.fuente).filter(Boolean)
+  ]);
   const sinConectar = db.entries
     .filter(e => e.type === 'libro' && (e.estado === 'leido' || e.estado === 'leyendo') && !enRutas.has(e.titulo))
     .sort((a,b) => a.titulo.localeCompare(b.titulo,'es'));
