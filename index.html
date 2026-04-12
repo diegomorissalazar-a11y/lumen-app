@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1a1510">
-<title>LUMEN v105 — Biblioteca Personal</title>
+<title>LUMEN v106 — Biblioteca Personal</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231a1510'/><text x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' font-family='Georgia,serif' font-size='14' font-weight='900' font-style='italic' fill='%23c8952a' letter-spacing='0.5'>L</text><rect x='6' y='23' width='20' height='2' rx='1' fill='%238b2020'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
@@ -2564,6 +2564,8 @@ function saveDB() {
         entries: entriesClean,
         mapas: cleanForFirestore(loadMapas()),
         desafios: cleanForFirestore(loadDesafios()),
+        rutaCustom: cleanForFirestore(loadRutaCustomNodes()),
+        rutaProgramas: cleanForFirestore(loadProgramas()),
         updatedAt: Date.now()
       };
       firestore.collection('users').doc(currentUser.uid).collection('data').doc('library').set(payload)
@@ -2592,6 +2594,8 @@ async function syncToFirestore() {
       entries: entriesClean,
       mapas: cleanForFirestore(loadMapas()),
       desafios: cleanForFirestore(loadDesafios()),
+      rutaCustom: cleanForFirestore(loadRutaCustomNodes()),
+      rutaProgramas: cleanForFirestore(loadProgramas()),
       updatedAt: Date.now()
     };
     await firestore.collection('users').doc(currentUser.uid).collection('data').doc('library').set(payload);
@@ -2641,6 +2645,21 @@ async function pullAndMerge(uid, silent) {
         };
         localStorage.setItem(MAPAS_KEY, JSON.stringify(mergedMapas));
         mapas = mergedMapas;
+      }
+      // Restaurar nodos custom y programas
+      if (remote.rutaCustom) {
+        const localCustom = loadRutaCustomNodes();
+        const merged = { ...localCustom };
+        Object.entries(remote.rutaCustom).forEach(([tipo, arr]) => {
+          if (!merged[tipo]) merged[tipo] = [];
+          arr.forEach(n => { if (!merged[tipo].includes(n)) merged[tipo].push(n); });
+        });
+        localStorage.setItem(RUTA_CUSTOM_KEY, JSON.stringify(merged));
+      }
+      if (remote.rutaProgramas) {
+        const localProg = loadProgramas();
+        const mergedProg = [...new Set([...localProg, ...remote.rutaProgramas])];
+        localStorage.setItem(PROGRAMA_KEY, JSON.stringify(mergedProg));
       }
       if (remote.desafios) {
         // Desafíos: merge por año — conservar el más reciente
@@ -2718,6 +2737,20 @@ function subscribeToFirestore(uid) {
       };
       localStorage.setItem(MAPAS_KEY, JSON.stringify(mergedMapas));
       mapas = mergedMapas;
+    }
+    if (remote.rutaCustom) {
+      const localCustom = loadRutaCustomNodes();
+      const merged = { ...localCustom };
+      Object.entries(remote.rutaCustom).forEach(([tipo, arr]) => {
+        if (!merged[tipo]) merged[tipo] = [];
+        arr.forEach(n => { if (!merged[tipo].includes(n)) merged[tipo].push(n); });
+      });
+      localStorage.setItem(RUTA_CUSTOM_KEY, JSON.stringify(merged));
+    }
+    if (remote.rutaProgramas) {
+      const localProg = loadProgramas();
+      const mergedProg = [...new Set([...localProg, ...remote.rutaProgramas])];
+      localStorage.setItem(PROGRAMA_KEY, JSON.stringify(mergedProg));
     }
     if (remote.desafios) {
       const localDes = loadDesafios();
