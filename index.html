@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1a1510">
-<title>LUMEN v107 — Biblioteca Personal</title>
+<title>LUMEN v111 — Biblioteca Personal</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231a1510'/><text x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' font-family='Georgia,serif' font-size='14' font-weight='900' font-style='italic' fill='%23c8952a' letter-spacing='0.5'>L</text><rect x='6' y='23' width='20' height='2' rx='1' fill='%238b2020'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
@@ -1272,6 +1272,11 @@ select.input { cursor: pointer; }
             style="padding:10px 6px;border:2px solid var(--border);border-radius:4px;background:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font-sans);color:var(--ink3);text-align:center;">
             🎙<br>Conferencia
           </button>
+          <button class="ruta-tipo-conexion" data-tipo="entrevista"
+            onclick="selectRutaTipoConexion('entrevista',this)"
+            style="padding:10px 6px;border:2px solid var(--border);border-radius:4px;background:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font-sans);color:var(--ink3);text-align:center;">
+            🎤<br>Entrevista
+          </button>
           <button class="ruta-tipo-conexion" data-tipo="serie"
             onclick="selectRutaTipoConexion('serie',this)"
             style="padding:10px 6px;border:2px solid var(--border);border-radius:4px;background:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font-sans);color:var(--ink3);text-align:center;">
@@ -1348,6 +1353,24 @@ select.input { cursor: pointer; }
           <label>Nombre de la charla o entrevista (opcional)</label>
           <input class="input" type="text" id="ruta-charla-titulo"
             placeholder="Título de la charla, podcast, entrevista...">
+        </div>
+        <!-- Campos entrevista: programa + nombre -->
+        <div id="ruta-programa-field" style="display:none;" class="field">
+          <label>Programa</label>
+          <select class="input" id="ruta-programa-sel" onchange="onProgramaSelChange()" style="margin-bottom:6px;">
+            <option value="">— Sin programa —</option>
+          </select>
+          <input class="input" type="text" id="ruta-programa-libre"
+            placeholder="Ej: A Fondo, La Belleza de Pensar..."
+            style="display:none;">
+          <div id="ruta-programa-hint" style="display:none;font-size:11px;color:var(--gold);margin-top:4px;">
+            ✓ Se guardará como programa reutilizable
+          </div>
+        </div>
+        <div id="ruta-entrevista-field" style="display:none;" class="field">
+          <label>Nombre de la entrevista (opcional)</label>
+          <input class="input" type="text" id="ruta-entrevista-titulo"
+            placeholder="Título o tema de la entrevista...">
         </div>
         <!-- Campo extra para podcast -->
         <div id="ruta-podcast-field" style="display:none;" class="field">
@@ -1426,7 +1449,7 @@ select.input { cursor: pointer; }
     Cerrar sesión
   </button>
   <div style="padding:8px 16px 10px;border-top:1px solid var(--border);font-size:10px;color:var(--ink4);letter-spacing:1px;text-align:right;">
-    LUMEN v100
+    LUMEN v110
   </div>
 </div>
 
