@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1a1510">
-<title>LUMEN v106 — Biblioteca Personal</title>
+<title>LUMEN v107 — Biblioteca Personal</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231a1510'/><text x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' font-family='Georgia,serif' font-size='14' font-weight='900' font-style='italic' fill='%23c8952a' letter-spacing='0.5'>L</text><rect x='6' y='23' width='20' height='2' rx='1' fill='%238b2020'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
@@ -1045,7 +1045,18 @@ select.input { cursor: pointer; }
       <button class="btn btn-secondary btn-sm" style="width:auto;" onclick="openModalRuta()">+ Añadir conexión</button>
       <button class="btn btn-secondary btn-sm" style="width:auto;" onclick="generarRutasMismoAutor()">↻ Actualizar</button>
       <span id="ruta-count" style="font-size:11px;color:var(--ink4);margin-left:auto;"></span>
-      <div style="position:relative;margin-left:6px;">
+      <!-- Badge libros sin conectar -->
+      <div style="position:relative;">
+        <button id="ruta-sin-conectar-btn" onclick="toggleSinConectar()"
+          style="display:none;border:1.5px solid var(--border);border-radius:4px;background:#fff;font-size:10px;font-weight:700;cursor:pointer;font-family:var(--font-sans);color:var(--ink3);padding:5px 8px;white-space:nowrap;">
+          📖 <span id="ruta-sin-count">0</span> sin conectar
+        </button>
+        <div id="ruta-sin-dropdown" style="display:none;position:absolute;right:0;top:calc(100% + 4px);background:#fff;border:1.5px solid var(--border);border-radius:6px;box-shadow:0 4px 16px rgba(0,0,0,0.12);z-index:200;min-width:220px;max-height:280px;overflow-y:auto;">
+          <div style="padding:8px 12px;font-size:10px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--ink4);border-bottom:1px solid var(--cream2);">Libros sin conexión</div>
+          <div id="ruta-sin-lista"></div>
+        </div>
+      </div>
+      <div style="position:relative;margin-left:4px;">
         <input type="text" id="ruta-search" placeholder="🔍 Buscar nodo..." oninput="onRutaSearch(this.value)"
           style="border:1.5px solid var(--border);border-radius:4px;padding:5px 28px 5px 8px;font-size:11px;font-family:var(--font-sans);background:#fff;color:var(--ink);width:130px;">
         <button onclick="document.getElementById('ruta-search').value='';onRutaSearch('')"
@@ -1072,19 +1083,11 @@ select.input { cursor: pointer; }
     </div>
     <div class="modal-body">
       <input type="hidden" id="inf-edit-id">
-      <div class="field">
-        <label>Fuente (quien influye / cita)</label>
-        <input class="input" type="text" id="inf-fuente" placeholder="Autor o título de la obra fuente" list="inf-fuente-list">
-        <datalist id="inf-fuente-list"></datalist>
-      </div>
-      <div class="field">
-        <label>Destino (quien es influido / citado)</label>
-        <input class="input" type="text" id="inf-destino" placeholder="Autor o título de la obra destino" list="inf-destino-list">
-        <datalist id="inf-destino-list"></datalist>
-      </div>
+
+      <!-- 1. Tipo de relación — PRIMERO -->
       <div class="field">
         <label>Tipo de relación</label>
-        <select class="input" id="inf-tipo">
+        <select class="input" id="inf-tipo" onchange="onInfTipoChange()">
           <option value="cita_directa">🟠 Cita directa</option>
           <option value="cita_indirecta">🟡 Cita indirecta</option>
           <option value="uso_personaje">🔵 Uso de personaje</option>
@@ -1092,26 +1095,153 @@ select.input { cursor: pointer; }
           <option value="continuacion">🟣 Continuación / adaptación</option>
         </select>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-        <div class="field">
-          <label>Libro donde lo encontré</label>
-          <input class="input" type="text" id="inf-libro-ref" placeholder="Título de mi libro" list="inf-libro-list">
-          <datalist id="inf-libro-list"></datalist>
-        </div>
-        <div class="field">
-          <label>Página</label>
-          <input class="input" type="number" id="inf-pagina" placeholder="57">
-        </div>
-      </div>
+
+      <!-- 2. Fuente — autor que influye -->
       <div class="field">
-        <label>Texto de referencia (opcional)</label>
-        <textarea class="input" id="inf-texto" rows="3" placeholder="Transcripción o descripción de la referencia..." style="resize:vertical;font-family:var(--font-serif);font-size:13px;"></textarea>
+        <label id="inf-fuente-label">Autor que influye / cita</label>
+        <select class="input" id="inf-fuente-sel" onchange="onInfFuenteSelChange()" style="margin-bottom:6px;">
+          <option value="">— Selecciona un autor —</option>
+        </select>
+        <input class="input" type="text" id="inf-fuente-libre"
+          placeholder="No está en la lista, escribe aquí..."
+          style="display:none;" oninput="onInfFuenteLibreInput()">
+        <div id="inf-fuente-libre-hint" style="display:none;font-size:11px;color:var(--gold);margin-top:3px;">
+          ✓ Se guardará como nodo reutilizable
+        </div>
       </div>
+
+      <!-- 3. Obra citada / fuente ISO -->
+      <div id="inf-panel-cita-directa">
+        <!-- Obra citada -->
+        <div class="field">
+          <label>Obra citada</label>
+          <select class="input" id="inf-obra-sel" onchange="onInfObraSelChange()" style="margin-bottom:6px;">
+            <option value="">— Selecciona o escribe abajo —</option>
+          </select>
+          <input class="input" type="text" id="inf-obra-libre"
+            placeholder="Título de la obra (si no está en biblioteca)..."
+            style="display:none;">
+        </div>
+        <!-- Campos ISO: editorial, año, edición, ciudad -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div class="field" style="margin-bottom:0;">
+            <label>Editorial</label>
+            <input class="input" type="text" id="inf-editorial" placeholder="Editorial...">
+          </div>
+          <div class="field" style="margin-bottom:0;">
+            <label>Año de publicación</label>
+            <input class="input" type="text" id="inf-anio-pub" placeholder="1949">
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
+          <div class="field" style="margin-bottom:0;">
+            <label>Ciudad</label>
+            <input class="input" type="text" id="inf-ciudad" placeholder="Londres...">
+          </div>
+          <div class="field" style="margin-bottom:0;">
+            <label>Edición</label>
+            <input class="input" type="text" id="inf-edicion" placeholder="2ª ed.">
+          </div>
+        </div>
+        <!-- Ubicación de la cita -->
+        <div class="field" style="margin-top:8px;">
+          <label>Ubicación en la obra</label>
+          <select class="input" id="inf-ubicacion-tipo" onchange="onInfUbicacionChange()" style="margin-bottom:6px;">
+            <option value="pagina">Página</option>
+            <option value="capitulo">Capítulo</option>
+            <option value="epigrafe">Epígrafe</option>
+            <option value="dedicatoria">Dedicatoria</option>
+            <option value="titulo">Título de la obra</option>
+            <option value="otro">Otro</option>
+          </select>
+          <input class="input" type="text" id="inf-ubicacion-detalle"
+            placeholder="Ej: 45, o Cap. III, o nombre del epígrafe...">
+        </div>
+        <!-- Texto citado -->
+        <div class="field">
+          <label>Texto citado (opcional)</label>
+          <textarea class="input" id="inf-texto" rows="3"
+            placeholder="Fragmento literal o descripción de la referencia..."
+            style="resize:vertical;font-family:var(--font-serif);font-size:13px;"></textarea>
+        </div>
+      </div>
+
+      <!-- Panel cita indirecta: tipo de fuente -->
+      <div id="inf-panel-cita-indirecta" style="display:none;">
+        <div class="field">
+          <label>Tipo de fuente</label>
+          <select class="input" id="inf-fuente-indirecta-tipo" onchange="onInfFuenteIndirectaChange()" style="margin-bottom:8px;">
+            <option value="libro">📚 Libro</option>
+            <option value="entrevista_tv">📺 Entrevista / Programa de TV</option>
+            <option value="prensa">📰 Artículo de prensa</option>
+          </select>
+        </div>
+        <!-- Libro indirecto -->
+        <div id="inf-ind-libro" class="field">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <div class="field" style="margin-bottom:0;"><label>Año</label>
+              <input class="input" type="text" id="inf-ind-anio" placeholder="1949"></div>
+            <div class="field" style="margin-bottom:0;"><label>Página</label>
+              <input class="input" type="text" id="inf-ind-pagina" placeholder="45"></div>
+          </div>
+        </div>
+        <!-- Entrevista/TV indirecto -->
+        <div id="inf-ind-tv" style="display:none;">
+          <div class="field">
+            <label>Programa</label>
+            <input class="input" type="text" id="inf-ind-programa" placeholder="Nombre del programa...">
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <div class="field" style="margin-bottom:0;"><label>Canal / Productora</label>
+              <input class="input" type="text" id="inf-ind-canal" placeholder="Canal..."></div>
+            <div class="field" style="margin-bottom:0;"><label>Año</label>
+              <input class="input" type="text" id="inf-ind-tv-anio" placeholder="1977"></div>
+          </div>
+          <div class="field" style="margin-top:8px;">
+            <label>Link YouTube (opcional)</label>
+            <input class="input" type="url" id="inf-ind-youtube" placeholder="https://youtube.com/...">
+          </div>
+        </div>
+        <!-- Prensa indirecto -->
+        <div id="inf-ind-prensa" style="display:none;">
+          <div class="field">
+            <label>Título del artículo</label>
+            <input class="input" type="text" id="inf-ind-titulo-art" placeholder="Título...">
+          </div>
+          <div class="field">
+            <label>Medio</label>
+            <input class="input" type="text" id="inf-ind-medio" placeholder="El País, Le Monde...">
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <div class="field" style="margin-bottom:0;"><label>Fecha</label>
+              <input class="input" type="text" id="inf-ind-fecha" placeholder="12/03/1985"></div>
+            <div class="field" style="margin-bottom:0;"><label>Página / URL</label>
+              <input class="input" type="text" id="inf-ind-pag-url" placeholder="p.4 o URL"></div>
+          </div>
+        </div>
+        <div class="field" style="margin-top:8px;">
+          <label>Texto citado (opcional)</label>
+          <textarea class="input" id="inf-texto-ind" rows="2"
+            placeholder="Descripción de la referencia..."
+            style="resize:vertical;font-family:var(--font-serif);font-size:13px;"></textarea>
+        </div>
+      </div>
+
+      <!-- 4. Destino — el libro influido (cualquier estado) -->
+      <div class="field">
+        <label>Libro influido / destino</label>
+        <select class="input" id="inf-destino-sel">
+          <option value="">— Selecciona el libro —</option>
+        </select>
+      </div>
+
+      <!-- Cita ISO generada -->
+      <div id="inf-iso-preview" style="display:none;background:var(--cream2);border-radius:6px;padding:10px 12px;margin-bottom:12px;font-size:11px;color:var(--ink3);font-family:var(--font-serif);line-height:1.6;"></div>
+
       <button class="btn btn-primary" onclick="saveInfluencia()">Guardar relación</button>
     </div>
   </div>
 </div>
-
 <!-- ══════ MODAL: AÑADIR RUTA ══════ -->
 <div id="modal-ruta" class="modal-overlay">
   <div class="modal">
@@ -7087,47 +7217,314 @@ function getAutoresYLibros() {
 function getTitulosLibros() { return db.entries.map(e=>e.titulo).filter(Boolean).sort(); }
 
 // ══════════════════════════
+// ══════════════════════════
 //  INFLUENCIAS — CRUD
 // ══════════════════════════
+
+// ── Helpers para autocompletado ──────────────────────────
+function getAutoresBiblioteca() {
+  const autores = [...new Set(
+    db.entries.filter(e => e.autor && e.autor.trim()).map(e => e.autor.trim())
+  )].sort((a,b) => a.localeCompare(b,'es'));
+  return autores;
+}
+function getLibrosPorAutor(autor) {
+  return db.entries
+    .filter(e => e.type === 'libro' && (e.autor||'').trim() === autor)
+    .sort((a,b) => a.titulo.localeCompare(b.titulo,'es'));
+}
+function getTodosLibros() {
+  return db.entries
+    .filter(e => e.type === 'libro')
+    .sort((a,b) => a.titulo.localeCompare(b.titulo,'es'));
+}
+
+// ── Rellenar selectores ──────────────────────────────────
+function rellenarInfFuenteSel() {
+  const sel = document.getElementById('inf-fuente-sel');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">— Selecciona un autor —</option>';
+  getAutoresBiblioteca().forEach(a => {
+    const o = document.createElement('option'); o.value = a; o.textContent = a; sel.appendChild(o);
+  });
+  const oOtro = document.createElement('option');
+  oOtro.value = '__otro__'; oOtro.textContent = '✏ No está en la lista...';
+  sel.appendChild(oOtro);
+}
+
+function rellenarInfObraSel(autor) {
+  const sel   = document.getElementById('inf-obra-sel');
+  const libre = document.getElementById('inf-obra-libre');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">— Selecciona o escribe abajo —</option>';
+  if (autor && autor !== '__otro__') {
+    const libros = getLibrosPorAutor(autor);
+    libros.forEach(e => {
+      const o = document.createElement('option');
+      o.value = e.titulo; o.textContent = e.anio_pub ? `${e.titulo} (${e.anio_pub})` : e.titulo;
+      sel.appendChild(o);
+    });
+  }
+  const oOtro = document.createElement('option');
+  oOtro.value = '__otro__'; oOtro.textContent = '✏ Escribir título...';
+  sel.appendChild(oOtro);
+  if (libre) libre.style.display = 'none';
+}
+
+function rellenarInfDestinoSel() {
+  const sel = document.getElementById('inf-destino-sel');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">— Selecciona el libro —</option>';
+  getTodosLibros().forEach(e => {
+    const o = document.createElement('option');
+    o.value = e.titulo;
+    o.textContent = e.anio ? `${e.titulo} (${e.anio})` : e.titulo;
+    sel.appendChild(o);
+  });
+}
+
+// ── Eventos de cambio ────────────────────────────────────
+function onInfTipoChange() {
+  const tipo = document.getElementById('inf-tipo').value;
+  const esDirecta = tipo === 'cita_directa';
+  const esIndirecta = tipo === 'cita_indirecta';
+  document.getElementById('inf-panel-cita-directa').style.display   = esDirecta   ? 'block' : 'none';
+  document.getElementById('inf-panel-cita-indirecta').style.display = esIndirecta ? 'block' : 'none';
+  // Otros tipos: no muestran panel extra
+  const lbl = document.getElementById('inf-fuente-label');
+  const labels = {
+    cita_directa:      'Autor que es citado',
+    cita_indirecta:    'Autor o fuente que menciona',
+    uso_personaje:     'Obra de origen del personaje',
+    contexto_historico:'Contexto histórico / obra de referencia',
+    continuacion:      'Obra original',
+  };
+  if (lbl) lbl.textContent = labels[tipo] || 'Fuente';
+}
+
+function onInfFuenteSelChange() {
+  const sel   = document.getElementById('inf-fuente-sel');
+  const libre = document.getElementById('inf-fuente-libre');
+  const hint  = document.getElementById('inf-fuente-libre-hint');
+  if (sel.value === '__otro__') {
+    libre.style.display = 'block'; hint.style.display = 'block'; libre.focus();
+  } else {
+    libre.style.display = 'none'; hint.style.display = 'none'; libre.value = '';
+    // Autocompletar obra si el autor está en biblioteca
+    rellenarInfObraSel(sel.value);
+    // Intentar autocompletar editorial/ciudad/año desde primer libro del autor
+    if (sel.value && sel.value !== '__otro__') {
+      const libros = getLibrosPorAutor(sel.value);
+      if (libros.length > 0) {
+        const ref = libros[0];
+        const editorialEl = document.getElementById('inf-editorial');
+        const anioEl      = document.getElementById('inf-anio-pub');
+        if (editorialEl && !editorialEl.value) editorialEl.value = ref.editorial||'';
+        if (anioEl && !anioEl.value)           anioEl.value      = ref.anio_pub||'';
+      }
+    }
+    actualizarIsoPreview();
+  }
+}
+
+function onInfFuenteLibreInput() {
+  actualizarIsoPreview();
+}
+
+function onInfObraSelChange() {
+  const sel   = document.getElementById('inf-obra-sel');
+  const libre = document.getElementById('inf-obra-libre');
+  if (sel.value === '__otro__') {
+    libre.style.display = 'block'; libre.focus();
+  } else {
+    libre.style.display = 'none'; libre.value = '';
+    // Autocompletar editorial/año desde libro seleccionado
+    if (sel.value) {
+      const entry = db.entries.find(e => e.titulo === sel.value);
+      if (entry) {
+        const editorialEl = document.getElementById('inf-editorial');
+        const anioEl      = document.getElementById('inf-anio-pub');
+        const ciudadEl    = document.getElementById('inf-ciudad');
+        if (editorialEl) editorialEl.value = entry.editorial||editorialEl.value;
+        if (anioEl)      anioEl.value      = entry.anio_pub||anioEl.value;
+      }
+    }
+    actualizarIsoPreview();
+  }
+}
+
+function onInfUbicacionChange() {
+  actualizarIsoPreview();
+}
+
+function onInfFuenteIndirectaChange() {
+  const tipo = document.getElementById('inf-fuente-indirecta-tipo').value;
+  document.getElementById('inf-ind-libro').style.display   = tipo === 'libro'         ? 'block' : 'none';
+  document.getElementById('inf-ind-tv').style.display      = tipo === 'entrevista_tv'  ? 'block' : 'none';
+  document.getElementById('inf-ind-prensa').style.display  = tipo === 'prensa'         ? 'block' : 'none';
+}
+
+// ── Preview ISO 690 ──────────────────────────────────────
+function getInfFuente() {
+  const sel   = document.getElementById('inf-fuente-sel');
+  const libre = document.getElementById('inf-fuente-libre');
+  return sel && sel.value === '__otro__' ? libre?.value.trim() : sel?.value || '';
+}
+function getInfObra() {
+  const sel   = document.getElementById('inf-obra-sel');
+  const libre = document.getElementById('inf-obra-libre');
+  return sel && sel.value === '__otro__' ? libre?.value.trim() : sel?.value || '';
+}
+
+function actualizarIsoPreview() {
+  const preview = document.getElementById('inf-iso-preview');
+  if (!preview) return;
+  const tipo = document.getElementById('inf-tipo')?.value;
+  if (tipo !== 'cita_directa') { preview.style.display = 'none'; return; }
+
+  const autor     = getInfFuente();
+  const obra      = getInfObra();
+  const editorial = document.getElementById('inf-editorial')?.value.trim();
+  const anio      = document.getElementById('inf-anio-pub')?.value.trim();
+  const ciudad    = document.getElementById('inf-ciudad')?.value.trim();
+  const edicion   = document.getElementById('inf-edicion')?.value.trim();
+  const ubTipo    = document.getElementById('inf-ubicacion-tipo')?.value;
+  const ubDetalle = document.getElementById('inf-ubicacion-detalle')?.value.trim();
+
+  if (!autor && !obra) { preview.style.display = 'none'; return; }
+
+  const ubLabel = { pagina:'p.', capitulo:'cap.', epigrafe:'Epígrafe:', dedicatoria:'Dedicatoria', titulo:'[Título]', otro:'' };
+  let cita = '';
+  if (autor) cita += autor.toUpperCase() + '. ';
+  if (obra)  cita += `<em>${obra}</em>. `;
+  if (edicion) cita += edicion + '. ';
+  if (ciudad)  cita += ciudad + ': ';
+  if (editorial) cita += editorial + ', ';
+  if (anio)    cita += anio + '. ';
+  if (ubDetalle) cita += (ubLabel[ubTipo]||'') + ' ' + ubDetalle + '.';
+
+  preview.innerHTML = `<div style="font-size:9px;letter-spacing:1.2px;text-transform:uppercase;color:var(--ink4);font-family:var(--font-sans);margin-bottom:4px;font-weight:700;">Vista previa ISO 690</div>${cita.trim()}`;
+  preview.style.display = 'block';
+}
+
+// ── CRUD ─────────────────────────────────────────────────
 function openModalInfluencia(editId) {
-  const vals=getAutoresYLibros();
-  fillDatalist('inf-fuente-list', vals);
-  fillDatalist('inf-destino-list', vals);
-  fillDatalist('inf-libro-list', getTitulosLibros());
-  document.getElementById('inf-edit-id').value=editId||'';
+  rellenarInfFuenteSel();
+  rellenarInfDestinoSel();
+  document.getElementById('inf-edit-id').value = editId||'';
+
   if (editId) {
-    const inf=mapas.influencias.find(x=>x.id===editId);
+    const inf = mapas.influencias.find(x => x.id === editId);
     if (inf) {
-      document.getElementById('inf-fuente').value   =inf.fuente||'';
-      document.getElementById('inf-destino').value  =inf.destino||'';
-      document.getElementById('inf-tipo').value     =inf.tipo||'cita_directa';
-      document.getElementById('inf-libro-ref').value=inf.libro_ref||'';
-      document.getElementById('inf-pagina').value   =inf.pagina||'';
-      document.getElementById('inf-texto').value    =inf.texto||'';
+      document.getElementById('inf-tipo').value = inf.tipo||'cita_directa';
+      onInfTipoChange();
+      // Fuente
+      const fuenteSel = document.getElementById('inf-fuente-sel');
+      if ([...fuenteSel.options].some(o => o.value === inf.fuente)) {
+        fuenteSel.value = inf.fuente;
+        rellenarInfObraSel(inf.fuente);
+      } else {
+        fuenteSel.value = '__otro__';
+        document.getElementById('inf-fuente-libre').style.display = 'block';
+        document.getElementById('inf-fuente-libre').value = inf.fuente||'';
+      }
+      // Obra
+      const obraSel = document.getElementById('inf-obra-sel');
+      if ([...obraSel.options].some(o => o.value === inf.obra)) {
+        obraSel.value = inf.obra;
+      } else if (inf.obra) {
+        obraSel.value = '__otro__';
+        document.getElementById('inf-obra-libre').style.display = 'block';
+        document.getElementById('inf-obra-libre').value = inf.obra;
+      }
+      // Campos ISO
+      ['editorial','anio_pub','ciudad','edicion'].forEach(f => {
+        const el = document.getElementById('inf-'+f.replace('_','-'));
+        if (el) el.value = inf[f]||'';
+      });
+      document.getElementById('inf-ubicacion-tipo').value    = inf.ubicacion_tipo||'pagina';
+      document.getElementById('inf-ubicacion-detalle').value = inf.ubicacion_detalle||'';
+      document.getElementById('inf-texto').value             = inf.texto||'';
+      // Indirecta
+      if (inf.tipo === 'cita_indirecta') {
+        document.getElementById('inf-fuente-indirecta-tipo').value = inf.fuente_ind_tipo||'libro';
+        onInfFuenteIndirectaChange();
+        document.getElementById('inf-ind-anio').value        = inf.ind_anio||'';
+        document.getElementById('inf-ind-pagina').value      = inf.ind_pagina||'';
+        document.getElementById('inf-ind-programa').value    = inf.ind_programa||'';
+        document.getElementById('inf-ind-canal').value       = inf.ind_canal||'';
+        document.getElementById('inf-ind-tv-anio').value     = inf.ind_tv_anio||'';
+        document.getElementById('inf-ind-youtube').value     = inf.ind_youtube||'';
+        document.getElementById('inf-ind-titulo-art').value  = inf.ind_titulo_art||'';
+        document.getElementById('inf-ind-medio').value       = inf.ind_medio||'';
+        document.getElementById('inf-ind-fecha').value       = inf.ind_fecha||'';
+        document.getElementById('inf-ind-pag-url').value     = inf.ind_pag_url||'';
+        document.getElementById('inf-texto-ind').value       = inf.texto||'';
+      }
+      // Destino
+      const destSel = document.getElementById('inf-destino-sel');
+      if ([...destSel.options].some(o => o.value === inf.destino)) destSel.value = inf.destino;
+      actualizarIsoPreview();
     }
   } else {
-    ['inf-fuente','inf-destino','inf-libro-ref','inf-pagina','inf-texto'].forEach(id=>{
-      const el=document.getElementById(id); if(el) el.value='';
+    // Reset
+    document.getElementById('inf-tipo').value = 'cita_directa';
+    onInfTipoChange();
+    onInfFuenteIndirectaChange();
+    ['inf-editorial','inf-anio-pub','inf-ciudad','inf-edicion',
+     'inf-ubicacion-detalle','inf-texto','inf-texto-ind',
+     'inf-ind-anio','inf-ind-pagina','inf-ind-programa','inf-ind-canal',
+     'inf-ind-tv-anio','inf-ind-youtube','inf-ind-titulo-art',
+     'inf-ind-medio','inf-ind-fecha','inf-ind-pag-url'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.value = '';
     });
-    document.getElementById('inf-tipo').value='cita_directa';
+    document.getElementById('inf-ubicacion-tipo').value = 'pagina';
+    rellenarInfObraSel('');
+    actualizarIsoPreview();
   }
   openModal('modal-influencia');
 }
 
 function saveInfluencia() {
-  const fuente =document.getElementById('inf-fuente').value.trim();
-  const destino=document.getElementById('inf-destino').value.trim();
-  if (!fuente||!destino) { showToast('Ingresa fuente y destino'); return; }
-  const editId=document.getElementById('inf-edit-id').value;
-  const obj={
-    id:       editId||'inf_'+Date.now(),
-    fuente, destino,
-    tipo:     document.getElementById('inf-tipo').value,
-    libro_ref:document.getElementById('inf-libro-ref').value.trim(),
-    pagina:   parseInt(document.getElementById('inf-pagina').value)||null,
-    texto:    document.getElementById('inf-texto').value.trim(),
-    createdAt:editId?(mapas.influencias.find(x=>x.id===editId)?.createdAt||Date.now()):Date.now()
+  const tipo    = document.getElementById('inf-tipo').value;
+  const fuente  = getInfFuente().trim();
+  const destino = document.getElementById('inf-destino-sel').value.trim();
+  if (!fuente)  { showToast('Indica el autor o fuente'); return; }
+  if (!destino) { showToast('Selecciona el libro destino'); return; }
+  const editId  = document.getElementById('inf-edit-id').value;
+
+  const obra = getInfObra();
+
+  const obj = {
+    id:               editId || 'inf_' + Date.now(),
+    tipo, fuente, destino, obra,
+    editorial:        document.getElementById('inf-editorial')?.value.trim()||'',
+    anio_pub:         document.getElementById('inf-anio-pub')?.value.trim()||'',
+    ciudad:           document.getElementById('inf-ciudad')?.value.trim()||'',
+    edicion:          document.getElementById('inf-edicion')?.value.trim()||'',
+    ubicacion_tipo:   document.getElementById('inf-ubicacion-tipo')?.value||'pagina',
+    ubicacion_detalle:document.getElementById('inf-ubicacion-detalle')?.value.trim()||'',
+    texto:            (tipo==='cita_indirecta'
+                        ? document.getElementById('inf-texto-ind')?.value.trim()
+                        : document.getElementById('inf-texto')?.value.trim())||'',
+    // Campos cita indirecta
+    fuente_ind_tipo:  document.getElementById('inf-fuente-indirecta-tipo')?.value||'',
+    ind_anio:         document.getElementById('inf-ind-anio')?.value.trim()||'',
+    ind_pagina:       document.getElementById('inf-ind-pagina')?.value.trim()||'',
+    ind_programa:     document.getElementById('inf-ind-programa')?.value.trim()||'',
+    ind_canal:        document.getElementById('inf-ind-canal')?.value.trim()||'',
+    ind_tv_anio:      document.getElementById('inf-ind-tv-anio')?.value.trim()||'',
+    ind_youtube:      document.getElementById('inf-ind-youtube')?.value.trim()||'',
+    ind_titulo_art:   document.getElementById('inf-ind-titulo-art')?.value.trim()||'',
+    ind_medio:        document.getElementById('inf-ind-medio')?.value.trim()||'',
+    ind_fecha:        document.getElementById('inf-ind-fecha')?.value.trim()||'',
+    ind_pag_url:      document.getElementById('inf-ind-pag-url')?.value.trim()||'',
+    // Compatibilidad con campos anteriores
+    libro_ref:        destino,
+    pagina:           parseInt(document.getElementById('inf-ubicacion-detalle')?.value)||null,
+    createdAt:        editId ? (mapas.influencias.find(x=>x.id===editId)?.createdAt||Date.now()) : Date.now()
   };
+
   if (editId) { const i=mapas.influencias.findIndex(x=>x.id===editId); if(i>=0) mapas.influencias[i]=obj; }
   else mapas.influencias.push(obj);
   saveMapas();
@@ -7138,7 +7535,7 @@ function saveInfluencia() {
 
 function deleteInfluencia(id) {
   if (!confirm('¿Eliminar esta relación?')) return;
-  mapas.influencias=mapas.influencias.filter(x=>x.id!==id);
+  mapas.influencias = mapas.influencias.filter(x => x.id !== id);
   saveMapas(); renderMapaInfluencias(); showToast('Relación eliminada');
 }
 
@@ -7621,25 +8018,88 @@ function generarRutasMismoAutor(silencioso = false) {
 
 function onRutaSearch(q) {
   q = q.trim().toLowerCase();
-  const svg = d3.select('#mapa-rutas-svg svg g');
+  const svgEl = document.querySelector('#mapa-rutas-svg svg');
+  const svg   = d3.select('#mapa-rutas-svg svg g');
   if (!svg.node()) return;
 
+  // Atenuar nodos y links que no coinciden
+  let matchNode = null;
   svg.selectAll('g[cursor]').each(function(d) {
     if (!d) return;
     const match = !q || d.label.toLowerCase().includes(q);
-    d3.select(this).selectAll('circle')
-      .attr('opacity', match ? 1 : 0.15);
-    d3.select(this).selectAll('text')
-      .attr('opacity', match ? 1 : 0.15);
+    d3.select(this).selectAll('circle').attr('opacity', match ? 1 : 0.15);
+    d3.select(this).selectAll('text').attr('opacity', match ? 1 : 0.15);
+    if (match && q) matchNode = d;
   });
 
-  svg.selectAll('line')
-    .attr('opacity', function(d) {
-      if (!q) return 0.75;
-      const s = typeof d.source === 'object' ? d.source.label : d.source;
-      const t = typeof d.target === 'object' ? d.target.label : d.target;
-      return (s.toLowerCase().includes(q) || t.toLowerCase().includes(q)) ? 0.75 : 0.08;
-    });
+  svg.selectAll('line').attr('opacity', function(d) {
+    if (!q) return 0.75;
+    const s = typeof d.source === 'object' ? d.source.label : d.source;
+    const t = typeof d.target === 'object' ? d.target.label : d.target;
+    return (s.toLowerCase().includes(q) || t.toLowerCase().includes(q)) ? 0.75 : 0.08;
+  });
+
+  // Zoom al primer nodo que coincide
+  if (matchNode && svgEl && svgEl.__zoomBehavior) {
+    const W = svgEl.clientWidth  || 360;
+    const H = svgEl.clientHeight || 480;
+    const scale = 1.8;
+    const tx = W/2 - scale * matchNode.x;
+    const ty = H/2 - scale * matchNode.y;
+    d3.select(svgEl).transition().duration(600)
+      .call(svgEl.__zoomBehavior.transform,
+        d3.zoomIdentity.translate(tx, ty).scale(scale));
+  }
+}
+
+function actualizarBadgeSinConectar() {
+  const btn      = document.getElementById('ruta-sin-conectar-btn');
+  const countEl  = document.getElementById('ruta-sin-count');
+  const listaEl  = document.getElementById('ruta-sin-lista');
+  if (!btn) return;
+
+  // Libros leídos/leyendo que no aparecen en ninguna ruta como destino
+  const enRutas = new Set(mapas.rutas.map(r => r.destino).filter(Boolean));
+  const sinConectar = db.entries
+    .filter(e => e.type === 'libro' && (e.estado === 'leido' || e.estado === 'leyendo') && !enRutas.has(e.titulo))
+    .sort((a,b) => a.titulo.localeCompare(b.titulo,'es'));
+
+  if (sinConectar.length === 0) { btn.style.display = 'none'; return; }
+  btn.style.display = 'inline-flex';
+  countEl.textContent = sinConectar.length;
+
+  listaEl.innerHTML = sinConectar.map(e => `
+    <div style="padding:8px 12px;border-bottom:1px solid var(--cream2);font-size:12px;color:var(--ink);
+      display:flex;align-items:center;gap:8px;cursor:pointer;"
+      onclick="buscarNodoEnGrafo('${e.titulo.replace(/'/g,"\\'")}')">
+      <span style="flex:1;font-weight:700;font-family:var(--font-serif);">${e.titulo}</span>
+      <span style="font-size:10px;color:var(--ink4);">${e.anio||''}</span>
+    </div>`).join('');
+}
+
+function toggleSinConectar() {
+  const dd = document.getElementById('ruta-sin-dropdown');
+  dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
+  // Cerrar al click fuera
+  if (dd.style.display === 'block') {
+    setTimeout(() => {
+      const handler = (e) => {
+        if (!dd.contains(e.target) && !document.getElementById('ruta-sin-conectar-btn').contains(e.target)) {
+          dd.style.display = 'none';
+          document.removeEventListener('click', handler);
+        }
+      };
+      document.addEventListener('click', handler);
+    }, 10);
+  }
+}
+
+function buscarNodoEnGrafo(titulo) {
+  // Cerrar dropdown
+  document.getElementById('ruta-sin-dropdown').style.display = 'none';
+  // Llenar búsqueda y disparar zoom
+  const input = document.getElementById('ruta-search');
+  if (input) { input.value = titulo; onRutaSearch(titulo); }
 }
 
 function deleteRuta(id) {
@@ -7657,7 +8117,11 @@ function buildD3Graph(containerId, nodes, links, colorFn, tooltipEdgeFn, fuenteT
   const W=container.clientWidth||360, H=container.clientHeight||480;
   const svg=d3.select('#'+containerId).append('svg').attr('width',W).attr('height',H);
   const g=svg.append('g');
-  svg.call(d3.zoom().scaleExtent([0.15,4]).on('zoom',e=>g.attr('transform',e.transform)));
+  const zoomBehavior = d3.zoom().scaleExtent([0.15,4]).on('zoom',e=>g.attr('transform',e.transform));
+  svg.call(zoomBehavior);
+  // Exponer zoom para búsqueda externa
+  svg.node().__zoomBehavior = zoomBehavior;
+  svg.node().__zoomG = g;
 
   // ── Ranking por grado: calcular entradas + salidas por nodo ──
   const degree = {};
@@ -7958,6 +8422,7 @@ function renderMapaRutas() {
   if (elCount) elCount.textContent=`${data.length} conexión${data.length!==1?'es':''}`;
   if (elEmpty) elEmpty.style.display=data.length===0?'flex':'none';
   renderListaRutas();
+  actualizarBadgeSinConectar();
   if (data.length===0) { d3.select('#mapa-rutas-svg').selectAll('svg').remove(); return; }
 
 
