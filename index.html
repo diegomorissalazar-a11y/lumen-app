@@ -1024,6 +1024,10 @@ select.input { cursor: pointer; }
       style="flex:1;padding:12px;border:none;background:none;font-family:var(--font-sans);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;color:var(--ink4);border-bottom:2px solid transparent;margin-bottom:-2px;">
       🎬 Películas
     </button>
+    <button id="mapa-tab-normalizar" onclick="switchMapaTab('normalizar')"
+      style="flex:1;padding:12px;border:none;background:none;font-family:var(--font-sans);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;color:var(--ink4);border-bottom:2px solid transparent;margin-bottom:-2px;">
+      🧹 Normalizar
+    </button>
   </div>
 
   <!-- TAB: INFLUENCIAS -->
@@ -1105,6 +1109,41 @@ select.input { cursor: pointer; }
     </div>
     <!-- Tooltip flotante -->
     <div id="pel-tooltip" style="position:fixed;display:none;background:var(--ink);color:var(--cream);padding:8px 12px;border-radius:6px;font-size:12px;font-family:var(--font-sans);z-index:500;pointer-events:none;max-width:220px;line-height:1.5;box-shadow:0 4px 16px rgba(0,0,0,0.3);"></div>
+  </div>
+
+  <!-- TAB: NORMALIZAR -->
+  <div id="mapa-normalizar-panel" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+    <!-- Toolbar -->
+    <div style="padding:10px 16px;display:flex;gap:8px;align-items:center;border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap;">
+      <span style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--ink4);">Ámbito:</span>
+      <button class="norm-scope-btn active" id="norm-scope-peliculas" onclick="setNormScope('peliculas',this)"
+        style="padding:4px 10px;border:1.5px solid var(--ink);border-radius:3px;background:var(--ink);color:#fff;font-size:10px;font-weight:700;font-family:var(--font-sans);cursor:pointer;">🎬 Películas/Series</button>
+      <button class="norm-scope-btn" id="norm-scope-mapas" onclick="setNormScope('mapas',this)"
+        style="padding:4px 10px;border:1.5px solid var(--border);border-radius:3px;background:#fff;color:var(--ink3);font-size:10px;font-weight:700;font-family:var(--font-sans);cursor:pointer;">🔗 Influencias & Rutas</button>
+      <span style="font-size:10px;color:var(--ink4);margin-left:4px;">Umbral:</span>
+      <input type="range" id="norm-threshold" min="75" max="100" value="85" step="1"
+        style="width:80px;accent-color:var(--gold);" oninput="onNormThresholdChange(this.value)">
+      <span id="norm-threshold-val" style="font-size:11px;font-weight:700;color:var(--gold);min-width:32px;">85%</span>
+      <button class="btn btn-secondary btn-sm" style="width:auto;" onclick="runNormalizacion()">🔍 Analizar</button>
+      <span id="norm-count" style="font-size:11px;color:var(--ink4);margin-left:auto;"></span>
+    </div>
+    <!-- Resultados -->
+    <div id="norm-resultados" style="flex:1;overflow-y:auto;padding:12px 16px;">
+      <div id="norm-empty" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:8px;color:var(--ink4);">
+        <div style="font-size:32px;">🧹</div>
+        <div style="font-size:13px;font-style:italic;text-align:center;">Pulsa "Analizar" para detectar<br>posibles duplicados en tus datos.</div>
+      </div>
+      <div id="norm-pares-lista"></div>
+    </div>
+    <!-- Lista negra -->
+    <div style="border-top:1px solid var(--border);flex-shrink:0;">
+      <button onclick="toggleNormListaNegra()" style="width:100%;padding:8px 16px;border:none;background:none;font-family:var(--font-sans);font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--ink4);cursor:pointer;text-align:left;">
+        🚫 Ver pares descartados (<span id="norm-blacklist-count">0</span>)
+      </button>
+      <div id="norm-blacklist-panel" style="display:none;padding:8px 16px;max-height:140px;overflow-y:auto;background:var(--cream2);">
+        <div id="norm-blacklist-lista" style="font-size:12px;color:var(--ink3);"></div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -2792,6 +2831,7 @@ async function syncToFirestore() {
       desafios: cleanForFirestore(loadDesafios()),
       rutaCustom: cleanForFirestore(loadRutaCustomNodes()),
       rutaProgramas: cleanForFirestore(loadProgramas()),
+      normBlacklist: loadNormBlacklist(),
       updatedAt: Date.now()
     };
     await firestore.collection('users').doc(currentUser.uid).collection('data').doc('library').set(payload);
@@ -2841,6 +2881,10 @@ async function pullAndMerge(uid, silent) {
         };
         localStorage.setItem(MAPAS_KEY, JSON.stringify(mergedMapas));
         mapas = mergedMapas;
+      }
+      if (remote.normBlacklist && Array.isArray(remote.normBlacklist)) {
+        normBlacklist = remote.normBlacklist;
+        saveNormBlacklist(normBlacklist);
       }
       // Restaurar nodos custom y programas
       if (remote.rutaCustom) {
@@ -2933,6 +2977,10 @@ function subscribeToFirestore(uid) {
       };
       localStorage.setItem(MAPAS_KEY, JSON.stringify(mergedMapas));
       mapas = mergedMapas;
+    }
+    if (remote.normBlacklist && Array.isArray(remote.normBlacklist)) {
+      normBlacklist = remote.normBlacklist;
+      saveNormBlacklist(normBlacklist);
     }
     if (remote.rutaCustom) {
       const localCustom = loadRutaCustomNodes();
@@ -6779,6 +6827,10 @@ async function manualLoadFromCloud() {
         localStorage.setItem(MAPAS_KEY, JSON.stringify(mergedMapas));
         mapas = mergedMapas;
       }
+      if (remote.normBlacklist && Array.isArray(remote.normBlacklist)) {
+        normBlacklist = remote.normBlacklist;
+        saveNormBlacklist(normBlacklist);
+      }
       if (remote.desafios) {
         const localDes = loadDesafios();
         const mergedDes = { ...localDes };
@@ -7260,13 +7312,15 @@ function switchMapaTab(tab) {
   document.getElementById('mapa-influencias-panel').style.display = tab==='influencias'?'flex':'none';
   document.getElementById('mapa-rutas-panel').style.display       = tab==='rutas'?'flex':'none';
   document.getElementById('mapa-peliculas-panel').style.display   = tab==='peliculas'?'flex':'none';
-  ['influencias','rutas','peliculas'].forEach(t=>{
+  document.getElementById('mapa-normalizar-panel').style.display  = tab==='normalizar'?'flex':'none';
+  ['influencias','rutas','peliculas','normalizar'].forEach(t=>{
     const btn=document.getElementById('mapa-tab-'+t);
     if(btn){ btn.style.color=t===tab?'var(--gold)':'var(--ink4)'; btn.style.borderBottom=t===tab?'2px solid var(--gold)':'2px solid transparent'; }
   });
   if (tab==='influencias') renderMapaInfluencias();
   else if (tab==='rutas') renderMapaRutas();
   else if (tab==='peliculas') renderMapaPeliculas();
+  else if (tab==='normalizar') initNormalizacion();
 }
 
 // ── Colors ──
@@ -8725,7 +8779,12 @@ function renderMapaPeliculas() {
       musica:      rolesActivosPel.has('musica')       ? (pel.musica||'').split(/[,&]/).map(s=>s.trim()).filter(Boolean) : [],
       guionista:   rolesActivosPel.has('guionista')   ? (pel.guionista||'').split(/[,&]/).map(s=>s.trim()).filter(Boolean) : [],
       protagonista:rolesActivosPel.has('protagonista')? (pel.protagonista||'').split(/[,&]/).map(s=>s.trim()).filter(Boolean) : [],
-      elenco:      rolesActivosPel.has('elenco')      ? (Array.isArray(pel.elenco) ? pel.elenco : []) : []
+      elenco: (() => {
+        if (!rolesActivosPel.has('elenco')) return [];
+        const protas = (pel.protagonista||'').split(/[,&]/).map(s=>s.trim().toLowerCase()).filter(Boolean);
+        const rawElenco = Array.isArray(pel.elenco) ? pel.elenco : [];
+        return rawElenco.filter(a => !protas.includes(a.trim().toLowerCase()));
+      })()
     };
 
     Object.entries(roles).forEach(([rol, personas]) => {
@@ -8828,6 +8887,286 @@ function renderMapaPeliculas() {
       .attr('x2', d=>d.target.x).attr('y2', d=>d.target.y);
     node.attr('transform', d=>'translate(' + d.x + ',' + d.y + ')');
   });
+}
+
+
+// ══════════════════════════════════════════════════════
+//  MÓDULO DE NORMALIZACIÓN — Jaro-Winkler deduplication
+// ══════════════════════════════════════════════════════
+
+const NORM_BLACKLIST_KEY = 'lumen_norm_blacklist_v1';
+
+function loadNormBlacklist() {
+  try { const r = localStorage.getItem(NORM_BLACKLIST_KEY); return r ? JSON.parse(r) : []; }
+  catch { return []; }
+}
+function saveNormBlacklist(list) {
+  localStorage.setItem(NORM_BLACKLIST_KEY, JSON.stringify(list));
+  if (currentUser) {
+    clearTimeout(_saveDebounceTimer);
+    _saveDebounceTimer = setTimeout(() => syncToFirestore(), 800);
+  }
+}
+
+let normBlacklist = loadNormBlacklist(); // array de strings "nombre1||nombre2"
+let normScope = 'peliculas';
+let normThreshold = 0.85;
+
+// ── Jaro-Winkler ──
+function jaroSimilarity(s1, s2) {
+  if (s1 === s2) return 1;
+  const len1 = s1.length, len2 = s2.length;
+  const matchDist = Math.floor(Math.max(len1, len2) / 2) - 1;
+  if (matchDist < 0) return 0;
+  const s1Matches = new Array(len1).fill(false);
+  const s2Matches = new Array(len2).fill(false);
+  let matches = 0, transpositions = 0;
+  for (let i = 0; i < len1; i++) {
+    const start = Math.max(0, i - matchDist);
+    const end   = Math.min(i + matchDist + 1, len2);
+    for (let j = start; j < end; j++) {
+      if (s2Matches[j] || s1[i] !== s2[j]) continue;
+      s1Matches[i] = s2Matches[j] = true;
+      matches++;
+      break;
+    }
+  }
+  if (!matches) return 0;
+  let k = 0;
+  for (let i = 0; i < len1; i++) {
+    if (!s1Matches[i]) continue;
+    while (!s2Matches[k]) k++;
+    if (s1[i] !== s2[k]) transpositions++;
+    k++;
+  }
+  return (matches/len1 + matches/len2 + (matches - transpositions/2)/matches) / 3;
+}
+
+function jaroWinkler(s1, s2) {
+  const jaro = jaroSimilarity(s1, s2);
+  let prefix = 0;
+  for (let i = 0; i < Math.min(4, Math.min(s1.length, s2.length)); i++) {
+    if (s1[i] === s2[i]) prefix++; else break;
+  }
+  return jaro + prefix * 0.1 * (1 - jaro);
+}
+
+function normStr(s) {
+  return (s||'').toLowerCase()
+    .replace(/[.,;:]/g, '')   // quitar puntuación
+    .replace(/\s+/g, ' ')     // normalizar espacios
+    .trim();
+}
+
+function blacklistKey(a, b) {
+  return [a,b].sort().join('||');
+}
+
+function isBlacklisted(a, b) {
+  return normBlacklist.includes(blacklistKey(a, b));
+}
+
+// ── Extraer todos los nombres por scope ──
+function extractNombres(scope) {
+  const nombres = new Map(); // nombre_normalizado → nombre_original (primero visto)
+  if (scope === 'peliculas') {
+    const campos = ['director','fotografia','musica','guionista','protagonista'];
+    db.entries.filter(e => e.type === 'pelicula' || e.type === 'serie').forEach(e => {
+      campos.forEach(c => {
+        if (!e[c]) return;
+        e[c].split(/[,&]/).map(s => s.trim()).filter(Boolean).forEach(nombre => {
+          const key = normStr(nombre);
+          if (!nombres.has(key)) nombres.set(key, nombre);
+        });
+      });
+      (Array.isArray(e.elenco) ? e.elenco : []).forEach(nombre => {
+        const key = normStr(nombre);
+        if (!nombres.has(key)) nombres.set(key, nombre);
+      });
+    });
+  } else {
+    // Influencias y Rutas — nodos de texto
+    (mapas.influencias||[]).forEach(inf => {
+      [inf.origen, inf.destino].forEach(n => {
+        if (!n) return;
+        const key = normStr(n);
+        if (!nombres.has(key)) nombres.set(key, n);
+      });
+    });
+    (mapas.rutas||[]).forEach(r => {
+      [r.origen, r.destino].forEach(n => {
+        if (!n) return;
+        const key = normStr(n);
+        if (!nombres.has(key)) nombres.set(key, n);
+      });
+    });
+  }
+  return [...nombres.values()];
+}
+
+// ── Detectar pares similares ──
+function detectarPares(nombres, threshold) {
+  const pares = [];
+  for (let i = 0; i < nombres.length; i++) {
+    for (let j = i + 1; j < nombres.length; j++) {
+      const a = nombres[i], b = nombres[j];
+      if (isBlacklisted(a, b)) continue;
+      const score = jaroWinkler(normStr(a), normStr(b));
+      if (score >= threshold && score < 1) {
+        pares.push({ a, b, score });
+      }
+    }
+  }
+  // Ordenar: primero los más similares
+  return pares.sort((x, y) => y.score - x.score);
+}
+
+// ── Aplicar unificación: reemplaza nombre b → a en todos los datos ──
+function aplicarUnificacion(canonico, reemplazar) {
+  const campos = ['director','fotografia','musica','guionista','protagonista'];
+
+  db.entries.filter(e => e.type === 'pelicula' || e.type === 'serie').forEach(e => {
+    let modificado = false;
+    campos.forEach(c => {
+      if (!e[c]) return;
+      const partes = e[c].split(/([,&])/).map(s => {
+        const trimmed = s.trim();
+        if (normStr(trimmed) === normStr(reemplazar)) { modificado = true; return canonico; }
+        return trimmed;
+      });
+      if (modificado) e[c] = partes.join('');
+    });
+    if (Array.isArray(e.elenco)) {
+      e.elenco = e.elenco.map(n => normStr(n) === normStr(reemplazar) ? canonico : n);
+    }
+    if (modificado || true) e._updatedAt = Date.now();
+  });
+
+  // Influencias y rutas
+  (mapas.influencias||[]).forEach(inf => {
+    if (normStr(inf.origen)  === normStr(reemplazar)) inf.origen  = canonico;
+    if (normStr(inf.destino) === normStr(reemplazar)) inf.destino = canonico;
+  });
+  (mapas.rutas||[]).forEach(r => {
+    if (normStr(r.origen)  === normStr(reemplazar)) r.origen  = canonico;
+    if (normStr(r.destino) === normStr(reemplazar)) r.destino = canonico;
+  });
+
+  saveDB();
+  saveMapas();
+  showToast('✓ Unificado: "' + reemplazar + '" → "' + canonico + '"');
+  runNormalizacion();
+}
+
+// ── UI ──
+function setNormScope(scope, btn) {
+  normScope = scope;
+  document.querySelectorAll('.norm-scope-btn').forEach(b => {
+    b.style.background = '#fff';
+    b.style.color = 'var(--ink3)';
+    b.style.borderColor = 'var(--border)';
+  });
+  btn.style.background = 'var(--ink)';
+  btn.style.color = '#fff';
+  btn.style.borderColor = 'var(--ink)';
+  document.getElementById('norm-pares-lista').innerHTML = '';
+  document.getElementById('norm-count').textContent = '';
+  document.getElementById('norm-empty').style.display = 'flex';
+}
+
+function onNormThresholdChange(val) {
+  normThreshold = parseInt(val) / 100;
+  document.getElementById('norm-threshold-val').textContent = val + '%';
+}
+
+function initNormalizacion() {
+  actualizarBlacklistUI();
+}
+
+function runNormalizacion() {
+  const nombres = extractNombres(normScope);
+  const pares   = detectarPares(nombres, normThreshold);
+  const lista   = document.getElementById('norm-pares-lista');
+  const empty   = document.getElementById('norm-empty');
+  const countEl = document.getElementById('norm-count');
+
+  if (!pares.length) {
+    empty.style.display = 'flex';
+    empty.querySelector('div:last-child').innerHTML = 'Sin duplicados detectados<br>con el umbral actual.';
+    lista.innerHTML = '';
+    countEl.textContent = '';
+    return;
+  }
+
+  empty.style.display = 'none';
+  countEl.textContent = pares.length + ' par' + (pares.length !== 1 ? 'es' : '') + ' detectado' + (pares.length !== 1 ? 's' : '');
+
+  lista.innerHTML = pares.map((par, idx) => {
+    const pct   = Math.round(par.score * 100);
+    const zona  = pct >= 92 ? '#2d6b3a' : '#c8952a';
+    const label = pct >= 92 ? 'Alta' : 'Media';
+    return `
+      <div style="border:1.5px solid var(--border);border-radius:6px;padding:12px;margin-bottom:10px;background:#fff;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+          <span style="background:${zona};color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;font-family:var(--font-sans);letter-spacing:0.5px;">${label} ${pct}%</span>
+          <span style="font-size:11px;color:var(--ink4);">¿Son la misma persona?</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+          <button onclick="aplicarUnificacion('${par.a.replace(/'/g,"\'")}','${par.b.replace(/'/g,"\'")}'); "
+            style="padding:8px;border:2px solid var(--gold);border-radius:4px;background:var(--cream2);font-family:var(--font-serif);font-size:13px;font-weight:700;cursor:pointer;text-align:center;line-height:1.3;">
+            ✓ "${par.a}"
+          </button>
+          <button onclick="aplicarUnificacion('${par.b.replace(/'/g,"\'")}','${par.a.replace(/'/g,"\'")}');"
+            style="padding:8px;border:2px solid var(--gold);border-radius:4px;background:var(--cream2);font-family:var(--font-serif);font-size:13px;font-weight:700;cursor:pointer;text-align:center;line-height:1.3;">
+            ✓ "${par.b}"
+          </button>
+        </div>
+        <button onclick="descartarPar('${par.a.replace(/'/g,"\'")}','${par.b.replace(/'/g,"\'")}');"
+          style="width:100%;padding:6px;border:1.5px solid var(--border);border-radius:4px;background:#fff;font-family:var(--font-sans);font-size:10px;color:var(--ink4);cursor:pointer;font-weight:700;letter-spacing:0.5px;">
+          🚫 No es la misma persona
+        </button>
+      </div>`;
+  }).join('');
+}
+
+function descartarPar(a, b) {
+  const key = blacklistKey(a, b);
+  if (!normBlacklist.includes(key)) {
+    normBlacklist.push(key);
+    saveNormBlacklist(normBlacklist);
+  }
+  actualizarBlacklistUI();
+  runNormalizacion();
+}
+
+function toggleNormListaNegra() {
+  const panel = document.getElementById('norm-blacklist-panel');
+  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+}
+
+function actualizarBlacklistUI() {
+  const countEl = document.getElementById('norm-blacklist-count');
+  const listaEl = document.getElementById('norm-blacklist-lista');
+  if (countEl) countEl.textContent = normBlacklist.length;
+  if (!listaEl) return;
+  if (!normBlacklist.length) {
+    listaEl.innerHTML = '<span style="color:var(--ink4);font-style:italic;">Sin pares descartados.</span>';
+    return;
+  }
+  listaEl.innerHTML = normBlacklist.map((key, idx) => {
+    const [a, b] = key.split('||');
+    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);">
+      <span>"${a}" / "${b}"</span>
+      <button onclick="restaurarPar(${idx})" style="border:none;background:none;cursor:pointer;font-size:10px;color:var(--ink4);padding:2px 4px;">↩ Restaurar</button>
+    </div>`;
+  }).join('');
+}
+
+function restaurarPar(idx) {
+  normBlacklist.splice(idx, 1);
+  saveNormBlacklist(normBlacklist);
+  actualizarBlacklistUI();
+  showToast('Par restaurado');
 }
 
 </script>
