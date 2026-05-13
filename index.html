@@ -1020,6 +1020,10 @@ select.input { cursor: pointer; }
       style="flex:1;padding:12px;border:none;background:none;font-family:var(--font-sans);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;color:var(--ink4);border-bottom:2px solid transparent;margin-bottom:-2px;">
       🗺 Rutas de lectura
     </button>
+    <button id="mapa-tab-peliculas" onclick="switchMapaTab('peliculas')"
+      style="flex:1;padding:12px;border:none;background:none;font-family:var(--font-sans);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;color:var(--ink4);border-bottom:2px solid transparent;margin-bottom:-2px;">
+      🎬 Películas
+    </button>
   </div>
 
   <!-- TAB: INFLUENCIAS -->
@@ -1070,6 +1074,37 @@ select.input { cursor: pointer; }
       </div>
     </div>
     <div id="ruta-lista" style="overflow-y:auto;max-height:220px;border-top:1px solid var(--border);flex-shrink:0;display:none;"></div>
+  </div>
+
+  <!-- TAB: PELÍCULAS -->
+  <div id="mapa-peliculas-panel" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+    <!-- Toolbar -->
+    <div style="padding:10px 16px;display:flex;gap:6px;align-items:center;border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap;">
+      <button class="btn btn-secondary btn-sm" style="width:auto;" onclick="renderMapaPeliculas()">↻ Actualizar</button>
+      <span style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--ink4);margin-left:4px;">Roles:</span>
+      <button class="pel-rol-btn active" data-rol="director" onclick="toggleRolPel(this,'director')"
+        style="padding:4px 8px;border:1.5px solid var(--red);border-radius:3px;background:var(--red);color:#fff;font-size:10px;font-weight:700;font-family:var(--font-sans);cursor:pointer;letter-spacing:0.5px;">🎭 Director</button>
+      <button class="pel-rol-btn active" data-rol="fotografia" onclick="toggleRolPel(this,'fotografia')"
+        style="padding:4px 8px;border:1.5px solid #1a6b8a;border-radius:3px;background:#1a6b8a;color:#fff;font-size:10px;font-weight:700;font-family:var(--font-sans);cursor:pointer;letter-spacing:0.5px;">📷 Fotografía</button>
+      <button class="pel-rol-btn active" data-rol="musica" onclick="toggleRolPel(this,'musica')"
+        style="padding:4px 8px;border:1.5px solid #6b3a8a;border-radius:3px;background:#6b3a8a;color:#fff;font-size:10px;font-weight:700;font-family:var(--font-sans);cursor:pointer;letter-spacing:0.5px;">🎵 Música</button>
+      <button class="pel-rol-btn active" data-rol="guionista" onclick="toggleRolPel(this,'guionista')"
+        style="padding:4px 8px;border:1.5px solid #2d6b3a;border-radius:3px;background:#2d6b3a;color:#fff;font-size:10px;font-weight:700;font-family:var(--font-sans);cursor:pointer;letter-spacing:0.5px;">✍ Guionista</button>
+      <button class="pel-rol-btn active" data-rol="protagonista" onclick="toggleRolPel(this,'protagonista')"
+        style="padding:4px 8px;border:1.5px solid #c8952a;border-radius:3px;background:#c8952a;color:#fff;font-size:10px;font-weight:700;font-family:var(--font-sans);cursor:pointer;letter-spacing:0.5px;">⭐ Protagonista</button>
+      <button class="pel-rol-btn active" data-rol="elenco" onclick="toggleRolPel(this,'elenco')"
+        style="padding:4px 8px;border:1.5px solid #5a5a5a;border-radius:3px;background:#5a5a5a;color:#fff;font-size:10px;font-weight:700;font-family:var(--font-sans);cursor:pointer;letter-spacing:0.5px;">👤 Elenco</button>
+      <span id="pel-count" style="font-size:11px;color:var(--ink4);margin-left:auto;"></span>
+    </div>
+    <!-- SVG grafo -->
+    <div id="mapa-peliculas-svg" style="flex:1;overflow:hidden;position:relative;cursor:grab;">
+      <div id="pel-empty" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;color:var(--ink4);">
+        <div style="font-size:32px;">🎬</div>
+        <div style="font-size:13px;font-style:italic;text-align:center;">Sin películas en tu biblioteca.<br>Agrega películas para ver la red.</div>
+      </div>
+    </div>
+    <!-- Tooltip flotante -->
+    <div id="pel-tooltip" style="position:fixed;display:none;background:var(--ink);color:var(--cream);padding:8px 12px;border-radius:6px;font-size:12px;font-family:var(--font-sans);z-index:500;pointer-events:none;max-width:220px;line-height:1.5;box-shadow:0 4px 16px rgba(0,0,0,0.3);"></div>
   </div>
 </div>
 
@@ -1619,6 +1654,10 @@ select.input { cursor: pointer; }
         </div>
         <div class="field"><label>Guionista</label><input class="input" type="text" id="fp-guionista"></div>
         <div class="field">
+          <label>Elenco <span style="font-size:10px;color:var(--ink4);font-weight:400;letter-spacing:0;">(un actor por línea)</span></label>
+          <textarea class="input" id="fp-elenco" rows="4" placeholder="Renate Reinsve&#10;Stellan Skarsgård&#10;Elle Fanning" style="resize:vertical;font-size:13px;line-height:1.6;"></textarea>
+        </div>
+        <div class="field">
           <label>Basada en</label>
           <select class="input" id="fp-basada">
             <option value="">— Original —</option>
@@ -1683,6 +1722,10 @@ select.input { cursor: pointer; }
           <div class="field"><label>Protagonista</label><input class="input" type="text" id="fs-protagonista"></div>
         </div>
         <div class="field"><label>Guionista</label><input class="input" type="text" id="fs-guionista"></div>
+        <div class="field">
+          <label>Elenco <span style="font-size:10px;color:var(--ink4);font-weight:400;letter-spacing:0;">(un actor por línea)</span></label>
+          <textarea class="input" id="fs-elenco" rows="4" placeholder="Actor principal&#10;Actor secundario&#10;..." style="resize:vertical;font-size:13px;line-height:1.6;"></textarea>
+        </div>
         <div class="field">
           <label>Estado</label>
           <select class="input" id="fs-estado">
@@ -3026,8 +3069,8 @@ function selectType(type, btn) {
 
 function resetForm() {
   ['f-titulo','f-autor','f-editorial','f-paginas','f-anio-pub','f-traductor','f-idioma','f-cover','f-notas',
-   'fp-titulo','fp-director','fp-anio-est','fp-duracion','fp-foto','fp-musica','fp-protagonista','fp-guionista','fp-cover',
-   'fs-titulo','fs-director','fs-anio-est','fs-duracion','fs-caps-por-temp','fs-min-episodio','fs-musica','fs-protagonista','fs-guionista','fs-cover']
+   'fp-titulo','fp-director','fp-anio-est','fp-duracion','fp-foto','fp-musica','fp-protagonista','fp-guionista','fp-cover','fp-elenco',
+   'fs-titulo','fs-director','fs-anio-est','fs-duracion','fs-caps-por-temp','fs-min-episodio','fs-musica','fs-protagonista','fs-guionista','fs-cover','fs-elenco']
     .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
   // Limpiar previews de portada
   ['f-cover-preview','fp-cover-preview','fs-cover-preview'].forEach(id => {
@@ -3348,7 +3391,7 @@ function saveEntry() {
       musica: document.getElementById('fp-musica').value,
       protagonista: document.getElementById('fp-protagonista').value,
       guionista: document.getElementById('fp-guionista').value,
-      basada: document.getElementById('fp-basada').value,
+      elenco: document.getElementById('fp-elenco').value.split('\n').map(s=>s.trim()).filter(Boolean),
       autor_original: document.getElementById('fp-autor-original').value,
       mes: document.getElementById('fp-mes').value,
       anio: parseInt(document.getElementById('fp-anio-visto').value) || new Date().getFullYear(),
@@ -3365,6 +3408,7 @@ function saveEntry() {
       musica: document.getElementById('fs-musica').value,
       protagonista: document.getElementById('fs-protagonista').value,
       guionista: document.getElementById('fs-guionista').value,
+      elenco: document.getElementById('fs-elenco').value.split('\n').map(s=>s.trim()).filter(Boolean),
       estado: document.getElementById('fs-estado').value,
       basada: document.getElementById('fs-basada').value,
       mes: document.getElementById('fs-mes').value,
@@ -4289,11 +4333,13 @@ function editEntry(id) {
     } else if (e.type === 'pelicula') {
       const map = { titulo:'fp-titulo',director:'fp-director',anio_est:'fp-anio-est',duracion:'fp-duracion',fotografia:'fp-foto',musica:'fp-musica',protagonista:'fp-protagonista',guionista:'fp-guionista',cover:'fp-cover',autor_original:'fp-autor-original' };
       Object.entries(map).forEach(([k,id])=>{ const el=document.getElementById(id); if(el) el.value=e[k]||''; });
+      document.getElementById('fp-elenco').value = Array.isArray(e.elenco) ? e.elenco.join('\n') : (e.elenco||'');
       document.getElementById('fp-mes').value = e.mes||'';
       document.getElementById('fp-anio-visto').value = e.anio||'';
       document.getElementById('fp-basada').value = e.basada||'';
     } else {
       ['titulo','director','temporadas','duracion','musica','protagonista','guionista','cover'].forEach(k=>{ const el=document.getElementById('fs-'+k); if(el) el.value=e[k]||''; });
+      document.getElementById('fs-elenco').value = Array.isArray(e.elenco) ? e.elenco.join('\n') : (e.elenco||'');
       document.getElementById('fs-anio-est').value = e.anio_est || '';
       document.getElementById('fs-caps-por-temp').value = e.capsPorTemp || '';
       document.getElementById('fs-min-episodio').value  = e.minEpisodio  || '';
@@ -7213,12 +7259,14 @@ function switchMapaTab(tab) {
   currentMapaTab = tab;
   document.getElementById('mapa-influencias-panel').style.display = tab==='influencias'?'flex':'none';
   document.getElementById('mapa-rutas-panel').style.display       = tab==='rutas'?'flex':'none';
-  ['influencias','rutas'].forEach(t=>{
+  document.getElementById('mapa-peliculas-panel').style.display   = tab==='peliculas'?'flex':'none';
+  ['influencias','rutas','peliculas'].forEach(t=>{
     const btn=document.getElementById('mapa-tab-'+t);
     if(btn){ btn.style.color=t===tab?'var(--gold)':'var(--ink4)'; btn.style.borderBottom=t===tab?'2px solid var(--gold)':'2px solid transparent'; }
   });
   if (tab==='influencias') renderMapaInfluencias();
-  else renderMapaRutas();
+  else if (tab==='rutas') renderMapaRutas();
+  else if (tab==='peliculas') renderMapaPeliculas();
 }
 
 // ── Colors ──
@@ -8601,6 +8649,187 @@ document.getElementById('auth-email')?.addEventListener('keydown', e => { if(e.k
 document.getElementById('auth-password')?.addEventListener('keydown', e => { if(e.key==='Enter') loginEmail(); });
 document.getElementById('auth-reg-email')?.addEventListener('keydown', e => { if(e.key==='Enter') registerEmail(); });
 document.getElementById('auth-reg-password')?.addEventListener('keydown', e => { if(e.key==='Enter') registerEmail(); });
+
+// ══════════════════════════════════════════════════════
+//  MAPA DE PELÍCULAS — Red social cinematográfica
+// ══════════════════════════════════════════════════════
+
+const PEL_ROL_COLORS = {
+  director:    '#8b2020',
+  fotografia:  '#1a6b8a',
+  musica:      '#6b3a8a',
+  guionista:   '#2d6b3a',
+  protagonista:'#c8952a',
+  elenco:      '#5a5a5a',
+  pelicula:    '#1a1510'
+};
+
+const PEL_ROL_EMOJI = {
+  director:'🎭', fotografia:'📷', musica:'🎵',
+  guionista:'✍', protagonista:'⭐', elenco:'👤'
+};
+
+let rolesActivosPel = new Set(['director','fotografia','musica','guionista','protagonista','elenco']);
+
+function toggleRolPel(btn, rol) {
+  if (rolesActivosPel.has(rol)) {
+    rolesActivosPel.delete(rol);
+    btn.style.opacity = '0.35';
+    btn.style.background = '#fff';
+    btn.style.color = 'var(--ink3)';
+  } else {
+    rolesActivosPel.add(rol);
+    btn.style.opacity = '1';
+    const colores = { director:'#8b2020', fotografia:'#1a6b8a', musica:'#6b3a8a', guionista:'#2d6b3a', protagonista:'#c8952a', elenco:'#5a5a5a' };
+    btn.style.background = colores[rol]||'#333';
+    btn.style.color = '#fff';
+  }
+  renderMapaPeliculas();
+}
+
+function renderMapaPeliculas() {
+  const container = document.getElementById('mapa-peliculas-svg');
+  const emptyDiv  = document.getElementById('pel-empty');
+  const countEl   = document.getElementById('pel-count');
+
+  // Limpiar SVG previo
+  d3.select('#mapa-peliculas-svg svg').remove();
+
+  const peliculas = db.entries.filter(e => e.type === 'pelicula');
+  if (!peliculas.length) {
+    emptyDiv.style.display = 'flex';
+    if (countEl) countEl.textContent = '';
+    return;
+  }
+  emptyDiv.style.display = 'none';
+
+  // ── Construir nodos y aristas ──
+  const nodeMap = new Map();
+  const links   = [];
+
+  function getOrCreateNode(id, label, tipo) {
+    if (!nodeMap.has(id)) {
+      nodeMap.set(id, { id, label, tipo, grado: 0 });
+    }
+    return nodeMap.get(id);
+  }
+
+  peliculas.forEach(pel => {
+    const pelId    = 'pel_' + pel.id;
+    const pelLabel = pel.titulo + (pel.anio_est ? ' (' + pel.anio_est + ')' : '');
+    getOrCreateNode(pelId, pelLabel, 'pelicula');
+
+    const roles = {
+      director:    rolesActivosPel.has('director')    ? [pel.director].filter(Boolean) : [],
+      fotografia:  rolesActivosPel.has('fotografia')  ? [pel.fotografia].filter(Boolean) : [],
+      musica:      rolesActivosPel.has('musica')       ? [pel.musica].filter(Boolean) : [],
+      guionista:   rolesActivosPel.has('guionista')   ? (pel.guionista||'').split(/[,&]/).map(s=>s.trim()).filter(Boolean) : [],
+      protagonista:rolesActivosPel.has('protagonista')? [pel.protagonista].filter(Boolean) : [],
+      elenco:      rolesActivosPel.has('elenco')      ? (Array.isArray(pel.elenco) ? pel.elenco : []) : []
+    };
+
+    Object.entries(roles).forEach(([rol, personas]) => {
+      personas.forEach(persona => {
+        const pid = 'per_' + rol + '_' + persona.toLowerCase().replace(/\s+/g,'_').replace(/[^a-z0-9_]/g,'');
+        getOrCreateNode(pid, persona, rol);
+        const src = nodeMap.get(pelId);
+        const tgt = nodeMap.get(pid);
+        src.grado++;
+        tgt.grado++;
+        links.push({ source: pelId, target: pid, rol });
+      });
+    });
+  });
+
+  // Filtrar nodos sin conexiones visibles
+  const conectados = new Set();
+  links.forEach(l => { conectados.add(l.source); conectados.add(l.target); });
+  const nodes = [...nodeMap.values()].filter(n => conectados.has(n.id));
+
+  if (!nodes.length) {
+    emptyDiv.style.display = 'flex';
+    emptyDiv.querySelector('div:last-child').textContent = 'Activa algún rol para ver la red.';
+    return;
+  }
+
+  if (countEl) countEl.textContent = peliculas.length + ' películas · ' + nodes.filter(n=>n.tipo!=='pelicula').length + ' personas';
+
+  const W = container.clientWidth  || 600;
+  const H = container.clientHeight || 500;
+
+  const svg = d3.select('#mapa-peliculas-svg')
+    .append('svg').attr('width', W).attr('height', H);
+
+  const g = svg.append('g');
+  svg.call(d3.zoom().scaleExtent([0.2, 4]).on('zoom', e => g.attr('transform', e.transform)));
+
+  const sim = d3.forceSimulation(nodes)
+    .force('link', d3.forceLink(links).id(d=>d.id).distance(d => d.rol==='elenco' ? 70 : 90).strength(0.6))
+    .force('charge', d3.forceManyBody().strength(d => d.tipo==='pelicula' ? -320 : -120))
+    .force('center', d3.forceCenter(W/2, H/2))
+    .force('collide', d3.forceCollide().radius(d => d.tipo==='pelicula' ? 28 : 18));
+
+  const link = g.append('g').selectAll('line')
+    .data(links).join('line')
+    .attr('stroke', d => PEL_ROL_COLORS[d.rol]||'#ccc')
+    .attr('stroke-width', 1.2)
+    .attr('stroke-opacity', 0.45);
+
+  const node = g.append('g').selectAll('g')
+    .data(nodes).join('g')
+    .style('cursor','pointer')
+    .call(d3.drag()
+      .on('start', (ev,d) => { if(!ev.active) sim.alphaTarget(0.3).restart(); d.fx=d.x; d.fy=d.y; })
+      .on('drag',  (ev,d) => { d.fx=ev.x; d.fy=ev.y; })
+      .on('end',   (ev,d) => { if(!ev.active) sim.alphaTarget(0); d.fx=null; d.fy=null; }));
+
+  node.append('circle')
+    .attr('r', d => d.tipo==='pelicula' ? 18 : Math.min(8 + d.grado*1.5, 16))
+    .attr('fill', d => d.tipo==='pelicula' ? 'var(--ink)' : PEL_ROL_COLORS[d.tipo]||'#888')
+    .attr('stroke', d => d.tipo==='pelicula' ? 'var(--gold)' : '#fff')
+    .attr('stroke-width', d => d.tipo==='pelicula' ? 2 : 1.2)
+    .attr('fill-opacity', d => d.tipo==='pelicula' ? 1 : 0.85);
+
+  node.append('text')
+    .attr('text-anchor','middle').attr('dominant-baseline','central')
+    .attr('font-size', d => d.tipo==='pelicula' ? '12px' : '9px')
+    .style('pointer-events','none').style('user-select','none')
+    .text(d => d.tipo==='pelicula' ? '🎬' : (PEL_ROL_EMOJI[d.tipo]||''));
+
+  node.append('text')
+    .attr('dy', d => d.tipo==='pelicula' ? 28 : 22)
+    .attr('text-anchor','middle')
+    .attr('font-size', d => d.tipo==='pelicula' ? '10px' : '9px')
+    .attr('font-weight', d => d.tipo==='pelicula' ? '700' : '400')
+    .attr('font-family', d => d.tipo==='pelicula' ? 'var(--font-serif)' : 'var(--font-sans)')
+    .attr('fill', d => d.tipo==='pelicula' ? 'var(--ink)' : PEL_ROL_COLORS[d.tipo]||'#555')
+    .style('pointer-events','none').style('user-select','none')
+    .text(d => {
+      const max = d.tipo==='pelicula' ? 22 : 16;
+      return d.label.length > max ? d.label.slice(0, max-1)+'…' : d.label;
+    });
+
+  const tooltip = document.getElementById('pel-tooltip');
+  node.on('mouseover', (ev, d) => {
+    const rolLabel = d.tipo==='pelicula' ? 'Película' :
+      ({director:'Director',fotografia:'Fotografía',musica:'Música',guionista:'Guionista',protagonista:'Protagonista',elenco:'Elenco'}[d.tipo]||d.tipo);
+    tooltip.innerHTML = '<strong>' + d.label + '</strong><br><span style="opacity:0.7;font-size:10px;">' + rolLabel + '</span>';
+    tooltip.style.display = 'block';
+  })
+  .on('mousemove', ev => {
+    tooltip.style.left = (ev.clientX + 14) + 'px';
+    tooltip.style.top  = (ev.clientY - 10) + 'px';
+  })
+  .on('mouseout', () => { tooltip.style.display = 'none'; });
+
+  sim.on('tick', () => {
+    link
+      .attr('x1', d=>d.source.x).attr('y1', d=>d.source.y)
+      .attr('x2', d=>d.target.x).attr('y2', d=>d.target.y);
+    node.attr('transform', d=>'translate(' + d.x + ',' + d.y + ')');
+  });
+}
+
 </script>
 </body>
 </html>
