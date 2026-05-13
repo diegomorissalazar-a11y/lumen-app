@@ -8720,11 +8720,11 @@ function renderMapaPeliculas() {
     getOrCreateNode(pelId, pelLabel, 'pelicula');
 
     const roles = {
-      director:    rolesActivosPel.has('director')    ? [pel.director].filter(Boolean) : [],
-      fotografia:  rolesActivosPel.has('fotografia')  ? [pel.fotografia].filter(Boolean) : [],
-      musica:      rolesActivosPel.has('musica')       ? [pel.musica].filter(Boolean) : [],
+      director:    rolesActivosPel.has('director')    ? (pel.director||'').split(/[,&]/).map(s=>s.trim()).filter(Boolean) : [],
+      fotografia:  rolesActivosPel.has('fotografia')  ? (pel.fotografia||'').split(/[,&]/).map(s=>s.trim()).filter(Boolean) : [],
+      musica:      rolesActivosPel.has('musica')       ? (pel.musica||'').split(/[,&]/).map(s=>s.trim()).filter(Boolean) : [],
       guionista:   rolesActivosPel.has('guionista')   ? (pel.guionista||'').split(/[,&]/).map(s=>s.trim()).filter(Boolean) : [],
-      protagonista:rolesActivosPel.has('protagonista')? [pel.protagonista].filter(Boolean) : [],
+      protagonista:rolesActivosPel.has('protagonista')? (pel.protagonista||'').split(/[,&]/).map(s=>s.trim()).filter(Boolean) : [],
       elenco:      rolesActivosPel.has('elenco')      ? (Array.isArray(pel.elenco) ? pel.elenco : []) : []
     };
 
