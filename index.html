@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1a1510">
-<title>LUMEN v117 — Biblioteca Personal</title>
+<title>LUMEN v118 — Biblioteca Personal</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231a1510'/><text x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' font-family='Georgia,serif' font-size='14' font-weight='900' font-style='italic' fill='%23c8952a' letter-spacing='0.5'>L</text><rect x='6' y='23' width='20' height='2' rx='1' fill='%238b2020'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
@@ -1113,37 +1113,106 @@ select.input { cursor: pointer; }
 
   <!-- TAB: NORMALIZAR -->
   <div id="mapa-normalizar-panel" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
-    <!-- Toolbar -->
-    <div style="padding:10px 16px;display:flex;gap:8px;align-items:center;border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap;">
-      <span style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--ink4);">Ámbito:</span>
-      <button class="norm-scope-btn active" id="norm-scope-peliculas" onclick="setNormScope('peliculas',this)"
-        style="padding:4px 10px;border:1.5px solid var(--ink);border-radius:3px;background:var(--ink);color:#fff;font-size:10px;font-weight:700;font-family:var(--font-sans);cursor:pointer;">🎬 Películas/Series</button>
-      <button class="norm-scope-btn" id="norm-scope-mapas" onclick="setNormScope('mapas',this)"
-        style="padding:4px 10px;border:1.5px solid var(--border);border-radius:3px;background:#fff;color:var(--ink3);font-size:10px;font-weight:700;font-family:var(--font-sans);cursor:pointer;">🔗 Influencias & Rutas</button>
-      <span style="font-size:10px;color:var(--ink4);margin-left:4px;">Umbral:</span>
-      <input type="range" id="norm-threshold" min="75" max="100" value="85" step="1"
-        style="width:80px;accent-color:var(--gold);" oninput="onNormThresholdChange(this.value)">
-      <span id="norm-threshold-val" style="font-size:11px;font-weight:700;color:var(--gold);min-width:32px;">85%</span>
-      <button class="btn btn-secondary btn-sm" style="width:auto;" onclick="runNormalizacion()">🔍 Analizar</button>
-      <span id="norm-count" style="font-size:11px;color:var(--ink4);margin-left:auto;"></span>
-    </div>
-    <!-- Resultados -->
-    <div id="norm-resultados" style="flex:1;overflow-y:auto;padding:12px 16px;">
-      <div id="norm-empty" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:8px;color:var(--ink4);">
-        <div style="font-size:32px;">🧹</div>
-        <div style="font-size:13px;font-style:italic;text-align:center;">Pulsa "Analizar" para detectar<br>posibles duplicados en tus datos.</div>
-      </div>
-      <div id="norm-pares-lista"></div>
-    </div>
-    <!-- Lista negra -->
-    <div style="border-top:1px solid var(--border);flex-shrink:0;">
-      <button onclick="toggleNormListaNegra()" style="width:100%;padding:8px 16px;border:none;background:none;font-family:var(--font-sans);font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--ink4);cursor:pointer;text-align:left;">
-        🚫 Ver pares descartados (<span id="norm-blacklist-count">0</span>)
+
+    <!-- Subtabs de Normalizar -->
+    <div style="display:flex;border-bottom:2px solid var(--border);flex-shrink:0;background:var(--cream2);">
+      <button id="norm-tab-duplicados" onclick="switchNormTab('duplicados')"
+        style="flex:1;padding:9px;border:none;background:none;font-family:var(--font-sans);font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;color:var(--gold);border-bottom:2px solid var(--gold);margin-bottom:-2px;">
+        🧹 Duplicados
       </button>
-      <div id="norm-blacklist-panel" style="display:none;padding:8px 16px;max-height:140px;overflow-y:auto;background:var(--cream2);">
-        <div id="norm-blacklist-lista" style="font-size:12px;color:var(--ink3);"></div>
+      <button id="norm-tab-elencos" onclick="switchNormTab('elencos')"
+        style="flex:1;padding:9px;border:none;background:none;font-family:var(--font-sans);font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;color:var(--ink4);border-bottom:2px solid transparent;margin-bottom:-2px;">
+        📋 Elencos pendientes
+      </button>
+    </div>
+
+    <!-- SUBTAB: DUPLICADOS -->
+    <div id="norm-sub-duplicados" style="display:flex;flex-direction:column;flex:1;overflow:hidden;">
+      <div style="padding:10px 16px;display:flex;gap:8px;align-items:center;border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap;">
+        <span style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--ink4);">Ámbito:</span>
+        <button class="norm-scope-btn active" id="norm-scope-peliculas" onclick="setNormScope('peliculas',this)"
+          style="padding:4px 10px;border:1.5px solid var(--ink);border-radius:3px;background:var(--ink);color:#fff;font-size:10px;font-weight:700;font-family:var(--font-sans);cursor:pointer;">🎬 Películas/Series</button>
+        <button class="norm-scope-btn" id="norm-scope-mapas" onclick="setNormScope('mapas',this)"
+          style="padding:4px 10px;border:1.5px solid var(--border);border-radius:3px;background:#fff;color:var(--ink3);font-size:10px;font-weight:700;font-family:var(--font-sans);cursor:pointer;">🔗 Influencias & Rutas</button>
+        <span style="font-size:10px;color:var(--ink4);margin-left:4px;">Umbral:</span>
+        <input type="range" id="norm-threshold" min="75" max="100" value="85" step="1"
+          style="width:80px;accent-color:var(--gold);" oninput="onNormThresholdChange(this.value)">
+        <span id="norm-threshold-val" style="font-size:11px;font-weight:700;color:var(--gold);min-width:32px;">85%</span>
+        <button class="btn btn-secondary btn-sm" style="width:auto;" onclick="runNormalizacion()">🔍 Analizar</button>
+        <span id="norm-count" style="font-size:11px;color:var(--ink4);margin-left:auto;"></span>
+      </div>
+      <div id="norm-resultados" style="flex:1;overflow-y:auto;padding:12px 16px;">
+        <div id="norm-empty" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:8px;color:var(--ink4);">
+          <div style="font-size:32px;">🧹</div>
+          <div style="font-size:13px;font-style:italic;text-align:center;">Pulsa "Analizar" para detectar<br>posibles duplicados en tus datos.</div>
+        </div>
+        <div id="norm-pares-lista"></div>
+      </div>
+      <div style="border-top:1px solid var(--border);flex-shrink:0;">
+        <button onclick="toggleNormListaNegra()" style="width:100%;padding:8px 16px;border:none;background:none;font-family:var(--font-sans);font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--ink4);cursor:pointer;text-align:left;">
+          🚫 Ver pares descartados (<span id="norm-blacklist-count">0</span>)
+        </button>
+        <div id="norm-blacklist-panel" style="display:none;padding:8px 16px;max-height:140px;overflow-y:auto;background:var(--cream2);">
+          <div id="norm-blacklist-lista" style="font-size:12px;color:var(--ink3);"></div>
+        </div>
       </div>
     </div>
+
+    <!-- SUBTAB: ELENCOS PENDIENTES -->
+    <div id="norm-sub-elencos" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+      <!-- Toolbar -->
+      <div style="padding:10px 16px;display:flex;gap:8px;align-items:center;border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap;">
+        <span style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--ink4);">Sin elenco cargado:</span>
+        <span id="elenco-pending-count" style="font-size:11px;color:var(--gold);font-weight:700;"></span>
+        <div style="margin-left:auto;display:flex;gap:6px;">
+          <button class="elenco-tipo-btn active" id="elenco-tipo-pelicula" onclick="setElencTipo('pelicula',this)"
+            style="padding:4px 8px;border:1.5px solid var(--ink);border-radius:3px;background:var(--ink);color:#fff;font-size:10px;font-weight:700;font-family:var(--font-sans);cursor:pointer;">🎬 Películas</button>
+          <button class="elenco-tipo-btn" id="elenco-tipo-serie" onclick="setElencTipo('serie',this)"
+            style="padding:4px 8px;border:1.5px solid var(--border);border-radius:3px;background:#fff;color:var(--ink3);font-size:10px;font-weight:700;font-family:var(--font-sans);cursor:pointer;">📺 Series</button>
+          <button class="elenco-tipo-btn" id="elenco-tipo-todos" onclick="setElencTipo('todos',this)"
+            style="padding:4px 8px;border:1.5px solid var(--border);border-radius:3px;background:#fff;color:var(--ink3);font-size:10px;font-weight:700;font-family:var(--font-sans);cursor:pointer;">Todos</button>
+        </div>
+      </div>
+      <!-- Contenido dividido: lista izq + editor der -->
+      <div style="display:flex;flex:1;overflow:hidden;">
+        <!-- Lista de pendientes -->
+        <div id="elenco-lista" style="width:42%;border-right:1px solid var(--border);overflow-y:auto;flex-shrink:0;">
+          <div id="elenco-lista-empty" style="padding:24px 16px;text-align:center;color:var(--ink4);font-size:12px;font-style:italic;">
+            ¡Sin pendientes! Todos tienen elenco cargado.
+          </div>
+        </div>
+        <!-- Editor -->
+        <div id="elenco-editor" style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
+          <div id="elenco-editor-empty" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--ink4);">
+            <div style="font-size:28px;">👈</div>
+            <div style="font-size:12px;font-style:italic;text-align:center;">Selecciona una entrada<br>para cargar su elenco</div>
+          </div>
+          <div id="elenco-editor-form" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+            <div id="elenco-editor-info" style="padding:12px 14px;border-bottom:1px solid var(--border);flex-shrink:0;"></div>
+            <div style="padding:12px 14px;flex:1;display:flex;flex-direction:column;gap:8px;overflow-y:auto;">
+              <label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--ink4);">
+                Elenco <span style="font-weight:400;text-transform:none;letter-spacing:0;">(un actor por línea)</span>
+              </label>
+              <textarea id="elenco-editor-textarea"
+                rows="8"
+                placeholder="Renate Reinsve&#10;Stellan Skarsgård&#10;Elle Fanning"
+                style="resize:vertical;font-size:13px;line-height:1.7;font-family:var(--font-sans);border:1.5px solid var(--border);border-radius:4px;padding:8px 10px;background:var(--cream2);color:var(--ink);flex:1;min-height:120px;"></textarea>
+              <div style="display:flex;gap:8px;">
+                <button onclick="guardarElencoEditor()"
+                  style="flex:1;padding:10px;border:none;background:var(--ink);color:var(--cream);font-family:var(--font-sans);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;border-radius:4px;">
+                  ✓ Guardar y siguiente
+                </button>
+                <button onclick="saltarElencoEditor()"
+                  style="padding:10px 14px;border:1.5px solid var(--border);background:#fff;color:var(--ink4);font-family:var(--font-sans);font-size:11px;font-weight:700;cursor:pointer;border-radius:4px;">
+                  → Saltar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -1523,7 +1592,7 @@ select.input { cursor: pointer; }
     Cerrar sesión
   </button>
   <div style="padding:8px 16px 10px;border-top:1px solid var(--border);font-size:10px;color:var(--ink4);letter-spacing:1px;text-align:right;">
-    LUMEN v117
+    LUMEN v118
   </div>
 </div>
 
@@ -9130,6 +9199,7 @@ function onNormThresholdChange(val) {
 }
 
 function initNormalizacion() {
+  switchNormTab('duplicados');
   actualizarBlacklistUI();
 }
 
@@ -9217,6 +9287,154 @@ function restaurarPar(idx) {
   saveNormBlacklist(normBlacklist);
   actualizarBlacklistUI();
   showToast('Par restaurado');
+}
+
+
+// ══════════════════════════════════════════════════════
+//  ELENCOS PENDIENTES
+// ══════════════════════════════════════════════════════
+
+let elencTipoActual = 'pelicula';
+let elencPendientes = [];
+let elencSeleccionado = null;
+
+function switchNormTab(tab) {
+  const isDup = tab === 'duplicados';
+  document.getElementById('norm-sub-duplicados').style.display = isDup ? 'flex' : 'none';
+  document.getElementById('norm-sub-elencos').style.display    = isDup ? 'none' : 'flex';
+  ['duplicados','elencos'].forEach(t => {
+    const btn = document.getElementById('norm-tab-' + t);
+    if (!btn) return;
+    btn.style.color       = t === tab ? 'var(--gold)' : 'var(--ink4)';
+    btn.style.borderBottom = t === tab ? '2px solid var(--gold)' : '2px solid transparent';
+  });
+  if (tab === 'elencos') renderElencoPendientes();
+}
+
+function setElencTipo(tipo, btn) {
+  elencTipoActual = tipo;
+  document.querySelectorAll('.elenco-tipo-btn').forEach(b => {
+    b.style.background  = '#fff';
+    b.style.color       = 'var(--ink3)';
+    b.style.borderColor = 'var(--border)';
+  });
+  btn.style.background  = 'var(--ink)';
+  btn.style.color       = '#fff';
+  btn.style.borderColor = 'var(--ink)';
+  renderElencoPendientes();
+}
+
+function renderElencoPendientes() {
+  // Filtrar entradas sin elenco
+  const tipo = elencTipoActual;
+  elencPendientes = db.entries.filter(e => {
+    if (tipo !== 'todos' && e.type !== tipo) return false;
+    if (e.type !== 'pelicula' && e.type !== 'serie') return false;
+    const tieneElenco = Array.isArray(e.elenco) && e.elenco.length > 0;
+    return !tieneElenco;
+  }).sort((a, b) => (a.titulo||'').localeCompare(b.titulo||''));
+
+  const countEl  = document.getElementById('elenco-pending-count');
+  const listaEl  = document.getElementById('elenco-lista');
+  const emptyEl  = document.getElementById('elenco-lista-empty');
+
+  if (countEl) countEl.textContent = elencPendientes.length + ' pendiente' + (elencPendientes.length !== 1 ? 's' : '');
+
+  if (!elencPendientes.length) {
+    listaEl.innerHTML = '';
+    emptyEl.style.display = 'block';
+    mostrarEditorElenco(null);
+    return;
+  }
+  emptyEl.style.display = 'none';
+
+  listaEl.innerHTML = elencPendientes.map((e, idx) => {
+    const tipo = e.type === 'pelicula' ? '🎬' : '📺';
+    const anio = e.anio_est ? ' · ' + e.anio_est : '';
+    const dir  = e.director ? '<div style="font-size:10px;color:var(--ink4);margin-top:1px;">' + e.director + '</div>' : '';
+    return `<div class="elenco-item" id="elenco-item-${idx}"
+      onclick="seleccionarElencoItem(${idx})"
+      style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border);transition:background 0.15s;">
+      <div style="display:flex;align-items:baseline;gap:6px;">
+        <span style="font-size:11px;">${tipo}</span>
+        <span style="font-family:var(--font-serif);font-size:13px;font-weight:700;line-height:1.3;">${e.titulo}</span>
+        <span style="font-size:10px;color:var(--ink4);">${anio}</span>
+      </div>
+      ${dir}
+    </div>`;
+  }).join('');
+
+  // Auto-seleccionar el primero
+  if (elencPendientes.length > 0) seleccionarElencoItem(0);
+}
+
+function seleccionarElencoItem(idx) {
+  elencSeleccionado = idx;
+  // Highlight
+  document.querySelectorAll('.elenco-item').forEach((el, i) => {
+    el.style.background = i === idx ? 'var(--cream2)' : '';
+    el.style.borderLeft = i === idx ? '3px solid var(--gold)' : '3px solid transparent';
+  });
+  mostrarEditorElenco(elencPendientes[idx]);
+}
+
+function mostrarEditorElenco(entry) {
+  const editorEmpty = document.getElementById('elenco-editor-empty');
+  const editorForm  = document.getElementById('elenco-editor-form');
+  const infoEl      = document.getElementById('elenco-editor-info');
+  const textarea    = document.getElementById('elenco-editor-textarea');
+
+  if (!entry) {
+    editorEmpty.style.display = 'flex';
+    editorForm.style.display  = 'none';
+    return;
+  }
+
+  editorEmpty.style.display = 'none';
+  editorForm.style.display  = 'flex';
+
+  const anio      = entry.anio_est ? ' (' + entry.anio_est + ')' : '';
+  const director  = entry.director  ? '<span style="font-size:11px;color:var(--ink4);">Dir: ' + entry.director + '</span>' : '';
+  const prota     = entry.protagonista ? '<span style="font-size:11px;color:var(--ink4);">⭐ ' + entry.protagonista + '</span>' : '';
+
+  infoEl.innerHTML = `
+    <div style="font-family:var(--font-serif);font-size:15px;font-weight:700;">${entry.titulo}${anio}</div>
+    <div style="display:flex;gap:12px;margin-top:4px;flex-wrap:wrap;">${director}${prota}</div>`;
+
+  // Prellenar si ya tiene algo
+  textarea.value = Array.isArray(entry.elenco) ? entry.elenco.join('\n') : '';
+  textarea.focus();
+}
+
+function guardarElencoEditor() {
+  if (elencSeleccionado === null) return;
+  const entry   = elencPendientes[elencSeleccionado];
+  const textarea = document.getElementById('elenco-editor-textarea');
+  const lineas  = textarea.value.split('\n').map(s => s.trim()).filter(Boolean);
+
+  if (!lineas.length) { showToast('Escribe al menos un actor'); return; }
+
+  // Guardar en db
+  const idx = db.entries.findIndex(e => e.id === entry.id);
+  if (idx >= 0) {
+    db.entries[idx].elenco      = lineas;
+    db.entries[idx]._updatedAt  = Date.now();
+    saveDB();
+    showToast('✓ Elenco guardado — ' + entry.titulo);
+  }
+
+  // Pasar al siguiente
+  renderElencoPendientes();
+}
+
+function saltarElencoEditor() {
+  if (elencSeleccionado === null) return;
+  const siguiente = elencSeleccionado + 1;
+  if (siguiente < elencPendientes.length) {
+    seleccionarElencoItem(siguiente);
+  } else if (elencPendientes.length > 0) {
+    seleccionarElencoItem(0);
+  }
 }
 
 </script>
