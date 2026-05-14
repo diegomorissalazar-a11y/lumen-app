@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1a1510">
-<title>LUMEN v116 — Biblioteca Personal</title>
+<title>LUMEN v117 — Biblioteca Personal</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231a1510'/><text x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' font-family='Georgia,serif' font-size='14' font-weight='900' font-style='italic' fill='%23c8952a' letter-spacing='0.5'>L</text><rect x='6' y='23' width='20' height='2' rx='1' fill='%238b2020'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
@@ -1523,7 +1523,7 @@ select.input { cursor: pointer; }
     Cerrar sesión
   </button>
   <div style="padding:8px 16px 10px;border-top:1px solid var(--border);font-size:10px;color:var(--ink4);letter-spacing:1px;text-align:right;">
-    LUMEN v116
+    LUMEN v117
   </div>
 </div>
 
@@ -8761,11 +8761,34 @@ function renderMapaPeliculas() {
   const nodeMap = new Map();
   const links   = [];
 
+  // Jerarquía de roles para actores (protagonista > elenco)
+  const ROL_JERARQUIA = { protagonista: 2, elenco: 1 };
+
+  function personaKey(nombre) {
+    return nombre.toLowerCase().replace(/\s+/g,'_').replace(/[^a-z0-9_]/g,'');
+  }
+
   function getOrCreateNode(id, label, tipo) {
     if (!nodeMap.has(id)) {
-      nodeMap.set(id, { id, label, tipo, grado: 0 });
+      nodeMap.set(id, { id, label, tipo, grado: 0, apariciones: [] });
     }
     return nodeMap.get(id);
+  }
+
+  // Para actores: nodo compartido por nombre, con rol más alto
+  function getOrCreateActorNode(nombre, rol, pelLabel) {
+    const id = 'actor_' + personaKey(nombre);
+    if (!nodeMap.has(id)) {
+      nodeMap.set(id, { id, label: nombre, tipo: rol, grado: 0, apariciones: [] });
+    }
+    const node = nodeMap.get(id);
+    // Actualizar a rol más alto si corresponde
+    const jerarquiaActual = ROL_JERARQUIA[node.tipo] || 0;
+    const jerarquiaNueva  = ROL_JERARQUIA[rol] || 0;
+    if (jerarquiaNueva > jerarquiaActual) node.tipo = rol;
+    // Registrar aparición para tooltip
+    node.apariciones.push({ pelicula: pelLabel, rol });
+    return node;
   }
 
   peliculas.forEach(pel => {
@@ -8773,31 +8796,45 @@ function renderMapaPeliculas() {
     const pelLabel = pel.titulo + (pel.anio_est ? ' (' + pel.anio_est + ')' : '');
     getOrCreateNode(pelId, pelLabel, 'pelicula');
 
-    const roles = {
-      director:    rolesActivosPel.has('director')    ? (pel.director||'').split(/[,&]/).map(s=>s.trim()).filter(Boolean) : [],
-      fotografia:  rolesActivosPel.has('fotografia')  ? (pel.fotografia||'').split(/[,&]/).map(s=>s.trim()).filter(Boolean) : [],
-      musica:      rolesActivosPel.has('musica')       ? (pel.musica||'').split(/[,&]/).map(s=>s.trim()).filter(Boolean) : [],
-      guionista:   rolesActivosPel.has('guionista')   ? (pel.guionista||'').split(/[,&]/).map(s=>s.trim()).filter(Boolean) : [],
-      protagonista:rolesActivosPel.has('protagonista')? (pel.protagonista||'').split(/[,&]/).map(s=>s.trim()).filter(Boolean) : [],
-      elenco: (() => {
-        if (!rolesActivosPel.has('elenco')) return [];
-        const protas = (pel.protagonista||'').split(/[,&]/).map(s=>s.trim().toLowerCase()).filter(Boolean);
-        const rawElenco = Array.isArray(pel.elenco) ? pel.elenco : [];
-        return rawElenco.filter(a => !protas.includes(a.trim().toLowerCase()));
-      })()
+    // Roles con nodo independiente por rol (comportamiento original)
+    const rolesIndep = {
+      director:    rolesActivosPel.has('director')   ? (pel.director||'').split(/[,&]/).map(s=>s.trim()).filter(Boolean) : [],
+      fotografia:  rolesActivosPel.has('fotografia') ? (pel.fotografia||'').split(/[,&]/).map(s=>s.trim()).filter(Boolean) : [],
+      musica:      rolesActivosPel.has('musica')      ? (pel.musica||'').split(/[,&]/).map(s=>s.trim()).filter(Boolean) : [],
+      guionista:   rolesActivosPel.has('guionista')  ? (pel.guionista||'').split(/[,&]/).map(s=>s.trim()).filter(Boolean) : []
     };
 
-    Object.entries(roles).forEach(([rol, personas]) => {
+    Object.entries(rolesIndep).forEach(([rol, personas]) => {
       personas.forEach(persona => {
-        const pid = 'per_' + rol + '_' + persona.toLowerCase().replace(/\s+/g,'_').replace(/[^a-z0-9_]/g,'');
+        const pid = 'per_' + rol + '_' + personaKey(persona);
         getOrCreateNode(pid, persona, rol);
-        const src = nodeMap.get(pelId);
-        const tgt = nodeMap.get(pid);
-        src.grado++;
-        tgt.grado++;
+        nodeMap.get(pelId).grado++;
+        nodeMap.get(pid).grado++;
         links.push({ source: pelId, target: pid, rol });
       });
     });
+
+    // Protagonistas — nodo unificado por actor
+    const protas = rolesActivosPel.has('protagonista')
+      ? (pel.protagonista||'').split(/[,&]/).map(s=>s.trim()).filter(Boolean) : [];
+    protas.forEach(persona => {
+      const node = getOrCreateActorNode(persona, 'protagonista', pelLabel);
+      nodeMap.get(pelId).grado++;
+      node.grado++;
+      links.push({ source: pelId, target: node.id, rol: 'protagonista' });
+    });
+
+    // Elenco — nodo unificado por actor, sin duplicar protagonistas
+    const protasLower = protas.map(p => p.toLowerCase());
+    const rawElenco = rolesActivosPel.has('elenco') && Array.isArray(pel.elenco) ? pel.elenco : [];
+    rawElenco
+      .filter(a => !protasLower.includes(a.trim().toLowerCase()))
+      .forEach(persona => {
+        const node = getOrCreateActorNode(persona, 'elenco', pelLabel);
+        nodeMap.get(pelId).grado++;
+        node.grado++;
+        links.push({ source: pelId, target: node.id, rol: 'elenco' });
+      });
   });
 
   // Filtrar nodos sin conexiones visibles
@@ -8872,7 +8909,20 @@ function renderMapaPeliculas() {
   node.on('mouseover', (ev, d) => {
     const rolLabel = d.tipo==='pelicula' ? 'Película' :
       ({director:'Director',fotografia:'Fotografía',musica:'Música',guionista:'Guionista',protagonista:'Protagonista',elenco:'Elenco'}[d.tipo]||d.tipo);
-    tooltip.innerHTML = '<strong>' + d.label + '</strong><br><span style="opacity:0.7;font-size:10px;">' + rolLabel + '</span>';
+
+    let html = '<strong>' + d.label + '</strong><br><span style="opacity:0.7;font-size:10px;">' + rolLabel + '</span>';
+
+    // Para actores (protagonista/elenco) mostrar apariciones detalladas
+    if (d.apariciones && d.apariciones.length > 0) {
+      html += '<div style="margin-top:6px;border-top:1px solid rgba(255,255,255,0.2);padding-top:5px;">';
+      d.apariciones.forEach(ap => {
+        const apRol = ap.rol === 'protagonista' ? '⭐ Protagonista' : '👤 Elenco';
+        html += '<div style="font-size:10px;opacity:0.85;margin-top:2px;">' + apRol + ' en <em>' + ap.pelicula + '</em></div>';
+      });
+      html += '</div>';
+    }
+
+    tooltip.innerHTML = html;
     tooltip.style.display = 'block';
   })
   .on('mousemove', ev => {
