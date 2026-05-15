@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1a1510">
-<title>LUMEN v121 — Biblioteca Personal</title>
+<title>LUMEN v122 — Biblioteca Personal</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231a1510'/><text x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' font-family='Georgia,serif' font-size='14' font-weight='900' font-style='italic' fill='%23c8952a' letter-spacing='0.5'>L</text><rect x='6' y='23' width='20' height='2' rx='1' fill='%238b2020'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
@@ -1168,6 +1168,7 @@ select.input { cursor: pointer; }
       <div style="padding:10px 16px;display:flex;gap:8px;align-items:center;border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap;">
         <span style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--ink4);">Sin elenco cargado:</span>
         <span id="elenco-pending-count" style="font-size:11px;color:var(--gold);font-weight:700;"></span>
+        <button class="btn btn-secondary btn-sm" style="width:auto;" onclick="elencIdSeleccionado=null;renderElencoPendientes();">↻ Actualizar lista</button>
         <div style="margin-left:auto;display:flex;gap:6px;">
           <button class="elenco-tipo-btn active" id="elenco-tipo-pelicula" onclick="setElencTipo('pelicula',this)"
             style="padding:4px 8px;border:1.5px solid var(--ink);border-radius:3px;background:var(--ink);color:#fff;font-size:10px;font-weight:700;font-family:var(--font-sans);cursor:pointer;">🎬 Películas</button>
@@ -1644,7 +1645,7 @@ select.input { cursor: pointer; }
     Cerrar sesión
   </button>
   <div style="padding:8px 16px 10px;border-top:1px solid var(--border);font-size:10px;color:var(--ink4);letter-spacing:1px;text-align:right;">
-    LUMEN v121
+    LUMEN v122
   </div>
 </div>
 
@@ -9485,13 +9486,17 @@ function guardarElencoEditor() {
   const lineas   = textarea.value.split('\n').map(s => s.trim()).filter(Boolean);
   if (!lineas.length) { showToast('Escribe al menos un actor'); return; }
 
-  // Guardar en db
+  // Guardar solo en localStorage — Firestore con debounce largo (5s) para no saturar la cola
   const dbIdx = db.entries.findIndex(e => e.id === entry.id);
   if (dbIdx >= 0) {
     db.entries[dbIdx].elenco     = lineas;
     db.entries[dbIdx]._updatedAt = Date.now();
-    saveDB();
-    showToast('✓ Elenco guardado — ' + entry.titulo);
+    localStorage.setItem(DB_KEY, JSON.stringify(db));
+    if (currentUser) {
+      clearTimeout(_saveDebounceTimer);
+      _saveDebounceTimer = setTimeout(() => { setSyncStatus('syncing'); syncToFirestore(); }, 5000);
+    }
+    showToast('✓ ' + entry.titulo);
   }
 
   // Calcular ID del siguiente ANTES de re-renderizar
@@ -9499,7 +9504,7 @@ function guardarElencoEditor() {
   const siguiente   = elencPendientes[idxActual + 1];
   const siguienteId = siguiente ? siguiente.id : (elencPendientes[0]?.id !== entry.id ? elencPendientes[0]?.id : null);
 
-  elencIdSeleccionado = null; // reset para que renderElencoPendientes no mantenga el guardado
+  elencIdSeleccionado = null;
   renderElencoPendientes(siguienteId);
 }
 
