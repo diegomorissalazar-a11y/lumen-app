@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1a1510">
-<title>LUMEN v122 — Biblioteca Personal</title>
+<title>LUMEN v123 — Biblioteca Personal</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231a1510'/><text x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' font-family='Georgia,serif' font-size='14' font-weight='900' font-style='italic' fill='%23c8952a' letter-spacing='0.5'>L</text><rect x='6' y='23' width='20' height='2' rx='1' fill='%238b2020'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
@@ -1645,7 +1645,7 @@ select.input { cursor: pointer; }
     Cerrar sesión
   </button>
   <div style="padding:8px 16px 10px;border-top:1px solid var(--border);font-size:10px;color:var(--ink4);letter-spacing:1px;text-align:right;">
-    LUMEN v122
+    LUMEN v123
   </div>
 </div>
 
@@ -3007,7 +3007,7 @@ async function pullAndMerge(uid, silent) {
       }
       if (remote.normBlacklist && Array.isArray(remote.normBlacklist)) {
         normBlacklist = remote.normBlacklist;
-        saveNormBlacklist(normBlacklist);
+        saveNormBlacklist(normBlacklist, true);
       }
       // Restaurar nodos custom y programas
       if (remote.rutaCustom) {
@@ -3103,7 +3103,7 @@ function subscribeToFirestore(uid) {
     }
     if (remote.normBlacklist && Array.isArray(remote.normBlacklist)) {
       normBlacklist = remote.normBlacklist;
-      saveNormBlacklist(normBlacklist);
+      saveNormBlacklist(normBlacklist, true);
     }
     if (remote.rutaCustom) {
       const localCustom = loadRutaCustomNodes();
@@ -6952,7 +6952,7 @@ async function manualLoadFromCloud() {
       }
       if (remote.normBlacklist && Array.isArray(remote.normBlacklist)) {
         normBlacklist = remote.normBlacklist;
-        saveNormBlacklist(normBlacklist);
+        saveNormBlacklist(normBlacklist, true);
       }
       if (remote.desafios) {
         const localDes = loadDesafios();
@@ -9073,9 +9073,9 @@ function loadNormBlacklist() {
   try { const r = localStorage.getItem(NORM_BLACKLIST_KEY); return r ? JSON.parse(r) : []; }
   catch { return []; }
 }
-function saveNormBlacklist(list) {
+function saveNormBlacklist(list, localOnly) {
   localStorage.setItem(NORM_BLACKLIST_KEY, JSON.stringify(list));
-  if (currentUser) {
+  if (!localOnly && currentUser) {
     clearTimeout(_saveDebounceTimer);
     _saveDebounceTimer = setTimeout(() => syncToFirestore(), 800);
   }
@@ -9534,9 +9534,9 @@ function loadIdiomasAprobados() {
   } catch { return [...IDIOMAS_DEFAULT]; }
 }
 
-function saveIdiomasAprobados(lista) {
+function saveIdiomasAprobados(lista, localOnly) {
   localStorage.setItem(IDIOMAS_APROBADOS_KEY, JSON.stringify(lista));
-  if (currentUser) {
+  if (!localOnly && currentUser) {
     clearTimeout(_saveDebounceTimer);
     _saveDebounceTimer = setTimeout(() => syncToFirestore(), 800);
   }
