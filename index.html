@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1a1510">
-<title>LUMEN v120 — Biblioteca Personal</title>
+<title>LUMEN v121 — Biblioteca Personal</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231a1510'/><text x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' font-family='Georgia,serif' font-size='14' font-weight='900' font-style='italic' fill='%23c8952a' letter-spacing='0.5'>L</text><rect x='6' y='23' width='20' height='2' rx='1' fill='%238b2020'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
@@ -1644,7 +1644,7 @@ select.input { cursor: pointer; }
     Cerrar sesión
   </button>
   <div style="padding:8px 16px 10px;border-top:1px solid var(--border);font-size:10px;color:var(--ink4);letter-spacing:1px;text-align:right;">
-    LUMEN v120
+    LUMEN v121
   </div>
 </div>
 
@@ -9349,7 +9349,7 @@ function restaurarPar(idx) {
 
 let elencTipoActual = 'pelicula';
 let elencPendientes = [];
-let elencSeleccionado = null;
+let elencIdSeleccionado = null; // guardamos ID en lugar de índice
 
 function switchNormTab(tab) {
   document.getElementById('norm-sub-duplicados').style.display = tab==='duplicados' ? 'flex' : 'none';
@@ -9361,8 +9361,8 @@ function switchNormTab(tab) {
     btn.style.color        = t === tab ? 'var(--gold)' : 'var(--ink4)';
     btn.style.borderBottom = t === tab ? '2px solid var(--gold)' : '2px solid transparent';
   });
-  if (tab === 'elencos')  renderElencoPendientes();
-  if (tab === 'idiomas')  initIdiomasTab();
+  if (tab === 'elencos') { elencIdSeleccionado = null; renderElencoPendientes(); }
+  if (tab === 'idiomas') initIdiomasTab();
 }
 
 function setElencTipo(tipo, btn) {
@@ -9375,22 +9375,22 @@ function setElencTipo(tipo, btn) {
   btn.style.background  = 'var(--ink)';
   btn.style.color       = '#fff';
   btn.style.borderColor = 'var(--ink)';
+  elencIdSeleccionado = null;
   renderElencoPendientes();
 }
 
-function renderElencoPendientes() {
-  // Filtrar entradas sin elenco
+function renderElencoPendientes(focusId) {
   const tipo = elencTipoActual;
   elencPendientes = db.entries.filter(e => {
     if (tipo !== 'todos' && e.type !== tipo) return false;
     if (e.type !== 'pelicula' && e.type !== 'serie') return false;
-    const tieneElenco = Array.isArray(e.elenco) && e.elenco.length > 0;
-    return !tieneElenco;
+    return !(Array.isArray(e.elenco) && e.elenco.length > 0);
   }).sort((a, b) => (a.titulo||'').localeCompare(b.titulo||''));
 
-  const countEl  = document.getElementById('elenco-pending-count');
-  const listaEl  = document.getElementById('elenco-lista');
-  const emptyEl  = document.getElementById('elenco-lista-empty');
+  const countEl = document.getElementById('elenco-pending-count');
+  const listaEl = document.getElementById('elenco-lista');
+  const emptyEl = document.getElementById('elenco-lista-empty');
+  if (!listaEl || !emptyEl) return;
 
   if (countEl) countEl.textContent = elencPendientes.length + ' pendiente' + (elencPendientes.length !== 1 ? 's' : '');
 
@@ -9398,19 +9398,20 @@ function renderElencoPendientes() {
     listaEl.innerHTML = '';
     emptyEl.style.display = 'block';
     mostrarEditorElenco(null);
+    elencIdSeleccionado = null;
     return;
   }
   emptyEl.style.display = 'none';
 
   listaEl.innerHTML = elencPendientes.map((e, idx) => {
-    const tipo = e.type === 'pelicula' ? '🎬' : '📺';
-    const anio = e.anio_est ? ' · ' + e.anio_est : '';
-    const dir  = e.director ? '<div style="font-size:10px;color:var(--ink4);margin-top:1px;">' + e.director + '</div>' : '';
-    return `<div class="elenco-item" id="elenco-item-${idx}"
-      onclick="seleccionarElencoItem(${idx})"
+    const icono = e.type === 'pelicula' ? '🎬' : '📺';
+    const anio  = e.anio_est ? ' · ' + e.anio_est : '';
+    const dir   = e.director ? '<div style="font-size:10px;color:var(--ink4);margin-top:1px;">' + e.director + '</div>' : '';
+    return `<div class="elenco-item" id="elenco-item-${e.id}"
+      onclick="seleccionarElencoItem('${e.id}')"
       style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border);border-left:3px solid transparent;transition:background 0.15s;">
       <div style="display:flex;align-items:baseline;gap:6px;">
-        <span style="font-size:11px;">${tipo}</span>
+        <span style="font-size:11px;">${icono}</span>
         <span style="font-family:var(--font-serif);font-size:13px;font-weight:700;line-height:1.3;">${e.titulo}</span>
         <span style="font-size:10px;color:var(--ink4);">${anio}</span>
       </div>
@@ -9418,20 +9419,32 @@ function renderElencoPendientes() {
     </div>`;
   }).join('');
 
-  // Solo auto-seleccionar el primero en la carga inicial (cuando no hay foco previo)
-  if (elencSeleccionado === null && elencPendientes.length > 0) {
-    seleccionarElencoItem(0);
+  // Determinar qué ítem mostrar
+  let idParaMostrar = focusId || elencIdSeleccionado;
+  // Verificar que sigue en la lista
+  if (idParaMostrar && !elencPendientes.find(e => e.id === idParaMostrar)) {
+    idParaMostrar = null;
   }
+  // Si no hay ninguno válido, tomar el primero
+  if (!idParaMostrar && elencPendientes.length > 0) {
+    idParaMostrar = elencPendientes[0].id;
+  }
+  if (idParaMostrar) seleccionarElencoItem(idParaMostrar);
 }
 
-function seleccionarElencoItem(idx) {
-  elencSeleccionado = idx;
+function seleccionarElencoItem(id) {
+  elencIdSeleccionado = id;
+  const entry = elencPendientes.find(e => e.id === id);
   // Highlight
-  document.querySelectorAll('.elenco-item').forEach((el, i) => {
-    el.style.background = i === idx ? 'var(--cream2)' : '';
-    el.style.borderLeft = i === idx ? '3px solid var(--gold)' : '3px solid transparent';
+  document.querySelectorAll('.elenco-item').forEach(el => {
+    const esEste = el.id === 'elenco-item-' + id;
+    el.style.background = esEste ? 'var(--cream2)' : '';
+    el.style.borderLeft = esEste ? '3px solid var(--gold)' : '3px solid transparent';
   });
-  mostrarEditorElenco(elencPendientes[idx]);
+  // Scroll al item
+  const itemEl = document.getElementById('elenco-item-' + id);
+  if (itemEl) itemEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  mostrarEditorElenco(entry || null);
 }
 
 function mostrarEditorElenco(entry) {
@@ -9439,6 +9452,7 @@ function mostrarEditorElenco(entry) {
   const editorForm  = document.getElementById('elenco-editor-form');
   const infoEl      = document.getElementById('elenco-editor-info');
   const textarea    = document.getElementById('elenco-editor-textarea');
+  if (!editorEmpty || !editorForm) return;
 
   if (!entry) {
     editorEmpty.style.display = 'flex';
@@ -9449,65 +9463,52 @@ function mostrarEditorElenco(entry) {
   editorEmpty.style.display = 'none';
   editorForm.style.display  = 'flex';
 
-  const anio      = entry.anio_est ? ' (' + entry.anio_est + ')' : '';
-  const director  = entry.director  ? '<span style="font-size:11px;color:var(--ink4);">Dir: ' + entry.director + '</span>' : '';
-  const prota     = entry.protagonista ? '<span style="font-size:11px;color:var(--ink4);">⭐ ' + entry.protagonista + '</span>' : '';
+  const anio     = entry.anio_est ? ' (' + entry.anio_est + ')' : '';
+  const director = entry.director     ? '<span style="font-size:11px;color:var(--ink4);">Dir: ' + entry.director + '</span>' : '';
+  const prota    = entry.protagonista ? '<span style="font-size:11px;color:var(--ink4);">⭐ ' + entry.protagonista + '</span>' : '';
 
-  infoEl.innerHTML = `
+  if (infoEl) infoEl.innerHTML = `
     <div style="font-family:var(--font-serif);font-size:15px;font-weight:700;">${entry.titulo}${anio}</div>
     <div style="display:flex;gap:12px;margin-top:4px;flex-wrap:wrap;">${director}${prota}</div>`;
 
-  // Prellenar si ya tiene algo
-  textarea.value = Array.isArray(entry.elenco) ? entry.elenco.join('\n') : '';
-  textarea.focus();
+  if (textarea) {
+    textarea.value = Array.isArray(entry.elenco) ? entry.elenco.join('\n') : '';
+    textarea.focus();
+  }
 }
 
 function guardarElencoEditor() {
-  if (elencSeleccionado === null) return;
-  const entry    = elencPendientes[elencSeleccionado];
+  if (!elencIdSeleccionado) return;
+  const entry    = elencPendientes.find(e => e.id === elencIdSeleccionado);
+  if (!entry) return;
   const textarea = document.getElementById('elenco-editor-textarea');
   const lineas   = textarea.value.split('\n').map(s => s.trim()).filter(Boolean);
-
   if (!lineas.length) { showToast('Escribe al menos un actor'); return; }
 
   // Guardar en db
-  const idx = db.entries.findIndex(e => e.id === entry.id);
-  if (idx >= 0) {
-    db.entries[idx].elenco     = lineas;
-    db.entries[idx]._updatedAt = Date.now();
+  const dbIdx = db.entries.findIndex(e => e.id === entry.id);
+  if (dbIdx >= 0) {
+    db.entries[dbIdx].elenco     = lineas;
+    db.entries[dbIdx]._updatedAt = Date.now();
     saveDB();
     showToast('✓ Elenco guardado — ' + entry.titulo);
   }
 
-  // Guardar ID del siguiente ANTES de re-renderizar
-  const siguienteId = elencPendientes[elencSeleccionado + 1]
-    ? elencPendientes[elencSeleccionado + 1].id
-    : null;
+  // Calcular ID del siguiente ANTES de re-renderizar
+  const idxActual   = elencPendientes.findIndex(e => e.id === elencIdSeleccionado);
+  const siguiente   = elencPendientes[idxActual + 1];
+  const siguienteId = siguiente ? siguiente.id : (elencPendientes[0]?.id !== entry.id ? elencPendientes[0]?.id : null);
 
-  // Re-renderizar lista (excluye la película recién guardada)
-  renderElencoPendientesConFoco(siguienteId);
+  elencIdSeleccionado = null; // reset para que renderElencoPendientes no mantenga el guardado
+  renderElencoPendientes(siguienteId);
 }
 
 function saltarElencoEditor() {
-  if (elencSeleccionado === null) return;
-  const siguienteId = elencPendientes[elencSeleccionado + 1]
-    ? elencPendientes[elencSeleccionado + 1].id
-    : elencPendientes[0]?.id || null;
-  renderElencoPendientesConFoco(siguienteId);
-}
-
-function renderElencoPendientesConFoco(idObjetivo) {
-  renderElencoPendientes(); // re-renderiza la lista actualizada
-  if (!idObjetivo || !elencPendientes.length) return;
-  // Buscar el índice del objetivo en la nueva lista
-  const nuevoIdx = elencPendientes.findIndex(e => e.id === idObjetivo);
-  if (nuevoIdx >= 0) {
-    seleccionarElencoItem(nuevoIdx);
-    // Scroll al item en la lista
-    const itemEl = document.getElementById('elenco-item-' + nuevoIdx);
-    if (itemEl) itemEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  } else if (elencPendientes.length > 0) {
-    seleccionarElencoItem(0);
+  if (!elencIdSeleccionado) return;
+  const idxActual   = elencPendientes.findIndex(e => e.id === elencIdSeleccionado);
+  const siguiente   = elencPendientes[idxActual + 1] || elencPendientes[0];
+  if (siguiente && siguiente.id !== elencIdSeleccionado) {
+    seleccionarElencoItem(siguiente.id);
   }
 }
 
