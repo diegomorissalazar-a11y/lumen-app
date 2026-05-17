@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1a1510">
-<title>LUMEN v124 — Biblioteca Personal</title>
+<title>LUMEN v125 — Biblioteca Personal</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231a1510'/><text x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' font-family='Georgia,serif' font-size='14' font-weight='900' font-style='italic' fill='%23c8952a' letter-spacing='0.5'>L</text><rect x='6' y='23' width='20' height='2' rx='1' fill='%238b2020'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
@@ -1269,6 +1269,69 @@ select.input { cursor: pointer; }
   </div>
 </div>
 
+<!-- ══════ MODAL: WIKI PREVIEW INDIVIDUAL ══════ -->
+<div id="modal-wiki-preview" class="modal-overlay" style="display:none;">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title">🌐 Datos de Wikipedia</div>
+      <button class="modal-close" onclick="wikiPreviewCancelar()">✕</button>
+    </div>
+    <div style="padding:0 16px 8px;">
+      <div id="wiki-preview-title" style="font-family:var(--font-serif);font-size:15px;font-weight:700;margin-bottom:4px;"></div>
+      <div id="wiki-preview-source" style="font-size:10px;color:var(--ink4);margin-bottom:12px;"></div>
+      <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--ink4);margin-bottom:6px;">Campos a completar:</div>
+      <div id="wiki-preview-body" style="margin-bottom:16px;"></div>
+      <div style="font-size:11px;color:var(--ink4);font-style:italic;margin-bottom:16px;">Solo se completan campos vacíos. No se sobreescriben datos existentes.</div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-primary" onclick="wikiPreviewConfirmar()" style="flex:1;">✓ Guardar</button>
+        <button class="btn btn-secondary" onclick="wikiPreviewCancelar()" style="flex:1;">Cancelar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ MODAL: WIKI MASIVO ══════ -->
+<div id="modal-wiki-masivo" class="modal-overlay" style="display:none;">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title">🌐 Importación masiva Wikipedia</div>
+      <button class="modal-close" onclick="document.getElementById('modal-wiki-masivo').style.display='none'">✕</button>
+    </div>
+    <div style="padding:0 16px 16px;">
+      <p style="font-size:13px;color:var(--ink2);margin-bottom:8px;">Se completarán <strong id="wiki-masivo-count">0</strong> películas con país, productora y género desde Wikipedia.</p>
+      <p style="font-size:12px;color:var(--ink4);margin-bottom:8px;">Solo se completan campos vacíos. No sobreescribe datos existentes.</p>
+      <p style="font-size:12px;color:var(--ink4);margin-bottom:16px;">⚠ Puede tomar varios minutos. Se guarda un rollback automático.</p>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-primary" onclick="wikiMasivoConfirmar()" style="flex:1;">▶ Iniciar</button>
+        <button class="btn btn-secondary" onclick="document.getElementById('modal-wiki-masivo').style.display='none'" style="flex:1;">Cancelar</button>
+      </div>
+      <button onclick="rollbackWikiImport()" style="width:100%;margin-top:10px;padding:8px;border:1.5px solid var(--border);border-radius:4px;background:#fff;font-family:var(--font-sans);font-size:11px;color:var(--ink4);cursor:pointer;font-weight:700;">↩ Deshacer última importación</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ MODAL: EXPORTAR LECTURA ══════ -->
+<div id="modal-exportar-lectura" class="modal-overlay" style="display:none;">
+  <div class="modal" style="max-height:90vh;display:flex;flex-direction:column;">
+    <div class="modal-handle"></div>
+    <div class="modal-header" style="flex-shrink:0;">
+      <div class="modal-title">📊 Exportar historial de lectura</div>
+      <button class="modal-close" onclick="document.getElementById('modal-exportar-lectura').style.display='none'">✕</button>
+    </div>
+    <div style="padding:0 16px 16px;display:flex;flex-direction:column;flex:1;overflow:hidden;">
+      <p style="font-size:12px;color:var(--ink4);margin-bottom:10px;flex-shrink:0;">Resumen semanal + datos crudos CSV. Copia y pega en el chat para análisis.</p>
+      <textarea id="exportar-lectura-output" readonly
+        style="flex:1;min-height:280px;font-family:monospace;font-size:11px;line-height:1.5;border:1.5px solid var(--border);border-radius:4px;padding:10px;background:var(--cream2);resize:none;color:var(--ink2);"></textarea>
+      <div style="display:flex;gap:8px;margin-top:10px;flex-shrink:0;">
+        <button class="btn btn-primary" onclick="copiarExportLectura()" style="flex:1;">📋 Copiar al portapapeles</button>
+        <button class="btn btn-secondary" onclick="document.getElementById('modal-exportar-lectura').style.display='none'" style="flex:1;">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ══════ MODAL: AÑADIR INFLUENCIA ══════ -->
 <div id="modal-influencia" class="modal-overlay">
   <div class="modal">
@@ -1640,12 +1703,20 @@ select.input { cursor: pointer; }
     <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0018 9h-1.26A8 8 0 103 16.3"/></svg>
     Importar / Exportar CSV
   </button>
+  <button class="user-menu-item" onclick="closeUserMenu();wikiMasivo();">
+    <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20"/></svg>
+    🌐 Completar desde Wikipedia
+  </button>
+  <button class="user-menu-item" onclick="closeUserMenu();exportarLectura();">
+    <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0018 9h-1.26A8 8 0 103 16.3"/></svg>
+    📊 Exportar historial de lectura
+  </button>
   <button class="user-menu-item danger" onclick="confirmLogOut()">
     <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
     Cerrar sesión
   </button>
   <div style="padding:8px 16px 10px;border-top:1px solid var(--border);font-size:10px;color:var(--ink4);letter-spacing:1px;text-align:right;">
-    LUMEN v124
+    LUMEN v125
   </div>
 </div>
 
@@ -1817,6 +1888,66 @@ select.input { cursor: pointer; }
         <div class="field">
           <label>Elenco <span style="font-size:10px;color:var(--ink4);font-weight:400;letter-spacing:0;">(un actor por línea)</span></label>
           <textarea class="input" id="fp-elenco" rows="4" placeholder="Renate Reinsve&#10;Stellan Skarsgård&#10;Elle Fanning" style="resize:vertical;font-size:13px;line-height:1.6;"></textarea>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="field">
+            <label>País de producción</label>
+            <select class="input" id="fp-pais">
+              <option value="">— Seleccionar —</option>
+              <option value="AR">Argentina</option><option value="AU">Australia</option>
+              <option value="AT">Austria</option><option value="BE">Bélgica</option>
+              <option value="BR">Brasil</option><option value="CA">Canadá</option>
+              <option value="CL">Chile</option><option value="CN">China</option>
+              <option value="CO">Colombia</option><option value="HR">Croacia</option>
+              <option value="CZ">República Checa</option><option value="DK">Dinamarca</option>
+              <option value="EG">Egipto</option><option value="FI">Finlandia</option>
+              <option value="FR">Francia</option><option value="DE">Alemania</option>
+              <option value="GR">Grecia</option><option value="HK">Hong Kong</option>
+              <option value="HU">Hungría</option><option value="IN">India</option>
+              <option value="ID">Indonesia</option><option value="IR">Irán</option>
+              <option value="IE">Irlanda</option><option value="IL">Israel</option>
+              <option value="IT">Italia</option><option value="JP">Japón</option>
+              <option value="KR">Corea del Sur</option><option value="MX">México</option>
+              <option value="MA">Marruecos</option><option value="NL">Países Bajos</option>
+              <option value="NZ">Nueva Zelanda</option><option value="NO">Noruega</option>
+              <option value="PK">Pakistán</option><option value="PE">Perú</option>
+              <option value="PL">Polonia</option><option value="PT">Portugal</option>
+              <option value="RO">Rumanía</option><option value="RU">Rusia</option>
+              <option value="ZA">Sudáfrica</option><option value="ES">España</option>
+              <option value="SE">Suecia</option><option value="CH">Suiza</option>
+              <option value="TW">Taiwán</option><option value="TH">Tailandia</option>
+              <option value="TR">Turquía</option><option value="UA">Ucrania</option>
+              <option value="GB">Reino Unido</option><option value="US">Estados Unidos</option>
+              <option value="VE">Venezuela</option><option value="VN">Vietnam</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Productora</label>
+            <input class="input" type="text" id="fp-productora" placeholder="A24, Mubi...">
+          </div>
+        </div>
+        <div class="field">
+          <label>Género <span style="font-size:10px;color:var(--ink4);font-weight:400;letter-spacing:0;">(máx. 2)</span></label>
+          <div id="fp-generos-cine" style="display:flex;flex-wrap:wrap;gap:5px;margin-top:4px;">
+            <button type="button" class="fp-genero-btn" data-g="Drama" onclick="toggleGeneroCine(this)" style="padding:4px 9px;border:1.5px solid var(--border);border-radius:12px;background:#fff;font-family:var(--font-sans);font-size:11px;cursor:pointer;color:var(--ink3);">Drama</button>
+            <button type="button" class="fp-genero-btn" data-g="Comedia" onclick="toggleGeneroCine(this)" style="padding:4px 9px;border:1.5px solid var(--border);border-radius:12px;background:#fff;font-family:var(--font-sans);font-size:11px;cursor:pointer;color:var(--ink3);">Comedia</button>
+            <button type="button" class="fp-genero-btn" data-g="Thriller" onclick="toggleGeneroCine(this)" style="padding:4px 9px;border:1.5px solid var(--border);border-radius:12px;background:#fff;font-family:var(--font-sans);font-size:11px;cursor:pointer;color:var(--ink3);">Thriller</button>
+            <button type="button" class="fp-genero-btn" data-g="Terror" onclick="toggleGeneroCine(this)" style="padding:4px 9px;border:1.5px solid var(--border);border-radius:12px;background:#fff;font-family:var(--font-sans);font-size:11px;cursor:pointer;color:var(--ink3);">Terror</button>
+            <button type="button" class="fp-genero-btn" data-g="Ciencia ficción" onclick="toggleGeneroCine(this)" style="padding:4px 9px;border:1.5px solid var(--border);border-radius:12px;background:#fff;font-family:var(--font-sans);font-size:11px;cursor:pointer;color:var(--ink3);">Ciencia ficción</button>
+            <button type="button" class="fp-genero-btn" data-g="Animación" onclick="toggleGeneroCine(this)" style="padding:4px 9px;border:1.5px solid var(--border);border-radius:12px;background:#fff;font-family:var(--font-sans);font-size:11px;cursor:pointer;color:var(--ink3);">Animación</button>
+            <button type="button" class="fp-genero-btn" data-g="Documental" onclick="toggleGeneroCine(this)" style="padding:4px 9px;border:1.5px solid var(--border);border-radius:12px;background:#fff;font-family:var(--font-sans);font-size:11px;cursor:pointer;color:var(--ink3);">Documental</button>
+            <button type="button" class="fp-genero-btn" data-g="Romance" onclick="toggleGeneroCine(this)" style="padding:4px 9px;border:1.5px solid var(--border);border-radius:12px;background:#fff;font-family:var(--font-sans);font-size:11px;cursor:pointer;color:var(--ink3);">Romance</button>
+            <button type="button" class="fp-genero-btn" data-g="Acción" onclick="toggleGeneroCine(this)" style="padding:4px 9px;border:1.5px solid var(--border);border-radius:12px;background:#fff;font-family:var(--font-sans);font-size:11px;cursor:pointer;color:var(--ink3);">Acción</button>
+            <button type="button" class="fp-genero-btn" data-g="Aventura" onclick="toggleGeneroCine(this)" style="padding:4px 9px;border:1.5px solid var(--border);border-radius:12px;background:#fff;font-family:var(--font-sans);font-size:11px;cursor:pointer;color:var(--ink3);">Aventura</button>
+            <button type="button" class="fp-genero-btn" data-g="Histórico" onclick="toggleGeneroCine(this)" style="padding:4px 9px;border:1.5px solid var(--border);border-radius:12px;background:#fff;font-family:var(--font-sans);font-size:11px;cursor:pointer;color:var(--ink3);">Histórico</button>
+            <button type="button" class="fp-genero-btn" data-g="Crimen" onclick="toggleGeneroCine(this)" style="padding:4px 9px;border:1.5px solid var(--border);border-radius:12px;background:#fff;font-family:var(--font-sans);font-size:11px;cursor:pointer;color:var(--ink3);">Crimen</button>
+            <button type="button" class="fp-genero-btn" data-g="Misterio" onclick="toggleGeneroCine(this)" style="padding:4px 9px;border:1.5px solid var(--border);border-radius:12px;background:#fff;font-family:var(--font-sans);font-size:11px;cursor:pointer;color:var(--ink3);">Misterio</button>
+            <button type="button" class="fp-genero-btn" data-g="Musical" onclick="toggleGeneroCine(this)" style="padding:4px 9px;border:1.5px solid var(--border);border-radius:12px;background:#fff;font-family:var(--font-sans);font-size:11px;cursor:pointer;color:var(--ink3);">Musical</button>
+            <button type="button" class="fp-genero-btn" data-g="Fantasía" onclick="toggleGeneroCine(this)" style="padding:4px 9px;border:1.5px solid var(--border);border-radius:12px;background:#fff;font-family:var(--font-sans);font-size:11px;cursor:pointer;color:var(--ink3);">Fantasía</button>
+            <button type="button" class="fp-genero-btn" data-g="Bélico" onclick="toggleGeneroCine(this)" style="padding:4px 9px;border:1.5px solid var(--border);border-radius:12px;background:#fff;font-family:var(--font-sans);font-size:11px;cursor:pointer;color:var(--ink3);">Bélico</button>
+            <button type="button" class="fp-genero-btn" data-g="Biográfico" onclick="toggleGeneroCine(this)" style="padding:4px 9px;border:1.5px solid var(--border);border-radius:12px;background:#fff;font-family:var(--font-sans);font-size:11px;cursor:pointer;color:var(--ink3);">Biográfico</button>
+            <button type="button" class="fp-genero-btn" data-g="Western" onclick="toggleGeneroCine(this)" style="padding:4px 9px;border:1.5px solid var(--border);border-radius:12px;background:#fff;font-family:var(--font-sans);font-size:11px;cursor:pointer;color:var(--ink3);">Western</button>
+          </div>
         </div>
         <div class="field">
           <label>Basada en</label>
@@ -3240,7 +3371,7 @@ function selectType(type, btn) {
 
 function resetForm() {
   ['f-titulo','f-autor','f-editorial','f-paginas','f-anio-pub','f-traductor','f-idioma','f-cover','f-notas',
-   'fp-titulo','fp-director','fp-anio-est','fp-duracion','fp-foto','fp-musica','fp-protagonista','fp-guionista','fp-cover','fp-elenco',
+   'fp-titulo','fp-director','fp-anio-est','fp-duracion','fp-foto','fp-musica','fp-protagonista','fp-guionista','fp-cover','fp-elenco','fp-productora',
    'fs-titulo','fs-director','fs-anio-est','fs-duracion','fs-caps-por-temp','fs-min-episodio','fs-musica','fs-protagonista','fs-guionista','fs-cover','fs-elenco']
     .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
   // Limpiar previews de portada
@@ -3258,6 +3389,8 @@ function resetForm() {
   document.getElementById('f-idioma-otro').style.display = 'none';
   document.getElementById('f-idioma-otro').value = '';
   resetGeneros();
+  setGenerosCineSeleccionados([]);
+  document.getElementById('fp-pais').value = '';
   document.getElementById('fp-basada').value = '';
   document.getElementById('fs-basada').value = '';
   selectType('libro', document.querySelector('.type-btn[data-type="libro"]'));
@@ -3439,15 +3572,18 @@ async function importFromWikipedia() {
     const fields = parseWikipediaInfobox(wikitext);
 
     // Fill form fields
-    if (fields.titulo)      document.getElementById('fp-titulo').value = fields.titulo;
-    if (fields.director)    document.getElementById('fp-director').value = fields.director;
-    if (fields.anio)        document.getElementById('fp-anio-est').value = fields.anio;
-    if (fields.duracion)    document.getElementById('fp-duracion').value = fields.duracion;
-    if (fields.protagonista)document.getElementById('fp-protagonista').value = fields.protagonista;
-    if (fields.guionista)   document.getElementById('fp-guionista').value = fields.guionista;
-    if (fields.musica)      document.getElementById('fp-musica').value = fields.musica;
-    if (fields.fotografia)  document.getElementById('fp-foto').value = fields.fotografia;
-    if (fields.cover)       document.getElementById('fp-cover').value = fields.cover;
+    if (fields.titulo)       document.getElementById('fp-titulo').value = fields.titulo;
+    if (fields.director)     document.getElementById('fp-director').value = fields.director;
+    if (fields.anio)         document.getElementById('fp-anio-est').value = fields.anio;
+    if (fields.duracion)     document.getElementById('fp-duracion').value = fields.duracion;
+    if (fields.protagonista) document.getElementById('fp-protagonista').value = fields.protagonista;
+    if (fields.guionista)    document.getElementById('fp-guionista').value = fields.guionista;
+    if (fields.musica)       document.getElementById('fp-musica').value = fields.musica;
+    if (fields.fotografia)   document.getElementById('fp-foto').value = fields.fotografia;
+    if (fields.cover)        document.getElementById('fp-cover').value = fields.cover;
+    if (fields.pais)         document.getElementById('fp-pais').value = fields.pais;
+    if (fields.productora)   document.getElementById('fp-productora').value = fields.productora;
+    if (fields.generos_cine) setGenerosCineSeleccionados(fields.generos_cine);
 
     const filled = Object.keys(fields).length;
     status.textContent = `✓ ${filled} campo${filled!==1?'s':''} importado${filled!==1?'s':''}. Revisa y edita si es necesario.`;
@@ -3503,6 +3639,65 @@ function parseWikipediaInfobox(wikitext) {
 
   const cin = getField(['fotografía','cinematography','cinematógrafo','fotografia']);
   if (cin) fields.fotografia = cin;
+
+  // País de producción → código ISO
+  const paisRaw = getField(['país','country','pais','país_de_producción','nation']);
+  if (paisRaw) {
+    const PAIS_MAP = {
+      'argentina':'AR','australia':'AU','austria':'AT','bélgica':'BE','belgium':'BE',
+      'brasil':'BR','brazil':'BR','canadá':'CA','canada':'CA','chile':'CL','china':'CN',
+      'colombia':'CO','croacia':'HR','república checa':'CZ','czech':'CZ',
+      'dinamarca':'DK','denmark':'DK','egipto':'EG','egypt':'EG','finlandia':'FI','finland':'FI',
+      'francia':'FR','france':'FR','alemania':'DE','germany':'DE','grecia':'GR','greece':'GR',
+      'hong kong':'HK','hungría':'HU','hungary':'HU','india':'IN','indonesia':'ID',
+      'irán':'IR','iran':'IR','irlanda':'IE','ireland':'IE','israel':'IL',
+      'italia':'IT','italy':'IT','japón':'JP','japan':'JP','corea del sur':'KR',
+      'south korea':'KR','mexico':'MX','méxico':'MX','marruecos':'MA','morocco':'MA',
+      'países bajos':'NL','netherlands':'NL','nueva zelanda':'NZ','new zealand':'NZ',
+      'noruega':'NO','norway':'NO','pakistan':'PK','perú':'PE','peru':'PE',
+      'polonia':'PL','poland':'PL','portugal':'PT','rumanía':'RO','romania':'RO',
+      'rusia':'RU','russia':'RU','sudáfrica':'ZA','south africa':'ZA',
+      'españa':'ES','spain':'ES','suecia':'SE','sweden':'SE','suiza':'CH','switzerland':'CH',
+      'taiwán':'TW','taiwan':'TW','tailandia':'TH','thailand':'TH',
+      'turquía':'TR','turkey':'TR','ucrania':'UA','ukraine':'UA',
+      'reino unido':'GB','united kingdom':'GB','gran bretaña':'GB','uk':'GB',
+      'estados unidos':'US','united states':'US','usa':'US','ee. uu.':'US',
+      'venezuela':'VE','vietnam':'VN','yugoslavia':'YU'
+    };
+    const paisLower = paisRaw.toLowerCase().replace(/['']/g,"'");
+    for (const [nombre, codigo] of Object.entries(PAIS_MAP)) {
+      if (paisLower.includes(nombre)) { fields.pais = codigo; break; }
+    }
+  }
+
+  // Productora
+  const prod = getField(['productora','production_company','producer','empresa_productora','distribución','production']);
+  if (prod) fields.productora = prod.split(/[,·\/]/)[0].trim();
+
+  // Género → mapear a lista controlada
+  const genRaw = getField(['género','genre','genero']);
+  if (genRaw) {
+    const GENERO_MAP = {
+      'drama':'Drama','comedia':'Comedia','comedy':'Comedia','thriller':'Thriller',
+      'terror':'Terror','horror':'Terror','ciencia ficción':'Ciencia ficción',
+      'science fiction':'Ciencia ficción','sci-fi':'Ciencia ficción','animación':'Animación',
+      'animation':'Animación','documental':'Documental','documentary':'Documental',
+      'romance':'Romance','romantic':'Romance','acción':'Acción','action':'Acción',
+      'aventura':'Aventura','adventure':'Aventura','histórico':'Histórico',
+      'historical':'Histórico','historia':'Histórico','crimen':'Crimen','crime':'Crimen',
+      'misterio':'Misterio','mystery':'Misterio','musical':'Musical','fantasía':'Fantasía',
+      'fantasy':'Fantasía','bélico':'Bélico','war':'Bélico','guerra':'Bélico',
+      'biográfico':'Biográfico','biography':'Biográfico','biographical':'Biográfico',
+      'western':'Western'
+    };
+    const genLower = genRaw.toLowerCase();
+    const generos = [];
+    for (const [key, val] of Object.entries(GENERO_MAP)) {
+      if (genLower.includes(key) && !generos.includes(val)) generos.push(val);
+      if (generos.length >= 2) break;
+    }
+    if (generos.length) fields.generos_cine = generos;
+  }
 
   // Try to get cover from image field
   const img = getField(['imagen','image','image_name','poster']);
@@ -3563,6 +3758,9 @@ function saveEntry() {
       protagonista: document.getElementById('fp-protagonista').value,
       guionista: document.getElementById('fp-guionista').value,
       elenco: document.getElementById('fp-elenco').value.split('\n').map(s=>s.trim()).filter(Boolean),
+      pais: document.getElementById('fp-pais').value || null,
+      productora: document.getElementById('fp-productora').value.trim() || null,
+      generos_cine: getGenerosCineSeleccionados(),
       autor_original: document.getElementById('fp-autor-original').value,
       mes: document.getElementById('fp-mes').value,
       anio: parseInt(document.getElementById('fp-anio-visto').value) || new Date().getFullYear(),
@@ -4316,6 +4514,12 @@ function showDetail(id) {
   } else if (e.type === 'pelicula') {
     html += row('Director', e.director) + row('Estreno', e.anio_est) + row('Duración', e.duracion ? fmtMin(e.duracion) : '') + row('Fotografía', e.fotografia) + row('Música', e.musica) + row('Protagonista', e.protagonista) + row('Guionista', e.guionista);
     if (e.basada) html += row('Basada en', e.basada + (e.autor_original ? ' — ' + e.autor_original : ''));
+    if (e.pais)       html += row('País', getPaisNombre(e.pais));
+    if (e.productora) html += row('Productora', e.productora);
+    if (e.generos_cine && e.generos_cine.length) {
+      const chips = e.generos_cine.map(g=>`<span style="font-size:11px;background:var(--cream2);border:1px solid var(--border);border-radius:12px;padding:2px 9px;color:var(--ink2);">${g}</span>`).join(' ');
+      html += `<div style="display:flex;gap:8px;padding:7px 0;border-bottom:1px solid var(--cream2);align-items:flex-start;"><span style="font-size:10px;color:var(--ink4);letter-spacing:1.5px;text-transform:uppercase;font-weight:700;width:110px;flex-shrink:0;padding-top:4px;">Género</span><div style="display:flex;flex-wrap:wrap;gap:4px;">${chips}</div></div>`;
+    }
     html += row('Vista', `${e.mes||''} ${e.anio||''}`);
   } else { // serie
     const capInfo = (e.capActual || e.capTotal) ? `Cap. ${e.capActual||0} / ${e.capTotal||'?'}` : null;
@@ -4330,8 +4534,9 @@ function showDetail(id) {
     html += row('Vista', `${e.mes||''} ${e.anio||''}`);
   }
   if (e.notas) html += `<div style="margin-top:14px;padding:12px;background:var(--cream2);border-radius:4px;font-family:var(--font-serif);font-style:italic;font-size:14px;color:var(--ink2);line-height:1.5;">${e.notas.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>`;
-  html += `<div style="display:flex;gap:8px;margin-top:16px;">
+  html += `<div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap;">
     <button class="btn btn-secondary btn-sm" onclick="editEntry('${e.id}')">✏ Editar</button>
+    ${e.type === 'pelicula' ? `<button class="btn btn-secondary btn-sm" onclick="wikiCompletarIndividual('${e.id}')" style="background:var(--cream2);">🌐 Wikipedia</button>` : ''}
     <button class="btn btn-sm" style="background:var(--red);color:var(--cream);width:auto;" onclick="deleteEntry('${e.id}')">🗑 Eliminar</button>
   </div>`;
 
@@ -4505,6 +4710,9 @@ function editEntry(id) {
       const map = { titulo:'fp-titulo',director:'fp-director',anio_est:'fp-anio-est',duracion:'fp-duracion',fotografia:'fp-foto',musica:'fp-musica',protagonista:'fp-protagonista',guionista:'fp-guionista',cover:'fp-cover',autor_original:'fp-autor-original' };
       Object.entries(map).forEach(([k,id])=>{ const el=document.getElementById(id); if(el) el.value=e[k]||''; });
       document.getElementById('fp-elenco').value = Array.isArray(e.elenco) ? e.elenco.join('\n') : (e.elenco||'');
+      document.getElementById('fp-pais').value = e.pais || '';
+      document.getElementById('fp-productora').value = e.productora || '';
+      setGenerosCineSeleccionados(e.generos_cine || []);
       document.getElementById('fp-mes').value = e.mes||'';
       document.getElementById('fp-anio-visto').value = e.anio||'';
       document.getElementById('fp-basada').value = e.basada||'';
@@ -9734,6 +9942,327 @@ function eliminarIdiomaAprobado(idx) {
   saveIdiomasAprobados(idiomasAprobados);
   renderIdiomasAprobados();
   runIdiomasAnalisis();
+}
+
+
+// ══════════════════════════════════════════════════════
+//  GÉNEROS CINEMATOGRÁFICOS
+// ══════════════════════════════════════════════════════
+
+function toggleGeneroCine(btn) {
+  const seleccionados = document.querySelectorAll('.fp-genero-btn[data-selected="1"]');
+  const estaSeleccionado = btn.getAttribute('data-selected') === '1';
+  if (!estaSeleccionado && seleccionados.length >= 2) {
+    showToast('Máximo 2 géneros'); return;
+  }
+  if (estaSeleccionado) {
+    btn.removeAttribute('data-selected');
+    btn.style.background = '#fff';
+    btn.style.color = 'var(--ink3)';
+    btn.style.borderColor = 'var(--border)';
+  } else {
+    btn.setAttribute('data-selected','1');
+    btn.style.background = 'var(--ink)';
+    btn.style.color = '#fff';
+    btn.style.borderColor = 'var(--ink)';
+  }
+}
+
+function getGenerosCineSeleccionados() {
+  return [...document.querySelectorAll('.fp-genero-btn[data-selected="1"]')]
+    .map(b => b.getAttribute('data-g'));
+}
+
+function setGenerosCineSeleccionados(generos) {
+  document.querySelectorAll('.fp-genero-btn').forEach(btn => {
+    const estaSeleccionado = (generos||[]).includes(btn.getAttribute('data-g'));
+    btn.setAttribute('data-selected', estaSeleccionado ? '1' : '0');
+    if (estaSeleccionado) {
+      btn.setAttribute('data-selected','1');
+      btn.style.background = 'var(--ink)';
+      btn.style.color = '#fff';
+      btn.style.borderColor = 'var(--ink)';
+    } else {
+      btn.removeAttribute('data-selected');
+      btn.style.background = '#fff';
+      btn.style.color = 'var(--ink3)';
+      btn.style.borderColor = 'var(--border)';
+    }
+  });
+}
+
+// ══════════════════════════════════════════════════════
+//  MAPA DE PAÍSES ISO → NOMBRE
+// ══════════════════════════════════════════════════════
+const PAIS_NOMBRE = {"AR": "Argentina", "AU": "Australia", "AT": "Austria", "BE": "Bélgica", "BR": "Brasil", "CA": "Canadá", "CL": "Chile", "CN": "China", "CO": "Colombia", "HR": "Croacia", "CZ": "República Checa", "DK": "Dinamarca", "EG": "Egipto", "FI": "Finlandia", "FR": "Francia", "DE": "Alemania", "GR": "Grecia", "HK": "Hong Kong", "HU": "Hungría", "IN": "India", "ID": "Indonesia", "IR": "Irán", "IE": "Irlanda", "IL": "Israel", "IT": "Italia", "JP": "Japón", "KR": "Corea del Sur", "MX": "México", "MA": "Marruecos", "NL": "Países Bajos", "NZ": "Nueva Zelanda", "NO": "Noruega", "PK": "Pakistán", "PE": "Perú", "PL": "Polonia", "PT": "Portugal", "RO": "Rumanía", "RU": "Rusia", "ZA": "Sudáfrica", "ES": "España", "SE": "Suecia", "CH": "Suiza", "TW": "Taiwán", "TH": "Tailandia", "TR": "Turquía", "UA": "Ucrania", "GB": "Reino Unido", "US": "Estados Unidos", "VE": "Venezuela", "VN": "Vietnam", "YU": "Yugoslavia"};
+function getPaisNombre(iso) { return PAIS_NOMBRE[iso] || iso || ''; }
+
+// ══════════════════════════════════════════════════════
+//  WIKIPEDIA MASIVO + ROLLBACK
+// ══════════════════════════════════════════════════════
+const WIKI_ROLLBACK_KEY = 'lumen_wiki_rollback_v1';
+
+function saveWikiRollback() {
+  const snapshot = db.entries
+    .filter(e => e.type === 'pelicula')
+    .map(e => ({ id: e.id, pais: e.pais, productora: e.productora, generos_cine: e.generos_cine }));
+  localStorage.setItem(WIKI_ROLLBACK_KEY, JSON.stringify({ ts: Date.now(), snapshot }));
+}
+
+function rollbackWikiImport() {
+  const data = localStorage.getItem(WIKI_ROLLBACK_KEY);
+  if (!data) { showToast('Sin importación previa para deshacer'); return; }
+  const { ts, snapshot } = JSON.parse(data);
+  const fecha = new Date(ts).toLocaleString('es-CL');
+  if (!confirm('¿Deshacer importación del ' + fecha + '? Se revertirán país, productora y género de todas las películas modificadas.')) return;
+  snapshot.forEach(snap => {
+    const idx = db.entries.findIndex(e => e.id === snap.id);
+    if (idx >= 0) {
+      db.entries[idx].pais        = snap.pais;
+      db.entries[idx].productora  = snap.productora;
+      db.entries[idx].generos_cine = snap.generos_cine;
+      db.entries[idx]._updatedAt  = Date.now();
+    }
+  });
+  saveDB();
+  localStorage.removeItem(WIKI_ROLLBACK_KEY);
+  showToast('↩ Importación deshecha');
+  renderBiblioteca();
+}
+
+async function wikiCompletarFicha(entryId) {
+  const entry = db.entries.find(e => e.id === entryId);
+  if (!entry) return;
+  const titulo = entry.titulo;
+  const anio   = entry.anio_est || '';
+
+  showToast('⏳ Buscando en Wikipedia...');
+  try {
+    // Buscar por título + año en Wikipedia en español primero, luego inglés
+    const query = encodeURIComponent(titulo + (anio ? ' ' + anio : '') + ' película');
+    const searchUrl = `https://es.wikipedia.org/w/api.php?action=query&list=search&srsearch=${query}&srlimit=1&format=json&origin=*`;
+    const searchRes = await fetch(searchUrl);
+    const searchJson = await searchRes.json();
+    const firstResult = searchJson.query?.search?.[0];
+    if (!firstResult) throw new Error('No encontrado');
+
+    const articleTitle = firstResult.title;
+    const apiUrl = `https://es.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(articleTitle)}&prop=revisions&rvprop=content&rvslots=main&format=json&origin=*`;
+    const res = await fetch(apiUrl);
+    const json = await res.json();
+    const page = Object.values(json.query?.pages||{})[0];
+    if (!page || page.missing) throw new Error('Página no encontrada');
+
+    const wikitext = page.revisions?.[0]?.slots?.main?.['*'] || '';
+    const fields = parseWikipediaInfobox(wikitext);
+    fields._articleTitle = articleTitle;
+    return fields;
+  } catch(e) {
+    showToast('⚠ No encontrado: ' + titulo);
+    return null;
+  }
+}
+
+async function wikiCompletarIndividual(entryId) {
+  const fields = await wikiCompletarFicha(entryId);
+  if (!fields) return;
+  const entry = db.entries.find(e => e.id === entryId);
+  if (!entry) return;
+
+  // Construir previsualización
+  const preview = [];
+  if (fields.pais && !entry.pais)              preview.push('🌍 País: ' + getPaisNombre(fields.pais));
+  if (fields.productora && !entry.productora)  preview.push('🏢 Productora: ' + fields.productora);
+  if (fields.generos_cine && !(entry.generos_cine||[]).length) preview.push('🎭 Género: ' + fields.generos_cine.join(', '));
+  if (fields.director && !entry.director)      preview.push('Director: ' + fields.director);
+  if (fields.fotografia && !entry.fotografia)  preview.push('Fotografía: ' + fields.fotografia);
+  if (fields.musica && !entry.musica)          preview.push('Música: ' + fields.musica);
+
+  if (!preview.length) { showToast('Sin datos nuevos para ' + entry.titulo); return; }
+
+  const modal = document.getElementById('modal-wiki-preview');
+  const body  = document.getElementById('wiki-preview-body');
+  const title = document.getElementById('wiki-preview-title');
+  if (!modal) { showToast('Error interno'); return; }
+
+  title.textContent = entry.titulo + (entry.anio_est ? ' (' + entry.anio_est + ')' : '');
+  document.getElementById('wiki-preview-source').textContent = fields._articleTitle || '';
+  body.innerHTML = preview.map(p => `<div style="padding:5px 0;border-bottom:1px solid var(--border);font-size:13px;">✓ ${p}</div>`).join('');
+
+  modal.style.display = 'flex';
+  modal._pendingFields = fields;
+  modal._pendingId = entryId;
+}
+
+function wikiPreviewConfirmar() {
+  const modal = document.getElementById('modal-wiki-preview');
+  const fields = modal._pendingFields;
+  const entryId = modal._pendingId;
+  if (!fields || !entryId) return;
+  const idx = db.entries.findIndex(e => e.id === entryId);
+  if (idx >= 0) {
+    if (fields.pais && !db.entries[idx].pais)             db.entries[idx].pais = fields.pais;
+    if (fields.productora && !db.entries[idx].productora) db.entries[idx].productora = fields.productora;
+    if (fields.generos_cine && !(db.entries[idx].generos_cine||[]).length) db.entries[idx].generos_cine = fields.generos_cine;
+    if (fields.director && !db.entries[idx].director)     db.entries[idx].director = fields.director;
+    if (fields.fotografia && !db.entries[idx].fotografia) db.entries[idx].fotografia = fields.fotografia;
+    if (fields.musica && !db.entries[idx].musica)         db.entries[idx].musica = fields.musica;
+    db.entries[idx]._updatedAt = Date.now();
+    saveDB();
+    showToast('✓ Guardado: ' + db.entries[idx].titulo);
+  }
+  modal.style.display = 'none';
+  renderBiblioteca();
+}
+
+function wikiPreviewCancelar() {
+  const modal = document.getElementById('modal-wiki-preview');
+  if (modal) modal.style.display = 'none';
+}
+
+// Importación masiva
+async function wikiMasivo() {
+  const peliculas = db.entries.filter(e => e.type === 'pelicula' && (!e.pais || !e.productora || !(e.generos_cine||[]).length));
+  if (!peliculas.length) { showToast('Todas las películas ya tienen estos datos'); return; }
+
+  const modal = document.getElementById('modal-wiki-masivo');
+  if (!modal) return;
+  document.getElementById('wiki-masivo-count').textContent = peliculas.length;
+  modal.style.display = 'flex';
+}
+
+async function wikiMasivoConfirmar() {
+  const modal = document.getElementById('modal-wiki-masivo');
+  if (modal) modal.style.display = 'none';
+
+  const peliculas = db.entries.filter(e => e.type === 'pelicula' && (!e.pais || !e.productora || !(e.generos_cine||[]).length));
+  saveWikiRollback();
+
+  let ok = 0, fail = 0;
+  for (const pel of peliculas) {
+    await new Promise(r => setTimeout(r, 400)); // throttle
+    const fields = await wikiCompletarFicha(pel.id);
+    if (!fields) { fail++; continue; }
+    const idx = db.entries.findIndex(e => e.id === pel.id);
+    if (idx < 0) continue;
+    if (fields.pais && !db.entries[idx].pais)             db.entries[idx].pais = fields.pais;
+    if (fields.productora && !db.entries[idx].productora) db.entries[idx].productora = fields.productora;
+    if (fields.generos_cine && !(db.entries[idx].generos_cine||[]).length) db.entries[idx].generos_cine = fields.generos_cine;
+    db.entries[idx]._updatedAt = Date.now();
+    ok++;
+    if (ok % 5 === 0) showToast('⏳ ' + ok + '/' + peliculas.length + ' procesadas...');
+  }
+  saveDB();
+  showToast('✓ Completadas: ' + ok + ' · Sin datos: ' + fail);
+  renderBiblioteca();
+}
+
+// ══════════════════════════════════════════════════════
+//  EXPORTADOR DE LECTURA
+// ══════════════════════════════════════════════════════
+
+function exportarLectura() {
+  const modal = document.getElementById('modal-exportar-lectura');
+  if (modal) modal.style.display = 'flex';
+  generarExportLectura();
+}
+
+function generarExportLectura() {
+  // Recopilar todos los registros diarios de todos los libros
+  const registros = []; // { fecha, titulo, pags, pagActual, totalPags }
+
+  db.entries.filter(e => e.type === 'libro' && Array.isArray(e.readDates) && e.readDates.length > 0).forEach(libro => {
+    const norm = normalizeReadDates(libro.readDates).filter(r => r.pag !== null).sort((a,b) => a.date.localeCompare(b.date));
+    for (let i = 0; i < norm.length; i++) {
+      const pags = i === 0 ? norm[i].pag : Math.max(0, norm[i].pag - norm[i-1].pag);
+      registros.push({
+        fecha: norm[i].date,
+        titulo: libro.titulo,
+        autor: libro.autor || '',
+        pags,
+        pagActual: norm[i].pag,
+        totalPags: libro.paginas || null
+      });
+    }
+  });
+
+  if (!registros.length) {
+    document.getElementById('exportar-lectura-output').value = 'Sin registros de lectura diaria encontrados.';
+    return;
+  }
+
+  // Ordenar por fecha
+  registros.sort((a,b) => a.fecha.localeCompare(b.fecha));
+
+  // Agrupar por semana ISO
+  const semanas = {};
+  registros.forEach(r => {
+    const wk = getISOWeekKey(r.fecha);
+    if (!semanas[wk]) semanas[wk] = [];
+    semanas[wk].push(r);
+  });
+
+  // Construir texto de exportación
+  const lineas = [];
+  lineas.push('═══════════════════════════════════════════════');
+  lineas.push('EXPORTACIÓN DE LECTURA — LUMEN');
+  lineas.push('Generado: ' + new Date().toLocaleString('es-CL'));
+  lineas.push('═══════════════════════════════════════════════');
+  lineas.push('');
+
+  // Resumen global
+  const totalPags = registros.reduce((s,r) => s + r.pags, 0);
+  const diasConLectura = new Set(registros.map(r => r.fecha)).size;
+  const semanaKeys = Object.keys(semanas).sort();
+  const promPorSemana = semanaKeys.length ? Math.round(totalPags / semanaKeys.length) : 0;
+
+  lineas.push('RESUMEN GLOBAL');
+  lineas.push('─────────────────────────────────────────────');
+  lineas.push('Total páginas registradas : ' + totalPags);
+  lineas.push('Días con lectura          : ' + diasConLectura);
+  lineas.push('Semanas con actividad     : ' + semanaKeys.length);
+  lineas.push('Promedio páginas/semana   : ' + promPorSemana);
+  lineas.push('');
+
+  // Detalle por semana
+  lineas.push('DETALLE POR SEMANA');
+  lineas.push('─────────────────────────────────────────────');
+  semanaKeys.forEach(wk => {
+    const regs = semanas[wk];
+    const totalSem = regs.reduce((s,r) => s + r.pags, 0);
+    const dias = [...new Set(regs.map(r => r.fecha))].sort();
+    const libros = [...new Set(regs.map(r => r.titulo))];
+    lineas.push('');
+    lineas.push('Semana ' + wk + '  (' + dias[0] + ' → ' + dias[dias.length-1] + ')');
+    lineas.push('  Páginas     : ' + totalSem);
+    lineas.push('  Días activos: ' + dias.length + '/7');
+    lineas.push('  Libros      : ' + libros.join(' | '));
+    // Día a día
+    dias.forEach(fecha => {
+      const del_dia = regs.filter(r => r.fecha === fecha);
+      const pag_dia = del_dia.reduce((s,r) => s + r.pags, 0);
+      const dia_nombre = new Date(fecha + 'T12:00:00').toLocaleDateString('es-CL', {weekday:'short', day:'2-digit', month:'2-digit'});
+      lineas.push('    ' + dia_nombre + '  ' + pag_dia + ' págs');
+    });
+  });
+
+  lineas.push('');
+  lineas.push('═══════════════════════════════════════════════');
+  lineas.push('DATOS CRUDOS (fecha, libro, páginas_leídas)');
+  lineas.push('─────────────────────────────────────────────');
+  lineas.push('fecha,libro,autor,pags_leidas,pag_actual,total_pags');
+  registros.forEach(r => {
+    lineas.push([r.fecha, '"'+r.titulo+'"', '"'+(r.autor||'')+'"', r.pags, r.pagActual, r.totalPags||''].join(','));
+  });
+
+  document.getElementById('exportar-lectura-output').value = lineas.join('\n');
+}
+
+function copiarExportLectura() {
+  const ta = document.getElementById('exportar-lectura-output');
+  ta.select();
+  document.execCommand('copy');
+  showToast('✓ Copiado al portapapeles');
 }
 
 </script>
