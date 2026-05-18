@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1a1510">
-<title>LUMEN v125 — Biblioteca Personal</title>
+<title>LUMEN v126 — Biblioteca Personal</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231a1510'/><text x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' font-family='Georgia,serif' font-size='14' font-weight='900' font-style='italic' fill='%23c8952a' letter-spacing='0.5'>L</text><rect x='6' y='23' width='20' height='2' rx='1' fill='%238b2020'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
@@ -656,6 +656,18 @@ select.input { cursor: pointer; }
   <!-- LOGROS SEMANALES -->
   <div id="logros-card" style="margin:0 20px 12px;"></div>
 
+  <!-- EXPORTAR LECTURA — acceso rápido -->
+  <div id="exportar-lectura-card" style="margin:0 20px 10px;display:none;">
+    <button onclick="exportarLectura()" style="width:100%;display:flex;align-items:center;gap:10px;padding:10px 14px;border:1.5px solid var(--border);border-radius:6px;background:#fff;cursor:pointer;font-family:var(--font-sans);text-align:left;box-shadow:var(--shadow);">
+      <span style="font-size:20px;">📊</span>
+      <div>
+        <div style="font-size:12px;font-weight:700;color:var(--ink);letter-spacing:0.5px;">Exportar historial de lectura</div>
+        <div style="font-size:10px;color:var(--ink4);margin-top:1px;">Ritmo semanal · páginas por día · CSV para análisis</div>
+      </div>
+      <span style="margin-left:auto;font-size:12px;color:var(--ink4);">→</span>
+    </button>
+  </div>
+
   <!-- LEYENDO AHORA -->
   <div style="padding:0 20px 4px;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
@@ -1082,23 +1094,46 @@ select.input { cursor: pointer; }
 
   <!-- TAB: PELÍCULAS -->
   <div id="mapa-peliculas-panel" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
-    <!-- Toolbar -->
-    <div style="padding:10px 16px;display:flex;gap:6px;align-items:center;border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap;">
+    <!-- Toolbar fila 1: Actualizar + Período + contador -->
+    <div style="padding:8px 12px 6px;display:flex;gap:6px;align-items:center;border-bottom:1px solid var(--cream3);flex-shrink:0;flex-wrap:wrap;background:#faf8f4;">
       <button class="btn btn-secondary btn-sm" style="width:auto;" onclick="renderMapaPeliculas()">↻ Actualizar</button>
-      <span style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--ink4);margin-left:4px;">Roles:</span>
-      <button class="pel-rol-btn active" data-rol="director" onclick="toggleRolPel(this,'director')"
-        style="padding:4px 8px;border:1.5px solid var(--red);border-radius:3px;background:var(--red);color:#fff;font-size:10px;font-weight:700;font-family:var(--font-sans);cursor:pointer;letter-spacing:0.5px;">🎭 Director</button>
-      <button class="pel-rol-btn active" data-rol="fotografia" onclick="toggleRolPel(this,'fotografia')"
-        style="padding:4px 8px;border:1.5px solid #1a6b8a;border-radius:3px;background:#1a6b8a;color:#fff;font-size:10px;font-weight:700;font-family:var(--font-sans);cursor:pointer;letter-spacing:0.5px;">📷 Fotografía</button>
-      <button class="pel-rol-btn active" data-rol="musica" onclick="toggleRolPel(this,'musica')"
-        style="padding:4px 8px;border:1.5px solid #6b3a8a;border-radius:3px;background:#6b3a8a;color:#fff;font-size:10px;font-weight:700;font-family:var(--font-sans);cursor:pointer;letter-spacing:0.5px;">🎵 Música</button>
-      <button class="pel-rol-btn active" data-rol="guionista" onclick="toggleRolPel(this,'guionista')"
-        style="padding:4px 8px;border:1.5px solid #2d6b3a;border-radius:3px;background:#2d6b3a;color:#fff;font-size:10px;font-weight:700;font-family:var(--font-sans);cursor:pointer;letter-spacing:0.5px;">✍ Guionista</button>
-      <button class="pel-rol-btn active" data-rol="protagonista" onclick="toggleRolPel(this,'protagonista')"
-        style="padding:4px 8px;border:1.5px solid #c8952a;border-radius:3px;background:#c8952a;color:#fff;font-size:10px;font-weight:700;font-family:var(--font-sans);cursor:pointer;letter-spacing:0.5px;">⭐ Protagonista</button>
-      <button class="pel-rol-btn active" data-rol="elenco" onclick="toggleRolPel(this,'elenco')"
-        style="padding:4px 8px;border:1.5px solid #5a5a5a;border-radius:3px;background:#5a5a5a;color:#fff;font-size:10px;font-weight:700;font-family:var(--font-sans);cursor:pointer;letter-spacing:0.5px;">👤 Elenco</button>
+      <span style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--ink4);">Período:</span>
+      <select id="pel-periodo-sel" onchange="renderMapaPeliculas()"
+        style="border:1.5px solid var(--border);border-radius:4px;padding:4px 8px;font-size:11px;font-family:var(--font-sans);background:#fff;color:var(--ink2);cursor:pointer;">
+        <option value="todos">Todos</option>
+      </select>
+      <select id="pel-periodo-intervalo" onchange="actualizarOpcionesPeriodo()"
+        style="border:1.5px solid var(--border);border-radius:4px;padding:4px 8px;font-size:11px;font-family:var(--font-sans);background:#fff;color:var(--ink2);cursor:pointer;">
+        <option value="5">Cada 5 años</option>
+        <option value="10">Cada 10 años</option>
+      </select>
       <span id="pel-count" style="font-size:11px;color:var(--ink4);margin-left:auto;"></span>
+    </div>
+    <!-- Toolbar fila 2: Roles -->
+    <div style="padding:6px 12px;display:flex;gap:5px;align-items:center;border-bottom:1px solid var(--cream3);flex-shrink:0;flex-wrap:wrap;background:#faf8f4;">
+      <span style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--ink4);">Roles:</span>
+      <button class="pel-rol-btn active" data-rol="director" onclick="toggleRolPel(this,'director')"
+        style="padding:4px 8px;border:1.5px solid var(--red);border-radius:3px;background:var(--red);color:#fff;font-size:10px;font-weight:700;font-family:var(--font-sans);cursor:pointer;">🎭 Director</button>
+      <button class="pel-rol-btn active" data-rol="fotografia" onclick="toggleRolPel(this,'fotografia')"
+        style="padding:4px 8px;border:1.5px solid #1a6b8a;border-radius:3px;background:#1a6b8a;color:#fff;font-size:10px;font-weight:700;font-family:var(--font-sans);cursor:pointer;">📷 Fotografía</button>
+      <button class="pel-rol-btn active" data-rol="musica" onclick="toggleRolPel(this,'musica')"
+        style="padding:4px 8px;border:1.5px solid #6b3a8a;border-radius:3px;background:#6b3a8a;color:#fff;font-size:10px;font-weight:700;font-family:var(--font-sans);cursor:pointer;">🎵 Música</button>
+      <button class="pel-rol-btn active" data-rol="guionista" onclick="toggleRolPel(this,'guionista')"
+        style="padding:4px 8px;border:1.5px solid #2d6b3a;border-radius:3px;background:#2d6b3a;color:#fff;font-size:10px;font-weight:700;font-family:var(--font-sans);cursor:pointer;">✍ Guionista</button>
+      <button class="pel-rol-btn active" data-rol="protagonista" onclick="toggleRolPel(this,'protagonista')"
+        style="padding:4px 8px;border:1.5px solid #c8952a;border-radius:3px;background:#c8952a;color:#fff;font-size:10px;font-weight:700;font-family:var(--font-sans);cursor:pointer;">⭐ Protagonista</button>
+      <button class="pel-rol-btn active" data-rol="elenco" onclick="toggleRolPel(this,'elenco')"
+        style="padding:4px 8px;border:1.5px solid #5a5a5a;border-radius:3px;background:#5a5a5a;color:#fff;font-size:10px;font-weight:700;font-family:var(--font-sans);cursor:pointer;">👤 Elenco</button>
+    </div>
+    <!-- Toolbar fila 3: Nodos contextuales -->
+    <div style="padding:6px 12px;display:flex;gap:5px;align-items:center;border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap;background:#f5f0e8;">
+      <span style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--ink4);">Nodos:</span>
+      <button class="pel-nodo-btn" data-nodo="pais" onclick="toggleNodoPel(this,'pais')"
+        style="padding:4px 8px;border:1.5px solid var(--border);border-radius:3px;background:#fff;color:var(--ink3);font-size:10px;font-weight:700;font-family:var(--font-sans);cursor:pointer;">🌍 País</button>
+      <button class="pel-nodo-btn" data-nodo="productora" onclick="toggleNodoPel(this,'productora')"
+        style="padding:4px 8px;border:1.5px solid var(--border);border-radius:3px;background:#fff;color:var(--ink3);font-size:10px;font-weight:700;font-family:var(--font-sans);cursor:pointer;">🏢 Productora</button>
+      <button class="pel-nodo-btn" data-nodo="genero" onclick="toggleNodoPel(this,'genero')"
+        style="padding:4px 8px;border:1.5px solid var(--border);border-radius:3px;background:#fff;color:var(--ink3);font-size:10px;font-weight:700;font-family:var(--font-sans);cursor:pointer;">🎭 Género</button>
     </div>
     <!-- SVG grafo -->
     <div id="mapa-peliculas-svg" style="flex:1;overflow:hidden;position:relative;cursor:grab;">
@@ -1716,7 +1751,7 @@ select.input { cursor: pointer; }
     Cerrar sesión
   </button>
   <div style="padding:8px 16px 10px;border-top:1px solid var(--border);font-size:10px;color:var(--ink4);letter-spacing:1px;text-align:right;">
-    LUMEN v125
+    LUMEN v126
   </div>
 </div>
 
@@ -4063,6 +4098,12 @@ function renderLogros() {
   const el = document.getElementById('logros-card');
   if (!el) return;
   const data = calcLogrosSemana();
+
+  // Mostrar/ocultar card de exportar según si hay datos de lectura
+  const cardExp = document.getElementById('exportar-lectura-card');
+  const hayReadDates = db.entries.some(e => e.type==='libro' && Array.isArray(e.readDates) && e.readDates.length > 0);
+  if (cardExp) cardExp.style.display = hayReadDates ? 'block' : 'none';
+
   if (!data) { el.innerHTML = ''; return; }
 
   const { mejorSemana, semanaActual, semanaAnterior } = data;
@@ -7650,7 +7691,7 @@ function switchMapaTab(tab) {
   });
   if (tab==='influencias') renderMapaInfluencias();
   else if (tab==='rutas') renderMapaRutas();
-  else if (tab==='peliculas') renderMapaPeliculas();
+  else if (tab==='peliculas') { actualizarOpcionesPeriodo(); }
   else if (tab==='normalizar') initNormalizacion();
 }
 
@@ -9072,15 +9113,80 @@ function toggleRolPel(btn, rol) {
   renderMapaPeliculas();
 }
 
+// Nodos contextuales activos (país, productora, género)
+let nodosActivosPel = new Set();
+
+function toggleNodoPel(btn, nodo) {
+  if (nodosActivosPel.has(nodo)) {
+    nodosActivosPel.delete(nodo);
+    btn.style.background  = '#fff';
+    btn.style.color       = 'var(--ink3)';
+    btn.style.borderColor = 'var(--border)';
+  } else {
+    nodosActivosPel.add(nodo);
+    const colores = { pais:'#1a6e3c', productora:'#8b2020', genero:'#5a3e8b' };
+    btn.style.background  = colores[nodo] || 'var(--ink)';
+    btn.style.color       = '#fff';
+    btn.style.borderColor = colores[nodo] || 'var(--ink)';
+  }
+  renderMapaPeliculas();
+}
+
+const PEL_NODO_COLORS = { pais:'#1a6e3c', productora:'#8b2020', genero:'#5a3e8b' };
+const PEL_NODO_EMOJI  = { pais:'🌍', productora:'🏢', genero:'🎭' };
+
+function actualizarOpcionesPeriodo() {
+  const intervalo = parseInt(document.getElementById('pel-periodo-intervalo')?.value || '5');
+  const sel = document.getElementById('pel-periodo-sel');
+  if (!sel) return;
+  const anios = db.entries
+    .filter(e => e.type === 'pelicula' && e.anio_est)
+    .map(e => parseInt(e.anio_est));
+  if (!anios.length) return;
+  const minAnio = Math.min(...anios);
+  const maxAnio = Math.max(...anios);
+  const inicio  = Math.floor(minAnio / intervalo) * intervalo;
+  const fin     = Math.ceil((maxAnio + 1) / intervalo) * intervalo;
+  const valorActual = sel.value;
+  sel.innerHTML = '<option value="todos">Todos los años</option>';
+  for (let y = inicio; y < fin; y += intervalo) {
+    const label = y + '–' + (y + intervalo - 1);
+    const opt = document.createElement('option');
+    opt.value = y + '-' + (y + intervalo - 1);
+    opt.textContent = label;
+    if (opt.value === valorActual) opt.selected = true;
+    sel.appendChild(opt);
+  }
+  renderMapaPeliculas();
+}
+
 function renderMapaPeliculas() {
   const container = document.getElementById('mapa-peliculas-svg');
   const emptyDiv  = document.getElementById('pel-empty');
   const countEl   = document.getElementById('pel-count');
 
-  // Limpiar SVG previo
   d3.select('#mapa-peliculas-svg svg').remove();
 
-  const peliculas = db.entries.filter(e => e.type === 'pelicula');
+  // Obtener período seleccionado
+  const periodoSel = document.getElementById('pel-periodo-sel')?.value || 'todos';
+  let peliculas = db.entries.filter(e => e.type === 'pelicula');
+
+  // Inicializar opciones de período si el selector está vacío
+  const periodoSelEl = document.getElementById('pel-periodo-sel');
+  if (periodoSelEl && periodoSelEl.options.length <= 1 && peliculas.length) {
+    actualizarOpcionesPeriodo();
+    return; // actualizarOpcionesPeriodo llama a renderMapaPeliculas al final
+  }
+
+  // Filtrar por período
+  if (periodoSel !== 'todos') {
+    const [desde, hasta] = periodoSel.split('-').map(Number);
+    peliculas = peliculas.filter(e => {
+      const yr = parseInt(e.anio_est);
+      return yr >= desde && yr <= hasta;
+    });
+  }
+
   if (!peliculas.length) {
     emptyDiv.style.display = 'flex';
     if (countEl) countEl.textContent = '';
@@ -9088,11 +9194,8 @@ function renderMapaPeliculas() {
   }
   emptyDiv.style.display = 'none';
 
-  // ── Construir nodos y aristas ──
   const nodeMap = new Map();
   const links   = [];
-
-  // Jerarquía de roles para actores (protagonista > elenco)
   const ROL_JERARQUIA = { protagonista: 2, elenco: 1 };
 
   function personaKey(nombre) {
@@ -9106,18 +9209,15 @@ function renderMapaPeliculas() {
     return nodeMap.get(id);
   }
 
-  // Para actores: nodo compartido por nombre, con rol más alto
   function getOrCreateActorNode(nombre, rol, pelLabel) {
     const id = 'actor_' + personaKey(nombre);
     if (!nodeMap.has(id)) {
       nodeMap.set(id, { id, label: nombre, tipo: rol, grado: 0, apariciones: [] });
     }
     const node = nodeMap.get(id);
-    // Actualizar a rol más alto si corresponde
     const jerarquiaActual = ROL_JERARQUIA[node.tipo] || 0;
     const jerarquiaNueva  = ROL_JERARQUIA[rol] || 0;
     if (jerarquiaNueva > jerarquiaActual) node.tipo = rol;
-    // Registrar aparición para tooltip
     node.apariciones.push({ pelicula: pelLabel, rol });
     return node;
   }
@@ -9127,14 +9227,13 @@ function renderMapaPeliculas() {
     const pelLabel = pel.titulo + (pel.anio_est ? ' (' + pel.anio_est + ')' : '');
     getOrCreateNode(pelId, pelLabel, 'pelicula');
 
-    // Roles con nodo independiente por rol (comportamiento original)
+    // Roles con nodo independiente
     const rolesIndep = {
-      director:    rolesActivosPel.has('director')   ? (pel.director||'').split(/[,&]/).map(s=>s.trim()).filter(Boolean) : [],
-      fotografia:  rolesActivosPel.has('fotografia') ? (pel.fotografia||'').split(/[,&]/).map(s=>s.trim()).filter(Boolean) : [],
-      musica:      rolesActivosPel.has('musica')      ? (pel.musica||'').split(/[,&]/).map(s=>s.trim()).filter(Boolean) : [],
-      guionista:   rolesActivosPel.has('guionista')  ? (pel.guionista||'').split(/[,&]/).map(s=>s.trim()).filter(Boolean) : []
+      director:   rolesActivosPel.has('director')   ? (pel.director||'').split(/[,&]/).map(s=>s.trim()).filter(Boolean) : [],
+      fotografia: rolesActivosPel.has('fotografia') ? (pel.fotografia||'').split(/[,&]/).map(s=>s.trim()).filter(Boolean) : [],
+      musica:     rolesActivosPel.has('musica')     ? (pel.musica||'').split(/[,&]/).map(s=>s.trim()).filter(Boolean) : [],
+      guionista:  rolesActivosPel.has('guionista')  ? (pel.guionista||'').split(/[,&]/).map(s=>s.trim()).filter(Boolean) : []
     };
-
     Object.entries(rolesIndep).forEach(([rol, personas]) => {
       personas.forEach(persona => {
         const pid = 'per_' + rol + '_' + personaKey(persona);
@@ -9155,7 +9254,7 @@ function renderMapaPeliculas() {
       links.push({ source: pelId, target: node.id, rol: 'protagonista' });
     });
 
-    // Elenco — nodo unificado por actor, sin duplicar protagonistas
+    // Elenco — sin duplicar protagonistas
     const protasLower = protas.map(p => p.toLowerCase());
     const rawElenco = rolesActivosPel.has('elenco') && Array.isArray(pel.elenco) ? pel.elenco : [];
     rawElenco
@@ -9166,9 +9265,34 @@ function renderMapaPeliculas() {
         node.grado++;
         links.push({ source: pelId, target: node.id, rol: 'elenco' });
       });
+
+    // ── Nodos contextuales (país, productora, género) ──
+    if (nodosActivosPel.has('pais') && pel.pais) {
+      const nid = 'ctx_pais_' + pel.pais;
+      getOrCreateNode(nid, getPaisNombre(pel.pais), 'pais');
+      nodeMap.get(pelId).grado++;
+      nodeMap.get(nid).grado++;
+      links.push({ source: pelId, target: nid, rol: 'pais' });
+    }
+    if (nodosActivosPel.has('productora') && pel.productora) {
+      const prod = pel.productora.split(/[,\/]/)[0].trim();
+      const nid  = 'ctx_prod_' + prod.toLowerCase().replace(/\s+/g,'_').replace(/[^a-z0-9_]/g,'');
+      getOrCreateNode(nid, prod, 'productora');
+      nodeMap.get(pelId).grado++;
+      nodeMap.get(nid).grado++;
+      links.push({ source: pelId, target: nid, rol: 'productora' });
+    }
+    if (nodosActivosPel.has('genero') && (pel.generos_cine||[]).length) {
+      pel.generos_cine.forEach(gen => {
+        const nid = 'ctx_gen_' + gen.toLowerCase().replace(/\s+/g,'_').replace(/[^a-z0-9_]/g,'');
+        getOrCreateNode(nid, gen, 'genero');
+        nodeMap.get(pelId).grado++;
+        nodeMap.get(nid).grado++;
+        links.push({ source: pelId, target: nid, rol: 'genero' });
+      });
+    }
   });
 
-  // Filtrar nodos sin conexiones visibles
   const conectados = new Set();
   links.forEach(l => { conectados.add(l.source); conectados.add(l.target); });
   const nodes = [...nodeMap.values()].filter(n => conectados.has(n.id));
@@ -9179,28 +9303,45 @@ function renderMapaPeliculas() {
     return;
   }
 
-  if (countEl) countEl.textContent = peliculas.length + ' películas · ' + nodes.filter(n=>n.tipo!=='pelicula').length + ' personas';
+  const personasCount = nodes.filter(n => !['pelicula','pais','productora','genero'].includes(n.tipo)).length;
+  const ctxCount = nodes.filter(n => ['pais','productora','genero'].includes(n.tipo)).length;
+  if (countEl) countEl.textContent = peliculas.length + ' películas · ' + personasCount + ' personas' + (ctxCount ? ' · ' + ctxCount + ' nodos' : '');
 
   const W = container.clientWidth  || 600;
   const H = container.clientHeight || 500;
 
   const svg = d3.select('#mapa-peliculas-svg')
     .append('svg').attr('width', W).attr('height', H);
-
   const g = svg.append('g');
   svg.call(d3.zoom().scaleExtent([0.2, 4]).on('zoom', e => g.attr('transform', e.transform)));
 
   const sim = d3.forceSimulation(nodes)
-    .force('link', d3.forceLink(links).id(d=>d.id).distance(d => d.rol==='elenco' ? 70 : 90).strength(0.6))
-    .force('charge', d3.forceManyBody().strength(d => d.tipo==='pelicula' ? -320 : -120))
+    .force('link', d3.forceLink(links).id(d=>d.id)
+      .distance(d => ['pais','productora','genero'].includes(d.rol) ? 110 : d.rol==='elenco' ? 70 : 90)
+      .strength(0.6))
+    .force('charge', d3.forceManyBody().strength(d => {
+      if (d.tipo==='pelicula') return -320;
+      if (['pais','productora','genero'].includes(d.tipo)) return -280;
+      return -120;
+    }))
     .force('center', d3.forceCenter(W/2, H/2))
-    .force('collide', d3.forceCollide().radius(d => d.tipo==='pelicula' ? 28 : 18));
+    .force('collide', d3.forceCollide().radius(d => {
+      if (d.tipo==='pelicula') return 28;
+      if (['pais','productora','genero'].includes(d.tipo)) return 26;
+      return 18;
+    }));
+
+  const linkColor = d => {
+    if (['pais','productora','genero'].includes(d.rol)) return PEL_NODO_COLORS[d.rol] || '#aaa';
+    return PEL_ROL_COLORS[d.rol] || '#ccc';
+  };
 
   const link = g.append('g').selectAll('line')
     .data(links).join('line')
-    .attr('stroke', d => PEL_ROL_COLORS[d.rol]||'#ccc')
-    .attr('stroke-width', 1.2)
-    .attr('stroke-opacity', 0.45);
+    .attr('stroke', linkColor)
+    .attr('stroke-width', d => ['pais','productora','genero'].includes(d.rol) ? 1.5 : 1.2)
+    .attr('stroke-opacity', d => ['pais','productora','genero'].includes(d.rol) ? 0.6 : 0.45)
+    .attr('stroke-dasharray', d => ['pais','productora','genero'].includes(d.rol) ? '4,3' : null);
 
   const node = g.append('g').selectAll('g')
     .data(nodes).join('g')
@@ -9210,41 +9351,74 @@ function renderMapaPeliculas() {
       .on('drag',  (ev,d) => { d.fx=ev.x; d.fy=ev.y; })
       .on('end',   (ev,d) => { if(!ev.active) sim.alphaTarget(0); d.fx=null; d.fy=null; }));
 
+  const esContextual = d => ['pais','productora','genero'].includes(d.tipo);
+
   node.append('circle')
-    .attr('r', d => d.tipo==='pelicula' ? 18 : Math.min(8 + d.grado*1.5, 16))
-    .attr('fill', d => d.tipo==='pelicula' ? 'var(--ink)' : PEL_ROL_COLORS[d.tipo]||'#888')
-    .attr('stroke', d => d.tipo==='pelicula' ? 'var(--gold)' : '#fff')
+    .attr('r', d => {
+      if (d.tipo==='pelicula') return 18;
+      if (esContextual(d))    return 14 + Math.min(d.grado * 1.5, 12);
+      return Math.min(8 + d.grado*1.5, 16);
+    })
+    .attr('fill', d => {
+      if (d.tipo==='pelicula') return 'var(--ink)';
+      if (esContextual(d))    return PEL_NODO_COLORS[d.tipo] || '#888';
+      return PEL_ROL_COLORS[d.tipo] || '#888';
+    })
+    .attr('stroke', d => d.tipo==='pelicula' ? 'var(--gold)' : esContextual(d) ? '#fff' : '#fff')
     .attr('stroke-width', d => d.tipo==='pelicula' ? 2 : 1.2)
-    .attr('fill-opacity', d => d.tipo==='pelicula' ? 1 : 0.85);
+    .attr('fill-opacity', 0.88);
 
   node.append('text')
     .attr('text-anchor','middle').attr('dominant-baseline','central')
-    .attr('font-size', d => d.tipo==='pelicula' ? '12px' : '9px')
-    .style('pointer-events','none').style('user-select','none')
-    .text(d => d.tipo==='pelicula' ? '🎬' : (PEL_ROL_EMOJI[d.tipo]||''));
-
-  node.append('text')
-    .attr('dy', d => d.tipo==='pelicula' ? 28 : 22)
-    .attr('text-anchor','middle')
-    .attr('font-size', d => d.tipo==='pelicula' ? '10px' : '9px')
-    .attr('font-weight', d => d.tipo==='pelicula' ? '700' : '400')
-    .attr('font-family', d => d.tipo==='pelicula' ? 'var(--font-serif)' : 'var(--font-sans)')
-    .attr('fill', d => d.tipo==='pelicula' ? 'var(--ink)' : PEL_ROL_COLORS[d.tipo]||'#555')
+    .attr('font-size', d => d.tipo==='pelicula' ? '12px' : esContextual(d) ? '11px' : '9px')
     .style('pointer-events','none').style('user-select','none')
     .text(d => {
-      const max = d.tipo==='pelicula' ? 22 : 16;
+      if (d.tipo==='pelicula') return '🎬';
+      if (esContextual(d))    return PEL_NODO_EMOJI[d.tipo] || '◉';
+      return PEL_ROL_EMOJI[d.tipo] || '';
+    });
+
+  node.append('text')
+    .attr('dy', d => d.tipo==='pelicula' ? 28 : esContextual(d) ? 26 : 22)
+    .attr('text-anchor','middle')
+    .attr('font-size', d => d.tipo==='pelicula' ? '10px' : esContextual(d) ? '10px' : '9px')
+    .attr('font-weight', d => (d.tipo==='pelicula' || esContextual(d)) ? '700' : '400')
+    .attr('font-family', d => d.tipo==='pelicula' ? 'var(--font-serif)' : 'var(--font-sans)')
+    .attr('fill', d => {
+      if (d.tipo==='pelicula') return 'var(--ink)';
+      if (esContextual(d))    return PEL_NODO_COLORS[d.tipo] || '#555';
+      return PEL_ROL_COLORS[d.tipo] || '#555';
+    })
+    .style('pointer-events','none').style('user-select','none')
+    .text(d => {
+      const max = d.tipo==='pelicula' ? 22 : esContextual(d) ? 18 : 16;
       return d.label.length > max ? d.label.slice(0, max-1)+'…' : d.label;
     });
 
   const tooltip = document.getElementById('pel-tooltip');
   node.on('mouseover', (ev, d) => {
-    const rolLabel = d.tipo==='pelicula' ? 'Película' :
-      ({director:'Director',fotografia:'Fotografía',musica:'Música',guionista:'Guionista',protagonista:'Protagonista',elenco:'Elenco'}[d.tipo]||d.tipo);
+    const tipoLabel = {
+      pelicula:'Película', director:'Director', fotografia:'Fotografía',
+      musica:'Música', guionista:'Guionista', protagonista:'Protagonista', elenco:'Elenco',
+      pais:'País', productora:'Productora', genero:'Género'
+    }[d.tipo] || d.tipo;
 
-    let html = '<strong>' + d.label + '</strong><br><span style="opacity:0.7;font-size:10px;">' + rolLabel + '</span>';
+    let html = '<strong>' + d.label + '</strong><br><span style="opacity:0.7;font-size:10px;">' + tipoLabel + '</span>';
 
-    // Para actores (protagonista/elenco) mostrar apariciones detalladas
-    if (d.apariciones && d.apariciones.length > 0) {
+    if (esContextual(d)) {
+      const relacionadas = peliculas.filter(p => {
+        if (d.tipo==='pais')       return getPaisNombre(p.pais||'') === d.label || p.pais === d.label;
+        if (d.tipo==='productora') return (p.productora||'').split(/[,\/]/)[0].trim() === d.label;
+        if (d.tipo==='genero')     return (p.generos_cine||[]).includes(d.label);
+        return false;
+      });
+      if (relacionadas.length) {
+        html += '<div style="margin-top:5px;border-top:1px solid rgba(255,255,255,0.2);padding-top:4px;font-size:10px;opacity:0.85;">';
+        relacionadas.slice(0,5).forEach(p => { html += '<div>🎬 ' + p.titulo + (p.anio_est?' ('+p.anio_est+')':'') + '</div>'; });
+        if (relacionadas.length > 5) html += '<div>…y ' + (relacionadas.length-5) + ' más</div>';
+        html += '</div>';
+      }
+    } else if (d.apariciones && d.apariciones.length > 0) {
       html += '<div style="margin-top:6px;border-top:1px solid rgba(255,255,255,0.2);padding-top:5px;">';
       d.apariciones.forEach(ap => {
         const apRol = ap.rol === 'protagonista' ? '⭐ Protagonista' : '👤 Elenco';
