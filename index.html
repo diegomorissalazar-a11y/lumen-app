@@ -3705,9 +3705,9 @@ function parseWikipediaInfobox(wikitext) {
     }
   }
 
-  // Productora
+  // Productora — preservar múltiples separadas por coma
   const prod = getField(['productora','production_company','producer','empresa_productora','distribución','production']);
-  if (prod) fields.productora = prod.split(/[,·\/]/)[0].trim();
+  if (prod) fields.productora = cleanWikiTextList(prod);
 
   // Género → mapear a lista controlada
   const genRaw = getField(['género','genre','genero']);
@@ -3750,12 +3750,35 @@ function parseWikipediaInfobox(wikitext) {
 
 function cleanWikiText(str) {
   return str
-    .replace(/\[\[([^\]|]*\|)?([^\]]*)\]\]/g, '$2')  // [[link|text]] → text
-    .replace(/\{\{[^}]*\}\}/g, '')                     // {{template}} → ''
-    .replace(/<[^>]+>/g, '')                            // HTML tags
-    .replace(/'''?/g, '')                               // bold/italic
+    // Plainlist / unbulleted list: extraer contenido y separar ítems con coma
+    .replace(/\{\{(?:plainlist|unbulleted list|ubl|hlist)[^}]*\|([\s\S]*?)\}\}/gi, (_, inner) => {
+      return inner.split(/\*|\n/).map(s => s.trim()).filter(Boolean).join(', ');
+    })
+    // Flatlist similar
+    .replace(/\{\{flatlist\|([\s\S]*?)\}\}/gi, (_, inner) => {
+      return inner.split(/\*|\n/).map(s => s.trim()).filter(Boolean).join(', ');
+    })
+    // Saltos de línea entre ítems (ej: líneas con * al inicio) → coma
+    .replace(/\n\s*\*/g, ', ')
+    // [[link|text]] → text
+    .replace(/\[\[([^\]|]*\|)?([^\]]*)\]\]/g, '$2')
+    // {{template}} → '' (después de los especiales de lista)
+    .replace(/\{\{[^}]*\}\}/g, '')
+    // HTML tags
+    .replace(/<[^>]+>/g, '')
+    // bold/italic
+    .replace(/'''?/g, '')
+    // Comas duplicadas
+    .replace(/,\s*,/g, ',')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+// Versión especial para campos de lista (productora, país) — preserva múltiples valores
+function cleanWikiTextList(str) {
+  const clean = cleanWikiText(str);
+  // Separar por coma, punto, &, newline y retornar primeros 3 máximo
+  return clean.split(/[,&\n·]/).map(s => s.trim()).filter(s => s.length > 1).slice(0, 3).join(', ');
 }
 function setRating(n) { currentRating = n; updateStars(n); }
 function updateStars(n) {
@@ -9275,12 +9298,14 @@ function renderMapaPeliculas() {
       links.push({ source: pelId, target: nid, rol: 'pais' });
     }
     if (nodosActivosPel.has('productora') && pel.productora) {
-      const prod = pel.productora.split(/[,\/]/)[0].trim();
-      const nid  = 'ctx_prod_' + prod.toLowerCase().replace(/\s+/g,'_').replace(/[^a-z0-9_]/g,'');
-      getOrCreateNode(nid, prod, 'productora');
-      nodeMap.get(pelId).grado++;
-      nodeMap.get(nid).grado++;
-      links.push({ source: pelId, target: nid, rol: 'productora' });
+      const prods = pel.productora.split(/[,&]/).map(s=>s.trim()).filter(Boolean).slice(0,3);
+      prods.forEach(prod => {
+        const nid = 'ctx_prod_' + prod.toLowerCase().replace(/\s+/g,'_').replace(/[^a-z0-9_]/g,'');
+        getOrCreateNode(nid, prod, 'productora');
+        nodeMap.get(pelId).grado++;
+        nodeMap.get(nid).grado++;
+        links.push({ source: pelId, target: nid, rol: 'productora' });
+      });
     }
     if (nodosActivosPel.has('genero') && (pel.generos_cine||[]).length) {
       pel.generos_cine.forEach(gen => {
