@@ -394,37 +394,6 @@ select.input { cursor: pointer; }
 .desafio-edit:hover { color:var(--gold); }
 .desafio-completado { color: var(--gold) !important; }
 
-
-
-/* ── SEGUIMIENTO LECTOR / KPI SEMANAL ── */
-.logros-card-v2 {
-  background:#fff; border:1px solid var(--border); border-radius:var(--radius);
-  padding:12px 14px; box-shadow:var(--shadow);
-}
-.logros-head { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:10px; }
-.logros-title { font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--ink4); font-weight:700; }
-.logros-coach { font-size:10px; color:var(--gold); font-weight:700; letter-spacing:.7px; text-transform:uppercase; text-align:right; line-height:1.4; }
-.logros-main { display:flex; justify-content:space-between; align-items:flex-end; gap:10px; margin-bottom:7px; }
-.logros-pages { font-family:var(--font-serif); font-size:28px; font-weight:900; color:var(--ink); line-height:1; }
-.logros-pages span { font-size:16px; color:var(--ink4); font-weight:700; }
-.logros-pct { font-family:var(--font-serif); font-size:18px; font-weight:700; color:var(--gold); line-height:1; }
-.logros-bar-wrap { background:var(--cream2); border-radius:5px; height:7px; overflow:hidden; margin-bottom:9px; }
-.logros-bar-fill { height:100%; background:var(--gold); border-radius:5px; transition:width .45s ease; }
-.logros-note { font-size:12px; color:var(--ink3); line-height:1.5; margin-bottom:10px; }
-.logros-kpi-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-bottom:10px; }
-.logros-kpi { background:var(--cream2); border:1px solid var(--cream3); border-radius:6px; padding:8px 7px; min-width:0; }
-.logros-kpi-label { font-size:9px; letter-spacing:1.2px; text-transform:uppercase; color:var(--ink4); font-weight:700; margin-bottom:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.logros-kpi-num { font-family:var(--font-serif); font-size:18px; font-weight:900; color:var(--ink); line-height:1; }
-.logros-kpi-num small { font-family:var(--font-sans); font-size:10px; color:var(--ink4); font-weight:700; }
-.logros-kpi-gap { font-size:10px; color:var(--ink3); margin-top:4px; line-height:1.25; }
-.logros-record { border-top:1px solid var(--cream3); padding-top:8px; display:flex; justify-content:space-between; gap:8px; font-size:12px; color:var(--ink3); line-height:1.5; }
-.logros-record b { color:var(--ink2); }
-@media (max-width:360px) {
-  .logros-kpi-grid { grid-template-columns:1fr; }
-  .logros-main { align-items:flex-start; flex-direction:column; }
-  .logros-coach { text-align:left; }
-}
-
 /* ── GÉNEROS ── */
 .genero-chip {
   padding:5px 11px; border-radius:20px; border:1.5px solid var(--border);
@@ -4071,173 +4040,138 @@ function saveDesafio() {
   renderDesafioCard();
 }
 
-// ── Semana ISO: lunes→domingo ─────────────────────────
-function getISOWeekKey(dateStr) {
-  const d = new Date(dateStr + 'T12:00:00');
-  const day = d.getDay() || 7; // lunes=1 … domingo=7
-  d.setDate(d.getDate() - day + 1); // ir al lunes
-  return d.toISOString().split('T')[0]; // YYYY-MM-DD del lunes
-}
+// ── Semana ISO Chile/Santiago: lunes→domingo ─────────────────────────
+const LUMEN_TZ = 'America/Santiago';
+const META_SEMANAL_PAGS = 180;
 
-function buildDailyReadingMap(year) {
-  const daily = {}; // YYYY-MM-DD → páginas reales leídas ese día
-  const add = (dateStr, pags) => {
-    if (!dateStr || !String(dateStr).startsWith(String(year)) || pags <= 0) return;
-    daily[dateStr] = (daily[dateStr] || 0) + pags;
-  };
+function lumenPad2(n) { return String(n).padStart(2, '0'); }
 
-  db.entries.filter(e => e.type === 'libro').forEach(e => {
-    const norm = (e.readDates || []).map(r =>
-      typeof r === 'string' ? { date: r, pag: null } : r
-    ).filter(r => r && r.date && r.pag !== null && String(r.date).startsWith(String(year)));
-
-    if (norm.length >= 2) {
-      norm.sort((a, b) => String(a.date).localeCompare(String(b.date)));
-      for (let i = 1; i < norm.length; i++) {
-        const curr = parseInt(norm[i].pag) || 0;
-        const prev = parseInt(norm[i-1].pag) || 0;
-        const diff = Math.max(0, curr - prev);
-        if (diff > 0) add(norm[i].date, diff);
-      }
-    }
-  });
-
-  return daily;
-}
-
-function calcReadingPerformanceKPIs(year, daily) {
-  const hoy = new Date();
-  const todayStr = hoy.toISOString().split('T')[0];
-  const dates = Object.keys(daily).filter(d => d <= todayStr).sort();
-
-  const metaSemanal = 180;
-  const metaHabil = 22;
-  const metaFinde = 35;
-  const metaAdherencia = 90;
-
-  const isWeekend = (dateStr) => {
-    const day = new Date(dateStr + 'T12:00:00').getDay();
-    return day === 0 || day === 6;
-  };
-
-  const sum = arr => arr.reduce((a, b) => a + b, 0);
-  const avg = arr => arr.length ? sum(arr) / arr.length : 0;
-  const median = arr => {
-    if (!arr.length) return 0;
-    const srt = [...arr].sort((a, b) => a - b);
-    const mid = Math.floor(srt.length / 2);
-    return srt.length % 2 ? srt[mid] : (srt[mid - 1] + srt[mid]) / 2;
-  };
-
-  const weekdayVals = dates.filter(d => !isWeekend(d) && daily[d] > 0).map(d => daily[d]);
-  const weekendValsRaw = dates.filter(d => isWeekend(d) && daily[d] > 0).map(d => daily[d]);
-  const weekendMedian = median(weekendValsRaw);
-  const weekendLimit = weekendMedian > 0 ? Math.max(120, weekendMedian * 4) : 120;
-  const weekendVals = weekendValsRaw.filter(v => v <= weekendLimit);
-
-  // Adherencia desde la primera lectura registrada del año, no desde enero si el hábito empezó después.
-  const firstDateStr = dates[0] || todayStr;
-  let cursor = new Date(firstDateStr + 'T12:00:00');
-  const end = new Date(todayStr + 'T12:00:00');
-  let habilesDisponibles = 0, findeDisponibles = 0;
-  while (cursor <= end) {
-    const dStr = cursor.toISOString().split('T')[0];
-    if (isWeekend(dStr)) findeDisponibles++; else habilesDisponibles++;
-    cursor.setDate(cursor.getDate() + 1);
-  }
-
-  const habilesActivos = dates.filter(d => !isWeekend(d) && daily[d] > 0).length;
-  const findeActivos = dates.filter(d => isWeekend(d) && daily[d] > 0).length;
-  const diasActivos = habilesActivos + findeActivos;
-  const diasDisponibles = habilesDisponibles + findeDisponibles;
-
-  const currentDayIso = hoy.getDay() || 7; // lunes=1 … domingo=7
-  const diasRestantesSemana = Math.max(1, 7 - currentDayIso);
-  const semanaActualKey = getISOWeekKey(todayStr);
-  const semanaActualPags = Object.entries(daily)
-    .filter(([dateStr]) => getISOWeekKey(dateStr) === semanaActualKey)
-    .reduce((acc, [, pags]) => acc + pags, 0);
-  const faltanMeta = Math.max(0, metaSemanal - semanaActualPags);
-  const ritmoRequerido = faltanMeta > 0 ? Math.ceil(faltanMeta / diasRestantesSemana) : 0;
-
-  const kpiHabil = avg(weekdayVals);
-  const kpiFinde = avg(weekendVals);
-  const adherencia = diasDisponibles ? (diasActivos / diasDisponibles) * 100 : 0;
-
-  let coach;
-  if (!dates.length) {
-    coach = 'Empieza con 15 páginas hoy para activar el hábito.';
-  } else if (semanaActualPags >= metaSemanal) {
-    coach = 'Meta semanal cumplida. Mantén una sesión ligera para sostener racha.';
-  } else if (ritmoRequerido <= 15) {
-    coach = `Con ${ritmoRequerido} págs/día mantienes la semana en control.`;
-  } else if (ritmoRequerido <= 30) {
-    coach = `Hoy conviene apuntar a ${ritmoRequerido} páginas para volver al ritmo.`;
-  } else {
-    coach = `Semana exigente: divide ${ritmoRequerido} páginas en dos sesiones.`;
-  }
-
+function getDatePartsInSantiago(date = new Date()) {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: LUMEN_TZ,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).formatToParts(date).reduce((acc, p) => {
+    if (p.type !== 'literal') acc[p.type] = p.value;
+    return acc;
+  }, {});
   return {
-    metas: { semanal: metaSemanal, habil: metaHabil, finde: metaFinde, adherencia: metaAdherencia },
-    kpiHabil,
-    kpiFinde,
-    adherencia,
-    habilesActivos,
-    findeActivos,
-    diasActivos,
-    diasDisponibles,
-    semanaActualPags,
-    faltanMeta,
-    ritmoRequerido,
-    diasRestantesSemana,
-    coach,
-    outliersFinde: weekendValsRaw.length - weekendVals.length
+    year: Number(parts.year),
+    month: Number(parts.month),
+    day: Number(parts.day),
+    dateStr: `${parts.year}-${parts.month}-${parts.day}`
   };
+}
+
+function todaySantiagoStr() {
+  return getDatePartsInSantiago(new Date()).dateStr;
+}
+
+function currentYearSantiago() {
+  return getDatePartsInSantiago(new Date()).year;
+}
+
+function dateStrFromUTCDate(d) {
+  return `${d.getUTCFullYear()}-${lumenPad2(d.getUTCMonth() + 1)}-${lumenPad2(d.getUTCDate())}`;
+}
+
+function addDaysToDateStr(dateStr, days) {
+  const [y, m, d] = String(dateStr).split('-').map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  dt.setUTCDate(dt.getUTCDate() + days);
+  return dateStrFromUTCDate(dt);
+}
+
+function getISOWeekKey(dateStr) {
+  if (!dateStr) return '';
+  const [y, m, d] = String(dateStr).slice(0, 10).split('-').map(Number);
+  if (!y || !m || !d) return '';
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  const day = dt.getUTCDay() || 7; // lunes=1 … domingo=7
+  dt.setUTCDate(dt.getUTCDate() - day + 1); // ir al lunes
+  return dateStrFromUTCDate(dt); // YYYY-MM-DD del lunes, sin desfase UTC/local
 }
 
 function calcLogrosSemana() {
-  const yr = new Date().getFullYear();
-  const hoy = new Date();
-  const todayStr = hoy.toISOString().split('T')[0];
-  const semanaActualKey = getISOWeekKey(todayStr);
-  const semanas = {}; // weekKey → pages
-  const daily = buildDailyReadingMap(yr);
+  const yr = currentYearSantiago();
+  const hoyStr = todaySantiagoStr();
+  const semanaActualKey = getISOWeekKey(hoyStr);
 
-  Object.entries(daily).forEach(([dateStr, pags]) => {
+  // Construir mapa semana → páginas
+  const semanas = {}; // weekKey → pages
+
+  const addToWeek = (dateStr, pags) => {
+    if (!dateStr || pags <= 0) return;
     const wk = getISOWeekKey(dateStr);
+    if (!wk) return;
     semanas[wk] = (semanas[wk] || 0) + pags;
+  };
+
+  db.entries.filter(e => e.type === 'libro').forEach(e => {
+    // Solo datos con marca de página exacta (nuevo formato lumen-74+)
+    const norm = (e.readDates || []).map(r =>
+      typeof r === 'string' ? { date: r, pag: null } : r
+    ).filter(r => r.pag !== null && String(r.date || '').startsWith(String(yr)));
+
+    if (norm.length >= 2) {
+      norm.sort((a, b) => a.date.localeCompare(b.date));
+      for (let i = 1; i < norm.length; i++) {
+        const diff = Math.max(0, norm[i].pag - norm[i-1].pag);
+        if (diff > 0) addToWeek(norm[i].date, diff);
+      }
+    }
+    // Datos legacy (sin pag) → ignorar para este cálculo
   });
 
+  // Filtrar semanas con datos — excluir semana actual si recién empieza
   const semanasValidas = Object.entries(semanas)
     .filter(([wk]) => wk !== semanaActualKey || semanas[wk] >= 20)
     .sort((a, b) => a[0].localeCompare(b[0]));
 
-  if (semanasValidas.length < 1) return null;
+  if (semanasValidas.length < 1) return null; // sin suficientes datos
 
+  // Mejor semana del año (excluye semana actual si existen semanas pasadas)
   const pasadas = semanasValidas.filter(([wk]) => wk !== semanaActualKey);
-  const baseRecord = pasadas.length ? pasadas : semanasValidas;
-  const [mejorWk, mejorPags] = baseRecord.reduce((a, b) => b[1] > a[1] ? b : a);
+  const baseMejor = pasadas.length ? pasadas : semanasValidas;
+  const [mejorWk, mejorPags] = baseMejor.reduce((a, b) => b[1] > a[1] ? b : a);
   const semanaActualPags = semanas[semanaActualKey] || 0;
 
-  const anteriorDate = new Date(hoy);
-  anteriorDate.setDate(anteriorDate.getDate() - 7);
-  const anteriorWk = getISOWeekKey(anteriorDate.toISOString().split('T')[0]);
+  // Semana anterior según fecha local Santiago, no UTC
+  const anteriorWk = getISOWeekKey(addDaysToDateStr(hoyStr, -7));
   const anteriorPags = semanas[anteriorWk] || 0;
 
+  // Formatear fecha del lunes de la mejor semana
   const fmtSemana = (wkKey) => {
     const lunes = new Date(wkKey + 'T12:00:00');
-    const domingo = new Date(wkKey + 'T12:00:00');
-    domingo.setDate(domingo.getDate() + 6);
-    const opts = { day: 'numeric', month: 'short' };
-    return `${lunes.toLocaleDateString('es', opts)} – ${domingo.toLocaleDateString('es', opts)}`;
+    const domingoStr = addDaysToDateStr(wkKey, 6);
+    const domingo = new Date(domingoStr + 'T12:00:00');
+    const opts = { day: 'numeric', month: 'short', timeZone: LUMEN_TZ };
+    return `${lunes.toLocaleDateString('es-CL', opts)} – ${domingo.toLocaleDateString('es-CL', opts)}`;
   };
+
+  const pctMeta = Math.round((semanaActualPags / META_SEMANAL_PAGS) * 100);
+  const sobreMeta = Math.max(0, semanaActualPags - META_SEMANAL_PAGS);
 
   return {
     mejorSemana: { key: mejorWk, pags: mejorPags, label: fmtSemana(mejorWk) },
-    semanaActual: { pags: semanaActualPags, esMejor: semanaActualPags >= mejorPags && semanaActualKey !== mejorWk },
-    semanaAnterior: { pags: anteriorPags },
+    semanaActual: {
+      key: semanaActualKey,
+      pags: semanaActualPags,
+      esMejor: semanaActualPags >= mejorPags,
+      pctMeta,
+      sobreMeta,
+      faltanMeta: Math.max(0, META_SEMANAL_PAGS - semanaActualPags)
+    },
+    semanaAnterior: {
+      key: anteriorWk,
+      pags: anteriorPags,
+      pctMeta: Math.round((anteriorPags / META_SEMANAL_PAGS) * 100),
+      sobreMeta: Math.max(0, anteriorPags - META_SEMANAL_PAGS)
+    },
     totalSemanas: semanasValidas.length,
-    performance: calcReadingPerformanceKPIs(yr, daily)
+    year: yr,
+    todayStr: hoyStr
   };
 }
 
@@ -4253,61 +4187,40 @@ function renderLogros() {
 
   if (!data) { el.innerHTML = ''; return; }
 
-  const { mejorSemana, semanaActual, semanaAnterior, performance } = data;
-  const pctSemana = Math.min(100, Math.round((performance.semanaActualPags / performance.metas.semanal) * 100));
-  const fmt1 = n => (Math.round(n * 10) / 10).toLocaleString('es-CL', { maximumFractionDigits: 1 });
-  const fmt0 = n => Math.round(n).toLocaleString('es-CL');
-  const gapTxt = (actual, meta, unidad='págs') => {
-    const diff = meta - actual;
-    if (diff <= 0) return 'Meta superada';
-    return `Faltan +${fmt1(diff)} ${unidad}`;
-  };
-  const semanaTxt = performance.faltanMeta > 0
-    ? `Te faltan <b>${fmt0(performance.faltanMeta)} págs</b> para la meta semanal · ritmo requerido: <b>${fmt0(performance.ritmoRequerido)} págs/día</b>.`
-    : `Meta semanal cumplida · ya superaste las <b>${performance.metas.semanal} páginas</b>.`;
-  const recordTxt = semanaActual.pags > 0 && !semanaActual.esMejor
-    ? `Faltan <b>${fmt0(Math.max(0, mejorSemana.pags - semanaActual.pags))}</b> para superar el récord.`
-    : `Estás en zona de récord semanal.`;
+  const { mejorSemana, semanaActual, semanaAnterior, year } = data;
+  const pctVisible = semanaActual.pctMeta;
+  const barWidth = Math.min(100, pctVisible);
+  const metaMsg = semanaActual.pags >= META_SEMANAL_PAGS
+    ? `Meta superada: +${semanaActual.sobreMeta} págs sobre la meta semanal.`
+    : `Te faltan <b>${semanaActual.faltanMeta} págs</b> para la meta semanal.`;
+  const semanaAnteriorMsg = semanaAnterior.pags >= META_SEMANAL_PAGS
+    ? `Semana anterior: <b>${semanaAnterior.pags} págs</b> (${semanaAnterior.pctMeta}%, +${semanaAnterior.sobreMeta} sobre la meta)`
+    : `Semana anterior: <b>${semanaAnterior.pags} págs</b>`;
+  const recordMsg = semanaActual.pags > 0 && semanaActual.esMejor
+    ? 'Estás en zona de récord semanal.'
+    : `Récord: <b>${mejorSemana.pags} págs</b> <span style="color:var(--ink4);font-weight:400;">(${mejorSemana.label})</span>`;
 
   el.innerHTML = `
-    <div class="logros-card-v2">
-      <div class="logros-head">
-        <div class="logros-title">Seguimiento semanal · ${new Date().getFullYear()}</div>
-        <div class="logros-coach">Coach lector</div>
+    <div style="background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;box-shadow:var(--shadow);">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:12px;">
+        <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--ink4);font-weight:700;">Seguimiento semanal · ${year}</div>
+        <div style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--gold);font-weight:700;">Control de Plan</div>
       </div>
-
-      <div class="logros-main">
+      <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:12px;">
         <div>
-          <div class="logros-pages">${fmt0(performance.semanaActualPags)} <span>/ ${performance.metas.semanal} págs</span></div>
-          <div style="font-size:11px;color:var(--ink4);margin-top:3px;">Meta semanal estable</div>
+          <div style="font-family:var(--font-serif);font-size:26px;font-weight:900;color:var(--ink);line-height:1;"><span style="color:${semanaActual.pags >= META_SEMANAL_PAGS ? 'var(--green)' : 'var(--ink)'};">${semanaActual.pags}</span> <span style="font-size:16px;color:var(--ink4);">/ ${META_SEMANAL_PAGS} págs</span></div>
+          <div style="font-size:11px;color:var(--ink3);margin-top:4px;">Meta semanal estable</div>
         </div>
-        <div class="logros-pct">${pctSemana}%</div>
+        <div style="font-family:var(--font-serif);font-size:22px;font-weight:900;color:${pctVisible >= 100 ? 'var(--green)' : 'var(--gold)'};line-height:1;">${pctVisible}%</div>
       </div>
-      <div class="logros-bar-wrap"><div class="logros-bar-fill" style="width:${pctSemana}%;"></div></div>
-      <div class="logros-note">${semanaTxt}</div>
-
-      <div class="logros-kpi-grid">
-        <div class="logros-kpi">
-          <div class="logros-kpi-label">Día hábil</div>
-          <div class="logros-kpi-num">${fmt1(performance.kpiHabil)} <small>/ ${performance.metas.habil}</small></div>
-          <div class="logros-kpi-gap">${gapTxt(performance.kpiHabil, performance.metas.habil)}</div>
-        </div>
-        <div class="logros-kpi">
-          <div class="logros-kpi-label">Finde</div>
-          <div class="logros-kpi-num">${fmt1(performance.kpiFinde)} <small>/ ${performance.metas.finde}</small></div>
-          <div class="logros-kpi-gap">${gapTxt(performance.kpiFinde, performance.metas.finde)}</div>
-        </div>
-        <div class="logros-kpi">
-          <div class="logros-kpi-label">Adherencia</div>
-          <div class="logros-kpi-num">${fmt0(performance.adherencia)}<small>% / ${performance.metas.adherencia}%</small></div>
-          <div class="logros-kpi-gap">${performance.diasActivos}/${performance.diasDisponibles} días activos</div>
-        </div>
+      <div style="height:6px;background:var(--cream2);border-radius:4px;overflow:hidden;margin:10px 0 10px;">
+        <div style="height:100%;width:${barWidth}%;background:${pctVisible >= 100 ? 'var(--green)' : 'var(--gold)'};border-radius:4px;transition:width 0.4s ease;"></div>
       </div>
-
-      <div class="logros-note" style="margin-bottom:8px;color:var(--ink2);"><b>${performance.coach}</b></div>
-      <div class="logros-record">
-        <div>🏅 Récord: <b>${fmt0(mejorSemana.pags)} págs</b> <span style="color:var(--ink4);">(${mejorSemana.label})</span><br>Semana anterior: <b>${fmt0(semanaAnterior.pags)}</b> págs</div>
-        <div style="text-align:right;min-width:90px;">${recordTxt}</div>
+      <div style="font-size:13px;color:var(--ink2);line-height:1.8;">${metaMsg}</div>
+      <div class="divider" style="margin:10px 0;"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+        <div style="font-size:13px;color:var(--ink2);line-height:1.8;">🏅 ${recordMsg}<br>${semanaAnterior.pags > 0 ? semanaAnteriorMsg : ''}</div>
+        ${semanaActual.pags >= META_SEMANAL_PAGS ? `<div style="font-size:12px;color:var(--green);font-weight:700;">✓ Semana cumplida y superada</div>` : `<div style="font-size:12px;color:var(--ink3);font-weight:700;">Ritmo requerido: ${semanaActual.faltanMeta} págs restantes</div>`}
       </div>
     </div>`;
 }
@@ -10560,7 +10473,7 @@ function generarExportLectura() {
   const lineas = [];
   lineas.push('═══════════════════════════════════════════════');
   lineas.push('EXPORTACIÓN DE LECTURA — LUMEN');
-  lineas.push('Generado: ' + new Date().toLocaleString('es-CL'));
+  lineas.push('Generado: ' + new Date().toLocaleString('es-CL', { timeZone: LUMEN_TZ }));
   lineas.push('═══════════════════════════════════════════════');
   lineas.push('');
 
