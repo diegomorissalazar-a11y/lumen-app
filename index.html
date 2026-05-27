@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1a1510">
-<title>LUMEN v128 — Biblioteca Personal</title>
+<title>LUMEN v129 — Biblioteca Personal</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231a1510'/><text x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' font-family='Georgia,serif' font-size='14' font-weight='900' font-style='italic' fill='%23c8952a' letter-spacing='0.5'>L</text><rect x='6' y='23' width='20' height='2' rx='1' fill='%238b2020'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
@@ -1751,7 +1751,7 @@ select.input { cursor: pointer; }
     Cerrar sesión
   </button>
   <div style="padding:8px 16px 10px;border-top:1px solid var(--border);font-size:10px;color:var(--ink4);letter-spacing:1px;text-align:right;">
-    LUMEN v128
+    LUMEN v129
   </div>
 </div>
 
@@ -4177,26 +4177,34 @@ function calcReadingDailyPages(year) {
   return dias;
 }
 
-function summarizeWeekReading(dias, weekKey) {
+function summarizeWeekReading(dias, weekKey, opts = {}) {
   const days = getWeekDaysFromKey(weekKey);
-  const habiles = days.filter(d => !isChileNonWorkingDay(d));
-  const inhabiles = days.filter(d => isChileNonWorkingDay(d));
+  const limitDays = Math.max(0, Math.min(7, Number(opts.limitDays || 7)));
+  const consideredDays = days.slice(0, limitDays);
+  const habiles = consideredDays.filter(d => !isChileNonWorkingDay(d));
+  const inhabiles = consideredDays.filter(d => isChileNonWorkingDay(d));
+  const fullHabiles = days.filter(d => !isChileNonWorkingDay(d));
+  const fullInhabiles = days.filter(d => isChileNonWorkingDay(d));
   const sum = arr => arr.reduce((acc, d) => acc + (dias[d] || 0), 0);
   const active = arr => arr.filter(d => (dias[d] || 0) > 0).length;
-  const safeAvg = (total, count) => count > 0 ? total / count : 0;
+  const safeAvg = (total, count) => count > 0 ? total / count : null;
 
   const totalHabil = sum(habiles);
   const totalInhabil = sum(inhabiles);
   const activeHabil = active(habiles);
   const activeInhabil = active(inhabiles);
-  const totalSemana = totalHabil + totalInhabil;
-  const activeSemana = active(days);
+  const totalSemana = sum(consideredDays);
+  const activeSemana = active(consideredDays);
+  const denominator = consideredDays.length || 1;
 
   return {
     key: weekKey,
     days,
+    consideredDays,
     habiles,
     inhabiles,
+    fullHabiles,
+    fullInhabiles,
     totalSemana,
     activeSemana,
     totalHabil,
@@ -4205,9 +4213,25 @@ function summarizeWeekReading(dias, weekKey) {
     activeInhabil,
     avgHabil: safeAvg(totalHabil, habiles.length),
     avgInhabil: safeAvg(totalInhabil, inhabiles.length),
-    adherencePct: Math.round((activeSemana / days.length) * 100),
-    activeLabel: `${activeSemana}/7 días activos`
+    adherencePct: Math.round((activeSemana / denominator) * 100),
+    activeLabel: `${activeSemana}/${consideredDays.length} días activos`,
+    habilLabel: `${activeHabil}/${habiles.length} días hábiles`,
+    inhabilLabel: `${activeInhabil}/${inhabiles.length} días inhábiles`
   };
+}
+
+function getWeekElapsedDays(weekKey, todayStr) {
+  const days = getWeekDaysFromKey(weekKey);
+  const idx = days.indexOf(todayStr);
+  if (idx < 0) return 7;
+  return idx + 1;
+}
+
+function countRemainingDaysInWeek(weekKey, todayStr) {
+  const days = getWeekDaysFromKey(weekKey);
+  const idx = days.indexOf(todayStr);
+  if (idx < 0) return 0;
+  return Math.max(0, days.length - idx - 1);
 }
 
 function calcLogrosSemana() {
@@ -4236,10 +4260,13 @@ function calcLogrosSemana() {
   const pasadas = semanasValidas.filter(([wk]) => wk !== semanaActualKey);
   const baseMejor = pasadas.length ? pasadas : semanasValidas;
   const [mejorWk, mejorPags] = baseMejor.reduce((a, b) => b[1] > a[1] ? b : a);
-  const actualResumen = summarizeWeekReading(dias, semanaActualKey);
-  const anteriorResumen = summarizeWeekReading(dias, anteriorWk);
+  const elapsedDays = getWeekElapsedDays(semanaActualKey, hoyStr);
+  const actualResumen = summarizeWeekReading(dias, semanaActualKey, { limitDays: elapsedDays });
+  const anteriorResumenComparable = summarizeWeekReading(dias, anteriorWk, { limitDays: elapsedDays });
+  const anteriorResumenCompleto = summarizeWeekReading(dias, anteriorWk, { limitDays: 7 });
   const semanaActualPags = actualResumen.totalSemana;
-  const anteriorPags = anteriorResumen.totalSemana;
+  const anteriorPags = anteriorResumenCompleto.totalSemana;
+  const remainingDays = countRemainingDaysInWeek(semanaActualKey, hoyStr);
 
   const fmtSemana = (wkKey) => {
     const lunes = new Date(wkKey + 'T12:00:00');
@@ -4268,15 +4295,21 @@ function calcLogrosSemana() {
       pags: anteriorPags,
       pctMeta: Math.round((anteriorPags / META_SEMANAL_PAGS) * 100),
       sobreMeta: Math.max(0, anteriorPags - META_SEMANAL_PAGS),
-      resumen: anteriorResumen
+      resumen: anteriorResumenComparable,
+      resumenCompleto: anteriorResumenCompleto
     },
     totalSemanas: semanasValidas.length,
     year: yr,
-    todayStr: hoyStr
+    todayStr: hoyStr,
+    elapsedDays,
+    remainingDays
   };
 }
 
 function formatKpiDelta(actual, anterior, suffix = '') {
+  if (actual === null || anterior === null || actual === undefined || anterior === undefined) {
+    return `<span style="color:var(--ink4);font-weight:700;">—</span> vs sem. ant.`;
+  }
   const diff = actual - anterior;
   const sign = diff > 0 ? '+' : '';
   const cls = diff >= 0 ? 'var(--green)' : 'var(--red2)';
@@ -4296,15 +4329,16 @@ function renderLogros() {
 
   if (!data) { el.innerHTML = ''; return; }
 
-  const { mejorSemana, semanaActual, semanaAnterior, year } = data;
+  const { mejorSemana, semanaActual, semanaAnterior, year, elapsedDays, remainingDays } = data;
   const actual = semanaActual.resumen;
   const anterior = semanaAnterior.resumen;
   const pctVisible = semanaActual.pctMeta;
   const barWidth = Math.min(100, pctVisible);
+  const ritmoRequerido = remainingDays > 0 ? Math.ceil(semanaActual.faltanMeta / remainingDays) : semanaActual.faltanMeta;
 
   const metaMsg = semanaActual.pags >= META_SEMANAL_PAGS
     ? `Meta superada: <b>${semanaActual.pags} de ${META_SEMANAL_PAGS} págs</b> (${pctVisible}%). +${semanaActual.sobreMeta} págs sobre la meta semanal.`
-    : `Te faltan <b>${semanaActual.faltanMeta} págs</b> para la meta semanal · ritmo requerido: ${semanaActual.faltanMeta} págs/día.`;
+    : `Te faltan <b>${semanaActual.faltanMeta} págs</b> para la meta semanal · ritmo requerido: ${ritmoRequerido} págs/día.`;
   const semanaAnteriorMsg = semanaAnterior.pags >= META_SEMANAL_PAGS
     ? `Semana anterior: <b>${semanaAnterior.pags} págs</b> (${semanaAnterior.pctMeta}%, +${semanaAnterior.sobreMeta} sobre la meta)`
     : `Semana anterior: <b>${semanaAnterior.pags} págs</b>`;
@@ -4316,11 +4350,16 @@ function renderLogros() {
   const targetInhabil = 35;
   const avgHabil = actual.avgHabil;
   const avgInhabil = actual.avgInhabil;
-  const faltanHabil = targetHabil - avgHabil;
-  const faltanInhabil = targetInhabil - avgInhabil;
+  const faltanHabil = avgHabil === null ? null : targetHabil - avgHabil;
+  const faltanInhabil = avgInhabil === null ? null : targetInhabil - avgInhabil;
   const adherenciaTarget = 90;
   const adherenciaDelta = actual.adherencePct - anterior.adherencePct;
   const adherenciaDeltaTxt = `<span style="color:${adherenciaDelta >= 0 ? 'var(--green)' : 'var(--red2)'};font-weight:700;">${adherenciaDelta >= 0 ? '▲ +' : '▼ '}${adherenciaDelta} pts</span> vs sem. ant.`;
+  const fmtAvg = v => v === null ? '—' : v.toFixed(1).replace('.', ',');
+  const fmtGap = (gap, emptyText) => {
+    if (gap === null) return emptyText;
+    return gap > 0 ? `Faltan +${gap.toFixed(1).replace('.', ',')} págs` : `Sobre meta +${Math.abs(gap).toFixed(1).replace('.', ',')} págs`;
+  };
 
   const kpiCard = (label, value, target, sub, deltaHtml) => `
     <div style="background:var(--cream2);border:1px solid var(--border);border-radius:6px;padding:10px 12px;min-height:74px;">
@@ -4352,16 +4391,16 @@ function renderLogros() {
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0 10px;">
         ${kpiCard(
           'Día hábil Chile',
-          avgHabil.toFixed(1).replace('.', ','),
+          fmtAvg(avgHabil),
           `${targetHabil} págs/día`,
-          faltanHabil > 0 ? `Faltan +${faltanHabil.toFixed(1).replace('.', ',')} págs` : `Sobre meta +${Math.abs(faltanHabil).toFixed(1).replace('.', ',')} págs`,
+          `${fmtGap(faltanHabil, 'Sin días hábiles transcurridos')} · ${actual.habilLabel}`,
           formatKpiDelta(avgHabil, anterior.avgHabil, '')
         )}
         ${kpiCard(
           'Día inhábil',
-          avgInhabil.toFixed(1).replace('.', ','),
+          fmtAvg(avgInhabil),
           `${targetInhabil} págs/día`,
-          faltanInhabil > 0 ? `Faltan +${faltanInhabil.toFixed(1).replace('.', ',')} págs` : `Sobre meta +${Math.abs(faltanInhabil).toFixed(1).replace('.', ',')} págs`,
+          `${fmtGap(faltanInhabil, 'Sin días inhábiles transcurridos')} · ${actual.inhabilLabel}`,
           formatKpiDelta(avgInhabil, anterior.avgInhabil, '')
         )}
         ${kpiCard(
@@ -4376,7 +4415,7 @@ function renderLogros() {
       <div class="divider" style="margin:10px 0;"></div>
       <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
         <div style="font-size:13px;color:var(--ink2);line-height:1.8;">🏅 ${recordMsg}<br>${semanaAnterior.pags > 0 ? semanaAnteriorMsg : ''}</div>
-        ${semanaActual.pags >= META_SEMANAL_PAGS ? `<div style="font-size:12px;color:var(--green);font-weight:700;">✓ Semana cumplida y superada</div>` : `<div style="font-size:12px;color:var(--ink3);font-weight:700;">Ritmo requerido: ${semanaActual.faltanMeta} págs restantes</div>`}
+        ${semanaActual.pags >= META_SEMANAL_PAGS ? `<div style="font-size:12px;color:var(--green);font-weight:700;">✓ Semana cumplida y superada</div>` : `<div style="font-size:12px;color:var(--ink3);font-weight:700;">Ritmo requerido: ${ritmoRequerido} págs/día</div>`}
       </div>
     </div>`;
 }
