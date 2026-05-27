@@ -4306,15 +4306,23 @@ function calcLogrosSemana() {
   };
 }
 
-function formatKpiDelta(actual, anterior, suffix = '') {
-  if (actual === null || anterior === null || actual === undefined || anterior === undefined) {
-    return `<span style="color:var(--ink4);font-weight:700;">—</span> vs sem. ant.`;
+function formatKpiDelta(actual, anterior, suffix = '', previousLabel = '') {
+  const prevText = (anterior === null || anterior === undefined)
+    ? ''
+    : ` <span style="color:var(--ink3);">(sem. ant.: ${anterior.toFixed(1).replace('.', ',')}${previousLabel || suffix})</span>`;
+  if (actual === null || actual === undefined || anterior === null || anterior === undefined) {
+    return `<span style="color:var(--ink4);font-weight:700;">—</span> vs sem. ant.${prevText}`;
   }
   const diff = actual - anterior;
   const sign = diff > 0 ? '+' : '';
   const cls = diff >= 0 ? 'var(--green)' : 'var(--red2)';
   const arrow = diff >= 0 ? '▲' : '▼';
-  return `<span style="color:${cls};font-weight:700;">${arrow} ${sign}${diff.toFixed(1).replace('.', ',')}${suffix}</span> vs sem. ant.`;
+  return `<span style="color:${cls};font-weight:700;">${arrow} ${sign}${diff.toFixed(1).replace('.', ',')}${suffix}</span> vs sem. ant.${prevText}`;
+}
+
+function formatPctTarget(actual, target) {
+  if (actual === null || actual === undefined || !target) return '—';
+  return `${Math.round((actual / target) * 100)}%`;
 }
 
 function renderLogros() {
@@ -4356,16 +4364,19 @@ function renderLogros() {
   const faltanInhabil = avgInhabil === null ? null : targetInhabil - avgInhabil;
   const adherenciaTarget = 90;
   const adherenciaDelta = actual.adherencePct - anterior.adherencePct;
-  const adherenciaDeltaTxt = `<span style="color:${adherenciaDelta >= 0 ? 'var(--green)' : 'var(--red2)'};font-weight:700;">${adherenciaDelta >= 0 ? '▲ +' : '▼ '}${adherenciaDelta} pts</span> vs sem. ant.`;
+  const adherenciaDeltaTxt = `<span style="color:${adherenciaDelta >= 0 ? 'var(--green)' : 'var(--red2)'};font-weight:700;">${adherenciaDelta >= 0 ? '▲ +' : '▼ '}${adherenciaDelta} pts</span> vs sem. ant. <span style="color:var(--ink3);">(sem. ant.: ${anterior.adherencePct}%)</span>`;
   const fmtAvg = v => v === null ? '—' : v.toFixed(1).replace('.', ',');
   const fmtGap = (gap, emptyText) => {
     if (gap === null) return emptyText;
     return gap > 0 ? `Faltan +${gap.toFixed(1).replace('.', ',')} págs` : `Sobre meta +${Math.abs(gap).toFixed(1).replace('.', ',')} págs`;
   };
 
-  const kpiCard = (label, value, target, sub, deltaHtml) => `
-    <div style="background:var(--cream2);border:1px solid var(--border);border-radius:6px;padding:10px 12px;min-height:74px;">
-      <div style="font-size:10px;letter-spacing:1.3px;text-transform:uppercase;color:var(--ink4);font-weight:700;margin-bottom:4px;">${label}</div>
+  const kpiCard = (label, value, target, sub, deltaHtml, pctTarget = '—') => `
+    <div style="background:var(--cream2);border:1px solid var(--border);border-radius:6px;padding:10px 12px;min-height:78px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px;">
+        <div style="font-size:10px;letter-spacing:1.3px;text-transform:uppercase;color:var(--ink4);font-weight:700;">${label}</div>
+        <div style="font-size:10px;color:${pctTarget !== '—' && parseInt(pctTarget, 10) >= 100 ? 'var(--green)' : 'var(--ink4)'};font-weight:700;">${pctTarget}</div>
+      </div>
       <div style="font-family:var(--font-serif);font-size:20px;font-weight:900;color:var(--ink);line-height:1;">
         ${value} <span style="font-size:12px;color:var(--ink4);">/ ${target}</span>
       </div>
@@ -4396,21 +4407,24 @@ function renderLogros() {
           fmtAvg(avgHabil),
           `${targetHabil} págs/día`,
           `${fmtGap(faltanHabil, 'Sin días hábiles transcurridos')} · ${actual.habilLabel}`,
-          formatKpiDelta(avgHabil, anterior.avgHabil, '')
+          formatKpiDelta(avgHabil, anterior.avgHabil, '', ' págs/día'),
+          formatPctTarget(avgHabil, targetHabil)
         )}
         ${kpiCard(
           'Día inhábil',
           fmtAvg(avgInhabil),
           `${targetInhabil} págs/día`,
           `${fmtGap(faltanInhabil, 'Sin días inhábiles transcurridos')} · ${actual.inhabilLabel}`,
-          formatKpiDelta(avgInhabil, anterior.avgInhabil, '')
+          formatKpiDelta(avgInhabil, anterior.avgInhabil, '', ' págs/día'),
+          formatPctTarget(avgInhabil, targetInhabil)
         )}
         ${kpiCard(
           'Adherencia',
           `${actual.adherencePct}%`,
           `${adherenciaTarget}%`,
           actual.activeLabel,
-          adherenciaDeltaTxt
+          adherenciaDeltaTxt,
+          `${Math.round((actual.adherencePct / adherenciaTarget) * 100)}%`
         )}
       </div>
       <div style="font-size:11px;color:var(--ink4);line-height:1.5;margin-bottom:4px;">Días hábiles: lunes a viernes excluyendo feriados de Chile. Días inhábiles: sábados, domingos y feriados.</div>
