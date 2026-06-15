@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1a1510">
-<title>LUMEN v135 — Biblioteca Personal</title>
+<title>LUMEN v136 — Biblioteca Personal</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231a1510'/><text x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' font-family='Georgia,serif' font-size='14' font-weight='900' font-style='italic' fill='%23c8952a' letter-spacing='0.5'>L</text><rect x='6' y='23' width='20' height='2' rx='1' fill='%238b2020'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
@@ -1771,7 +1771,7 @@ select.input { cursor: pointer; }
     Cerrar sesión
   </button>
   <div style="padding:8px 16px 10px;border-top:1px solid var(--border);font-size:10px;color:var(--ink4);letter-spacing:1px;text-align:right;">
-    LUMEN v135
+    LUMEN v136
   </div>
 </div>
 
@@ -4402,17 +4402,50 @@ function formatPctTarget(actual, target) {
 function renderLogros() {
   const el = document.getElementById('logros-card');
   if (!el) return;
-  const data = calcLogrosSemana();
+  el.style.display = 'block';
+  el.style.visibility = 'visible';
 
   // Mostrar/ocultar card de exportar según si hay datos de lectura.
   const cardExp = document.getElementById('exportar-lectura-card');
-  const hayReadDates = db.entries.some(e => e.type === 'libro' && Array.isArray(e.readDates) && e.readDates.length > 0);
+  const hayReadDates = Array.isArray(db?.entries) && db.entries.some(e => e.type === 'libro' && Array.isArray(e.readDates) && e.readDates.length > 0);
   if (cardExp) cardExp.style.display = hayReadDates ? 'block' : 'none';
 
-  if (!data) { el.innerHTML = ''; return; }
+  let data;
+  try {
+    data = calcLogrosSemana();
+  } catch (err) {
+    console.warn('renderLogros/calcLogrosSemana error:', err);
+    data = null;
+  }
 
   const META_SEMANAL_PAGS = getMetaSemanalPags();
-  const { mejorSemana, semanaActual, semanaAnterior, year, elapsedDays, remainingDays } = data;
+  const yrFallback = currentYearSantiago();
+
+  // Fallback seguro: Control de Plan nunca debe desaparecer si existe meta semanal.
+  if (!data) {
+    el.innerHTML = `
+      <div class="logros-card-inner">
+        <div class="logros-header">
+          <div class="logros-header-left">Seguimiento semanal · ${yrFallback}</div>
+          <div class="logros-header-right">
+            <div style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--gold);font-weight:700;">Control de Plan</div>
+            <button onclick="openMetaSemanalModal()" style="border:1px solid var(--border);background:#fff;border-radius:4px;padding:4px 7px;font-family:var(--font-sans);font-size:9px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;color:var(--ink3);cursor:pointer;white-space:nowrap;">✎ Meta</button>
+          </div>
+        </div>
+        <div class="logros-main-row">
+          <div>
+            <div style="font-family:var(--font-serif);font-size:26px;font-weight:900;color:var(--ink);line-height:1;">0 <span style="font-size:16px;color:var(--ink4);">/ ${META_SEMANAL_PAGS} págs</span></div>
+            <div style="font-size:11px;color:var(--ink3);margin-top:4px;">Meta semanal editable</div>
+          </div>
+          <div style="font-family:var(--font-serif);font-size:22px;font-weight:900;color:var(--gold);line-height:1;">0%</div>
+        </div>
+        <div style="height:6px;background:var(--cream2);border-radius:4px;overflow:hidden;margin:10px 0 10px;"><div style="height:100%;width:0%;background:var(--gold);"></div></div>
+        <div style="font-size:13px;color:var(--ink2);line-height:1.8;">Sin lectura registrada para calcular la semana actual.</div>
+      </div>`;
+    return;
+  }
+
+  const { mejorSemana, semanaActual, semanaAnterior, year, remainingDays } = data;
   const actual = semanaActual.resumen;
   // Para comparar KPIs contra semana anterior se usa la semana cerrada completa.
   // Así los días inhábiles anteriores incluyen sábado, domingo y feriados de Chile (ej: 21 de mayo).
@@ -4446,18 +4479,22 @@ function renderLogros() {
     return gap > 0 ? `Faltan +${gap.toFixed(1).replace('.', ',')} págs` : `Sobre meta +${Math.abs(gap).toFixed(1).replace('.', ',')} págs`;
   };
 
-  const kpiCard = (label, value, target, sub, deltaHtml, pctTarget = '—') => `
-    <div class="logros-kpi-card">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px;">
-        <div style="font-size:10px;letter-spacing:1.3px;text-transform:uppercase;color:var(--ink4);font-weight:700;">${label}</div>
-        ${pctTarget !== '—' ? `<div style="font-size:9px;color:${parseInt(pctTarget, 10) >= 100 ? 'var(--green)' : 'var(--ink4)'};font-weight:700;letter-spacing:0.3px;white-space:nowrap;">Cumpl. ${pctTarget}</div>` : `<div style="font-size:10px;color:var(--ink4);font-weight:700;">—</div>`}
-      </div>
-      <div style="font-family:var(--font-serif);font-size:20px;font-weight:900;color:var(--ink);line-height:1;">
-        ${value} <span style="font-size:12px;color:var(--ink4);">/ ${target}</span>
-      </div>
-      <div style="font-size:11px;color:var(--ink3);margin-top:5px;line-height:1.4;">${sub}</div>
-      <div style="font-size:10px;color:var(--ink4);margin-top:3px;line-height:1.4;">${deltaHtml}</div>
-    </div>`;
+  const kpiCard = (label, value, target, sub, deltaHtml, pctTarget = '—') => {
+    const pctNum = parseInt(String(pctTarget).replace(/[^0-9-]/g, ''), 10);
+    const pctColor = Number.isFinite(pctNum) && pctNum >= 100 ? 'var(--green)' : 'var(--ink4)';
+    return `
+      <div class="logros-kpi-card">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px;">
+          <div style="font-size:10px;letter-spacing:1.3px;text-transform:uppercase;color:var(--ink4);font-weight:700;">${label}</div>
+          ${pctTarget !== '—' ? `<div style="font-size:9px;color:${pctColor};font-weight:700;letter-spacing:0.3px;white-space:nowrap;">Cumpl. ${pctTarget}</div>` : `<div style="font-size:10px;color:var(--ink4);font-weight:700;">—</div>`}
+        </div>
+        <div style="font-family:var(--font-serif);font-size:20px;font-weight:900;color:var(--ink);line-height:1;">
+          ${value} <span style="font-size:12px;color:var(--ink4);">/ ${target}</span>
+        </div>
+        <div style="font-size:11px;color:var(--ink3);margin-top:5px;line-height:1.4;">${sub}</div>
+        <div style="font-size:10px;color:var(--ink4);margin-top:3px;line-height:1.4;">${deltaHtml}</div>
+      </div>`;
+  };
 
   el.innerHTML = `
     <div class="logros-card-inner">
@@ -4513,7 +4550,6 @@ function renderLogros() {
       </div>
     </div>`;
 }
-
 
 let lumenUtcShiftRepairDone = false;
 function repairUtcShiftedReadDates() {
