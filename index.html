@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1a1510">
-<title>LUMEN v137 — Biblioteca Personal</title>
+<title>LUMEN v138 — Biblioteca Personal</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231a1510'/><text x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' font-family='Georgia,serif' font-size='14' font-weight='900' font-style='italic' fill='%23c8952a' letter-spacing='0.5'>L</text><rect x='6' y='23' width='20' height='2' rx='1' fill='%238b2020'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
@@ -394,27 +394,6 @@ select.input { cursor: pointer; }
 .desafio-edit:hover { color:var(--gold); }
 .desafio-completado { color: var(--gold) !important; }
 
-/* ── CONTROL DE PLAN / LOGROS ── */
-#logros-card { display:block !important; visibility:visible !important; opacity:1 !important; min-height:1px; }
-.logros-card-inner { background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:12px 14px; box-shadow:var(--shadow); overflow:hidden; }
-.logros-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; gap:12px; flex-wrap:wrap; }
-.logros-header-left { font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--ink4); font-weight:700; }
-.logros-header-right { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
-.logros-main-row { display:flex; align-items:flex-end; justify-content:space-between; gap:12px; }
-.logros-kpi-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin:12px 0 10px; }
-.logros-kpi-card { background:var(--cream2); border:1px solid var(--border); border-radius:6px; padding:10px 12px; min-height:78px; min-width:0; }
-.logros-kpi-card * { min-width:0; }
-@media (max-width: 720px) {
-  #logros-card { display:block !important; visibility:visible !important; opacity:1 !important; margin:0 20px 12px !important; width:auto !important; max-width:calc(100vw - 40px) !important; overflow:visible !important; clear:both; order:0; }
-  .logros-card-inner { display:block !important; padding:14px 16px; width:100%; max-width:100%; overflow:hidden; }
-  .logros-header { align-items:flex-start; gap:10px; }
-  .logros-header-left { flex:1 1 100%; line-height:1.35; }
-  .logros-header-right { width:100%; justify-content:space-between; }
-  .logros-main-row { align-items:flex-start; }
-  .logros-kpi-grid { grid-template-columns:1fr !important; gap:10px; }
-  .logros-kpi-card { width:100%; }
-}
-
 /* ── GÉNEROS ── */
 .genero-chip {
   padding:5px 11px; border-radius:20px; border:1.5px solid var(--border);
@@ -553,6 +532,39 @@ select.input { cursor: pointer; }
 
 ::-webkit-scrollbar-track { background: var(--cream); }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+
+/* ── CONTROL DE PLAN RESPONSIVE (v138) ── */
+@media (max-width: 640px) {
+  #logros-card {
+    display: block !important;
+    position: static !important;
+    clear: both !important;
+    margin: 0 20px 12px !important;
+    width: auto !important;
+    max-width: none !important;
+    z-index: auto !important;
+  }
+  #logros-card .lumen-logros-card {
+    position: static !important;
+    overflow: visible !important;
+  }
+  #logros-card .lumen-logros-head,
+  #logros-card .lumen-logros-main,
+  #logros-card .lumen-logros-footer {
+    flex-wrap: wrap !important;
+    align-items: flex-start !important;
+  }
+  #logros-card .lumen-logros-actions {
+    margin-left: 0 !important;
+  }
+  #logros-card .lumen-kpi-grid {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+}
+
 </style>
 <!-- Firebase compat SDKs (carga síncrona, sin módulos) -->
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
@@ -1772,7 +1784,7 @@ select.input { cursor: pointer; }
     Cerrar sesión
   </button>
   <div style="padding:8px 16px 10px;border-top:1px solid var(--border);font-size:10px;color:var(--ink4);letter-spacing:1px;text-align:right;">
-    LUMEN v137
+    LUMEN v138
   </div>
 </div>
 
@@ -2944,10 +2956,10 @@ function calcPagsByDay(readDates) {
   const map = {};
   for (let i = 0; i < norm.length; i++) {
     if (i === 0) {
-      // Primer registro con página exacta: la página actual equivale a páginas leídas acumuladas del libro.
-      map[norm[i].date] = Math.max(0, Number(norm[i].pag || 0));
+      // Primer registro: no tenemos referencia anterior, asignar 0
+      map[norm[i].date] = 0;
     } else {
-      const diff = Math.max(0, Number(norm[i].pag || 0) - Number(norm[i-1].pag || 0));
+      const diff = Math.max(0, norm[i].pag - norm[i-1].pag);
       map[norm[i].date] = diff;
     }
   }
@@ -4109,7 +4121,11 @@ function getDatePartsInSantiago(date = new Date()) {
     timeZone: LUMEN_TZ,
     year: 'numeric',
     month: '2-digit',
-    day: '2-digit'
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
   }).formatToParts(date).reduce((acc, p) => {
     if (p.type !== 'literal') acc[p.type] = p.value;
     return acc;
@@ -4118,16 +4134,30 @@ function getDatePartsInSantiago(date = new Date()) {
     year: Number(parts.year),
     month: Number(parts.month),
     day: Number(parts.day),
+    hour: Number(parts.hour),
+    minute: Number(parts.minute),
+    second: Number(parts.second),
     dateStr: `${parts.year}-${parts.month}-${parts.day}`
   };
 }
 
+function santiagoOperationalTodayStr(date = new Date()) {
+  const parts = getDatePartsInSantiago(date);
+  const ds = parts.dateStr;
+  const [y, m, d] = ds.split('-').map(Number);
+  const dow = new Date(Date.UTC(y, m - 1, d)).getUTCDay(); // 1=lunes
+  // Regla operativa del usuario: la nueva semana parte el lunes a las 00:01 hora Santiago.
+  // Si se registra justo el lunes 00:00, todavía se considera cierre de la semana anterior.
+  if (dow === 1 && parts.hour === 0 && parts.minute === 0) return addDaysToDateStr(ds, -1);
+  return ds;
+}
+
 function todaySantiagoStr() {
-  return getDatePartsInSantiago(new Date()).dateStr;
+  return santiagoOperationalTodayStr(new Date());
 }
 
 function currentYearSantiago() {
-  return getDatePartsInSantiago(new Date()).year;
+  return Number(todaySantiagoStr().slice(0, 4));
 }
 
 function dateStrFromUTCDate(d) {
@@ -4210,40 +4240,30 @@ function getWeekDaysFromKey(weekKey) {
   return Array.from({ length: 7 }, (_, i) => addDaysToDateStr(weekKey, i));
 }
 
-function calcReadingDailyStats(year) {
-  const dias = {}; // YYYY-MM-DD → { pags, active }
-  const ensureDay = (dateStr) => {
-    const ds = String(dateStr || '').slice(0, 10);
-    if (!ds || !ds.startsWith(String(year))) return null;
-    if (!dias[ds]) dias[ds] = { pags: 0, active: false };
-    return dias[ds];
-  };
+function calcReadingDailyPages(year) {
+  const dias = {}; // YYYY-MM-DD → páginas leídas del día
   const addToDay = (dateStr, pags) => {
-    const day = ensureDay(dateStr);
-    if (!day) return;
-    day.active = true;
-    if (pags > 0) day.pags += pags;
+    if (!dateStr || pags <= 0) return;
+    const ds = String(dateStr).slice(0, 10);
+    if (!ds.startsWith(String(year))) return;
+    dias[ds] = (dias[ds] || 0) + pags;
   };
 
   db.entries.filter(e => e.type === 'libro').forEach(e => {
-    const norm = normalizeReadDates(e.readDates || [])
-      .filter(r => r.pag !== null && r.pag !== undefined && String(r.date || '').startsWith(String(year)))
-      .sort((a, b) => String(a.date).localeCompare(String(b.date)));
+    const norm = (e.readDates || []).map(r =>
+      typeof r === 'string' ? { date: r, pag: null } : r
+    ).filter(r => r.pag !== null && String(r.date || '').startsWith(String(year)));
 
-    for (let i = 0; i < norm.length; i++) {
-      const pagActual = Number(norm[i].pag || 0);
-      const prevPag = i === 0 ? 0 : Number(norm[i - 1].pag || 0);
-      const diff = Math.max(0, pagActual - prevPag);
-      addToDay(norm[i].date, diff);
+    if (norm.length >= 1) {
+      norm.sort((a, b) => String(a.date).localeCompare(String(b.date)));
+      // El primer registro de un libro nuevo también cuenta como páginas leídas del día.
+      addToDay(norm[0].date, Math.max(0, Number(norm[0].pag || 0)));
+      for (let i = 1; i < norm.length; i++) {
+        const diff = Math.max(0, Number(norm[i].pag || 0) - Number(norm[i - 1].pag || 0));
+        addToDay(norm[i].date, diff);
+      }
     }
   });
-  return dias;
-}
-
-function calcReadingDailyPages(year) {
-  const stats = calcReadingDailyStats(year);
-  const dias = {};
-  Object.entries(stats).forEach(([dateStr, v]) => { dias[dateStr] = v.pags || 0; });
   return dias;
 }
 
@@ -4251,16 +4271,12 @@ function summarizeWeekReading(dias, weekKey, opts = {}) {
   const days = getWeekDaysFromKey(weekKey);
   const limitDays = Math.max(0, Math.min(7, Number(opts.limitDays || 7)));
   const consideredDays = days.slice(0, limitDays);
-  const valueFor = (d) => {
-    const v = dias[d];
-    return (typeof v === 'number') ? { pags: v, active: v > 0 } : { pags: Number(v?.pags || 0), active: !!v?.active };
-  };
   const habiles = consideredDays.filter(d => !isChileNonWorkingDay(d));
   const inhabiles = consideredDays.filter(d => isChileNonWorkingDay(d));
   const fullHabiles = days.filter(d => !isChileNonWorkingDay(d));
   const fullInhabiles = days.filter(d => isChileNonWorkingDay(d));
-  const sum = arr => arr.reduce((acc, d) => acc + valueFor(d).pags, 0);
-  const active = arr => arr.filter(d => valueFor(d).active).length;
+  const sum = arr => arr.reduce((acc, d) => acc + (dias[d] || 0), 0);
+  const active = arr => arr.filter(d => (dias[d] || 0) > 0).length;
   const safeAvg = (total, count) => count > 0 ? total / count : null;
 
   const totalHabil = sum(habiles);
@@ -4314,26 +4330,25 @@ function calcLogrosSemana() {
   const hoyStr = todaySantiagoStr();
   const semanaActualKey = getISOWeekKey(hoyStr);
   const anteriorWk = getISOWeekKey(addDaysToDateStr(hoyStr, -7));
-  const dias = calcReadingDailyStats(yr);
+  const dias = calcReadingDailyPages(yr);
 
   // Construir mapa semana → páginas desde el mismo detalle diario que alimenta los KPIs.
   const semanas = {}; // weekKey → pages
-  Object.entries(dias).forEach(([dateStr, dataDia]) => {
+  Object.entries(dias).forEach(([dateStr, pags]) => {
     const wk = getISOWeekKey(dateStr);
     if (!wk) return;
-    semanas[wk] = (semanas[wk] || 0) + Number(dataDia?.pags || 0);
+    semanas[wk] = (semanas[wk] || 0) + pags;
   });
 
   // Filtrar semanas con datos — excluir semana actual si recién empieza.
   const semanasValidas = Object.entries(semanas)
-    .filter(([, pags]) => pags > 0)
+    .filter(([wk]) => wk !== semanaActualKey || semanas[wk] >= 20)
     .sort((a, b) => a[0].localeCompare(b[0]));
 
-  if (semanasValidas.length < 1) semanasValidas.push([semanaActualKey, 0]);
-
   // Mejor semana del año (excluye semana actual si existen semanas pasadas).
+  // Aunque no existan registros, Control de Plan debe mostrarse igual con 0 páginas.
   const pasadas = semanasValidas.filter(([wk]) => wk !== semanaActualKey);
-  const baseMejor = pasadas.length ? pasadas : semanasValidas;
+  const baseMejor = pasadas.length ? pasadas : (semanasValidas.length ? semanasValidas : [[semanaActualKey, 0]]);
   const [mejorWk, mejorPags] = baseMejor.reduce((a, b) => b[1] > a[1] ? b : a);
   const elapsedDays = getWeekElapsedDays(semanaActualKey, hoyStr);
   const actualResumen = summarizeWeekReading(dias, semanaActualKey, { limitDays: elapsedDays });
@@ -4400,81 +4415,20 @@ function formatPctTarget(actual, target) {
   return `${Math.round((actual / target) * 100)}%`;
 }
 
-function ensureLogrosCardMounted() {
-  const home = document.getElementById('screen-home');
-  if (!home) return null;
-  let el = document.getElementById('logros-card');
-  const exportCard = document.getElementById('exportar-lectura-card');
-
-  // En Safari/iOS observamos que el bloque podía quedar fuera del flujo o vacío.
-  // Esta rutina lo reinyecta siempre entre Desafío lector y Exportar historial.
-  if (!el) {
-    el = document.createElement('div');
-    el.id = 'logros-card';
-    el.setAttribute('style', 'margin:0 20px 12px;display:block;visibility:visible;');
-  }
-
-  if (exportCard && el.nextElementSibling !== exportCard) {
-    home.insertBefore(el, exportCard);
-  } else if (!el.parentNode) {
-    home.appendChild(el);
-  }
-
-  el.style.display = 'block';
-  el.style.visibility = 'visible';
-  el.style.opacity = '1';
-  el.style.margin = '0 20px 12px';
-  return el;
-}
-
 function renderLogros() {
-  const el = ensureLogrosCardMounted();
+  const el = document.getElementById('logros-card');
   if (!el) return;
-  el.style.display = 'block';
-  el.style.visibility = 'visible';
-  el.style.opacity = '1';
+  const data = calcLogrosSemana();
 
   // Mostrar/ocultar card de exportar según si hay datos de lectura.
   const cardExp = document.getElementById('exportar-lectura-card');
-  const hayReadDates = Array.isArray(db?.entries) && db.entries.some(e => e.type === 'libro' && Array.isArray(e.readDates) && e.readDates.length > 0);
+  const hayReadDates = db.entries.some(e => e.type === 'libro' && Array.isArray(e.readDates) && e.readDates.length > 0);
   if (cardExp) cardExp.style.display = hayReadDates ? 'block' : 'none';
 
-  let data;
-  try {
-    data = calcLogrosSemana();
-  } catch (err) {
-    console.warn('renderLogros/calcLogrosSemana error:', err);
-    data = null;
-  }
+  if (!data) { el.innerHTML = ''; return; }
 
   const META_SEMANAL_PAGS = getMetaSemanalPags();
-  const yrFallback = currentYearSantiago();
-
-  // Fallback seguro: Control de Plan nunca debe desaparecer si existe meta semanal.
-  if (!data) {
-    el.innerHTML = `
-      <div class="logros-card-inner">
-        <div class="logros-header">
-          <div class="logros-header-left">Seguimiento semanal · ${yrFallback}</div>
-          <div class="logros-header-right">
-            <div style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--gold);font-weight:700;">Control de Plan</div>
-            <button onclick="openMetaSemanalModal()" style="border:1px solid var(--border);background:#fff;border-radius:4px;padding:4px 7px;font-family:var(--font-sans);font-size:9px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;color:var(--ink3);cursor:pointer;white-space:nowrap;">✎ Meta</button>
-          </div>
-        </div>
-        <div class="logros-main-row">
-          <div>
-            <div style="font-family:var(--font-serif);font-size:26px;font-weight:900;color:var(--ink);line-height:1;">0 <span style="font-size:16px;color:var(--ink4);">/ ${META_SEMANAL_PAGS} págs</span></div>
-            <div style="font-size:11px;color:var(--ink3);margin-top:4px;">Meta semanal editable</div>
-          </div>
-          <div style="font-family:var(--font-serif);font-size:22px;font-weight:900;color:var(--gold);line-height:1;">0%</div>
-        </div>
-        <div style="height:6px;background:var(--cream2);border-radius:4px;overflow:hidden;margin:10px 0 10px;"><div style="height:100%;width:0%;background:var(--gold);"></div></div>
-        <div style="font-size:13px;color:var(--ink2);line-height:1.8;">Sin lectura registrada para calcular la semana actual.</div>
-      </div>`;
-    return;
-  }
-
-  const { mejorSemana, semanaActual, semanaAnterior, year, remainingDays } = data;
+  const { mejorSemana, semanaActual, semanaAnterior, year, elapsedDays, remainingDays } = data;
   const actual = semanaActual.resumen;
   // Para comparar KPIs contra semana anterior se usa la semana cerrada completa.
   // Así los días inhábiles anteriores incluyen sábado, domingo y feriados de Chile (ej: 21 de mayo).
@@ -4508,33 +4462,29 @@ function renderLogros() {
     return gap > 0 ? `Faltan +${gap.toFixed(1).replace('.', ',')} págs` : `Sobre meta +${Math.abs(gap).toFixed(1).replace('.', ',')} págs`;
   };
 
-  const kpiCard = (label, value, target, sub, deltaHtml, pctTarget = '—') => {
-    const pctNum = parseInt(String(pctTarget).replace(/[^0-9-]/g, ''), 10);
-    const pctColor = Number.isFinite(pctNum) && pctNum >= 100 ? 'var(--green)' : 'var(--ink4)';
-    return `
-      <div class="logros-kpi-card">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px;">
-          <div style="font-size:10px;letter-spacing:1.3px;text-transform:uppercase;color:var(--ink4);font-weight:700;">${label}</div>
-          ${pctTarget !== '—' ? `<div style="font-size:9px;color:${pctColor};font-weight:700;letter-spacing:0.3px;white-space:nowrap;">Cumpl. ${pctTarget}</div>` : `<div style="font-size:10px;color:var(--ink4);font-weight:700;">—</div>`}
-        </div>
-        <div style="font-family:var(--font-serif);font-size:20px;font-weight:900;color:var(--ink);line-height:1;">
-          ${value} <span style="font-size:12px;color:var(--ink4);">/ ${target}</span>
-        </div>
-        <div style="font-size:11px;color:var(--ink3);margin-top:5px;line-height:1.4;">${sub}</div>
-        <div style="font-size:10px;color:var(--ink4);margin-top:3px;line-height:1.4;">${deltaHtml}</div>
-      </div>`;
-  };
+  const kpiCard = (label, value, target, sub, deltaHtml, pctTarget = '—') => `
+    <div style="background:var(--cream2);border:1px solid var(--border);border-radius:6px;padding:10px 12px;min-height:78px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px;">
+        <div style="font-size:10px;letter-spacing:1.3px;text-transform:uppercase;color:var(--ink4);font-weight:700;">${label}</div>
+        ${pctTarget !== '—' ? `<div style="font-size:9px;color:${parseInt(pctTarget, 10) >= 100 ? 'var(--green)' : 'var(--ink4)'};font-weight:700;letter-spacing:0.3px;white-space:nowrap;">Cumpl. ${pctTarget}</div>` : `<div style="font-size:10px;color:var(--ink4);font-weight:700;">—</div>`}
+      </div>
+      <div style="font-family:var(--font-serif);font-size:20px;font-weight:900;color:var(--ink);line-height:1;">
+        ${value} <span style="font-size:12px;color:var(--ink4);">/ ${target}</span>
+      </div>
+      <div style="font-size:11px;color:var(--ink3);margin-top:5px;line-height:1.4;">${sub}</div>
+      <div style="font-size:10px;color:var(--ink4);margin-top:3px;line-height:1.4;">${deltaHtml}</div>
+    </div>`;
 
   el.innerHTML = `
-    <div class="logros-card-inner">
-      <div class="logros-header">
-        <div class="logros-header-left">Seguimiento semanal · ${year}</div>
-        <div class="logros-header-right">
+    <div class="lumen-logros-card" style="background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;box-shadow:var(--shadow);">
+      <div class="lumen-logros-head" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:12px;">
+        <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--ink4);font-weight:700;">Seguimiento semanal · ${year}</div>
+        <div class="lumen-logros-actions" style="display:flex;align-items:center;gap:8px;">
           <div style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--gold);font-weight:700;">Control de Plan</div>
           <button onclick="openMetaSemanalModal()" style="border:1px solid var(--border);background:#fff;border-radius:4px;padding:4px 7px;font-family:var(--font-sans);font-size:9px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;color:var(--ink3);cursor:pointer;white-space:nowrap;">✎ Meta</button>
         </div>
       </div>
-      <div class="logros-main-row">
+      <div class="lumen-logros-main" style="display:flex;align-items:flex-end;justify-content:space-between;gap:12px;">
         <div>
           <div style="font-family:var(--font-serif);font-size:26px;font-weight:900;color:var(--ink);line-height:1;"><span style="color:${semanaActual.pags >= META_SEMANAL_PAGS ? 'var(--green)' : 'var(--ink)'};">${semanaActual.pags}</span> <span style="font-size:16px;color:var(--ink4);">/ ${META_SEMANAL_PAGS} págs</span></div>
           <div style="font-size:11px;color:var(--ink3);margin-top:4px;">Meta semanal editable</div>
@@ -4545,7 +4495,7 @@ function renderLogros() {
         <div style="height:100%;width:${barWidth}%;background:${pctVisible >= 100 ? 'var(--green)' : 'var(--gold)'};border-radius:4px;transition:width 0.4s ease;"></div>
       </div>
       <div style="font-size:13px;color:var(--ink2);line-height:1.8;">${metaMsg}</div>
-      <div class="logros-kpi-grid">
+      <div class="lumen-kpi-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0 10px;">
         ${kpiCard(
           'Día hábil',
           fmtAvg(avgHabil),
@@ -4573,37 +4523,13 @@ function renderLogros() {
       </div>
       <div style="font-size:11px;color:var(--ink4);line-height:1.5;margin-bottom:4px;">Días hábiles: lunes a viernes excluyendo feriados de Chile. Días inhábiles: sábados, domingos y feriados.</div>
       <div class="divider" style="margin:10px 0;"></div>
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+      <div class="lumen-logros-footer" style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
         <div style="font-size:13px;color:var(--ink2);line-height:1.8;">🏅 ${recordMsg}<br>${semanaAnterior.pags > 0 ? semanaAnteriorMsg : ''}</div>
         ${semanaActual.pags >= META_SEMANAL_PAGS ? `<div style="font-size:12px;color:var(--green);font-weight:700;">✓ Semana cumplida y superada</div>` : `<div style="font-size:12px;color:var(--ink3);font-weight:700;">Ritmo requerido: ${ritmoRequerido} págs/día</div>`}
       </div>
     </div>`;
 }
 
-let lumenUtcShiftRepairDone = false;
-function repairUtcShiftedReadDates() {
-  if (lumenUtcShiftRepairDone) return;
-  lumenUtcShiftRepairDone = true;
-  const santiagoToday = todaySantiagoStr();
-  const utcToday = new Date().toISOString().split('T')[0];
-  const santiagoTomorrow = addDaysToDateStr(santiagoToday, 1);
-  if (utcToday !== santiagoTomorrow) return;
-
-  let changed = false;
-  db.entries.filter(e => e.type === 'libro' && Array.isArray(e.readDates)).forEach(e => {
-    e.readDates = normalizeReadDates(e.readDates);
-    const wrong = e.readDates.find(r => r.date === utcToday);
-    const right = e.readDates.find(r => r.date === santiagoToday);
-    if (wrong && !right) {
-      wrong.date = santiagoToday;
-      changed = true;
-    }
-  });
-  if (changed) {
-    db.entries.forEach(e => { if (Array.isArray(e.readDates)) e.readDates.sort((a,b) => String(a.date).localeCompare(String(b.date))); });
-    saveDB();
-  }
-}
 
 function renderDesafioCard() {
   const el = document.getElementById('desafio-card'); if(!el) return;
@@ -4663,8 +4589,7 @@ function renderDesafioCard() {
 }
 
 function renderHome() {
-  repairUtcShiftedReadDates();
-  const yr = currentYearSantiago();
+  const yr = new Date().getFullYear();
   document.getElementById('hero-year-label').textContent = yr;
   const thisYear = db.entries.filter(e => parseInt(e.anio) === yr);
   // Solo libros terminados para el contador — los en curso están en el carrusel
@@ -4680,11 +4605,7 @@ function renderHome() {
   document.getElementById('hero-sub').textContent = `${libros.length} libros · ${peliculas.length} películas · ${series.length} series`;
 
   renderDesafioCard();
-  ensureLogrosCardMounted();
   renderLogros();
-  // Refuerzo para mobile/Safari: si el Home se rehidrata o cambia de layout,
-  // el Control de Plan se vuelve a montar sin depender del primer paint.
-  setTimeout(() => { ensureLogrosCardMounted(); renderLogros(); }, 80);
 
   document.getElementById('year-summary').innerHTML = `
     <div class="ys-box">
@@ -5122,8 +5043,8 @@ function openNotasDirectas(entryId) {
 function openNotaModal(entryId, notaId) {
   document.getElementById('nota-entry-id').value = entryId;
   document.getElementById('nota-nota-id').value = notaId || '';
-  // Default date = today
-  const today = new Date().toISOString().split('T')[0];
+  // Default date = today in Santiago
+  const today = todaySantiagoStr();
   if (notaId) {
     const e = db.entries.find(x => x.id === entryId);
     const n = (e?.notas_lista || []).find(x => x.id === notaId);
@@ -6732,7 +6653,7 @@ function exportJSON() {
   const blob = new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `LUMEN_backup_${new Date().toISOString().split('T')[0]}.json`;
+  a.download = `LUMEN_backup_${todaySantiagoStr()}.json`;
   a.click();
   showToast('✓ Datos exportados');
 }
@@ -7357,28 +7278,22 @@ function finishBook() {
   const id = document.getElementById('progress-entry-id').value;
   const e = db.entries.find(x => x.id === id);
   if (!e) return;
-  const parts = getDatePartsInSantiago(new Date());
-  const today = parts.dateStr;
+  const today = todaySantiagoStr();
+  const [yy, mm] = today.split('-').map(Number);
   e.estado = 'leido';
   e.progreso = 100;
-  e.progresoPag = e.paginas || e.progresoPag || null;
-  e.anio = parts.year;
-  e.mes = MESES[(parts.month || 1) - 1];
+  e.progresoPag = e.paginas || e.progresoPag || 0;
+  e.anio = yy;
+  e.mes = MESES[(mm || 1) - 1];
   e.finishDate = today;
-
-  // Al terminar, asegurar marca final en readDates usando fecha de Santiago.
-  // Esto evita que el exportador y los KPI pierdan el cierre del libro.
-  if (e.paginas) {
-    e.readDates = normalizeReadDates(e.readDates || []);
+  if (!e.readDates) e.readDates = [];
+  e.readDates = normalizeReadDates(e.readDates);
+  const pagFinal = Number(e.paginas || e.progresoPag || 0);
+  if (pagFinal > 0) {
     const existing = e.readDates.find(r => r.date === today);
-    if (existing) {
-      existing.pag = e.paginas;
-    } else {
-      e.readDates.push({ date: today, pag: e.paginas });
-    }
-    e.readDates.sort((a, b) => String(a.date).localeCompare(String(b.date)));
+    if (existing) existing.pag = Math.max(Number(existing.pag || 0), pagFinal);
+    else e.readDates.push({ date: today, pag: pagFinal });
   }
-
   e._updatedAt = Date.now();
   saveDB();
   closeModal('modal-progress');
@@ -7918,7 +7833,7 @@ function getActivityByDate() {
     }
     const norm = normalizeReadDates(e.readDates);
     const conPag = norm.filter(r => r.pag !== null);
-    if (conPag.length >= 1) {
+    if (conPag.length >= 2) {
       // Nuevo formato: usar diferencias entre marcas de página
       const byDay = calcPagsByDay(e.readDates);
       Object.entries(byDay).forEach(([d, pags]) => {
@@ -7960,7 +7875,7 @@ function calcStreaks() {
     }
   }
   if (streak > best) { best = streak; bestStart = streakStart; bestEnd = dates[dates.length-1]; }
-  // Current streak: check if last date was today or yesterday, usando Santiago de Chile.
+  // Current streak: check if last date was today or yesterday
   const today = todaySantiagoStr();
   const yesterday = addDaysToDateStr(today, -1);
   const lastDate = dates[dates.length-1];
@@ -7981,7 +7896,7 @@ function renderHabitos() {
 
   // ── Populate year selectors ──
   const years = [...new Set(db.entries.filter(e=>e.anio).map(e=>parseInt(e.anio)))].sort((a,b)=>b-a);
-  const currentYr = new Date().getFullYear();
+  const currentYr = currentYearSantiago();
   if (years.indexOf(currentYr) === -1) years.unshift(currentYr);
 
   const heatSel = document.getElementById('heatmap-year-sel');
@@ -8088,7 +8003,7 @@ function renderHeatmap() {
       const dayIdx = w * 7 + dow - startOffset;
       if (dayIdx < 0 || dayIdx >= totalDays) continue;
       const date = new Date(yr, 0, dayIdx + 1);
-      const dateStr = date.toISOString().split('T')[0];
+      const dateStr = `${date.getFullYear()}-${lumenPad2(date.getMonth()+1)}-${lumenPad2(date.getDate())}`;
       const val = activity[dateStr] || 0;
       const color = getColor(val);
       const x = 30 + w * unit;
@@ -10909,7 +10824,7 @@ function generarExportLectura() {
     dias.forEach(fecha => {
       const del_dia = regs.filter(r => r.fecha === fecha);
       const pag_dia = del_dia.reduce((s,r) => s + r.pags, 0);
-      const dia_nombre = new Date(fecha + 'T12:00:00').toLocaleDateString('es-CL', {weekday:'short', day:'2-digit', month:'2-digit', timeZone: LUMEN_TZ});
+      const dia_nombre = new Date(fecha + 'T12:00:00').toLocaleDateString('es-CL', {weekday:'short', day:'2-digit', month:'2-digit', timeZone:LUMEN_TZ});
       lineas.push('    ' + dia_nombre + '  ' + pag_dia + ' págs');
     });
   });
