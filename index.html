@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1a1510">
-<title>LUMEN v134 — Biblioteca Personal</title>
+<title>LUMEN v135 — Biblioteca Personal</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231a1510'/><text x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' font-family='Georgia,serif' font-size='14' font-weight='900' font-style='italic' fill='%23c8952a' letter-spacing='0.5'>L</text><rect x='6' y='23' width='20' height='2' rx='1' fill='%238b2020'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
@@ -393,6 +393,26 @@ select.input { cursor: pointer; }
 .desafio-edit  { font-size:10px; letter-spacing:1px; text-transform:uppercase; font-weight:700; color:rgba(245,240,232,0.4); background:none; border:none; cursor:pointer; font-family:var(--font-sans); padding:0; }
 .desafio-edit:hover { color:var(--gold); }
 .desafio-completado { color: var(--gold) !important; }
+
+/* ── CONTROL DE PLAN / LOGROS ── */
+.logros-card-inner { background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:12px 14px; box-shadow:var(--shadow); overflow:hidden; }
+.logros-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; gap:12px; flex-wrap:wrap; }
+.logros-header-left { font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--ink4); font-weight:700; }
+.logros-header-right { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.logros-main-row { display:flex; align-items:flex-end; justify-content:space-between; gap:12px; }
+.logros-kpi-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin:12px 0 10px; }
+.logros-kpi-card { background:var(--cream2); border:1px solid var(--border); border-radius:6px; padding:10px 12px; min-height:78px; min-width:0; }
+.logros-kpi-card * { min-width:0; }
+@media (max-width: 720px) {
+  #logros-card { margin-left: 20px !important; margin-right: 20px !important; max-width: calc(100vw - 40px); overflow:hidden; }
+  .logros-card-inner { padding:14px 16px; }
+  .logros-header { align-items:flex-start; gap:10px; }
+  .logros-header-left { flex:1 1 100%; line-height:1.35; }
+  .logros-header-right { width:100%; justify-content:space-between; }
+  .logros-main-row { align-items:flex-start; }
+  .logros-kpi-grid { grid-template-columns:1fr; gap:10px; }
+  .logros-kpi-card { width:100%; }
+}
 
 /* ── GÉNEROS ── */
 .genero-chip {
@@ -1751,7 +1771,7 @@ select.input { cursor: pointer; }
     Cerrar sesión
   </button>
   <div style="padding:8px 16px 10px;border-top:1px solid var(--border);font-size:10px;color:var(--ink4);letter-spacing:1px;text-align:right;">
-    LUMEN v134
+    LUMEN v135
   </div>
 </div>
 
@@ -2923,10 +2943,10 @@ function calcPagsByDay(readDates) {
   const map = {};
   for (let i = 0; i < norm.length; i++) {
     if (i === 0) {
-      // Primer registro: no tenemos referencia anterior, asignar 0
-      map[norm[i].date] = 0;
+      // Primer registro con página exacta: la página actual equivale a páginas leídas acumuladas del libro.
+      map[norm[i].date] = Math.max(0, Number(norm[i].pag || 0));
     } else {
-      const diff = Math.max(0, norm[i].pag - norm[i-1].pag);
+      const diff = Math.max(0, Number(norm[i].pag || 0) - Number(norm[i-1].pag || 0));
       map[norm[i].date] = diff;
     }
   }
@@ -4189,28 +4209,40 @@ function getWeekDaysFromKey(weekKey) {
   return Array.from({ length: 7 }, (_, i) => addDaysToDateStr(weekKey, i));
 }
 
-function calcReadingDailyPages(year) {
-  const dias = {}; // YYYY-MM-DD → páginas leídas del día
+function calcReadingDailyStats(year) {
+  const dias = {}; // YYYY-MM-DD → { pags, active }
+  const ensureDay = (dateStr) => {
+    const ds = String(dateStr || '').slice(0, 10);
+    if (!ds || !ds.startsWith(String(year))) return null;
+    if (!dias[ds]) dias[ds] = { pags: 0, active: false };
+    return dias[ds];
+  };
   const addToDay = (dateStr, pags) => {
-    if (!dateStr || pags <= 0) return;
-    const ds = String(dateStr).slice(0, 10);
-    if (!ds.startsWith(String(year))) return;
-    dias[ds] = (dias[ds] || 0) + pags;
+    const day = ensureDay(dateStr);
+    if (!day) return;
+    day.active = true;
+    if (pags > 0) day.pags += pags;
   };
 
   db.entries.filter(e => e.type === 'libro').forEach(e => {
-    const norm = (e.readDates || []).map(r =>
-      typeof r === 'string' ? { date: r, pag: null } : r
-    ).filter(r => r.pag !== null && String(r.date || '').startsWith(String(year)));
+    const norm = normalizeReadDates(e.readDates || [])
+      .filter(r => r.pag !== null && r.pag !== undefined && String(r.date || '').startsWith(String(year)))
+      .sort((a, b) => String(a.date).localeCompare(String(b.date)));
 
-    if (norm.length >= 2) {
-      norm.sort((a, b) => String(a.date).localeCompare(String(b.date)));
-      for (let i = 1; i < norm.length; i++) {
-        const diff = Math.max(0, Number(norm[i].pag || 0) - Number(norm[i - 1].pag || 0));
-        addToDay(norm[i].date, diff);
-      }
+    for (let i = 0; i < norm.length; i++) {
+      const pagActual = Number(norm[i].pag || 0);
+      const prevPag = i === 0 ? 0 : Number(norm[i - 1].pag || 0);
+      const diff = Math.max(0, pagActual - prevPag);
+      addToDay(norm[i].date, diff);
     }
   });
+  return dias;
+}
+
+function calcReadingDailyPages(year) {
+  const stats = calcReadingDailyStats(year);
+  const dias = {};
+  Object.entries(stats).forEach(([dateStr, v]) => { dias[dateStr] = v.pags || 0; });
   return dias;
 }
 
@@ -4218,12 +4250,16 @@ function summarizeWeekReading(dias, weekKey, opts = {}) {
   const days = getWeekDaysFromKey(weekKey);
   const limitDays = Math.max(0, Math.min(7, Number(opts.limitDays || 7)));
   const consideredDays = days.slice(0, limitDays);
+  const valueFor = (d) => {
+    const v = dias[d];
+    return (typeof v === 'number') ? { pags: v, active: v > 0 } : { pags: Number(v?.pags || 0), active: !!v?.active };
+  };
   const habiles = consideredDays.filter(d => !isChileNonWorkingDay(d));
   const inhabiles = consideredDays.filter(d => isChileNonWorkingDay(d));
   const fullHabiles = days.filter(d => !isChileNonWorkingDay(d));
   const fullInhabiles = days.filter(d => isChileNonWorkingDay(d));
-  const sum = arr => arr.reduce((acc, d) => acc + (dias[d] || 0), 0);
-  const active = arr => arr.filter(d => (dias[d] || 0) > 0).length;
+  const sum = arr => arr.reduce((acc, d) => acc + valueFor(d).pags, 0);
+  const active = arr => arr.filter(d => valueFor(d).active).length;
   const safeAvg = (total, count) => count > 0 ? total / count : null;
 
   const totalHabil = sum(habiles);
@@ -4277,22 +4313,22 @@ function calcLogrosSemana() {
   const hoyStr = todaySantiagoStr();
   const semanaActualKey = getISOWeekKey(hoyStr);
   const anteriorWk = getISOWeekKey(addDaysToDateStr(hoyStr, -7));
-  const dias = calcReadingDailyPages(yr);
+  const dias = calcReadingDailyStats(yr);
 
   // Construir mapa semana → páginas desde el mismo detalle diario que alimenta los KPIs.
   const semanas = {}; // weekKey → pages
-  Object.entries(dias).forEach(([dateStr, pags]) => {
+  Object.entries(dias).forEach(([dateStr, dataDia]) => {
     const wk = getISOWeekKey(dateStr);
     if (!wk) return;
-    semanas[wk] = (semanas[wk] || 0) + pags;
+    semanas[wk] = (semanas[wk] || 0) + Number(dataDia?.pags || 0);
   });
 
   // Filtrar semanas con datos — excluir semana actual si recién empieza.
   const semanasValidas = Object.entries(semanas)
-    .filter(([wk]) => wk !== semanaActualKey || semanas[wk] >= 20)
+    .filter(([, pags]) => pags > 0)
     .sort((a, b) => a[0].localeCompare(b[0]));
 
-  if (semanasValidas.length < 1) return null;
+  if (semanasValidas.length < 1) semanasValidas.push([semanaActualKey, 0]);
 
   // Mejor semana del año (excluye semana actual si existen semanas pasadas).
   const pasadas = semanasValidas.filter(([wk]) => wk !== semanaActualKey);
@@ -4411,7 +4447,7 @@ function renderLogros() {
   };
 
   const kpiCard = (label, value, target, sub, deltaHtml, pctTarget = '—') => `
-    <div style="background:var(--cream2);border:1px solid var(--border);border-radius:6px;padding:10px 12px;min-height:78px;">
+    <div class="logros-kpi-card">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px;">
         <div style="font-size:10px;letter-spacing:1.3px;text-transform:uppercase;color:var(--ink4);font-weight:700;">${label}</div>
         ${pctTarget !== '—' ? `<div style="font-size:9px;color:${parseInt(pctTarget, 10) >= 100 ? 'var(--green)' : 'var(--ink4)'};font-weight:700;letter-spacing:0.3px;white-space:nowrap;">Cumpl. ${pctTarget}</div>` : `<div style="font-size:10px;color:var(--ink4);font-weight:700;">—</div>`}
@@ -4424,15 +4460,15 @@ function renderLogros() {
     </div>`;
 
   el.innerHTML = `
-    <div style="background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;box-shadow:var(--shadow);">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:12px;">
-        <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--ink4);font-weight:700;">Seguimiento semanal · ${year}</div>
-        <div style="display:flex;align-items:center;gap:8px;">
+    <div class="logros-card-inner">
+      <div class="logros-header">
+        <div class="logros-header-left">Seguimiento semanal · ${year}</div>
+        <div class="logros-header-right">
           <div style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--gold);font-weight:700;">Control de Plan</div>
           <button onclick="openMetaSemanalModal()" style="border:1px solid var(--border);background:#fff;border-radius:4px;padding:4px 7px;font-family:var(--font-sans);font-size:9px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;color:var(--ink3);cursor:pointer;white-space:nowrap;">✎ Meta</button>
         </div>
       </div>
-      <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:12px;">
+      <div class="logros-main-row">
         <div>
           <div style="font-family:var(--font-serif);font-size:26px;font-weight:900;color:var(--ink);line-height:1;"><span style="color:${semanaActual.pags >= META_SEMANAL_PAGS ? 'var(--green)' : 'var(--ink)'};">${semanaActual.pags}</span> <span style="font-size:16px;color:var(--ink4);">/ ${META_SEMANAL_PAGS} págs</span></div>
           <div style="font-size:11px;color:var(--ink3);margin-top:4px;">Meta semanal editable</div>
@@ -4443,7 +4479,7 @@ function renderLogros() {
         <div style="height:100%;width:${barWidth}%;background:${pctVisible >= 100 ? 'var(--green)' : 'var(--gold)'};border-radius:4px;transition:width 0.4s ease;"></div>
       </div>
       <div style="font-size:13px;color:var(--ink2);line-height:1.8;">${metaMsg}</div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0 10px;">
+      <div class="logros-kpi-grid">
         ${kpiCard(
           'Día hábil',
           fmtAvg(avgHabil),
@@ -4478,6 +4514,31 @@ function renderLogros() {
     </div>`;
 }
 
+
+let lumenUtcShiftRepairDone = false;
+function repairUtcShiftedReadDates() {
+  if (lumenUtcShiftRepairDone) return;
+  lumenUtcShiftRepairDone = true;
+  const santiagoToday = todaySantiagoStr();
+  const utcToday = new Date().toISOString().split('T')[0];
+  const santiagoTomorrow = addDaysToDateStr(santiagoToday, 1);
+  if (utcToday !== santiagoTomorrow) return;
+
+  let changed = false;
+  db.entries.filter(e => e.type === 'libro' && Array.isArray(e.readDates)).forEach(e => {
+    e.readDates = normalizeReadDates(e.readDates);
+    const wrong = e.readDates.find(r => r.date === utcToday);
+    const right = e.readDates.find(r => r.date === santiagoToday);
+    if (wrong && !right) {
+      wrong.date = santiagoToday;
+      changed = true;
+    }
+  });
+  if (changed) {
+    db.entries.forEach(e => { if (Array.isArray(e.readDates)) e.readDates.sort((a,b) => String(a.date).localeCompare(String(b.date))); });
+    saveDB();
+  }
+}
 
 function renderDesafioCard() {
   const el = document.getElementById('desafio-card'); if(!el) return;
@@ -4537,7 +4598,8 @@ function renderDesafioCard() {
 }
 
 function renderHome() {
-  const yr = new Date().getFullYear();
+  repairUtcShiftedReadDates();
+  const yr = currentYearSantiago();
   document.getElementById('hero-year-label').textContent = yr;
   const thisYear = db.entries.filter(e => parseInt(e.anio) === yr);
   // Solo libros terminados para el contador — los en curso están en el carrusel
@@ -7202,7 +7264,7 @@ function saveProgress() {
     e.progreso = e.paginas ? Math.round((pag/e.paginas)*100) : 0;
   }
   // Guardar marca de página del día — {date, pag}
-  const today = new Date().toISOString().split('T')[0];
+  const today = todaySantiagoStr();
   if (!e.readDates) e.readDates = [];
   // Normalizar al nuevo formato si viene del legado
   e.readDates = normalizeReadDates(e.readDates);
@@ -7226,13 +7288,29 @@ function finishBook() {
   const id = document.getElementById('progress-entry-id').value;
   const e = db.entries.find(x => x.id === id);
   if (!e) return;
-  const now = new Date();
+  const parts = getDatePartsInSantiago(new Date());
+  const today = parts.dateStr;
   e.estado = 'leido';
   e.progreso = 100;
-  if (e.readingMode === 'pag') e.progresoPag = e.paginas;
-  e.anio = now.getFullYear();
-  e.mes = MESES[now.getMonth()];
-  e.finishDate = now.toISOString();
+  e.progresoPag = e.paginas || e.progresoPag || null;
+  e.anio = parts.year;
+  e.mes = MESES[(parts.month || 1) - 1];
+  e.finishDate = today;
+
+  // Al terminar, asegurar marca final en readDates usando fecha de Santiago.
+  // Esto evita que el exportador y los KPI pierdan el cierre del libro.
+  if (e.paginas) {
+    e.readDates = normalizeReadDates(e.readDates || []);
+    const existing = e.readDates.find(r => r.date === today);
+    if (existing) {
+      existing.pag = e.paginas;
+    } else {
+      e.readDates.push({ date: today, pag: e.paginas });
+    }
+    e.readDates.sort((a, b) => String(a.date).localeCompare(String(b.date)));
+  }
+
+  e._updatedAt = Date.now();
   saveDB();
   closeModal('modal-progress');
   showToast(`🎉 ¡Terminaste "${e.titulo}"!`, 3000);
@@ -7771,7 +7849,7 @@ function getActivityByDate() {
     }
     const norm = normalizeReadDates(e.readDates);
     const conPag = norm.filter(r => r.pag !== null);
-    if (conPag.length >= 2) {
+    if (conPag.length >= 1) {
       // Nuevo formato: usar diferencias entre marcas de página
       const byDay = calcPagsByDay(e.readDates);
       Object.entries(byDay).forEach(([d, pags]) => {
@@ -7813,9 +7891,9 @@ function calcStreaks() {
     }
   }
   if (streak > best) { best = streak; bestStart = streakStart; bestEnd = dates[dates.length-1]; }
-  // Current streak: check if last date was today or yesterday
-  const today = new Date().toISOString().split('T')[0];
-  const yesterday = new Date(Date.now()-86400000).toISOString().split('T')[0];
+  // Current streak: check if last date was today or yesterday, usando Santiago de Chile.
+  const today = todaySantiagoStr();
+  const yesterday = addDaysToDateStr(today, -1);
   const lastDate = dates[dates.length-1];
   if (lastDate === today || lastDate === yesterday) {
     // Count backwards from last date
@@ -10754,7 +10832,7 @@ function generarExportLectura() {
     const dias = [...new Set(regs.map(r => r.fecha))].sort();
     const libros = [...new Set(regs.map(r => r.titulo))];
     lineas.push('');
-    lineas.push('Semana ' + wk + '  (' + dias[0] + ' → ' + dias[dias.length-1] + ')');
+    lineas.push('Semana ' + wk + '  (' + wk + ' → ' + addDaysToDateStr(wk, 6) + ')');
     lineas.push('  Páginas     : ' + totalSem);
     lineas.push('  Días activos: ' + dias.length + '/7');
     lineas.push('  Libros      : ' + libros.join(' | '));
@@ -10762,7 +10840,7 @@ function generarExportLectura() {
     dias.forEach(fecha => {
       const del_dia = regs.filter(r => r.fecha === fecha);
       const pag_dia = del_dia.reduce((s,r) => s + r.pags, 0);
-      const dia_nombre = new Date(fecha + 'T12:00:00').toLocaleDateString('es-CL', {weekday:'short', day:'2-digit', month:'2-digit'});
+      const dia_nombre = new Date(fecha + 'T12:00:00').toLocaleDateString('es-CL', {weekday:'short', day:'2-digit', month:'2-digit', timeZone: LUMEN_TZ});
       lineas.push('    ' + dia_nombre + '  ' + pag_dia + ' págs');
     });
   });
