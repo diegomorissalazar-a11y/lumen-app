@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1a1510">
-<title>LUMEN v139 — Biblioteca Personal</title>
+<title>LUMEN v140 — Biblioteca Personal</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231a1510'/><text x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' font-family='Georgia,serif' font-size='14' font-weight='900' font-style='italic' fill='%23c8952a' letter-spacing='0.5'>L</text><rect x='6' y='23' width='20' height='2' rx='1' fill='%238b2020'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
@@ -450,6 +450,40 @@ select.input { cursor: pointer; }
 .nota-btn.danger:hover { background:var(--red);color:var(--cream);border-color:var(--red); }
 .nota-add-btn { width:100%;padding:10px;border:1.5px dashed var(--border);border-radius:6px;background:transparent;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--ink4);cursor:pointer;font-family:var(--font-sans);margin-top:8px; }
 .nota-add-btn:hover { border-color:var(--gold);color:var(--gold); }
+
+/* ── BIBLIOTECA: NOTAS DOCUMENTO ── */
+.notas-doc-wrap { padding: 8px 0 28px; }
+.notas-doc-cover { text-align:center; padding:28px 10px 24px; border-bottom:1px solid var(--border); margin-bottom:18px; }
+.notas-doc-title { font-family:var(--font-serif); font-size:42px; font-weight:900; font-style:italic; color:var(--ink); line-height:1; }
+.notas-doc-sub { font-size:11px; color:var(--ink4); letter-spacing:2px; text-transform:uppercase; margin-top:8px; }
+.notas-doc-layout { display:grid; grid-template-columns:220px 1fr; gap:18px; align-items:start; }
+.notas-doc-toc { position:sticky; top:78px; background:#fff; border:1px solid var(--border); border-radius:8px; padding:12px; max-height:calc(100dvh - 150px); overflow:auto; box-shadow:var(--shadow); }
+.notas-doc-toc-title { font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--ink4); font-weight:700; margin-bottom:8px; }
+.notas-doc-toc-cat { font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:var(--gold); font-weight:700; margin:12px 0 5px; }
+.notas-doc-toc a { display:block; color:var(--ink2); text-decoration:none; font-size:12px; line-height:1.35; padding:4px 0; border-bottom:1px solid var(--cream2); }
+.notas-doc-toc a:active, .notas-doc-toc a:hover { color:var(--red); }
+.notas-doc-content { background:#fff; border:1px solid var(--border); border-radius:8px; padding:22px 22px 30px; box-shadow:var(--shadow); }
+.notas-doc-category { font-family:var(--font-serif); font-size:25px; font-weight:900; font-style:italic; color:var(--ink); margin:10px 0 18px; padding-bottom:8px; border-bottom:2px solid var(--ink); }
+.notas-doc-entry { scroll-margin-top:88px; padding:20px 0 28px; border-bottom:1px solid var(--cream3); }
+.notas-doc-entry:last-child { border-bottom:none; }
+.notas-doc-entry-title { font-family:var(--font-serif); font-size:22px; font-weight:700; color:var(--ink); margin-bottom:4px; }
+.notas-doc-entry-meta { font-size:11px; color:var(--ink4); letter-spacing:1px; text-transform:uppercase; margin-bottom:14px; }
+.notas-doc-note { margin:16px 0 20px; }
+.notas-doc-note-title { font-family:var(--font-serif); font-size:16px; font-weight:700; color:var(--ink); margin-bottom:6px; }
+.notas-doc-note-date { font-size:10px; color:var(--ink4); letter-spacing:1px; text-transform:uppercase; margin-bottom:6px; }
+.notas-doc-note-text { font-family:var(--font-serif); font-size:15px; color:var(--ink2); line-height:1.85; white-space:pre-wrap; }
+.notas-doc-actions { margin-top:12px; display:flex; gap:8px; flex-wrap:wrap; }
+.nota-toolbar { display:flex; gap:6px; margin-bottom:6px; }
+.nota-toolbar button { width:32px; height:30px; border:1.5px solid var(--border); border-radius:4px; background:#fff; color:var(--ink2); cursor:pointer; font-family:var(--font-serif); font-size:14px; font-weight:700; }
+.nota-toolbar button:active { background:var(--ink); color:var(--cream); }
+@media (max-width: 760px) {
+  .notas-doc-layout { display:block; }
+  .notas-doc-toc { position:relative; top:auto; max-height:260px; margin-bottom:14px; }
+  .notas-doc-content { padding:18px 14px 24px; }
+  .notas-doc-title { font-size:36px; }
+  .notas-doc-entry-title { font-size:20px; }
+}
+
 .home-recent-list .entry-card { margin-bottom: 0; }
 
 /* ── READING CAROUSEL ── */
@@ -766,6 +800,7 @@ select.input { cursor: pointer; }
       <button class="stats-seg-btn"        data-tab="pelicula" onclick="filterLib('pelicula',this)">🎬 Pelícs.</button>
       <button class="stats-seg-btn"        data-tab="serie"    onclick="filterLib('serie',this)">📺 Series</button>
       <button class="stats-seg-btn"        data-tab="disco"    onclick="filterLib('disco',this)">💿 Discos</button>
+      <button class="stats-seg-btn"        data-tab="notas"    onclick="filterLib('notas',this)">📝 Notas</button>
     </div>
   </div>
   <div style="padding:0 20px 4px;">
@@ -1832,7 +1867,7 @@ select.input { cursor: pointer; }
     Cerrar sesión
   </button>
   <div style="padding:8px 16px 10px;border-top:1px solid var(--border);font-size:10px;color:var(--ink4);letter-spacing:1px;text-align:right;">
-    LUMEN v139
+    LUMEN v140
   </div>
 </div>
 
@@ -2583,7 +2618,13 @@ select.input { cursor: pointer; }
       </div>
       <div class="field">
         <label>Nota</label>
+        <div class="nota-toolbar" aria-label="Formato de nota">
+          <button type="button" onclick="formatNotaSelection('bold')" title="Negrita"><strong>B</strong></button>
+          <button type="button" onclick="formatNotaSelection('italic')" title="Cursiva"><em>I</em></button>
+          <button type="button" onclick="formatNotaSelection('underline')" title="Subrayado"><u>U</u></button>
+        </div>
         <textarea class="input" id="nota-texto" rows="7" placeholder="Escribe o pega tu apunte aquí..." style="resize:vertical;line-height:1.6;font-family:var(--font-serif);font-size:14px;"></textarea>
+        <div style="font-size:11px;color:var(--ink4);margin-top:5px;line-height:1.5;">Puedes seleccionar texto y aplicar negrita, cursiva o subrayado. Se conserva en la vista de notas.</div>
       </div>
       <button class="btn btn-primary" onclick="saveNota()">Guardar nota</button>
     </div>
@@ -4945,6 +4986,10 @@ function filterLib(f, btn) {
 
 function renderLibrary() {
   const q = (document.getElementById('lib-search').value || '').toLowerCase();
+  if (libFilter === 'notas') {
+    renderNotasLibrary(q);
+    return;
+  }
   let items = db.entries.filter(e => {
     if (libFilter === 'todos') return true;
     if (libFilter === 'leyendo') return e.type === 'libro' && e.estado === 'leyendo';
@@ -4971,6 +5016,114 @@ function renderLibrary() {
     return;
   }
   el.innerHTML = items.map(e => entryCardHTML(e)).join('');
+}
+
+
+function typeLabelForNotas(type) {
+  return type === 'libro' ? 'Libros' : type === 'pelicula' ? 'Películas' : type === 'serie' ? 'Series' : type === 'disco' ? 'Discos' : 'Otros';
+}
+function typeIcon(type) {
+  return type === 'libro' ? '📚' : type === 'pelicula' ? '🎬' : type === 'serie' ? '📺' : type === 'disco' ? '💿' : '•';
+}
+function entryCreator(e) {
+  if (!e) return '';
+  return e.type === 'libro' ? (e.autor||'') : e.type === 'disco' ? (e.artista||'') : (e.director||'');
+}
+function noteAnchorId(entryId) {
+  return 'notas-entry-' + String(entryId).replace(/[^a-zA-Z0-9_-]/g, '-');
+}
+function renderRichNoteText(text) {
+  let html = String(text||'')
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;');
+  // Formato liviano guardado como marcas de texto: **negrita**, *cursiva*, __subrayado__.
+  html = html.replace(/\*\*([\s\S]+?)\*\*/g, '<strong>$1</strong>');
+  html = html.replace(/__([\s\S]+?)__/g, '<u>$1</u>');
+  html = html.replace(/(^|[^*])\*([^*\n][\s\S]*?[^*\n])\*(?!\*)/g, '$1<em>$2</em>');
+  return html;
+}
+function notasFechaLabel(fecha) {
+  if (!fecha) return '';
+  const [y,m,d] = String(fecha).split('-').map(Number);
+  if (!y || !m || !d) return fecha;
+  return new Date(y, m-1, d).toLocaleDateString('es-CL', {day:'2-digit', month:'short', year:'numeric'});
+}
+function renderNotasLibrary(query='') {
+  const q = (query || '').toLowerCase().trim();
+  const esc = s => s ? String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') : '';
+  const entries = db.entries
+    .filter(e => Array.isArray(e.notas_lista) && e.notas_lista.length > 0)
+    .map(e => ({...e, _notasFiltradas: (e.notas_lista||[]).filter(n => {
+      if (!q) return true;
+      return (e.titulo||'').toLowerCase().includes(q)
+        || (entryCreator(e)||'').toLowerCase().includes(q)
+        || (n.titulo||'').toLowerCase().includes(q)
+        || (n.texto||'').toLowerCase().includes(q)
+        || (typeLabelForNotas(e.type)||'').toLowerCase().includes(q);
+    })}))
+    .filter(e => e._notasFiltradas.length > 0)
+    .sort((a,b) => {
+      const ca = typeLabelForNotas(a.type).localeCompare(typeLabelForNotas(b.type), 'es');
+      if (ca !== 0) return ca;
+      return (a.titulo||'').localeCompare(b.titulo||'', 'es');
+    });
+
+  const el = document.getElementById('library-list');
+  if (!entries.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">📝</div><div class="empty-text">No hay notas para mostrar.<br>Agrega notas desde una ficha.</div></div>';
+    return;
+  }
+  const totalNotas = entries.reduce((sum,e)=>sum+e._notasFiltradas.length,0);
+  const grouped = entries.reduce((acc,e)=>{ const k=typeLabelForNotas(e.type); (acc[k] ||= []).push(e); return acc; }, {});
+  const cats = ['Libros','Películas','Series','Discos'].filter(k => grouped[k]?.length);
+
+  const toc = cats.map(cat => `
+    <div class="notas-doc-toc-cat">${cat}</div>
+    ${grouped[cat].map(e => `<a href="#${noteAnchorId(e.id)}" onclick="event.preventDefault();scrollToNotaEntry('${e.id}')">${typeIcon(e.type)} ${esc(e.titulo||'Sin título')}</a>`).join('')}
+  `).join('');
+
+  const content = cats.map(cat => `
+    <section>
+      <h2 class="notas-doc-category">${cat}</h2>
+      ${grouped[cat].map(e => `
+        <article class="notas-doc-entry" id="${noteAnchorId(e.id)}">
+          <h3 class="notas-doc-entry-title">${esc(e.titulo||'Sin título')}</h3>
+          <div class="notas-doc-entry-meta">${[entryCreator(e), e.anio_pub||e.anio_est||e.anio].filter(Boolean).map(esc).join(' · ')}</div>
+          ${e._notasFiltradas.map((n,i)=>`
+            <div class="notas-doc-note">
+              <div class="notas-doc-note-title">Nota ${i+1}${n.titulo ? ' — ' + esc(n.titulo) : ''}</div>
+              ${n.fecha ? `<div class="notas-doc-note-date">${notasFechaLabel(n.fecha)}</div>` : ''}
+              <div class="notas-doc-note-text">${renderRichNoteText(n.texto||'')}</div>
+            </div>
+          `).join('')}
+          <div class="notas-doc-actions">
+            <button class="btn btn-secondary btn-sm" onclick="showDetail('${e.id}')">Abrir ficha</button>
+            <button class="btn btn-secondary btn-sm" onclick="openNotaModal('${e.id}')">+ Nota</button>
+          </div>
+        </article>
+      `).join('')}
+    </section>
+  `).join('');
+
+  el.innerHTML = `
+    <div class="notas-doc-wrap">
+      <div class="notas-doc-cover">
+        <div class="notas-doc-title">Notas</div>
+        <div class="notas-doc-sub">${totalNotas} nota${totalNotas!==1?'s':''} · ${entries.length} estímulo${entries.length!==1?'s':''}</div>
+      </div>
+      <div class="notas-doc-layout">
+        <aside class="notas-doc-toc">
+          <div class="notas-doc-toc-title">Tabla de contenido</div>
+          ${toc}
+        </aside>
+        <main class="notas-doc-content">${content}</main>
+      </div>
+    </div>`;
+}
+function scrollToNotaEntry(entryId) {
+  const el = document.getElementById(noteAnchorId(entryId));
+  if (el) el.scrollIntoView({ behavior:'smooth', block:'start' });
 }
 
 function entryCardHTML(e) {
@@ -5138,7 +5291,7 @@ function notaCardHTML(n, num, entryId) {
       <div class="nota-num">#${num}</div>
       <div class="nota-titulo">${escTxt(n.titulo)||'Sin título'}</div>
       ${fecha ? `<div class="nota-fecha">${fecha}</div>` : ''}
-      <div class="nota-texto">${escTxt(n.texto||'')}</div>
+      <div class="nota-texto">${renderRichNoteText(n.texto||'')}</div>
       <div class="nota-actions">
         <button class="nota-btn" onclick="openNotaModal('${entryId}','${n.id}')">✏ Editar</button>
         <button class="nota-btn danger" onclick="deleteNota('${entryId}','${n.id}')">🗑 Eliminar</button>
@@ -5166,6 +5319,28 @@ function openNotasDirectas(entryId) {
       chevron?.classList.add('open');
     }
   }, 80);
+}
+
+
+function formatNotaSelection(kind) {
+  const ta = document.getElementById('nota-texto');
+  if (!ta) return;
+  const start = ta.selectionStart || 0;
+  const end = ta.selectionEnd || 0;
+  const value = ta.value || '';
+  const selected = value.slice(start, end) || 'texto';
+  const wraps = {
+    bold: ['**','**'],
+    italic: ['*','*'],
+    underline: ['__','__']
+  };
+  const [a,b] = wraps[kind] || ['',''];
+  const next = value.slice(0,start) + a + selected + b + value.slice(end);
+  ta.value = next;
+  const cursorStart = start + a.length;
+  const cursorEnd = cursorStart + selected.length;
+  ta.focus();
+  ta.setSelectionRange(cursorStart, cursorEnd);
 }
 
 function openNotaModal(entryId, notaId) {
