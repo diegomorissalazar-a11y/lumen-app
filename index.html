@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1a1510">
-<title>LUMEN v138 — Biblioteca Personal</title>
+<title>LUMEN v139 — Biblioteca Personal</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231a1510'/><text x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' font-family='Georgia,serif' font-size='14' font-weight='900' font-style='italic' fill='%23c8952a' letter-spacing='0.5'>L</text><rect x='6' y='23' width='20' height='2' rx='1' fill='%238b2020'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
@@ -118,6 +118,7 @@ select.input { cursor: pointer; }
 .badge-libro { background: #e8f0e8; color: var(--green); border: 1px solid #c0d8c0; }
 .badge-pelicula { background: #f0e8e8; color: var(--red); border: 1px solid #d8c0c0; }
 .badge-serie { background: #e8eef5; color: var(--blue); border: 1px solid #c0ccd8; }
+.badge-disco { background: #f4efe5; color: var(--gold); border: 1px solid #dccb9d; }
 .badge-leyendo { background: #fff8e8; color: var(--gold); border: 1px solid #e8d8a0; }
 
 /* ── SECTION TITLE ── */
@@ -183,6 +184,7 @@ select.input { cursor: pointer; }
 .entry-card-spine.libro { background: var(--green); }
 .entry-card-spine.pelicula { background: var(--red); }
 .entry-card-spine.serie { background: var(--blue); }
+.entry-card-spine.disco { background: var(--gold); }
 .entry-card-cover { width: 56px; height: 80px; object-fit: cover; flex-shrink: 0; background: var(--cream3); }
 .entry-card-info { padding: 11px 13px; flex: 1; min-width: 0; }
 .entry-card-title { font-family: var(--font-serif); font-size: 15px; font-weight: 700; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -228,7 +230,7 @@ select.input { cursor: pointer; }
 .hero-title { font-family: var(--font-serif); font-size: 32px; font-weight: 900; color: var(--cream); font-style: italic; line-height: 1.1; }
 .hero-sub { font-size: 12px; color: var(--ink3); margin-top: 6px; }
 
-.year-summary { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; padding: 16px 20px; }
+.year-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; padding: 16px 20px; }
 .ys-box { background: #fff; border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 10px; text-align: center; box-shadow: var(--shadow); }
 .ys-num { font-family: var(--font-serif); font-size: 28px; font-weight: 900; color: var(--ink); line-height: 1; }
 .ys-label { font-size: 9px; color: var(--ink3); letter-spacing: 1.5px; text-transform: uppercase; margin-top: 3px; }
@@ -328,7 +330,7 @@ select.input { cursor: pointer; }
 
 /* ── STATS SEGMENTED CONTROL ── */
 .stats-seg {
-  display: grid; grid-template-columns: repeat(4, 1fr);
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(78px, 1fr));
   background: var(--cream2); border-radius: 8px; padding: 3px; gap: 2px;
 }
 .stats-seg-btn {
@@ -763,6 +765,7 @@ select.input { cursor: pointer; }
       <button class="stats-seg-btn"        data-tab="libro"    onclick="filterLib('libro',this)">📚 Libros</button>
       <button class="stats-seg-btn"        data-tab="pelicula" onclick="filterLib('pelicula',this)">🎬 Pelícs.</button>
       <button class="stats-seg-btn"        data-tab="serie"    onclick="filterLib('serie',this)">📺 Series</button>
+      <button class="stats-seg-btn"        data-tab="disco"    onclick="filterLib('disco',this)">💿 Discos</button>
     </div>
   </div>
   <div style="padding:0 20px 4px;">
@@ -800,6 +803,7 @@ select.input { cursor: pointer; }
       <button class="stats-seg-btn active" data-seg="libros" onclick="switchStatsSeg('libros',this)">📚 Libros</button>
       <button class="stats-seg-btn" data-seg="peliculas" onclick="switchStatsSeg('peliculas',this)">🎬 Películas</button>
       <button class="stats-seg-btn" data-seg="series" onclick="switchStatsSeg('series',this)">📺 Series</button>
+      <button class="stats-seg-btn" data-seg="discos" onclick="switchStatsSeg('discos',this)">💿 Discos</button>
       <button class="stats-seg-btn" data-seg="global" onclick="switchStatsSeg('global',this)">🌐 Global</button>
     </div>
   </div>
@@ -993,6 +997,50 @@ select.input { cursor: pointer; }
       <div style="position:relative;height:240px;margin-bottom:8px;"><canvas id="sr-chart-scatter"></canvas></div>
       <div class="divider"></div>
       <div id="sr-curiosidades"></div>
+    </div>
+  </div>
+
+
+  <!-- ── PANEL DISCOS ── -->
+  <div class="stats-panel" id="spanel-discos">
+    <div class="stats-year-nav">
+      <button class="stats-year-btn" onclick="changeStatsYear('discos',-1)">
+        <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.5;"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <div style="text-align:center;">
+        <div class="stats-year-label" id="ds-year-label">Todos los años</div>
+        <div id="ds-vs-best" style="font-size:11px;color:var(--ink4);margin-top:2px;"></div>
+      </div>
+      <button class="stats-year-btn" onclick="changeStatsYear('discos',1)">
+        <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.5;"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+    </div>
+    <div style="padding:0 20px 20px;">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:16px;" id="ds-kpis"></div>
+      <div class="chart-section-header">
+        <div class="chart-section-title">Por mes</div>
+      </div>
+      <div class="chart-wrap"><canvas id="ds-chart-mes"></canvas></div>
+      <div class="divider"></div>
+      <div class="chart-section-title" style="margin-bottom:4px;">Rankings interactivos</div>
+      <p style="font-size:11px;color:var(--ink4);margin-bottom:10px;">Toca un nombre para filtrar los rankings y la tabla.</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+        <div><div class="stat-sublabel">Cantantes / grupos</div><div id="ds-top-artista" class="top-interactive"></div></div>
+        <div><div class="stat-sublabel">Productores</div><div id="ds-top-productor" class="top-interactive"></div></div>
+        <div><div class="stat-sublabel">Discográficas</div><div id="ds-top-discografica" class="top-interactive"></div></div>
+        <div><div class="stat-sublabel">Colaboraciones</div><div id="ds-top-colaboraciones" class="top-interactive"></div></div>
+      </div>
+      <div class="divider"></div>
+      <div class="chart-section-title" style="margin-bottom:8px;">Todos los discos</div>
+      <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;">
+        <button class="sort-pill active" onclick="sortDiscos('anio_pub',this)">Año pub.</button>
+        <button class="sort-pill" onclick="sortDiscos('artista',this)">Cantante/grupo</button>
+        <button class="sort-pill" onclick="sortDiscos('titulo',this)">Disco</button>
+        <button class="sort-pill" onclick="sortDiscos('productor',this)">Productor</button>
+      </div>
+      <div id="ds-active-filter" style="margin-bottom:8px;"></div>
+      <div id="ds-tabla" style="overflow-x:auto;"></div>
+      <div id="ds-pagination" class="table-pagination"></div>
     </div>
   </div>
 
@@ -1784,7 +1832,7 @@ select.input { cursor: pointer; }
     Cerrar sesión
   </button>
   <div style="padding:8px 16px 10px;border-top:1px solid var(--border);font-size:10px;color:var(--ink4);letter-spacing:1px;text-align:right;">
-    LUMEN v138
+    LUMEN v139
   </div>
 </div>
 
@@ -1831,6 +1879,7 @@ select.input { cursor: pointer; }
         <button class="type-btn active" data-type="libro" onclick="selectType('libro',this)" style="padding:12px 8px;border:2px solid var(--green);border-radius:4px;background:#e8f0e8;cursor:pointer;font-family:var(--font-sans);font-size:12px;font-weight:700;color:var(--green);letter-spacing:1px;text-transform:uppercase;">📚 Libro</button>
         <button class="type-btn" data-type="pelicula" onclick="selectType('pelicula',this)" style="padding:12px 8px;border:2px solid var(--border);border-radius:4px;background:#fff;cursor:pointer;font-family:var(--font-sans);font-size:12px;font-weight:700;color:var(--ink3);letter-spacing:1px;text-transform:uppercase;">🎬 Película</button>
         <button class="type-btn" data-type="serie" onclick="selectType('serie',this)" style="padding:12px 8px;border:2px solid var(--border);border-radius:4px;background:#fff;cursor:pointer;font-family:var(--font-sans);font-size:12px;font-weight:700;color:var(--ink3);letter-spacing:1px;text-transform:uppercase;">📺 Serie</button>
+        <button class="type-btn" data-type="disco" onclick="selectType('disco',this)" style="padding:12px 8px;border:2px solid var(--border);border-radius:4px;background:#fff;cursor:pointer;font-family:var(--font-sans);font-size:12px;font-weight:700;color:var(--ink3);letter-spacing:1px;text-transform:uppercase;">💿 Disco</button>
       </div>
 
       <!-- SEARCH -->
@@ -2130,6 +2179,49 @@ select.input { cursor: pointer; }
             style="width:100%;margin-top:8px;font-size:11px;">📁 Subir imagen desde dispositivo</button>
           <input type="file" id="fs-cover-file" accept="image/*" style="display:none;"
             onchange="handleMainCoverFile(event,'fs-cover','fs-cover-preview')">
+        </div>
+      </div>
+
+
+      <div id="form-disco" style="display:none;">
+        <div class="field"><label>Nombre del disco</label><input class="input" type="text" id="fd-titulo" placeholder="Título del disco"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="field"><label>Cantante / grupo</label><input class="input" type="text" id="fd-artista" placeholder="Artista, banda o grupo"></div>
+          <div class="field"><label>Año publicación</label><input class="input" type="number" id="fd-anio-pub" placeholder="1971"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="field"><label>Productor</label><input class="input" type="text" id="fd-productor" placeholder="Productor musical"></div>
+          <div class="field"><label>Discográfica</label><input class="input" type="text" id="fd-discografica" placeholder="Sello / label"></div>
+        </div>
+        <div class="field">
+          <label>Músicos <span style="font-size:10px;color:var(--ink4);font-weight:400;letter-spacing:0;">(uno por línea)</span></label>
+          <textarea class="input" id="fd-musicos" rows="4" placeholder="Nombre — instrumento\nNombre — instrumento" style="resize:vertical;font-size:13px;line-height:1.6;"></textarea>
+        </div>
+        <div class="field">
+          <label>Artistas invitados / colaboraciones <span style="font-size:10px;color:var(--ink4);font-weight:400;letter-spacing:0;">(uno por línea)</span></label>
+          <textarea class="input" id="fd-colaboraciones" rows="4" placeholder="Artista — participación\nArtista — voz invitada" style="resize:vertical;font-size:13px;line-height:1.6;"></textarea>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="field"><label>Mes escuchado</label>
+            <select class="input" id="fd-mes"><option value="">—</option>
+              <option>Enero</option><option>Febrero</option><option>Marzo</option><option>Abril</option>
+              <option>Mayo</option><option>Junio</option><option>Julio</option><option>Agosto</option>
+              <option>Septiembre</option><option>Octubre</option><option>Noviembre</option><option>Diciembre</option>
+            </select>
+          </div>
+          <div class="field"><label>Año escuchado</label><input class="input" type="number" id="fd-anio-escuchado" placeholder="2026"></div>
+        </div>
+        <div class="field">
+          <label>Portada</label>
+          <div id="fd-cover-preview" style="margin-bottom:8px;min-height:0;"></div>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <input class="input" type="text" id="fd-cover" placeholder="https://..." style="flex:1;" oninput="previewMainCover('fd-cover','fd-cover-preview')">
+            <button class="btn-icon" onclick="document.getElementById('fd-cover').value='';document.getElementById('fd-cover-preview').innerHTML='';" title="Limpiar" style="padding:8px;border:1.5px solid var(--border);border-radius:4px;background:#fff;">
+              <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:var(--ink3);fill:none;stroke-width:2;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="document.getElementById('fd-cover-file').click()" style="width:100%;margin-top:8px;font-size:11px;">📁 Subir imagen desde dispositivo</button>
+          <input type="file" id="fd-cover-file" accept="image/*" style="display:none;" onchange="handleMainCoverFile(event,'fd-cover','fd-cover-preview')">
         </div>
       </div>
 
@@ -3403,6 +3495,7 @@ function openModal(id) {
     document.getElementById('f-anio-lect').value = new Date().getFullYear();
     document.getElementById('fp-anio-visto').value = new Date().getFullYear();
     document.getElementById('fs-anio-visto').value = new Date().getFullYear();
+    const fdYear = document.getElementById('fd-anio-escuchado'); if (fdYear) fdYear.value = new Date().getFullYear();
   }
   if (id === 'modal-add') {
     // Pre-poblar datalists con datos de la biblioteca
@@ -3424,14 +3517,14 @@ function selectType(type, btn) {
     b.style.background = '#fff';
     b.style.color = 'var(--ink3)';
   });
-  const colors = { libro: 'var(--green)', pelicula: 'var(--red)', serie: 'var(--blue)' };
-  const bgs = { libro: '#e8f0e8', pelicula: '#f0e8e8', serie: '#e8eef5' };
+  const colors = { libro: 'var(--green)', pelicula: 'var(--red)', serie: 'var(--blue)', disco: 'var(--gold)' };
+  const bgs = { libro: '#e8f0e8', pelicula: '#f0e8e8', serie: '#e8eef5', disco: '#f7f0df' };
   btn.style.borderColor = colors[type];
   btn.style.background = bgs[type];
   btn.style.color = colors[type];
-  ['form-libro','form-pelicula','form-serie'].forEach(f => document.getElementById(f).style.display = 'none');
-  document.getElementById('form-' + (type === 'pelicula' ? 'pelicula' : type === 'serie' ? 'serie' : 'libro')).style.display = 'block';
-  const labels = { libro: 'Buscar libro en Google Books', pelicula: 'Buscar película (OMDB/TMDB)', serie: 'Buscar serie' };
+  ['form-libro','form-pelicula','form-serie','form-disco'].forEach(f => { const el=document.getElementById(f); if(el) el.style.display = 'none'; });
+  document.getElementById('form-' + (type === 'pelicula' ? 'pelicula' : type === 'serie' ? 'serie' : type === 'disco' ? 'disco' : 'libro')).style.display = 'block';
+  const labels = { libro: 'Buscar libro en Google Books', pelicula: 'Buscar película (OMDB/TMDB)', serie: 'Buscar serie', disco: 'Registrar disco manualmente' };
   document.getElementById('search-label').textContent = labels[type];
   document.getElementById('add-search').value = '';
   document.getElementById('add-search-results').style.display = 'none';
@@ -3440,10 +3533,11 @@ function selectType(type, btn) {
 function resetForm() {
   ['f-titulo','f-autor','f-editorial','f-paginas','f-anio-pub','f-traductor','f-idioma','f-cover','f-notas',
    'fp-titulo','fp-director','fp-anio-est','fp-duracion','fp-foto','fp-musica','fp-protagonista','fp-guionista','fp-cover','fp-elenco','fp-productora',
-   'fs-titulo','fs-director','fs-anio-est','fs-duracion','fs-caps-por-temp','fs-min-episodio','fs-musica','fs-protagonista','fs-guionista','fs-cover','fs-elenco']
+   'fs-titulo','fs-director','fs-anio-est','fs-duracion','fs-caps-por-temp','fs-min-episodio','fs-musica','fs-protagonista','fs-guionista','fs-cover','fs-elenco',
+   'fd-titulo','fd-artista','fd-anio-pub','fd-productor','fd-discografica','fd-musicos','fd-colaboraciones','fd-mes','fd-anio-escuchado','fd-cover']
     .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
   // Limpiar previews de portada
-  ['f-cover-preview','fp-cover-preview','fs-cover-preview'].forEach(id => {
+  ['f-cover-preview','fp-cover-preview','fs-cover-preview','fd-cover-preview'].forEach(id => {
     const el = document.getElementById(id); if (el) el.innerHTML = '';
   });
   const calcEl = document.getElementById('fs-duracion-calc');
@@ -3519,6 +3613,10 @@ async function doSearch(q) {
   resultsEl.innerHTML = '<div style="padding:12px 14px;font-size:13px;color:var(--ink3);">Buscando...</div>';
   resultsEl.style.display = 'block';
   try {
+    if (currentType === 'disco') {
+      resultsEl.innerHTML = '<div style="padding:12px 14px;font-size:13px;color:var(--ink3);">Los discos se registran manualmente por ahora.</div>';
+      return;
+    }
     if (currentType === 'libro') {
       const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q)}&maxResults=5&langRestrict=`);
       const data = await res.json();
@@ -3856,6 +3954,19 @@ function saveEntry() {
       mes: document.getElementById('fp-mes').value,
       anio: parseInt(document.getElementById('fp-anio-visto').value) || new Date().getFullYear(),
       cover: document.getElementById('fp-cover').value };
+  } else if (currentType === 'disco') {
+    const titulo = document.getElementById('fd-titulo').value.trim();
+    if (!titulo) { showToast('Ingresa el nombre del disco'); return; }
+    entry = { ...entry, titulo,
+      artista: document.getElementById('fd-artista').value.trim(),
+      anio_pub: parseInt(document.getElementById('fd-anio-pub').value) || null,
+      productor: document.getElementById('fd-productor').value.trim() || null,
+      discografica: document.getElementById('fd-discografica').value.trim() || null,
+      musicos: document.getElementById('fd-musicos').value.split('\n').map(s=>s.trim()).filter(Boolean),
+      colaboraciones: document.getElementById('fd-colaboraciones').value.split('\n').map(s=>s.trim()).filter(Boolean),
+      mes: document.getElementById('fd-mes').value,
+      anio: parseInt(document.getElementById('fd-anio-escuchado').value) || new Date().getFullYear(),
+      cover: document.getElementById('fd-cover').value };
   } else {
     const titulo = document.getElementById('fs-titulo').value.trim();
     if (!titulo) { showToast('Ingresa el título'); return; }
@@ -3894,10 +4005,10 @@ function saveEntry() {
       e.titulo.trim().toLowerCase() === entry.titulo.trim().toLowerCase()
     );
     if (dupSameType) {
-      const typeLabel = entry.type==='libro'?'libro':entry.type==='pelicula'?'película':'serie';
+      const typeLabel = entry.type==='libro'?'libro':entry.type==='pelicula'?'película':entry.type==='disco'?'disco':'serie';
       if (!confirm(`Ya tienes un ${typeLabel} con el título "${entry.titulo}". ¿Añadir de todas formas?`)) return;
     } else if (dupOtherType) {
-      const typeOtro = dupOtherType.type==='libro'?'libro':dupOtherType.type==='pelicula'?'película':'serie';
+      const typeOtro = dupOtherType.type==='libro'?'libro':dupOtherType.type==='pelicula'?'película':dupOtherType.type==='disco'?'disco':'serie';
       showToast(`ℹ También tienes este título como ${typeOtro}`, 3000);
     }
     db.entries.push(entry);
@@ -4600,9 +4711,10 @@ function renderHome() {
   const peliculas = thisYear.filter(e => e.type === 'pelicula');
   // Solo series terminadas — excluye viendo/pendiente, igual que Stats
   const series = thisYear.filter(e => e.type === 'serie' && e.estado === 'vista');
+  const discos = thisYear.filter(e => e.type === 'disco');
 
   document.getElementById('hero-title').textContent = pags > 0 ? `${pags.toLocaleString()} páginas\neste año` : 'Mi Biblioteca\nCultural';
-  document.getElementById('hero-sub').textContent = `${libros.length} libros · ${peliculas.length} películas · ${series.length} series`;
+  document.getElementById('hero-sub').textContent = `${libros.length} libros · ${peliculas.length} películas · ${series.length} series · ${discos.length} discos`;
 
   renderDesafioCard();
   renderLogros();
@@ -4622,6 +4734,11 @@ function renderHome() {
       <div class="ys-num">${series.length}</div>
       <div class="ys-label">Series</div>
       <div class="ys-sub">${fmtMin(series.reduce((a,b)=>a+(b.duracion||0),0))}</div>
+    </div>
+    <div class="ys-box">
+      <div class="ys-num">${discos.length}</div>
+      <div class="ys-label">Discos</div>
+      <div class="ys-sub">Escuchados</div>
     </div>`;
 
   // ── RITMO HERO CARD ──────────────
@@ -4833,9 +4950,10 @@ function renderLibrary() {
     if (libFilter === 'leyendo') return e.type === 'libro' && e.estado === 'leyendo';
     if (libFilter === 'serie') return e.type === 'serie';
     if (libFilter === 'pelicula') return e.type === 'pelicula';
+    if (libFilter === 'disco') return e.type === 'disco';
     if (libFilter === 'libro') return e.type === 'libro'; // includes leyendo
     return e.type === libFilter;
-  }).filter(e => !q || e.titulo.toLowerCase().includes(q) || (e.autor||'').toLowerCase().includes(q) || (e.director||'').toLowerCase().includes(q));
+  }).filter(e => !q || e.titulo.toLowerCase().includes(q) || (e.autor||'').toLowerCase().includes(q) || (e.director||'').toLowerCase().includes(q) || (e.artista||'').toLowerCase().includes(q) || (e.productor||'').toLowerCase().includes(q) || (e.discografica||'').toLowerCase().includes(q));
 
   // Sort: leyendo first, then by date desc, then id desc
   items = items.sort((a, b) => {
@@ -4869,6 +4987,8 @@ function entryCardHTML(e) {
   } else if (e.type === 'pelicula') {
     const parts = [ok(e.director)?e.director:null, e.anio_est?String(e.anio_est):null, e.duracion?fmtMin(e.duracion):null];
     sub = parts.filter(Boolean).map(esc).join(' · ');
+  } else if (e.type === 'disco') {
+    sub = [ok(e.artista)?e.artista:null, e.anio_pub?String(e.anio_pub):null, ok(e.productor)?'Prod. '+e.productor:null, ok(e.discografica)?e.discografica:null].filter(Boolean).map(esc).join(' · ');
   } else {
     const tempNum = getTemporadaNum(e);
     const temp = tempNum ? `Temporada ${tempNum}` : null;
@@ -4877,12 +4997,14 @@ function entryCardHTML(e) {
   }
 
   let chips = '';
-  if (e.type === 'pelicula' || e.type === 'serie') {
+  if (e.type === 'pelicula' || e.type === 'serie' || e.type === 'disco') {
     const extras = [];
     if (ok(e.guionista))    extras.push({ icon: '✍', val: e.guionista });
     if (ok(e.protagonista)) extras.push({ icon: '★', val: e.protagonista });
     if (ok(e.musica))       extras.push({ icon: '♪', val: e.musica });
     if (ok(e.fotografia))   extras.push({ icon: '◉', val: e.fotografia });
+    if (e.type === 'disco' && ok(e.productor)) extras.push({ icon: '🎚', val: e.productor });
+    if (e.type === 'disco' && ok(e.discografica)) extras.push({ icon: '💽', val: e.discografica });
     if (extras.length) {
       chips = `<div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:4px;">` +
         extras.map(x => `<span style="font-size:10px;color:var(--ink3);background:var(--cream2);padding:2px 7px;border-radius:10px;">${x.icon} ${esc(x.val)}</span>`).join('') +
@@ -4902,7 +5024,8 @@ function entryCardHTML(e) {
     const addBtn = `<button onclick="event.stopPropagation();openGeneroQuick('${e.id}')" style="font-size:9px;background:none;border:1px dashed var(--border);border-radius:10px;padding:2px 7px;color:var(--ink4);cursor:pointer;font-family:var(--font-sans);">🏷${gs.length>0?' +':' Etiquetar'}</button>`;
     return genChips + addBtn;
   })() : '';
-  const badge = `<span class="badge badge-${e.estado==='leyendo'?'leyendo':e.type}">${e.estado==='leyendo'?'Leyendo':e.type==='libro'?'Libro':e.type==='pelicula'?'Película':'Serie'}</span>`;
+  const typeName = e.type==='libro'?'Libro':e.type==='pelicula'?'Película':e.type==='disco'?'Disco':'Serie';
+  const badge = `<span class="badge badge-${e.estado==='leyendo'?'leyendo':e.type}">${e.estado==='leyendo'?'Leyendo':typeName}</span>`;
   const metaLine = `${e.mes ? esc(e.mes)+' ' : ''}${e.anio||''}`;
   const coverSrc = coverUrl(e) ? coverUrl(e).replace(/"/g,'&quot;') : '';
   const safeId = e.id.replace(/'/g, "\\'");
@@ -4913,7 +5036,7 @@ function entryCardHTML(e) {
         ? `<img src="${coverSrc}" class="entry-card-cover">`
         : hasPendingCover(e)
           ? `<div class="entry-card-cover" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:var(--cream2);" title="Portada en otro dispositivo"><span style="font-size:18px;">📷</span><span style="font-size:7px;color:var(--ink4);letter-spacing:0.5px;">PENDIENTE</span></div>`
-          : `<div class="entry-card-cover" style="display:flex;align-items:center;justify-content:center;font-size:22px;">${e.type==='libro'?'📚':e.type==='pelicula'?'🎬':'📺'}</div>`}
+          : `<div class="entry-card-cover" style="display:flex;align-items:center;justify-content:center;font-size:22px;">${e.type==='libro'?'📚':e.type==='pelicula'?'🎬':e.type==='disco'?'💿':'📺'}</div>`}
       <div class="entry-card-info">
         <div class="entry-card-title">${esc(e.titulo)}</div>
         <div class="entry-card-sub">${sub}</div>
@@ -4959,6 +5082,11 @@ function showDetail(id) {
       html += `<div style="display:flex;gap:8px;padding:7px 0;border-bottom:1px solid var(--cream2);align-items:flex-start;"><span style="font-size:10px;color:var(--ink4);letter-spacing:1.5px;text-transform:uppercase;font-weight:700;width:110px;flex-shrink:0;padding-top:4px;">Género</span><div style="display:flex;flex-wrap:wrap;gap:4px;">${chips}</div></div>`;
     }
     html += row('Vista', `${e.mes||''} ${e.anio||''}`);
+  } else if (e.type === 'disco') {
+    const list = arr => Array.isArray(arr) ? arr.join(' · ') : (arr||'');
+    html += row('Cantante/grupo', e.artista) + row('Publicado', e.anio_pub) + row('Productor', e.productor) + row('Discográfica', e.discografica) + row('Escuchado', `${e.mes||''} ${e.anio||''}`);
+    if (e.musicos && e.musicos.length) html += row('Músicos', list(e.musicos));
+    if (e.colaboraciones && e.colaboraciones.length) html += row('Colaboraciones', list(e.colaboraciones));
   } else { // serie
     const capInfo = (e.capActual || e.capTotal) ? `Cap. ${e.capActual||0} / ${e.capTotal||'?'}` : null;
     const pctCap = e.capTotal > 0 ? `${Math.round((e.capActual||0)/e.capTotal*100)}%` : null;
@@ -5154,6 +5282,14 @@ function editEntry(id) {
       document.getElementById('fp-mes').value = e.mes||'';
       document.getElementById('fp-anio-visto').value = e.anio||'';
       document.getElementById('fp-basada').value = e.basada||'';
+    } else if (e.type === 'disco') {
+      const map = { titulo:'fd-titulo', artista:'fd-artista', anio_pub:'fd-anio-pub', productor:'fd-productor', discografica:'fd-discografica', cover:'fd-cover' };
+      Object.entries(map).forEach(([k,id])=>{ const el=document.getElementById(id); if(el) el.value=e[k]||''; });
+      document.getElementById('fd-musicos').value = Array.isArray(e.musicos) ? e.musicos.join('\n') : (e.musicos||'');
+      document.getElementById('fd-colaboraciones').value = Array.isArray(e.colaboraciones) ? e.colaboraciones.join('\n') : (e.colaboraciones||'');
+      document.getElementById('fd-mes').value = e.mes||'';
+      document.getElementById('fd-anio-escuchado').value = e.anio||'';
+      if (coverUrl(e)) { document.getElementById('fd-cover').value = coverUrl(e); previewMainCover('fd-cover','fd-cover-preview'); }
     } else {
       ['titulo','director','temporadas','duracion','musica','protagonista','guionista','cover'].forEach(k=>{ const el=document.getElementById('fs-'+k); if(el) el.value=e[k]||''; });
       document.getElementById('fs-elenco').value = Array.isArray(e.elenco) ? e.elenco.join('\n') : (e.elenco||'');
@@ -5492,6 +5628,8 @@ const MESES_SHORT = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct'
 let statsState = {
   libros:    { year: 'todos', filter: null, filterField: null, sortField: 'anio_pub', sortDir: 1, page: 0, chartMode: 'pags' },
   peliculas: { year: 'todos', filter: null, filterField: null, sortField: 'anio_est', sortDir: 1, page: 0, chartMode: 'cantidad' },
+  series: { year: 'todos', filter: null, filterField: null, sortField: 'anio_est', sortDir: 1, page: 0 },
+  discos: { year: 'todos', filter: null, filterField: null, sortField: 'anio_pub', sortDir: -1, page: 0 },
 };
 const PAGE_SIZE = 20;
 
@@ -5501,7 +5639,7 @@ function getYears(type) {
 }
 
 function changeStatsYear(key, dir) {
-  const typeMap = { libros: 'libro', peliculas: 'pelicula', series: 'serie' };
+  const typeMap = { libros: 'libro', peliculas: 'pelicula', series: 'serie', discos: 'disco' };
   const type = typeMap[key] || key;
   const yrs = ['todos', ...getYears(type)];
   const cur = statsState[key].year;
@@ -5513,6 +5651,7 @@ function changeStatsYear(key, dir) {
   if (key === 'libros') renderStatsLibros();
   else if (key === 'peliculas') renderStatsPeliculas();
   else if (key === 'series') renderStatsSeries();
+  else if (key === 'discos') renderStatsDiscos();
 }
 
 function getFiltered(type, key) {
@@ -5650,6 +5789,7 @@ function clearFilter(key) {
   if (key==='libros') renderStatsLibros();
   else if (key==='peliculas') renderStatsPeliculas();
   else if (key==='series') renderStatsSeries();
+  else if (key==='discos') renderStatsDiscos();
 }
 
 function activeFilterTag(key) {
@@ -5679,7 +5819,7 @@ function goPage(key, page) {
   if (key==='libros') renderLibrosTabla();
   else if (key==='peliculas') renderPeliculasTabla();
   else if (key==='series') renderSeriesTabla();
-  document.getElementById(key==='libros'?'lb-tabla':key==='peliculas'?'pl-tabla':'sr-tabla').scrollIntoView({behavior:'smooth',block:'nearest'});
+  document.getElementById(key==='libros'?'lb-tabla':key==='peliculas'?'pl-tabla':key==='series'?'sr-tabla':'ds-tabla')?.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 
 // ═══════════════════════════════════
@@ -5946,7 +6086,6 @@ function renderPeliculasTabla() {
 //  STATS SERIES
 // ═══════════════════════════════════
 let srChartMode = 'cantidad';
-statsState.series = { year: 'todos', filter: null, filterField: null, sortField: 'anio_est', sortDir: 1, page: 0 };
 
 function setSrChartMode(mode, btn) {
   srChartMode = mode;
@@ -6229,17 +6368,95 @@ function renderCuriosidadesSeries(series) {
 // ═══════════════════════════════════
 //  STATS GLOBAL
 // ═══════════════════════════════════
+
+// ── DISCOS ───────────────────────
+function ok(v) { if (!v && v !== 0) return false; const s=String(v).trim(); return s !== '' && s.toLowerCase() !== 'no aplica' && s !== '-' && s !== '—'; }
+function flattenDiscoList(items, field) {
+  return items.flatMap(e => Array.isArray(e[field]) ? e[field] : (e[field] ? String(e[field]).split('\n') : [])).map(s=>String(s).trim()).filter(Boolean);
+}
+
+function renderStatsDiscos() {
+  const yr = statsState.discos.year;
+  const allDiscos = db.entries.filter(e=>e.type==='disco');
+  const discos = yr==='todos' ? allDiscos : allDiscos.filter(e=>e.anio===parseInt(yr)||e.anio===yr);
+  document.getElementById('ds-year-label').textContent = yr==='todos' ? 'Todos los años' : yr;
+  const years = [...new Set(allDiscos.map(e=>e.anio).filter(Boolean))].sort((a,b)=>a-b);
+  document.getElementById('ds-vs-best').textContent = years.length ? `${years.length} año${years.length!==1?'s':''} con discos` : '';
+  const productores = new Set(discos.map(e=>e.productor).filter(ok));
+  const sellos = new Set(discos.map(e=>e.discografica).filter(ok));
+  const colabs = flattenDiscoList(discos,'colaboraciones');
+  document.getElementById('ds-kpis').innerHTML = `
+    <div class="stat-box"><div class="stat-num">${discos.length}</div><div class="stat-label">Discos</div></div>
+    <div class="stat-box"><div class="stat-num">${new Set(discos.map(e=>e.artista).filter(ok)).size}</div><div class="stat-label">Artistas</div></div>
+    <div class="stat-box"><div class="stat-num">${productores.size}</div><div class="stat-label">Productores</div></div>
+    <div class="stat-box"><div class="stat-num">${colabs.length}</div><div class="stat-label">Colaboraciones</div></div>`;
+  destroyChart('ds-chart-mes');
+  drawBarChart('ds-chart-mes', MESES_SHORT, monthlyCount(discos), 'rgba(200,149,42,0.75)');
+  renderTopInteractive('ds-top-artista',      discos, 'artista',       'var(--gold)',  'discos','artista');
+  renderTopInteractive('ds-top-productor',    discos, 'productor',     'var(--green)', 'discos','productor');
+  renderTopInteractive('ds-top-discografica', discos, 'discografica',  'var(--blue)',  'discos','discografica');
+  renderTopListFromValues('ds-top-colaboraciones', colabs, 'var(--red)');
+  document.getElementById('ds-active-filter').innerHTML = activeFilterTag('discos');
+  renderDiscosTabla();
+}
+
+function renderTopListFromValues(containerId, values, color) {
+  const el = document.getElementById(containerId); if (!el) return;
+  const counts = {};
+  values.forEach(v => { counts[v] = (counts[v]||0)+1; });
+  const arr = Object.entries(counts).sort((a,b)=>b[1]-a[1] || a[0].localeCompare(b[0])).slice(0,7);
+  if (!arr.length) { el.innerHTML = '<div style="font-size:12px;color:var(--ink4);font-style:italic;">Sin datos</div>'; return; }
+  const max = Math.max(...arr.map(x=>x[1]));
+  el.innerHTML = arr.map(([name,count],i)=>`
+    <div class="top-int-item">
+      <div class="top-int-rank">${i+1}</div><div class="top-int-name">${name}</div>
+      <div class="top-int-count">${count}</div><div class="top-int-bar"><div class="top-int-bar-fill" style="width:${Math.round(count/max*100)}%;background:${color};"></div></div>
+    </div>`).join('');
+}
+
+function sortDiscos(field, btn) {
+  const s = statsState.discos;
+  if (s.sortField === field) s.sortDir *= -1; else { s.sortField = field; s.sortDir = field==='anio_pub' ? -1 : 1; }
+  document.querySelectorAll('#spanel-discos .sort-pill').forEach(b=>b.classList.toggle('active',b===btn));
+  renderDiscosTabla();
+}
+
+function renderDiscosTabla() {
+  const s = statsState.discos;
+  let items = getFilteredWithActive('disco','discos');
+  items = items.sort((a,b)=>{
+    let av=a[s.sortField]||'', bv=b[s.sortField]||'';
+    if (typeof av==='string') av=av.toLowerCase(); if (typeof bv==='string') bv=bv.toLowerCase();
+    return av>bv?s.sortDir:av<bv?-s.sortDir:0;
+  });
+  const total = items.length;
+  const pageItems = items.slice(s.page*20, s.page*20+20);
+  document.getElementById('ds-tabla').innerHTML = `<table class="data-table"><thead><tr><th>Disco</th><th>Artista/grupo</th><th>Año pub.</th><th>Productor</th><th>Discográfica</th><th>Escuchado</th><th>Notas</th></tr></thead><tbody>` + pageItems.map(e=>`
+    <tr onclick="showDetail('${e.id.replace(/'/g,"\\'")}')" style="cursor:pointer;">
+      <td><b>${e.titulo||'—'}</b></td>
+      <td class="clickable" data-key="discos" data-field="artista" data-name="${(e.artista||'').replace(/"/g,'&quot;')}" onclick="event.stopPropagation();toggleFilterFromEl(this)">${ok(e.artista)?e.artista:'—'}</td>
+      <td>${e.anio_pub||'—'}</td>
+      <td class="clickable" data-key="discos" data-field="productor" data-name="${(e.productor||'').replace(/"/g,'&quot;')}" onclick="event.stopPropagation();toggleFilterFromEl(this)">${ok(e.productor)?e.productor:'—'}</td>
+      <td class="clickable" data-key="discos" data-field="discografica" data-name="${(e.discografica||'').replace(/"/g,'&quot;')}" onclick="event.stopPropagation();toggleFilterFromEl(this)">${ok(e.discografica)?e.discografica:'—'}</td>
+      <td>${[e.mes,e.anio].filter(Boolean).join(' ')||'—'}</td>
+      <td>${e.notas_lista?.length||0}</td>
+    </tr>`).join('') + `</tbody></table>`;
+  renderPagination('ds-pagination', total, 'discos');
+}
+
 function renderStatsGlobal() {
   const allYears = [...new Set(db.entries.filter(e=>e.anio).map(e=>e.anio))].sort((a,b)=>a-b);
   const libros = db.entries.filter(e=>e.type==='libro'&&e.estado==='leido');
   const pels   = db.entries.filter(e=>e.type==='pelicula');
   const series = db.entries.filter(e=>e.type==='serie' && e.estado!=='viendo' && e.estado!=='pendiente');
+  const discos = db.entries.filter(e=>e.type==='disco');
   const totalPags = libros.reduce((a,b)=>a+(b.paginas||0),0);
   const totalMin  = [...pels,...series].reduce((a,b)=>a+(b.duracion||0),0);
   document.getElementById('gl-kpis').innerHTML = `
     <div class="stat-box"><div class="stat-num">${libros.length}</div><div class="stat-label">Libros</div><div style="font-size:11px;color:var(--ink3);margin-top:3px;">${totalPags.toLocaleString()} págs</div></div>
     <div class="stat-box"><div class="stat-num">${pels.length}</div><div class="stat-label">Películas</div></div>
     <div class="stat-box"><div class="stat-num">${series.length}</div><div class="stat-label">Series</div></div>
+    <div class="stat-box"><div class="stat-num">${discos.length}</div><div class="stat-label">Discos</div></div>
     <div class="stat-box"><div class="stat-num">${Math.round(totalMin/60)}h</div><div class="stat-label">En pantalla</div></div>`;
   setTimeout(() => {
     destroyChart('gl-chart-anual');
@@ -6250,6 +6467,7 @@ function renderStatsGlobal() {
         {label:'Libros',   data:allYears.map(y=>db.entries.filter(e=>e.type==='libro'&&e.anio===y&&e.estado!=='pendiente').length), backgroundColor:'rgba(45,90,61,0.75)',borderRadius:3},
         {label:'Películas',data:allYears.map(y=>db.entries.filter(e=>e.type==='pelicula'&&e.anio===y).length), backgroundColor:'rgba(139,32,32,0.75)',borderRadius:3},
         {label:'Series',   data:allYears.map(y=>db.entries.filter(e=>e.type==='serie'&&e.anio===y).length), backgroundColor:'rgba(26,58,92,0.75)',borderRadius:3},
+        {label:'Discos',   data:allYears.map(y=>db.entries.filter(e=>e.type==='disco'&&e.anio===y).length), backgroundColor:'rgba(200,149,42,0.75)',borderRadius:3},
       ]},
       options:{responsive:true,maintainAspectRatio:false,
         plugins:{legend:{labels:{color:'#4a4035',font:{size:11}}}},
@@ -6285,6 +6503,7 @@ function switchStatsSeg(seg, btn) {
   if (seg==='libros') renderStatsLibros();
   else if (seg==='peliculas') renderStatsPeliculas();
   else if (seg==='series') renderStatsSeries();
+  else if (seg==='discos') renderStatsDiscos();
   else if (seg==='global') renderStatsGlobal();
 }
 
