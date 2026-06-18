@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1a1510">
-<title>LUMEN v140 — Biblioteca Personal</title>
+<title>LUMEN v142 — Biblioteca Personal</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231a1510'/><text x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' font-family='Georgia,serif' font-size='14' font-weight='900' font-style='italic' fill='%23c8952a' letter-spacing='0.5'>L</text><rect x='6' y='23' width='20' height='2' rx='1' fill='%238b2020'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
@@ -451,37 +451,60 @@ select.input { cursor: pointer; }
 .nota-add-btn { width:100%;padding:10px;border:1.5px dashed var(--border);border-radius:6px;background:transparent;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--ink4);cursor:pointer;font-family:var(--font-sans);margin-top:8px; }
 .nota-add-btn:hover { border-color:var(--gold);color:var(--gold); }
 
-/* ── BIBLIOTECA: NOTAS DOCUMENTO ── */
+/* ── BIBLIOTECA: NOTAS DOCUMENTO / LECTOR ── */
 .notas-doc-wrap { padding: 8px 0 28px; }
-.notas-doc-cover { text-align:center; padding:28px 10px 24px; border-bottom:1px solid var(--border); margin-bottom:18px; }
-.notas-doc-title { font-family:var(--font-serif); font-size:42px; font-weight:900; font-style:italic; color:var(--ink); line-height:1; }
-.notas-doc-sub { font-size:11px; color:var(--ink4); letter-spacing:2px; text-transform:uppercase; margin-top:8px; }
-.notas-doc-layout { display:grid; grid-template-columns:220px 1fr; gap:18px; align-items:start; }
-.notas-doc-toc { position:sticky; top:78px; background:#fff; border:1px solid var(--border); border-radius:8px; padding:12px; max-height:calc(100dvh - 150px); overflow:auto; box-shadow:var(--shadow); }
-.notas-doc-toc-title { font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--ink4); font-weight:700; margin-bottom:8px; }
-.notas-doc-toc-cat { font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:var(--gold); font-weight:700; margin:12px 0 5px; }
-.notas-doc-toc a { display:block; color:var(--ink2); text-decoration:none; font-size:12px; line-height:1.35; padding:4px 0; border-bottom:1px solid var(--cream2); }
-.notas-doc-toc a:active, .notas-doc-toc a:hover { color:var(--red); }
-.notas-doc-content { background:#fff; border:1px solid var(--border); border-radius:8px; padding:22px 22px 30px; box-shadow:var(--shadow); }
-.notas-doc-category { font-family:var(--font-serif); font-size:25px; font-weight:900; font-style:italic; color:var(--ink); margin:10px 0 18px; padding-bottom:8px; border-bottom:2px solid var(--ink); }
-.notas-doc-entry { scroll-margin-top:88px; padding:20px 0 28px; border-bottom:1px solid var(--cream3); }
+.notas-doc-cover { text-align:center; padding:34px 10px 30px; border-bottom:1px solid var(--border); margin-bottom:18px; background:#fff; }
+.notas-doc-title { font-family:var(--font-serif); font-size:46px; font-weight:900; font-style:italic; color:var(--ink); line-height:1; }
+.notas-doc-sub { font-size:11px; color:var(--ink4); letter-spacing:2px; text-transform:uppercase; margin-top:10px; }
+.notas-reader-layout { display:grid; grid-template-columns:minmax(230px, 290px) minmax(0, 1fr); gap:18px; align-items:start; }
+.notas-reader-toc { position:sticky; top:74px; height:calc(100dvh - 154px); overflow:auto; background:#f7f7f7; border:1px solid var(--border); border-radius:6px; padding:10px 8px; box-shadow:var(--shadow); }
+.notas-reader-toc-title { font-size:11px; letter-spacing:2px; text-transform:uppercase; color:var(--ink4); font-weight:700; padding:4px 6px 8px; border-bottom:1px solid var(--border); margin-bottom:8px; }
+.notas-tree { font-family:var(--font-sans); font-size:12px; color:var(--ink2); }
+.notas-tree ul { list-style:none; margin:0; padding-left:14px; border-left:1px dotted var(--border); }
+.notas-tree > ul { padding-left:0; border-left:none; }
+.notas-tree li { margin:2px 0; }
+.notas-tree details { margin:2px 0; }
+.notas-tree summary { cursor:pointer; list-style:none; display:flex; align-items:center; gap:4px; padding:3px 4px; border-radius:3px; color:var(--ink); font-weight:700; }
+.notas-tree summary::-webkit-details-marker { display:none; }
+.notas-tree summary::before { content:'▸'; color:var(--ink4); font-size:11px; width:10px; display:inline-block; }
+.notas-tree details[open] > summary::before { content:'▾'; }
+.notas-tree a { display:block; color:var(--ink2); text-decoration:none; line-height:1.35; padding:3px 4px; border-radius:3px; overflow:hidden; text-overflow:ellipsis; }
+.notas-tree a:hover, .notas-tree a:active { background:var(--cream2); color:var(--red); }
+.notas-tree .toc-entry-link { font-weight:700; }
+.notas-tree .toc-note-link { font-size:11px; color:var(--ink3); padding-left:12px; }
+.notas-reader-mobile-toggle { display:none; width:100%; margin:0 0 10px; border:1.5px solid var(--border); border-radius:6px; background:#fff; padding:10px 12px; font-family:var(--font-sans); font-size:12px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--ink2); text-align:left; cursor:pointer; }
+.notas-reader-doc { background:#fff; border:1px solid var(--border); border-radius:6px; box-shadow:var(--shadow); min-height:calc(100dvh - 170px); padding:34px 44px 48px; }
+.notas-doc-category { font-family:var(--font-serif); font-size:29px; font-weight:900; font-style:italic; color:var(--ink); text-align:center; margin:6px 0 34px; padding-bottom:12px; border-bottom:2px solid var(--ink); scroll-margin-top:88px; }
+.notas-doc-entry { scroll-margin-top:88px; padding:22px 0 34px; border-bottom:1px solid var(--cream3); }
 .notas-doc-entry:last-child { border-bottom:none; }
-.notas-doc-entry-title { font-family:var(--font-serif); font-size:22px; font-weight:700; color:var(--ink); margin-bottom:4px; }
-.notas-doc-entry-meta { font-size:11px; color:var(--ink4); letter-spacing:1px; text-transform:uppercase; margin-bottom:14px; }
-.notas-doc-note { margin:16px 0 20px; }
-.notas-doc-note-title { font-family:var(--font-serif); font-size:16px; font-weight:700; color:var(--ink); margin-bottom:6px; }
-.notas-doc-note-date { font-size:10px; color:var(--ink4); letter-spacing:1px; text-transform:uppercase; margin-bottom:6px; }
-.notas-doc-note-text { font-family:var(--font-serif); font-size:15px; color:var(--ink2); line-height:1.85; white-space:pre-wrap; }
-.notas-doc-actions { margin-top:12px; display:flex; gap:8px; flex-wrap:wrap; }
-.nota-toolbar { display:flex; gap:6px; margin-bottom:6px; }
-.nota-toolbar button { width:32px; height:30px; border:1.5px solid var(--border); border-radius:4px; background:#fff; color:var(--ink2); cursor:pointer; font-family:var(--font-serif); font-size:14px; font-weight:700; }
+.notas-doc-entry-title { font-family:var(--font-serif); font-size:24px; font-weight:900; color:var(--ink); text-align:center; text-transform:none; margin-bottom:6px; }
+.notas-doc-entry-meta { font-size:11px; color:var(--ink4); letter-spacing:1px; text-transform:uppercase; text-align:center; margin-bottom:22px; }
+.notas-doc-note { margin:22px 0 28px; scroll-margin-top:88px; }
+.notas-doc-note + .notas-doc-note { padding-top:18px; border-top:1px solid var(--cream2); }
+.notas-doc-note-title { font-family:var(--font-serif); font-size:17px; font-weight:900; color:var(--ink); margin-bottom:8px; }
+.notas-doc-note-date { font-size:10px; color:var(--ink4); letter-spacing:1px; text-transform:uppercase; margin-bottom:8px; }
+.notas-doc-note-text { font-family:var(--font-serif); font-size:15.5px; color:var(--ink2); line-height:1.9; white-space:pre-wrap; }
+.notas-doc-actions { margin-top:16px; display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
+.nota-toolbar { display:flex; gap:6px; margin-bottom:6px; flex-wrap:wrap; }
+.nota-toolbar button { min-width:32px; height:30px; border:1.5px solid var(--border); border-radius:4px; background:#fff; color:var(--ink2); cursor:pointer; font-family:var(--font-serif); font-size:14px; font-weight:700; padding:0 8px; }
+.nota-toolbar button.nota-tool-wide { width:auto; min-width:42px; font-family:var(--font-sans); font-size:12px; letter-spacing:0.5px; }
 .nota-toolbar button:active { background:var(--ink); color:var(--cream); }
+.nota-rich { white-space:normal; }
+.nota-rich p { margin:0 0 0.55em; white-space:pre-wrap; }
+.nota-rich p:last-child { margin-bottom:0; }
+.nota-rich .nota-list { margin:0.35em 0 0.85em 1.35em; padding-left:1.1em; }
+.nota-rich .nota-list li { margin:0.18em 0; padding-left:0.25em; }
+.nota-rich .nota-list-roman { list-style-type:upper-roman; }
+.nota-rich .nota-spacer { height:0.6em; }
 @media (max-width: 760px) {
-  .notas-doc-layout { display:block; }
-  .notas-doc-toc { position:relative; top:auto; max-height:260px; margin-bottom:14px; }
-  .notas-doc-content { padding:18px 14px 24px; }
-  .notas-doc-title { font-size:36px; }
-  .notas-doc-entry-title { font-size:20px; }
+  .notas-reader-layout { display:block; }
+  .notas-reader-mobile-toggle { display:block; }
+  .notas-reader-toc { display:none; position:relative; top:auto; height:auto; max-height:280px; margin-bottom:14px; }
+  .notas-reader-toc.open { display:block; }
+  .notas-reader-doc { padding:24px 16px 34px; min-height:auto; }
+  .notas-doc-title { font-size:38px; }
+  .notas-doc-category { font-size:25px; margin-bottom:26px; }
+  .notas-doc-entry-title { font-size:21px; }
 }
 
 .home-recent-list .entry-card { margin-bottom: 0; }
@@ -1867,7 +1890,7 @@ select.input { cursor: pointer; }
     Cerrar sesión
   </button>
   <div style="padding:8px 16px 10px;border-top:1px solid var(--border);font-size:10px;color:var(--ink4);letter-spacing:1px;text-align:right;">
-    LUMEN v140
+    LUMEN v142
   </div>
 </div>
 
@@ -2622,9 +2645,11 @@ select.input { cursor: pointer; }
           <button type="button" onclick="formatNotaSelection('bold')" title="Negrita"><strong>B</strong></button>
           <button type="button" onclick="formatNotaSelection('italic')" title="Cursiva"><em>I</em></button>
           <button type="button" onclick="formatNotaSelection('underline')" title="Subrayado"><u>U</u></button>
+          <button type="button" class="nota-tool-wide" onclick="formatNotaSelection('numbered')" title="Lista numerada">1.</button>
+          <button type="button" class="nota-tool-wide" onclick="formatNotaSelection('roman')" title="Lista romana">I.</button>
         </div>
         <textarea class="input" id="nota-texto" rows="7" placeholder="Escribe o pega tu apunte aquí..." style="resize:vertical;line-height:1.6;font-family:var(--font-serif);font-size:14px;"></textarea>
-        <div style="font-size:11px;color:var(--ink4);margin-top:5px;line-height:1.5;">Puedes seleccionar texto y aplicar negrita, cursiva o subrayado. Se conserva en la vista de notas.</div>
+        <div style="font-size:11px;color:var(--ink4);margin-top:5px;line-height:1.5;">Puedes seleccionar texto y aplicar negrita, cursiva, subrayado, listas 1. y listas romanas I. Las numeraciones escritas a mano también se conservan.</div>
       </div>
       <button class="btn btn-primary" onclick="saveNota()">Guardar nota</button>
     </div>
@@ -5032,16 +5057,69 @@ function entryCreator(e) {
 function noteAnchorId(entryId) {
   return 'notas-entry-' + String(entryId).replace(/[^a-zA-Z0-9_-]/g, '-');
 }
-function renderRichNoteText(text) {
-  let html = String(text||'')
+function noteItemAnchorId(entryId, idx) {
+  return noteAnchorId(entryId) + '-nota-' + (idx + 1);
+}
+function noteCategoryAnchorId(cat) {
+  return 'notas-cat-' + String(cat || '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9_-]/g, '-').toLowerCase();
+}
+function escapeNoteHtml(value) {
+  return String(value || '')
     .replace(/&/g,'&amp;')
     .replace(/</g,'&lt;')
     .replace(/>/g,'&gt;');
+}
+function renderInlineNoteFormat(text) {
+  let html = escapeNoteHtml(text);
   // Formato liviano guardado como marcas de texto: **negrita**, *cursiva*, __subrayado__.
   html = html.replace(/\*\*([\s\S]+?)\*\*/g, '<strong>$1</strong>');
   html = html.replace(/__([\s\S]+?)__/g, '<u>$1</u>');
   html = html.replace(/(^|[^*])\*([^*\n][\s\S]*?[^*\n])\*(?!\*)/g, '$1<em>$2</em>');
   return html;
+}
+function renderRichNoteText(text) {
+  const lines = String(text || '').replace(/\r\n/g, '\n').split('\n');
+  const romanRe = /^\s*([IVXLCDM]+)[\.)]\s+(.+)$/i;
+  const numRe = /^\s*(\d+)[\.)]\s+(.+)$/;
+  let html = '';
+  let listType = null;
+
+  const closeList = () => {
+    if (listType) {
+      html += '</ol>';
+      listType = null;
+    }
+  };
+  const openList = (type, start) => {
+    if (listType !== type) {
+      closeList();
+      const cls = type === 'roman' ? 'nota-list nota-list-roman' : 'nota-list nota-list-decimal';
+      const attr = type === 'roman' ? ' type="I"' : (start && start > 1 ? ` start="${start}"` : '');
+      html += `<ol class="${cls}"${attr}>`;
+      listType = type;
+    }
+  };
+
+  lines.forEach(line => {
+    const raw = String(line || '');
+    const numeric = raw.match(numRe);
+    const roman = raw.match(romanRe);
+    if (numeric) {
+      openList('decimal', parseInt(numeric[1], 10));
+      html += `<li>${renderInlineNoteFormat(numeric[2])}</li>`;
+    } else if (roman) {
+      openList('roman');
+      html += `<li>${renderInlineNoteFormat(roman[2])}</li>`;
+    } else if (!raw.trim()) {
+      closeList();
+      html += '<div class="nota-spacer"></div>';
+    } else {
+      closeList();
+      html += `<p>${renderInlineNoteFormat(raw)}</p>`;
+    }
+  });
+  closeList();
+  return `<div class="nota-rich">${html}</div>`;
 }
 function notasFechaLabel(fecha) {
   if (!fecha) return '';
@@ -5052,6 +5130,7 @@ function notasFechaLabel(fecha) {
 function renderNotasLibrary(query='') {
   const q = (query || '').toLowerCase().trim();
   const esc = s => s ? String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') : '';
+  const js = s => String(s || '').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
   const entries = db.entries
     .filter(e => Array.isArray(e.notas_lista) && e.notas_lista.length > 0)
     .map(e => ({...e, _notasFiltradas: (e.notas_lista||[]).filter(n => {
@@ -5078,28 +5157,38 @@ function renderNotasLibrary(query='') {
   const grouped = entries.reduce((acc,e)=>{ const k=typeLabelForNotas(e.type); (acc[k] ||= []).push(e); return acc; }, {});
   const cats = ['Libros','Películas','Series','Discos'].filter(k => grouped[k]?.length);
 
-  const toc = cats.map(cat => `
-    <div class="notas-doc-toc-cat">${cat}</div>
-    ${grouped[cat].map(e => `<a href="#${noteAnchorId(e.id)}" onclick="event.preventDefault();scrollToNotaEntry('${e.id}')">${typeIcon(e.type)} ${esc(e.titulo||'Sin título')}</a>`).join('')}
-  `).join('');
+  const toc = `<div class="notas-tree"><ul><li><details open><summary>Notas</summary><ul>` + cats.map(cat => `
+    <li><details open><summary>${esc(cat)}</summary><ul>
+      ${grouped[cat].map(e => `
+        <li><details open>
+          <summary><a class="toc-entry-link" href="#${noteAnchorId(e.id)}" onclick="event.preventDefault();scrollToNotaEntry('${js(e.id)}')">${typeIcon(e.type)} ${esc(e.titulo||'Sin título')}</a></summary>
+          <ul>
+            ${e._notasFiltradas.map((n,i)=>`
+              <li><a class="toc-note-link" href="#${noteItemAnchorId(e.id,i)}" onclick="event.preventDefault();scrollToNotaNote('${js(e.id)}',${i})">Nota ${i+1}${n.titulo ? '. ' + esc(n.titulo) : ''}</a></li>
+            `).join('')}
+          </ul>
+        </details></li>
+      `).join('')}
+    </ul></details></li>
+  `).join('') + `</ul></details></li></ul></div>`;
 
   const content = cats.map(cat => `
     <section>
-      <h2 class="notas-doc-category">${cat}</h2>
+      <h2 class="notas-doc-category" id="${noteCategoryAnchorId(cat)}">${cat}</h2>
       ${grouped[cat].map(e => `
         <article class="notas-doc-entry" id="${noteAnchorId(e.id)}">
           <h3 class="notas-doc-entry-title">${esc(e.titulo||'Sin título')}</h3>
           <div class="notas-doc-entry-meta">${[entryCreator(e), e.anio_pub||e.anio_est||e.anio].filter(Boolean).map(esc).join(' · ')}</div>
           ${e._notasFiltradas.map((n,i)=>`
-            <div class="notas-doc-note">
+            <div class="notas-doc-note" id="${noteItemAnchorId(e.id,i)}">
               <div class="notas-doc-note-title">Nota ${i+1}${n.titulo ? ' — ' + esc(n.titulo) : ''}</div>
               ${n.fecha ? `<div class="notas-doc-note-date">${notasFechaLabel(n.fecha)}</div>` : ''}
               <div class="notas-doc-note-text">${renderRichNoteText(n.texto||'')}</div>
             </div>
           `).join('')}
           <div class="notas-doc-actions">
-            <button class="btn btn-secondary btn-sm" onclick="showDetail('${e.id}')">Abrir ficha</button>
-            <button class="btn btn-secondary btn-sm" onclick="openNotaModal('${e.id}')">+ Nota</button>
+            <button class="btn btn-secondary btn-sm" onclick="showDetail('${js(e.id)}')">Abrir ficha</button>
+            <button class="btn btn-secondary btn-sm" onclick="openNotaModal('${js(e.id)}')">+ Nota</button>
           </div>
         </article>
       `).join('')}
@@ -5112,18 +5201,32 @@ function renderNotasLibrary(query='') {
         <div class="notas-doc-title">Notas</div>
         <div class="notas-doc-sub">${totalNotas} nota${totalNotas!==1?'s':''} · ${entries.length} estímulo${entries.length!==1?'s':''}</div>
       </div>
-      <div class="notas-doc-layout">
-        <aside class="notas-doc-toc">
-          <div class="notas-doc-toc-title">Tabla de contenido</div>
+      <div class="notas-reader-layout">
+        <button class="notas-reader-mobile-toggle" onclick="toggleNotasToc()">☰ Índice de notas</button>
+        <aside class="notas-reader-toc" id="notas-reader-toc">
+          <div class="notas-reader-toc-title">Tabla de contenido</div>
           ${toc}
         </aside>
-        <main class="notas-doc-content">${content}</main>
+        <main class="notas-reader-doc">${content}</main>
       </div>
     </div>`;
 }
+
+function closeNotasTocOnMobile() {
+  const toc = document.getElementById('notas-reader-toc');
+  if (toc && window.matchMedia && window.matchMedia('(max-width: 760px)').matches) toc.classList.remove('open');
+}
+function toggleNotasToc() {
+  const toc = document.getElementById('notas-reader-toc');
+  if (toc) toc.classList.toggle('open');
+}
 function scrollToNotaEntry(entryId) {
   const el = document.getElementById(noteAnchorId(entryId));
-  if (el) el.scrollIntoView({ behavior:'smooth', block:'start' });
+  if (el) { el.scrollIntoView({ behavior:'smooth', block:'start' }); closeNotasTocOnMobile(); }
+}
+function scrollToNotaNote(entryId, idx) {
+  const el = document.getElementById(noteItemAnchorId(entryId, idx));
+  if (el) { el.scrollIntoView({ behavior:'smooth', block:'start' }); closeNotasTocOnMobile(); }
 }
 
 function entryCardHTML(e) {
@@ -5322,7 +5425,54 @@ function openNotasDirectas(entryId) {
 }
 
 
+function romanNotaNumber(num) {
+  const map = [
+    [1000,'M'],[900,'CM'],[500,'D'],[400,'CD'],[100,'C'],[90,'XC'],[50,'L'],[40,'XL'],[10,'X'],[9,'IX'],[5,'V'],[4,'IV'],[1,'I']
+  ];
+  let n = Math.max(1, parseInt(num,10) || 1);
+  let out = '';
+  for (const [val, sym] of map) {
+    while (n >= val) { out += sym; n -= val; }
+  }
+  return out;
+}
+function stripNotaListPrefix(line) {
+  return String(line || '').replace(/^\s*(\d+|[IVXLCDM]+)[\.)]\s+/i, '');
+}
+function formatNotaList(kind) {
+  const ta = document.getElementById('nota-texto');
+  if (!ta) return;
+  const start = ta.selectionStart || 0;
+  const end = ta.selectionEnd || 0;
+  const value = ta.value || '';
+  const selected = value.slice(start, end);
+  const seed = kind === 'roman' ? 'I. ' : '1. ';
+
+  if (!selected) {
+    const next = value.slice(0,start) + seed + value.slice(end);
+    ta.value = next;
+    ta.focus();
+    ta.setSelectionRange(start + seed.length, start + seed.length);
+    return;
+  }
+
+  let counter = 1;
+  const formatted = selected.split('\n').map(line => {
+    if (!line.trim()) return line;
+    const body = stripNotaListPrefix(line);
+    const prefix = kind === 'roman' ? `${romanNotaNumber(counter)}. ` : `${counter}. `;
+    counter += 1;
+    return prefix + body;
+  }).join('\n');
+  ta.value = value.slice(0,start) + formatted + value.slice(end);
+  ta.focus();
+  ta.setSelectionRange(start, start + formatted.length);
+}
 function formatNotaSelection(kind) {
+  if (kind === 'numbered' || kind === 'roman') {
+    formatNotaList(kind === 'roman' ? 'roman' : 'decimal');
+    return;
+  }
   const ta = document.getElementById('nota-texto');
   if (!ta) return;
   const start = ta.selectionStart || 0;
