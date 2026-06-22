@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1a1510">
-<title>LUMEN v146 — Biblioteca Personal</title>
+<title>LUMEN v147 — Biblioteca Personal</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231a1510'/><text x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' font-family='Georgia,serif' font-size='14' font-weight='900' font-style='italic' fill='%23c8952a' letter-spacing='0.5'>L</text><rect x='6' y='23' width='20' height='2' rx='1' fill='%238b2020'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
@@ -1922,12 +1922,16 @@ select.input { cursor: pointer; }
     <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0018 9h-1.26A8 8 0 103 16.3"/></svg>
     📊 Exportar historial de lectura
   </button>
+  <button class="user-menu-item" onclick="closeUserMenu();exportarCSVHistoricoCompleto();">
+    <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    📦 Exportar CSV histórico completo
+  </button>
   <button class="user-menu-item danger" onclick="confirmLogOut()">
     <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
     Cerrar sesión
   </button>
   <div style="padding:8px 16px 10px;border-top:1px solid var(--border);font-size:10px;color:var(--ink4);letter-spacing:1px;text-align:right;">
-    LUMEN v146
+    LUMEN v147
   </div>
 </div>
 
@@ -2370,6 +2374,7 @@ select.input { cursor: pointer; }
       <p style="font-size:11px;color:var(--ink4);margin-top:8px;">Las columnas en <span style="color:var(--red);font-weight:700;">rojo</span> son las que se importan. "No aplica" se omite automáticamente.</p>
       <div class="divider"></div>
       <button class="btn btn-secondary" onclick="exportJSON()" style="margin-bottom:8px;">⬇ Exportar todo (JSON)</button>
+      <button class="btn btn-secondary" onclick="exportarCSVHistoricoCompleto()" style="margin-bottom:8px;">📦 Exportar CSV histórico completo</button>
       <button class="btn btn-secondary" onclick="clearAll()">🗑 Limpiar todos los datos</button>
     </div>
   </div>
@@ -7237,6 +7242,151 @@ function exportJSON() {
   a.download = `LUMEN_backup_${todaySantiagoStr()}.json`;
   a.click();
   showToast('✓ Datos exportados');
+}
+
+
+// ═══════════════════════════════════
+//  EXPORTADOR CSV HISTÓRICO COMPLETO
+// ═══════════════════════════════════
+function csvHistoricoNoAplica(v) {
+  if (v === null || v === undefined) return 'No aplica';
+  if (Array.isArray(v)) return v.length ? v.join(' | ') : 'No aplica';
+  const str = String(v).trim();
+  if (!str || str === '-' || str.toLowerCase() === 'null' || str.toLowerCase() === 'undefined') return 'No aplica';
+  return str;
+}
+
+function csvHistoricoLimpio(v) {
+  if (v === null || v === undefined) return '';
+  if (Array.isArray(v)) return v.join(' | ');
+  return String(v).replace(/\r?\n/g, ' | ').trim();
+}
+
+function csvHistoricoEscape(v) {
+  const str = csvHistoricoLimpio(v);
+  return '"' + str.replace(/"/g, '""') + '"';
+}
+
+function csvHistoricoCategoria(type) {
+  return type === 'libro' ? 'Libro' : type === 'pelicula' ? 'Pelicula' : type === 'serie' ? 'Serie' : type === 'disco' ? 'Disco' : csvHistoricoNoAplica(type);
+}
+
+function csvHistoricoNumeroMes(mes) {
+  const idx = MESES.indexOf(mes);
+  return idx >= 0 ? String(idx + 1) : 'No aplica';
+}
+
+function csvHistoricoNotasEstructuradas(e) {
+  const notas = Array.isArray(e.notas_lista) ? e.notas_lista : [];
+  if (!notas.length) return 'No aplica';
+  return notas.map((n, i) => {
+    const titulo = csvHistoricoLimpio(n.titulo || `Nota ${i + 1}`);
+    const fecha = csvHistoricoLimpio(n.fecha || '');
+    const texto = csvHistoricoLimpio(n.texto || '');
+    return `Nota ${i + 1} — ${titulo}${fecha ? ' [' + fecha + ']' : ''}: ${texto}`;
+  }).join(' || ');
+}
+
+function csvHistoricoAutorDirector(e) {
+  if (e.type === 'libro') return e.autor;
+  if (e.type === 'disco') return e.artista;
+  return e.director;
+}
+
+function csvHistoricoPublicacion(e) {
+  return e.type === 'libro' || e.type === 'disco' ? e.anio_pub : e.anio_est;
+}
+
+function csvHistoricoDuracionPaginas(e) {
+  if (e.type === 'libro') return e.paginas;
+  if (e.type === 'pelicula' || e.type === 'serie') return e.duracion;
+  return 'No aplica';
+}
+
+function csvHistoricoTemporadaSaga(e) {
+  if (e.type === 'serie') return getTemporadaNum(e) || e.temporadas || 'No aplica';
+  return e.temporada || e.saga || e.coleccion || 'No aplica';
+}
+
+function csvHistoricoBasadoTitulo(e) {
+  if (e.basada && e.autor_original) return e.autor_original;
+  return e.titulo_original || 'No aplica';
+}
+
+function construirCSVHistoricoCompleto() {
+  const headers = [
+    'ID','Categoría','Nombre','Temporada/Saga','Autor/Director','LEN','Publicación','Año de Lec','Mes de Lec','N° Mes',
+    'Traductor','Editorial','Páginas / Minutos totales','Guion','Música','Fotografía','Protagonista','Basado en','Título','Idea Original','Colección','Dirigida por',
+    'Estado','Portada','Notas generales','Cantidad notas','Notas estructuradas','Elenco','País','Productora','Géneros cine','Géneros libro','Temporada actual','Capítulo actual','Capítulos totales','Minutos episodio',
+    'Disco artista/grupo','Disco productor','Disco discográfica','Disco músicos','Disco colaboraciones','Fecha actualización'
+  ];
+
+  const rows = (db.entries || []).map((e, idx) => {
+    const notas = Array.isArray(e.notas_lista) ? e.notas_lista : [];
+    const row = [
+      e.id || idx + 1,
+      csvHistoricoCategoria(e.type),
+      e.titulo,
+      csvHistoricoTemporadaSaga(e),
+      csvHistoricoAutorDirector(e),
+      e.type === 'libro' ? e.idioma : 'No aplica',
+      csvHistoricoPublicacion(e),
+      e.anio,
+      e.mes,
+      csvHistoricoNumeroMes(e.mes),
+      e.type === 'libro' ? e.traductor : 'No aplica',
+      e.type === 'libro' ? e.editorial : e.type === 'disco' ? e.discografica : 'No aplica',
+      csvHistoricoDuracionPaginas(e),
+      e.guionista || 'No aplica',
+      e.musica || 'No aplica',
+      e.fotografia || 'No aplica',
+      e.protagonista || 'No aplica',
+      e.basada || 'No aplica',
+      csvHistoricoBasadoTitulo(e),
+      e.idea_original || e.autor_original || 'No aplica',
+      e.coleccion || 'No aplica',
+      e.dirigida_por || e.director_original || 'No aplica',
+      e.estado || (e.type === 'disco' ? 'Escuchado' : 'No aplica'),
+      e.cover || 'No aplica',
+      e.notas || 'No aplica',
+      notas.length,
+      csvHistoricoNotasEstructuradas(e),
+      Array.isArray(e.elenco) ? e.elenco : 'No aplica',
+      e.pais ? getPaisNombre(e.pais) : 'No aplica',
+      e.productora || 'No aplica',
+      Array.isArray(e.generos_cine) ? e.generos_cine : 'No aplica',
+      Array.isArray(e.generos) ? e.generos : 'No aplica',
+      e.temporadaActual || e.temporadas || 'No aplica',
+      e.capActual || 'No aplica',
+      e.capTotal || e.capsPorTemp || 'No aplica',
+      e.minEpisodio || 'No aplica',
+      e.type === 'disco' ? e.artista : 'No aplica',
+      e.type === 'disco' ? e.productor : 'No aplica',
+      e.type === 'disco' ? e.discografica : 'No aplica',
+      e.type === 'disco' && Array.isArray(e.musicos) ? e.musicos : 'No aplica',
+      e.type === 'disco' && Array.isArray(e.colaboraciones) ? e.colaboraciones : 'No aplica',
+      e._updatedAt ? new Date(e._updatedAt).toISOString() : 'No aplica'
+    ];
+    return row.map(v => csvHistoricoEscape(csvHistoricoNoAplica(v))).join(',');
+  });
+
+  return '\ufeff' + headers.map(csvHistoricoEscape).join(',') + '\n' + rows.join('\n');
+}
+
+function exportarCSVHistoricoCompleto() {
+  try {
+    const csv = construirCSVHistoricoCompleto();
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `LUMEN_csv_historico_completo_${todaySantiagoStr()}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    showToast('✓ CSV histórico exportado');
+  } catch (err) {
+    console.error(err);
+    showToast('No se pudo exportar el CSV histórico');
+  }
 }
 
 function clearAll() {
