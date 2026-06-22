@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1a1510">
-<title>LUMEN v144 — Biblioteca Personal</title>
+<title>LUMEN v145 — Biblioteca Personal</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231a1510'/><text x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' font-family='Georgia,serif' font-size='14' font-weight='900' font-style='italic' fill='%23c8952a' letter-spacing='0.5'>L</text><rect x='6' y='23' width='20' height='2' rx='1' fill='%238b2020'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
@@ -153,6 +153,11 @@ select.input { cursor: pointer; }
   animation: slideUp 0.22s ease;
 }
 @keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+@keyframes slideInRight { from { transform: translateX(50px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+@media (max-width: 640px) {
+  #modal-inf-carga { align-items:flex-end !important; justify-content:center !important; }
+  #modal-inf-carga .modal { width:100% !important; height:auto !important; max-height:88dvh !important; border-left:none !important; border-top:3px solid var(--gold) !important; animation:slideUp 0.22s ease !important; }
+}
 .modal-handle { width: 36px; height: 3px; background: var(--border); border-radius: 2px; margin: 12px auto; }
 .modal-header {
   padding: 8px 20px 14px; display: flex; justify-content: space-between; align-items: center;
@@ -1184,19 +1189,9 @@ select.input { cursor: pointer; }
   <!-- TAB: INFLUENCIAS -->
   <div id="mapa-influencias-panel" style="display:flex;flex-direction:column;flex:1;overflow:hidden;">
     <div style="padding:10px 16px;display:flex;gap:8px;align-items:center;border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap;">
-      <button class="btn btn-secondary btn-sm" style="width:auto;" onclick="openModalInfluencia()">+ Añadir relación</button>
+      <button class="btn btn-secondary btn-sm" style="width:auto;" onclick="openInfluenciasCargaPanel()">+ Añadir relación</button>
       <button class="btn btn-secondary btn-sm" style="width:auto;" onclick="renderMapaInfluencias()">↻ Actualizar</button>
       <span id="inf-count" style="font-size:11px;color:var(--ink4);margin-left:auto;"></span>
-    </div>
-    <div id="inf-cards" style="padding:12px 16px;border-bottom:1px solid var(--border);background:var(--cream);flex-shrink:0;max-height:228px;overflow-y:auto;">
-      <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:10px;">
-        <div>
-          <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--ink4);font-weight:700;">Carga operativa</div>
-          <div style="font-family:var(--font-serif);font-size:17px;font-weight:700;color:var(--ink);font-style:italic;">Relaciones de influencia</div>
-        </div>
-        <div style="font-size:10px;color:var(--ink4);text-align:right;line-height:1.4;">Manual o JSON<br>por tipo de relación</div>
-      </div>
-      <div id="inf-type-cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;"></div>
     </div>
     <div id="mapa-influencias-svg" style="flex:1;overflow:hidden;position:relative;cursor:grab;">
       <div id="inf-empty" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;color:var(--ink4);">
@@ -1206,6 +1201,23 @@ select.input { cursor: pointer; }
     </div>
     <!-- Legend -->
     <div id="inf-lista" style="overflow-y:auto;max-height:200px;border-top:1px solid var(--border);flex-shrink:0;display:none;"></div>
+  </div>
+
+  <!-- DRAWER: CARGA OPERATIVA DE INFLUENCIAS -->
+  <div id="modal-inf-carga" class="modal-overlay" style="display:none;align-items:stretch;justify-content:flex-end;">
+    <div class="modal" style="width:min(520px,100%);height:100%;max-height:100%;border-top:none;border-left:3px solid var(--gold);padding:0 0 24px;animation:slideInRight 0.22s ease;">
+      <div class="modal-header" style="position:sticky;top:0;background:var(--cream);z-index:2;">
+        <div>
+          <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--ink4);font-weight:700;">Carga operativa</div>
+          <div class="modal-title">Relaciones de influencia</div>
+          <div style="font-size:12px;color:var(--ink3);margin-top:3px;">Elige tipo de relación y luego carga manual o JSON.</div>
+        </div>
+        <button class="btn-icon" onclick="closeInfluenciasCargaPanel()"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+      <div class="modal-body">
+        <div id="inf-type-cards" style="display:grid;grid-template-columns:1fr;gap:10px;"></div>
+      </div>
+    </div>
   </div>
 
   <!-- TAB: RUTAS -->
@@ -1927,7 +1939,7 @@ select.input { cursor: pointer; }
     Cerrar sesión
   </button>
   <div style="padding:8px 16px 10px;border-top:1px solid var(--border);font-size:10px;color:var(--ink4);letter-spacing:1px;text-align:right;">
-    LUMEN v144
+    LUMEN v145
   </div>
 </div>
 
@@ -8907,6 +8919,16 @@ const INF_CARD_DEFS = [
 ];
 let _infJsonPreviewItems = [];
 
+function openInfluenciasCargaPanel() {
+  renderInfluenciasTypeCards();
+  const m = document.getElementById('modal-inf-carga');
+  if (m) m.style.display = 'flex';
+}
+function closeInfluenciasCargaPanel() {
+  const m = document.getElementById('modal-inf-carga');
+  if (m) m.style.display = 'none';
+}
+
 function renderInfluenciasTypeCards() {
   const el = document.getElementById('inf-type-cards');
   if (!el) return;
@@ -8918,8 +8940,8 @@ function renderInfluenciasTypeCards() {
       </div>
       <div style="font-size:11px;color:var(--ink3);line-height:1.5;flex:1;">${c.desc}</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
-        <button onclick="openModalInfluencia(null,'${c.tipo}')" style="padding:7px 8px;border:1.5px solid var(--border);border-radius:4px;background:var(--cream2);font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;font-family:var(--font-sans);color:var(--ink2);">Cargar datos</button>
-        <button onclick="openInfJsonImport('${c.tipo}')" style="padding:7px 8px;border:1.5px solid var(--ink);border-radius:4px;background:var(--ink);font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;font-family:var(--font-sans);color:var(--cream);">Cargar JSON</button>
+        <button onclick="closeInfluenciasCargaPanel();openModalInfluencia(null,'${c.tipo}')" style="padding:7px 8px;border:1.5px solid var(--border);border-radius:4px;background:var(--cream2);font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;font-family:var(--font-sans);color:var(--ink2);">Cargar datos</button>
+        <button onclick="closeInfluenciasCargaPanel();openInfJsonImport('${c.tipo}')" style="padding:7px 8px;border:1.5px solid var(--ink);border-radius:4px;background:var(--ink);font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;font-family:var(--font-sans);color:var(--cream);">Cargar JSON</button>
       </div>
     </div>`).join('');
 }
