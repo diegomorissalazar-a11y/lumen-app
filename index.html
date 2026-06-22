@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1a1510">
-<title>LUMEN v147 — Biblioteca Personal</title>
+<title>LUMEN v148 — Biblioteca Personal</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231a1510'/><text x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' font-family='Georgia,serif' font-size='14' font-weight='900' font-style='italic' fill='%23c8952a' letter-spacing='0.5'>L</text><rect x='6' y='23' width='20' height='2' rx='1' fill='%238b2020'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
@@ -1184,19 +1184,9 @@ select.input { cursor: pointer; }
   <!-- TAB: INFLUENCIAS -->
   <div id="mapa-influencias-panel" style="display:flex;flex-direction:column;flex:1;overflow:hidden;">
     <div style="padding:10px 16px;display:flex;gap:8px;align-items:center;border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap;">
-      <button class="btn btn-secondary btn-sm" style="width:auto;" onclick="openModalInfluencia()">+ Añadir relación</button>
+      <button class="btn btn-secondary btn-sm" style="width:auto;" onclick="openInfluenciasCargaPanel()">+ Añadir relación</button>
       <button class="btn btn-secondary btn-sm" style="width:auto;" onclick="renderMapaInfluencias()">↻ Actualizar</button>
       <span id="inf-count" style="font-size:11px;color:var(--ink4);margin-left:auto;"></span>
-    </div>
-    <div id="inf-cards" style="padding:12px 16px;border-bottom:1px solid var(--border);background:var(--cream);flex-shrink:0;max-height:228px;overflow-y:auto;">
-      <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:10px;">
-        <div>
-          <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--ink4);font-weight:700;">Carga operativa</div>
-          <div style="font-family:var(--font-serif);font-size:17px;font-weight:700;color:var(--ink);font-style:italic;">Relaciones de influencia</div>
-        </div>
-        <div style="font-size:10px;color:var(--ink4);text-align:right;line-height:1.4;">Manual o JSON<br>por tipo de relación</div>
-      </div>
-      <div id="inf-type-cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;"></div>
     </div>
     <div id="mapa-influencias-svg" style="flex:1;overflow:hidden;position:relative;cursor:grab;">
       <div id="inf-empty" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;color:var(--ink4);">
@@ -1540,6 +1530,35 @@ select.input { cursor: pointer; }
         <button class="btn btn-secondary" onclick="closeModal('modal-inf-json')" style="flex:1;min-width:140px;">Cancelar</button>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- ══════ MODAL: ACCIONES INFLUENCIAS ══════ -->
+<div id="modal-inf-actions" class="modal-overlay">
+  <div class="modal" style="max-height:88vh;">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">Nueva relación de influencia</div>
+        <div style="font-size:11px;color:var(--ink4);margin-top:3px;letter-spacing:1px;text-transform:uppercase;">Carga manual o JSON por tipo</div>
+      </div>
+      <button class="btn-icon" onclick="closeModal('modal-inf-actions')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div id="inf-type-cards-panel" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ MODAL: DETALLE INFLUENCIA ══════ -->
+<div id="modal-inf-detail" class="modal-overlay">
+  <div class="modal" style="max-height:88vh;">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title">Detalle de relación</div>
+      <button class="btn-icon" onclick="closeModal('modal-inf-detail')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body" id="inf-detail-body"></div>
   </div>
 </div>
 
@@ -1931,7 +1950,7 @@ select.input { cursor: pointer; }
     Cerrar sesión
   </button>
   <div style="padding:8px 16px 10px;border-top:1px solid var(--border);font-size:10px;color:var(--ink4);letter-spacing:1px;text-align:right;">
-    LUMEN v147
+    LUMEN v148
   </div>
 </div>
 
@@ -9057,8 +9076,8 @@ const INF_CARD_DEFS = [
 ];
 let _infJsonPreviewItems = [];
 
-function renderInfluenciasTypeCards() {
-  const el = document.getElementById('inf-type-cards');
+function renderInfluenciasTypeCards(targetId='inf-type-cards-panel') {
+  const el = document.getElementById(targetId) || document.getElementById('inf-type-cards-panel');
   if (!el) return;
   el.innerHTML = INF_CARD_DEFS.map(c => `
     <div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:12px;box-shadow:0 1px 5px rgba(26,21,16,0.05);display:flex;flex-direction:column;gap:8px;min-height:138px;">
@@ -9068,10 +9087,15 @@ function renderInfluenciasTypeCards() {
       </div>
       <div style="font-size:11px;color:var(--ink3);line-height:1.5;flex:1;">${c.desc}</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
-        <button onclick="openModalInfluencia(null,'${c.tipo}')" style="padding:7px 8px;border:1.5px solid var(--border);border-radius:4px;background:var(--cream2);font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;font-family:var(--font-sans);color:var(--ink2);">Cargar datos</button>
-        <button onclick="openInfJsonImport('${c.tipo}')" style="padding:7px 8px;border:1.5px solid var(--ink);border-radius:4px;background:var(--ink);font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;font-family:var(--font-sans);color:var(--cream);">Cargar JSON</button>
+        <button onclick="closeModal('modal-inf-actions');openModalInfluencia(null,'${c.tipo}')" style="padding:7px 8px;border:1.5px solid var(--border);border-radius:4px;background:var(--cream2);font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;font-family:var(--font-sans);color:var(--ink2);">Cargar datos</button>
+        <button onclick="closeModal('modal-inf-actions');openInfJsonImport('${c.tipo}')" style="padding:7px 8px;border:1.5px solid var(--ink);border-radius:4px;background:var(--ink);font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;font-family:var(--font-sans);color:var(--cream);">Cargar JSON</button>
       </div>
     </div>`).join('');
+}
+
+function openInfluenciasCargaPanel() {
+  renderInfluenciasTypeCards('inf-type-cards-panel');
+  openModal('modal-inf-actions');
 }
 
 function openInfJsonImport(tipo) {
@@ -9412,6 +9436,55 @@ function deleteInfluencia(id) {
   if (!confirm('¿Eliminar esta relación?')) return;
   mapas.influencias = mapas.influencias.filter(x => x.id !== id);
   saveMapas(); renderMapaInfluencias(); showToast('Relación eliminada');
+}
+
+
+function fieldRow(label, value, isLong=false) {
+  if (value === undefined || value === null || String(value).trim() === '') return '';
+  const safe = escapeHtml(value);
+  return `<div style="padding:9px 0;border-bottom:1px solid var(--cream2);display:${isLong?'block':'grid'};grid-template-columns:150px 1fr;gap:10px;">
+    <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink4);font-weight:700;margin-bottom:${isLong?'5px':'0'};">${label}</div>
+    <div style="font-size:13px;color:var(--ink2);line-height:1.65;white-space:pre-wrap;">${safe}</div>
+  </div>`;
+}
+
+function openInfluenciaDetalle(id) {
+  const inf = (mapas.influencias || []).find(x => x.id === id);
+  if (!inf) return;
+  const body = document.getElementById('inf-detail-body');
+  if (!body) return;
+  const tipoLabel = INF_TIPO_LABELS[inf.tipo] || inf.tipo || 'Relación';
+  const tags = Array.isArray(inf.tags) ? inf.tags.join(', ') : (inf.tags || '');
+  const obraDestino = inf.libro_ref || inf.destino_titulo || inf.destino_original || '';
+  const ubic = [inf.ubicacion_tipo, inf.ubicacion_detalle].filter(Boolean).join(': ');
+  body.innerHTML = `
+    <div style="margin-bottom:14px;">
+      <div style="font-family:var(--font-serif);font-size:24px;font-weight:700;line-height:1.25;color:var(--ink);">${escapeHtml(inf.fuente || '—')} → ${escapeHtml(inf.destino || '—')}</div>
+      <div style="font-size:12px;color:var(--ink4);margin-top:5px;">${escapeHtml(tipoLabel)}${obraDestino ? ' · en ' + escapeHtml(obraDestino) : ''}</div>
+    </div>
+    <div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:14px;">
+      ${fieldRow('Tipo', tipoLabel)}
+      ${fieldRow('Fuente / autor citado', inf.fuente)}
+      ${fieldRow('Nombre en texto', inf.fuente_nombre_en_texto)}
+      ${fieldRow('Destino / autor influido', inf.destino)}
+      ${fieldRow('Obra destino', obraDestino)}
+      ${fieldRow('Obra citada', inf.obra)}
+      ${fieldRow('Ubicación', ubic || inf.ubicacion_detalle)}
+      ${fieldRow('Texto citado', inf.texto, true)}
+      ${fieldRow('Editorial', inf.editorial)}
+      ${fieldRow('Año', inf.anio_pub)}
+      ${fieldRow('Ciudad', inf.ciudad)}
+      ${fieldRow('Edición', inf.edicion)}
+      ${fieldRow('Nota', inf.nota, true)}
+      ${fieldRow('Tags', tags)}
+      ${fieldRow('ID importación', inf.id_import)}
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn btn-primary" onclick="closeModal('modal-inf-detail');openModalInfluencia('${inf.id}')" style="flex:1;min-width:130px;">✏ Editar</button>
+      <button class="btn btn-secondary" onclick="closeModal('modal-inf-detail')" style="flex:1;min-width:130px;">Cerrar</button>
+      <button class="btn btn-red" onclick="closeModal('modal-inf-detail');deleteInfluencia('${inf.id}')" style="flex:1;min-width:130px;">🗑 Eliminar</button>
+    </div>`;
+  openModal('modal-inf-detail');
 }
 
 // ══════════════════════════
@@ -10052,7 +10125,7 @@ function deleteRuta(id) {
 // ══════════════════════════
 //  D3 GRAPH ENGINE
 // ══════════════════════════
-function buildD3Graph(containerId, nodes, links, colorFn, tooltipEdgeFn, fuenteTipo = {}) {
+function buildD3Graph(containerId, nodes, links, colorFn, tooltipEdgeFn, fuenteTipo = {}, onLinkClick = null) {
   const container=document.getElementById(containerId); if(!container) return;
   d3.select('#'+containerId).selectAll('*').remove();
   const W=container.clientWidth||360, H=container.clientHeight||480;
@@ -10104,7 +10177,13 @@ function buildD3Graph(containerId, nodes, links, colorFn, tooltipEdgeFn, fuenteT
   const link=g.append('g').selectAll('line').data(links).join('line')
     .attr('stroke', d=>colorFn(d.tipo))
     .attr('stroke-width', 2).attr('stroke-opacity', 0.75)
-    .attr('marker-end', d=>`url(#arr-${d.tipo})`);
+    .attr('marker-end', d=>`url(#arr-${d.tipo})`)
+    .style('cursor', onLinkClick ? 'pointer' : 'default')
+    .on('click', function(event, d) {
+      if (!onLinkClick) return;
+      event.stopPropagation();
+      onLinkClick(d);
+    });
   link.append('title').text(d=>tooltipEdgeFn(d));
 
   // Nodes
@@ -10267,18 +10346,18 @@ function renderListaInfluencias() {
   if (data.length === 0) { el.style.display = 'none'; return; }
   el.style.display = 'block';
   el.innerHTML = data.map(r => `
-    <div style="display:flex;align-items:center;gap:8px;padding:9px 14px;border-bottom:1px solid var(--cream2);">
+    <div onclick="openInfluenciaDetalle('${r.id}')" style="display:flex;align-items:center;gap:8px;padding:9px 14px;border-bottom:1px solid var(--cream2);cursor:pointer;">
       <div style="flex:1;min-width:0;">
         <div style="font-size:12px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-          <span style="color:var(--ink3);">${r.fuente}</span> → <span>${r.destino}</span>
+          <span style="color:var(--ink3);">${escapeHtml(r.fuente)}</span> → <span>${escapeHtml(r.destino)}</span>
         </div>
-        <div style="font-size:10px;color:var(--ink4);margin-top:2px;">${INF_TIPO_LABELS[r.tipo]||r.tipo}${r.libro_ref?' · '+r.libro_ref:''}${r.pagina?' p.'+r.pagina:''}</div>
+        <div style="font-size:10px;color:var(--ink4);margin-top:2px;">${escapeHtml(INF_TIPO_LABELS[r.tipo]||r.tipo)}${r.libro_ref?' · '+escapeHtml(r.libro_ref):''}${r.pagina?' p.'+escapeHtml(r.pagina):''}</div>
       </div>
-      <button onclick="openModalInfluencia('${r.id}')"
+      <button onclick="event.stopPropagation();openModalInfluencia('${r.id}')"
         style="flex-shrink:0;padding:5px 10px;border:1.5px solid var(--border);border-radius:4px;background:#fff;font-size:10px;font-weight:700;cursor:pointer;font-family:var(--font-sans);color:var(--ink3);">
         ✏ Editar
       </button>
-      <button onclick="deleteInfluencia('${r.id}')"
+      <button onclick="event.stopPropagation();deleteInfluencia('${r.id}')"
         style="flex-shrink:0;padding:5px 10px;border:1.5px solid var(--border);border-radius:4px;background:#fff;font-size:10px;font-weight:700;cursor:pointer;font-family:var(--font-sans);color:var(--red);">
         🗑
       </button>
@@ -10287,7 +10366,6 @@ function renderListaInfluencias() {
 
 function renderMapaInfluencias() {
   migrateInfluenciasToAuthorGraph();
-  renderInfluenciasTypeCards();
   const data=mapas.influencias;
   const elCount = document.getElementById('inf-count');
   const elEmpty = document.getElementById('inf-empty');
@@ -10311,7 +10389,8 @@ function renderMapaInfluencias() {
   buildD3Graph('mapa-influencias-svg', nodes, links,
     tipo=>INF_COLORS[tipo]||'#999',
     d=>`${INF_LABELS[d.tipo]||d.tipo}${d.libro_ref?' · '+d.libro_ref:''}${d.pagina?' p.'+d.pagina:''}${d.texto?'\n"'+d.texto+'"':''}`,
-    {}
+    {},
+    d=>openInfluenciaDetalle(d.id)
   );
 }
 
