@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1a1510">
-<title>LUMEN v148 — Biblioteca Personal</title>
+<title>LUMEN v150 — Biblioteca Personal</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231a1510'/><text x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' font-family='Georgia,serif' font-size='14' font-weight='900' font-style='italic' fill='%23c8952a' letter-spacing='0.5'>L</text><rect x='6' y='23' width='20' height='2' rx='1' fill='%238b2020'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
@@ -474,7 +474,8 @@ select.input { cursor: pointer; }
 .notas-tree .toc-note-link { font-size:11px; color:var(--ink3); padding-left:12px; }
 .notas-reader-mobile-toggle { display:none; width:100%; margin:0 0 10px; border:1.5px solid var(--border); border-radius:6px; background:#fff; padding:10px 12px; font-family:var(--font-sans); font-size:12px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--ink2); text-align:left; cursor:pointer; }
 .notas-reader-doc { background:#fff; border:1px solid var(--border); border-radius:6px; box-shadow:var(--shadow); min-height:calc(100dvh - 170px); padding:34px 44px 48px; }
-.notas-doc-category { font-family:var(--font-serif); font-size:29px; font-weight:900; font-style:italic; color:var(--ink); text-align:center; margin:6px 0 34px; padding-bottom:12px; border-bottom:2px solid var(--ink); scroll-margin-top:88px; }
+.notas-doc-category { font-family:var(--font-serif); font-size:29px; font-weight:900; font-style:italic; color:var(--ink); text-align:center; margin:6px 0 52px; padding:0 0 22px; border-bottom:none; scroll-margin-top:88px; min-height:280px; display:flex; align-items:center; justify-content:center; flex-direction:column; position:relative; }
+.notas-doc-category::after { content:''; display:block; width:min(520px, 82%); border-bottom:2px solid var(--ink); margin-top:18px; }
 .notas-doc-entry { scroll-margin-top:88px; padding:22px 0 34px; border-bottom:1px solid var(--cream3); }
 .notas-doc-entry:last-child { border-bottom:none; }
 .notas-doc-entry-title { font-family:var(--font-serif); font-size:24px; font-weight:900; color:var(--ink); text-align:center; text-transform:none; margin-bottom:6px; }
@@ -503,7 +504,8 @@ select.input { cursor: pointer; }
   .notas-reader-toc.open { display:block; }
   .notas-reader-doc { padding:24px 16px 34px; min-height:auto; }
   .notas-doc-title { font-size:38px; }
-  .notas-doc-category { font-size:25px; margin-bottom:26px; }
+  .notas-doc-category { font-size:25px; min-height:180px; margin-bottom:34px; padding-bottom:18px; }
+  .notas-doc-category::after { width:82%; margin-top:14px; }
   .notas-doc-entry-title { font-size:21px; }
 }
 
@@ -1950,7 +1952,7 @@ select.input { cursor: pointer; }
     Cerrar sesión
   </button>
   <div style="padding:8px 16px 10px;border-top:1px solid var(--border);font-size:10px;color:var(--ink4);letter-spacing:1px;text-align:right;">
-    LUMEN v148
+    LUMEN v150
   </div>
 </div>
 
@@ -2043,6 +2045,21 @@ select.input { cursor: pointer; }
             </select>
           </div>
           <div class="field"><label>Año lectura</label><input class="input" type="number" id="f-anio-lect" placeholder="2025"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="field"><label>Origen del libro</label>
+            <select class="input" id="f-origen-adq">
+              <option value="">—</option>
+              <option value="compra">Compra</option>
+              <option value="regalo">Regalo</option>
+              <option value="herencia">Herencia</option>
+            </select>
+            <div style="font-size:10px;color:var(--ink4);margin-top:4px;line-height:1.4;">Solo libros físicos o significativos. No registrar compras digitales.</div>
+          </div>
+          <div class="field"><label>Fecha de adquisición</label>
+            <input class="input" type="date" id="f-fecha-adq">
+            <div style="font-size:10px;color:var(--ink4);margin-top:4px;line-height:1.4;">Compra, regalo o herencia.</div>
+          </div>
         </div>
         <div class="field">
           <label>Estado</label>
@@ -3658,7 +3675,7 @@ function selectType(type, btn) {
 }
 
 function resetForm() {
-  ['f-titulo','f-autor','f-editorial','f-paginas','f-anio-pub','f-traductor','f-idioma','f-cover','f-notas',
+  ['f-titulo','f-autor','f-editorial','f-paginas','f-anio-pub','f-traductor','f-idioma','f-cover','f-notas','f-origen-adq','f-fecha-adq',
    'fp-titulo','fp-director','fp-anio-est','fp-duracion','fp-foto','fp-musica','fp-protagonista','fp-guionista','fp-cover','fp-elenco','fp-productora',
    'fs-titulo','fs-director','fs-anio-est','fs-duracion','fs-caps-por-temp','fs-min-episodio','fs-musica','fs-protagonista','fs-guionista','fs-cover','fs-elenco',
    'fd-titulo','fd-artista','fd-anio-pub','fd-productor','fd-discografica','fd-musicos','fd-colaboraciones','fd-mes','fd-anio-escuchado','fd-cover']
@@ -3677,6 +3694,8 @@ function resetForm() {
   populateIdiomaSelect('');
   document.getElementById('f-idioma-otro').style.display = 'none';
   document.getElementById('f-idioma-otro').value = '';
+  const origenAdqEl = document.getElementById('f-origen-adq'); if (origenAdqEl) origenAdqEl.value = '';
+  const fechaAdqEl = document.getElementById('f-fecha-adq'); if (fechaAdqEl) fechaAdqEl.value = '';
   resetGeneros();
   setGenerosCineSeleccionados([]);
   document.getElementById('fp-pais').value = '';
@@ -4058,6 +4077,8 @@ function saveEntry() {
       idioma: getIdiomaValueFromForm(),
       mes: document.getElementById('f-mes').value,
       anio: parseInt(document.getElementById('f-anio-lect').value) || new Date().getFullYear(),
+      origen_adquisicion: document.getElementById('f-origen-adq')?.value || null,
+      fecha_adquisicion: document.getElementById('f-fecha-adq')?.value || null,
       estado: document.getElementById('f-estado').value,
       progreso: parseInt(document.getElementById('f-progreso').value),
       abandono: document.getElementById('f-abandono').value.trim() || null,
@@ -5130,18 +5151,53 @@ function escapeNoteHtml(value) {
     .replace(/</g,'&lt;')
     .replace(/>/g,'&gt;');
 }
-function renderInlineNoteFormat(text) {
-  let html = escapeNoteHtml(text);
-  // Formato liviano guardado como marcas de texto: **negrita**, *cursiva*, __subrayado__.
-  html = html.replace(/\*\*([\s\S]+?)\*\*/g, '<strong>$1</strong>');
-  html = html.replace(/__([\s\S]+?)__/g, '<u>$1</u>');
-  html = html.replace(/(^|[^*])\*([^*\n][\s\S]*?[^*\n])\*(?!\*)/g, '$1<em>$2</em>');
+function renderInlineNoteFormatStateful(text, state) {
+  // Parser liviano para notas. Mantiene estilos aunque el usuario abra **negrita**
+  // en una línea y la cierre en otra, caso común al transcribir apuntes.
+  const escChar = ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch] || ch);
+  const st = state || {bold:false, italic:false, underline:false};
+  const rawText = String(text || '');
+  let html = '';
+  if (st.bold) html += '<strong>';
+  if (st.italic) html += '<em>';
+  if (st.underline) html += '<u>';
+
+  for (let i = 0; i < rawText.length; i++) {
+    const rest = rawText.slice(i);
+    if (rest.startsWith('**')) {
+      html += st.bold ? '</strong>' : '<strong>';
+      st.bold = !st.bold;
+      i += 1;
+    } else if (rest.startsWith('__')) {
+      html += st.underline ? '</u>' : '<u>';
+      st.underline = !st.underline;
+      i += 1;
+    } else if (rest[0] === '*' && rest[1] !== '*') {
+      html += st.italic ? '</em>' : '<em>';
+      st.italic = !st.italic;
+    } else if (rest[0] === '_' && rest[1] !== '_') {
+      html += st.italic ? '</em>' : '<em>';
+      st.italic = !st.italic;
+    } else {
+      html += escChar(rest[0]);
+    }
+  }
+
+  // Cierre visual por línea/párrafo para no dejar HTML abierto.
+  // El estado queda vivo y la siguiente línea vuelve a abrir el estilo.
+  if (st.underline) html += '</u>';
+  if (st.italic) html += '</em>';
+  if (st.bold) html += '</strong>';
   return html;
+}
+function renderInlineNoteFormat(text) {
+  return renderInlineNoteFormatStateful(text, {bold:false, italic:false, underline:false});
 }
 function renderRichNoteText(text) {
   const lines = String(text || '').replace(/\r\n/g, '\n').split('\n');
   const romanRe = /^\s*([IVXLCDM]+)[\.)]\s+(.+)$/i;
   const numRe = /^\s*(\d+)[\.)]\s+(.+)$/;
+  const inlineState = {bold:false, italic:false, underline:false};
   let html = '';
   let listType = null;
 
@@ -5167,16 +5223,16 @@ function renderRichNoteText(text) {
     const roman = raw.match(romanRe);
     if (numeric) {
       openList('decimal', parseInt(numeric[1], 10));
-      html += `<li>${renderInlineNoteFormat(numeric[2])}</li>`;
+      html += `<li>${renderInlineNoteFormatStateful(numeric[2], inlineState)}</li>`;
     } else if (roman) {
       openList('roman');
-      html += `<li>${renderInlineNoteFormat(roman[2])}</li>`;
+      html += `<li>${renderInlineNoteFormatStateful(roman[2], inlineState)}</li>`;
     } else if (!raw.trim()) {
       closeList();
       html += '<div class="nota-spacer"></div>';
     } else {
       closeList();
-      html += `<p>${renderInlineNoteFormat(raw)}</p>`;
+      html += `<p>${renderInlineNoteFormatStateful(raw, inlineState)}</p>`;
     }
   });
   closeList();
@@ -5383,6 +5439,10 @@ function showDetail(id) {
   if (coverUrl(e)) html += `<img src="${esc(coverUrl(e))}" style="width:80px;height:110px;object-fit:cover;border-radius:3px;float:right;margin:0 0 12px 12px;" onerror="this.style.display='none'">`;
   if (e.type === 'libro') {
     html += row('Autor', e.autor) + row('Editorial', e.editorial) + row('Páginas', e.paginas) + row('Publicado', e.anio_pub) + row('Traductor', e.traductor) + row('Idioma orig.', e.idioma) + row('Leído', `${e.mes||''} ${e.anio||''}`);
+    html += row('Origen', origenAdquisicionLabel(e.origen_adquisicion));
+    html += row('Adquirido', e.fecha_adquisicion ? fechaCL(e.fecha_adquisicion) : '');
+    const espera = libroEsperaInfo(e);
+    if (espera) html += row('Tiempo espera', formatDiasEspera(espera.dias));
     if (e.estado === 'leyendo') html += row('Progreso', e.progreso + '%');
     if (e.estado === 'abandonado' && e.abandono) html += row('Abandonado', e.abandono);
     if (e.generos && e.generos.length) {
@@ -5651,6 +5711,8 @@ function editEntry(id) {
       document.getElementById('f-idioma-otro').style.display = 'none';
       document.getElementById('f-mes').value = e.mes||'';
       document.getElementById('f-anio-lect').value = e.anio||'';
+      const origenAdqEl = document.getElementById('f-origen-adq'); if (origenAdqEl) origenAdqEl.value = e.origen_adquisicion || '';
+      const fechaAdqEl = document.getElementById('f-fecha-adq'); if (fechaAdqEl) fechaAdqEl.value = e.fecha_adquisicion || '';
       document.getElementById('f-estado').value = e.estado||'leido';
       document.getElementById('f-progreso').value = e.progreso||0;
       document.getElementById('prog-pct').textContent = e.progreso||0;
@@ -6010,6 +6072,59 @@ function renderYearCharts(libros, peliculas, series) {
 // ═══════════════════════════════════
 const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 const MESES_SHORT = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+function escHtml(s) { return s ? String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') : ''; }
+function parseLocalDateStr(dateStr) {
+  if (!dateStr) return null;
+  const m = String(dateStr).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return null;
+  return new Date(parseInt(m[1],10), parseInt(m[2],10)-1, parseInt(m[3],10));
+}
+function diasEntreFechas(inicioStr, finStr) {
+  const a = parseLocalDateStr(inicioStr), b = parseLocalDateStr(finStr);
+  if (!a || !b) return null;
+  const diff = Math.round((b - a) / 86400000);
+  return diff >= 0 ? diff : null;
+}
+function fechaLecturaLibro(e) {
+  if (!e || e.type !== 'libro') return null;
+  if (e.finishDate) return e.finishDate;
+  if (Array.isArray(e.readDates) && e.readDates.length) {
+    const last = [...e.readDates].filter(r=>r && r.date).sort((a,b)=>String(a.date).localeCompare(String(b.date))).pop();
+    if (last) return last.date;
+  }
+  if (e.anio && e.mes && MESES.includes(e.mes)) {
+    const y = parseInt(e.anio,10), m = MESES.indexOf(e.mes)+1;
+    if (y && m) return new Date(y, m, 0).toISOString().slice(0,10);
+  }
+  return null;
+}
+function diasAdquisicionALectura(e) {
+  if (!e || e.type !== 'libro' || !e.fecha_adquisicion) return null;
+  const lectura = fechaLecturaLibro(e);
+  if (!lectura) return null;
+  return diasEntreFechas(e.fecha_adquisicion, lectura);
+}
+function formatDiasEspera(dias) {
+  if (dias === null || dias === undefined) return '';
+  if (dias === 0) return 'mismo día';
+  if (dias === 1) return '1 día';
+  const años = Math.floor(dias / 365);
+  if (años >= 1) return `${dias.toLocaleString('es-CL')} días (~${años} año${años>1?'s':''})`;
+  return `${dias.toLocaleString('es-CL')} días`;
+}
+function origenAdquisicionLabel(v) {
+  const map = { compra:'Compra', regalo:'Regalo', herencia:'Herencia' };
+  return map[String(v||'').toLowerCase()] || '';
+}
+function fechaCL(dateStr) {
+  const d = parseLocalDateStr(dateStr);
+  return d ? d.toLocaleDateString('es-CL', {day:'2-digit', month:'short', year:'numeric'}) : (dateStr||'');
+}
+function libroEsperaInfo(e) {
+  const dias = diasAdquisicionALectura(e);
+  if (dias === null) return null;
+  return { dias, fechaLectura: fechaLecturaLibro(e), fechaAdq: e.fecha_adquisicion, origen: e.origen_adquisicion || '' };
+}
 
 let statsState = {
   libros:    { year: 'todos', filter: null, filterField: null, sortField: 'anio_pub', sortDir: 1, page: 0, chartMode: 'pags' },
@@ -6602,6 +6717,29 @@ function renderCuriosidadesLibros(libros) {
   const generosSorted = Object.entries(generoCount).sort((a,b)=>b[1]-a[1]);
   const topGenero = generosSorted[0];
   const librosConGenero = libros.filter(e=>e.generos&&e.generos.length>0).length;
+  const esperaLibros = libros
+    .map(e => ({ e, info: libroEsperaInfo(e) }))
+    .filter(x => x.info && Number.isFinite(x.info.dias));
+  const esperaProm = esperaLibros.length ? Math.round(esperaLibros.reduce((a,x)=>a+x.info.dias,0) / esperaLibros.length) : null;
+  const esperaRapido = esperaLibros.length ? esperaLibros.reduce((a,b)=>b.info.dias < a.info.dias ? b : a) : null;
+  const esperaLento = esperaLibros.length ? esperaLibros.reduce((a,b)=>b.info.dias > a.info.dias ? b : a) : null;
+  const esperaPorOrigen = ['compra','regalo','herencia'].map(origen => {
+    const arr = esperaLibros.filter(x => String(x.info.origen).toLowerCase() === origen);
+    if (!arr.length) return null;
+    const prom = Math.round(arr.reduce((a,x)=>a+x.info.dias,0) / arr.length);
+    return `${origenAdquisicionLabel(origen)}: ${formatDiasEspera(prom)} (${arr.length})`;
+  }).filter(Boolean);
+  const esperaPanel = esperaLibros.length ? `
+    <div style="margin:12px 0 4px;padding:10px 12px;border:1px solid var(--border);border-radius:6px;background:var(--cream2);">
+      <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink4);font-weight:700;margin-bottom:6px;">Tiempo en espera antes de lectura</div>
+      <div style="font-size:12px;color:var(--ink2);line-height:1.9;">
+        📦 Promedio: <b>${formatDiasEspera(esperaProm)}</b>.<br>
+        ⚡ Leído más rápido: <b>${escHtml(esperaRapido.e.titulo)}</b> — ${formatDiasEspera(esperaRapido.info.dias)}.<br>
+        🐢 Mayor espera: <b>${escHtml(esperaLento.e.titulo)}</b> — ${formatDiasEspera(esperaLento.info.dias)}.<br>
+        ${esperaPorOrigen.length ? `<span style="font-size:11px;color:var(--ink4);">${esperaPorOrigen.join(' · ')}</span><br>` : ''}
+        <span style="font-size:11px;color:var(--ink4);">${esperaLibros.length} de ${libros.length} libros tienen origen y fecha de adquisición.</span>
+      </div>
+    </div>` : '';
   const generosBar = generosSorted.length > 0 ? `
     <div style="margin:8px 0 4px;">
       <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink4);font-weight:700;margin-bottom:6px;">Distribución por género</div>
@@ -6629,6 +6767,7 @@ function renderCuriosidadesLibros(libros) {
       ${topGenero?`🏷 Género más leído: <b>${topGenero[0]}</b> (${topGenero[1]} libro${topGenero[1]>1?'s':''}).<br>`:''}
       ${librosConGenero>0?`<span style="font-size:11px;color:var(--ink4);">${librosConGenero} de ${libros.length} libros tienen género etiquetado.</span><br>`:''}
     </div>
+    ${esperaPanel}
     ${generosBar}
   </div>`;
 }
@@ -7337,7 +7476,7 @@ function construirCSVHistoricoCompleto() {
     'ID','Categoría','Nombre','Temporada/Saga','Autor/Director','LEN','Publicación','Año de Lec','Mes de Lec','N° Mes',
     'Traductor','Editorial','Páginas / Minutos totales','Guion','Música','Fotografía','Protagonista','Basado en','Título','Idea Original','Colección','Dirigida por',
     'Estado','Portada','Notas generales','Cantidad notas','Notas estructuradas','Elenco','País','Productora','Géneros cine','Géneros libro','Temporada actual','Capítulo actual','Capítulos totales','Minutos episodio',
-    'Disco artista/grupo','Disco productor','Disco discográfica','Disco músicos','Disco colaboraciones','Fecha actualización'
+    'Disco artista/grupo','Disco productor','Disco discográfica','Disco músicos','Disco colaboraciones','Origen del libro','Fecha de adquisición','Días adquisición a lectura','Fecha actualización'
   ];
 
   const rows = (db.entries || []).map((e, idx) => {
@@ -7384,6 +7523,9 @@ function construirCSVHistoricoCompleto() {
       e.type === 'disco' ? e.discografica : 'No aplica',
       e.type === 'disco' && Array.isArray(e.musicos) ? e.musicos : 'No aplica',
       e.type === 'disco' && Array.isArray(e.colaboraciones) ? e.colaboraciones : 'No aplica',
+      e.type === 'libro' ? (origenAdquisicionLabel(e.origen_adquisicion) || 'No aplica') : 'No aplica',
+      e.type === 'libro' ? (e.fecha_adquisicion || 'No aplica') : 'No aplica',
+      e.type === 'libro' ? (diasAdquisicionALectura(e) ?? 'No aplica') : 'No aplica',
       e._updatedAt ? new Date(e._updatedAt).toISOString() : 'No aplica'
     ];
     return row.map(v => csvHistoricoEscape(csvHistoricoNoAplica(v))).join(',');
