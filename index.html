@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1a1510">
-<title>LUMEN v150 — Biblioteca Personal</title>
+<title>LUMEN v151 — Biblioteca Personal</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231a1510'/><text x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' font-family='Georgia,serif' font-size='14' font-weight='900' font-style='italic' fill='%23c8952a' letter-spacing='0.5'>L</text><rect x='6' y='23' width='20' height='2' rx='1' fill='%238b2020'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
@@ -424,6 +424,22 @@ select.input { cursor: pointer; }
 .heatmap-cell.lvl2 { background:#8ec98e; }
 .heatmap-cell.lvl3 { background:#4a9e6b; }
 .heatmap-cell.lvl4 { background:#1a6e3c; }
+/* ── HEATMAP SEMANAL META ── */
+.weekly-meta-wrap { background:#fff; border:1px solid var(--border); border-radius:8px; padding:14px 16px; box-shadow:var(--shadow); }
+.weekly-meta-grid { display:grid; grid-template-columns:repeat(13,1fr); gap:5px; margin-top:12px; }
+.weekly-meta-cell { aspect-ratio:1.35; min-height:26px; border-radius:5px; border:1px solid rgba(26,21,16,0.08); cursor:pointer; position:relative; transition:transform .12s ease, box-shadow .12s ease; }
+.weekly-meta-cell:hover { transform:translateY(-1px); box-shadow:0 2px 8px rgba(26,21,16,0.12); }
+.weekly-meta-cell.current { outline:2px solid var(--ink); outline-offset:1px; }
+.weekly-meta-summary { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:10px; }
+.weekly-meta-legend { display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-top:10px; }
+.weekly-meta-legend span { font-size:10px; color:var(--ink4); }
+.weekly-meta-swatch { width:13px; height:13px; border-radius:3px; border:1px solid var(--border); }
+@media (max-width: 640px) {
+  .weekly-meta-grid { grid-template-columns:repeat(8,1fr); gap:4px; }
+  .weekly-meta-cell { min-height:24px; }
+  .weekly-meta-summary { grid-template-columns:repeat(2,1fr); }
+}
+
 /* ── COMPARADOR ── */
 .comparador-cols { display:grid; grid-template-columns:1fr 1fr; gap:12px; padding:0 20px 16px; }
 .comparador-col { background:#fff; border:1px solid var(--border); border-radius:8px; padding:12px; }
@@ -1141,6 +1157,12 @@ select.input { cursor: pointer; }
         <div style="width:12px;height:12px;border-radius:2px;background:#1a1510;"></div>
         <span style="font-size:10px;color:var(--ink4);">Más</span>
       </div>
+    </div>
+    <!-- Heatmap semanal de cumplimiento -->
+    <div id="habitos-weekly-meta-wrap" class="weekly-meta-wrap">
+      <div class="chart-section-title" style="margin-bottom:4px;">Cumplimiento semanal de lectura</div>
+      <p style="font-size:11px;color:var(--ink4);margin-bottom:8px;line-height:1.5;">Cada celda es una semana lunes→domingo. Color = avance contra la meta semanal vigente.</p>
+      <div id="habitos-weekly-meta"></div>
     </div>
     <!-- Comparador de años -->
     <div id="habitos-comparador-wrap">
@@ -1952,7 +1974,7 @@ select.input { cursor: pointer; }
     Cerrar sesión
   </button>
   <div style="padding:8px 16px 10px;border-top:1px solid var(--border);font-size:10px;color:var(--ink4);letter-spacing:1px;text-align:right;">
-    LUMEN v150
+    LUMEN v151
   </div>
 </div>
 
@@ -8804,6 +8826,7 @@ function renderHabitos() {
 
   renderRachas();
   renderHeatmap();
+  renderWeeklyMetaHeatmap();
   renderComparador();
 }
 
@@ -8906,6 +8929,79 @@ function renderHeatmap() {
   }
   svg += '</svg>';
   el.innerHTML = svg;
+}
+
+// ── HEATMAP SEMANAL DE CUMPLIMIENTO ──
+function calcWeeklyReadingMeta(year) {
+  const dias = calcReadingDailyPages(year);
+  const meta = getMetaSemanalPags();
+  const firstWeek = getISOWeekKey(`${year}-01-01`);
+  const lastWeek = getISOWeekKey(`${year}-12-31`);
+  const todayStr = todaySantiagoStr();
+  const currentWeek = getISOWeekKey(todayStr);
+  const weeks = [];
+  let wk = firstWeek;
+  let guard = 0;
+  while (wk <= lastWeek && guard < 60) {
+    const days = getWeekDaysFromKey(wk);
+    const daysInYear = days.filter(d => d.startsWith(String(year)));
+    const pages = daysInYear.reduce((acc, d) => acc + (dias[d] || 0), 0);
+    const activeDays = daysInYear.filter(d => (dias[d] || 0) > 0).length;
+    const pct = meta > 0 ? Math.round((pages / meta) * 100) : 0;
+    const isCurrent = wk === currentWeek;
+    let status = 'Sin lectura';
+    if (pages > 0 && pct < 50) status = 'Bajo meta';
+    else if (pct >= 50 && pct < 100) status = 'Cerca de meta';
+    else if (pct >= 100 && pct < 120) status = 'Meta cumplida';
+    else if (pct >= 120) status = 'Meta superada';
+    weeks.push({ key:wk, days, daysInYear, start:days[0], end:days[6], pages, activeDays, pct, meta, isCurrent, status });
+    wk = addDaysToDateStr(wk, 7);
+    guard++;
+  }
+  return weeks;
+}
+
+function weeklyMetaColor(pct, pages) {
+  if (!pages || pct <= 0) return '#ede7d9';
+  if (pct < 50) return '#e8dcc0';
+  if (pct < 100) return '#d8bd73';
+  if (pct < 120) return '#c8952a';
+  return '#1a1510';
+}
+
+function renderWeeklyMetaHeatmap() {
+  const el = document.getElementById('habitos-weekly-meta');
+  if (!el) return;
+  const yr = parseInt(document.getElementById('heatmap-year-sel')?.value || currentYearSantiago());
+  const weeks = calcWeeklyReadingMeta(yr);
+  const meta = getMetaSemanalPags();
+  const done = weeks.filter(w => w.pages >= meta).length;
+  const over = weeks.filter(w => w.pct >= 120).length;
+  const active = weeks.filter(w => w.pages > 0).length;
+  const best = weeks.reduce((a, w) => !a || w.pages > a.pages ? w : a, null);
+  const fmtRange = w => `${w.start.slice(8,10)}-${w.start.slice(5,7)} → ${w.end.slice(8,10)}-${w.end.slice(5,7)}`;
+  const cells = weeks.map((w, idx) => {
+    const color = weeklyMetaColor(w.pct, w.pages);
+    const textColor = w.pct >= 120 ? '#f5f0e8' : 'transparent';
+    const title = `Semana ${idx+1} · ${fmtRange(w)}\n${w.pages} págs / ${w.meta} meta · ${w.pct}%\n${w.activeDays}/${w.daysInYear.length} días activos · ${w.status}${w.isCurrent ? ' · En curso' : ''}`;
+    return `<div class="weekly-meta-cell ${w.isCurrent ? 'current' : ''}" style="background:${color};" title="${escapeHtml(title)}" onclick="showToast('${w.pages} págs · ${w.pct}% · ${w.status.replace(/'/g,'\\\'')}')"><span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:${textColor};">${w.pct >= 120 ? w.pct + '%' : ''}</span></div>`;
+  }).join('');
+  el.innerHTML = `
+    <div class="weekly-meta-summary">
+      <div class="stat-box" style="padding:10px;text-align:center;"><div style="font-family:var(--font-serif);font-size:24px;font-weight:900;color:var(--ink);">${meta}</div><div class="stat-label">Meta semanal</div></div>
+      <div class="stat-box" style="padding:10px;text-align:center;"><div style="font-family:var(--font-serif);font-size:24px;font-weight:900;color:var(--green);">${done}</div><div class="stat-label">Semanas cumplidas</div></div>
+      <div class="stat-box" style="padding:10px;text-align:center;"><div style="font-family:var(--font-serif);font-size:24px;font-weight:900;color:var(--gold);">${over}</div><div class="stat-label">Sobre 120%</div></div>
+      <div class="stat-box" style="padding:10px;text-align:center;"><div style="font-family:var(--font-serif);font-size:24px;font-weight:900;color:var(--ink2);">${active}</div><div class="stat-label">Con lectura</div></div>
+    </div>
+    <div class="weekly-meta-grid">${cells}</div>
+    <div class="weekly-meta-legend">
+      <span>0</span><div class="weekly-meta-swatch" style="background:#ede7d9;"></div>
+      <span>&lt;50%</span><div class="weekly-meta-swatch" style="background:#e8dcc0;"></div>
+      <span>50–99%</span><div class="weekly-meta-swatch" style="background:#d8bd73;"></div>
+      <span>100–119%</span><div class="weekly-meta-swatch" style="background:#c8952a;"></div>
+      <span>120%+</span><div class="weekly-meta-swatch" style="background:#1a1510;"></div>
+    </div>
+    ${best ? `<div style="font-size:11px;color:var(--ink4);margin-top:8px;line-height:1.5;">Mejor semana: <b style="color:var(--ink2);">${best.pages} págs</b> · ${fmtRange(best)}. La semana actual se marca con borde negro.</div>` : ''}`;
 }
 
 // ── COMPARADOR DE AÑOS ──
