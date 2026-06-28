@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1a1510">
-<title>LUMEN v151 — Biblioteca Personal</title>
+<title>LUMEN v152 — Biblioteca Personal</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231a1510'/><text x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' font-family='Georgia,serif' font-size='14' font-weight='900' font-style='italic' fill='%23c8952a' letter-spacing='0.5'>L</text><rect x='6' y='23' width='20' height='2' rx='1' fill='%238b2020'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
@@ -1974,7 +1974,7 @@ select.input { cursor: pointer; }
     Cerrar sesión
   </button>
   <div style="padding:8px 16px 10px;border-top:1px solid var(--border);font-size:10px;color:var(--ink4);letter-spacing:1px;text-align:right;">
-    LUMEN v151
+    LUMEN v152
   </div>
 </div>
 
@@ -2431,6 +2431,8 @@ select.input { cursor: pointer; }
       </div>
       <p style="font-size:11px;color:var(--ink4);margin-top:8px;">Las columnas en <span style="color:var(--red);font-weight:700;">rojo</span> son las que se importan. "No aplica" se omite automáticamente.</p>
       <div class="divider"></div>
+      <button class="btn btn-primary" onclick="recuperarLecturasDesdeChat()" style="margin-bottom:8px;">🧩 Recuperar lecturas históricas desde chat</button>
+      <p style="font-size:11px;color:var(--ink4);margin:-2px 0 10px;line-height:1.5;">Fusiona los registros de lectura reconstruidos desde el export del 22-06 y conserva la lectura nueva de Chéjov del 27-06. Antes de fusionar guarda un respaldo local automático.</p>
       <button class="btn btn-secondary" onclick="exportJSON()" style="margin-bottom:8px;">⬇ Exportar todo (JSON)</button>
       <button class="btn btn-secondary" onclick="exportarCSVHistoricoCompleto()" style="margin-bottom:8px;">📦 Exportar CSV histórico completo</button>
       <button class="btn btn-secondary" onclick="clearAll()">🗑 Limpiar todos los datos</button>
@@ -7110,6 +7112,139 @@ function normMes(val) {
   if (!val) return '';
   const v = val.toLowerCase().trim();
   return MES_MAP[v] || val;
+}
+
+
+// ═══════════════════════════════════
+//  RECUPERACIÓN LECTURAS DESDE CHAT — v152
+//  Reconstruida desde export LUMEN 22-06-2026 + lectura Chéjov 27-06-2026
+// ═══════════════════════════════════
+function lumenNormTitleForRecovery(s) {
+  return String(s || '').trim().toLowerCase()
+    .replace(/["'’‘]/g,'')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/\s+/g,' ');
+}
+
+const LUMEN_READING_RECOVERY_20260627 = [
+  {
+    titulo: 'Viaje al Oeste', autor: 'Wu Cheng’en', paginas: 2206, anio: 2026, mes: 'junio', estado: 'leido', progreso: 100, progresoPag: 2206,
+    readDates: [
+      {date:'2026-01-05',pag:19},{date:'2026-01-07',pag:28},{date:'2026-01-15',pag:68},{date:'2026-01-18',pag:100},
+      {date:'2026-01-20',pag:126},{date:'2026-01-24',pag:168},{date:'2026-01-27',pag:200},{date:'2026-01-28',pag:219},
+      {date:'2026-02-07',pag:310},{date:'2026-02-28',pag:370},{date:'2026-03-01',pag:380},{date:'2026-03-03',pag:408},
+      {date:'2026-03-05',pag:441},{date:'2026-03-06',pag:469},{date:'2026-03-11',pag:503},{date:'2026-03-15',pag:546},
+      {date:'2026-03-16',pag:562},{date:'2026-04-05',pag:755},{date:'2026-04-06',pag:765},{date:'2026-04-07',pag:773},
+      {date:'2026-04-08',pag:777},{date:'2026-04-09',pag:789},{date:'2026-04-10',pag:801},{date:'2026-04-11',pag:815},
+      {date:'2026-04-12',pag:825},{date:'2026-04-13',pag:880},{date:'2026-04-14',pag:901},{date:'2026-04-15',pag:911},
+      {date:'2026-04-16',pag:914},{date:'2026-04-17',pag:945},{date:'2026-04-18',pag:1012},{date:'2026-04-19',pag:1066},
+      {date:'2026-04-20',pag:1132},{date:'2026-04-21',pag:1158},{date:'2026-04-22',pag:1162},{date:'2026-04-23',pag:1175},
+      {date:'2026-04-24',pag:1189},{date:'2026-04-25',pag:1215},{date:'2026-04-26',pag:1242},{date:'2026-04-27',pag:1259},
+      {date:'2026-04-28',pag:1290},{date:'2026-04-29',pag:1301},{date:'2026-04-30',pag:1307},{date:'2026-05-01',pag:1318},
+      {date:'2026-05-03',pag:1328},{date:'2026-05-05',pag:1344},{date:'2026-05-07',pag:1353},{date:'2026-05-10',pag:1395},
+      {date:'2026-05-12',pag:1406},{date:'2026-05-13',pag:1414},{date:'2026-05-14',pag:1425},{date:'2026-05-16',pag:1440},
+      {date:'2026-05-17',pag:1457},{date:'2026-05-18',pag:1487},{date:'2026-05-20',pag:1514},{date:'2026-05-21',pag:1563},
+      {date:'2026-05-22',pag:1582},{date:'2026-05-23',pag:1618},{date:'2026-05-24',pag:1642},{date:'2026-05-25',pag:1720},
+      {date:'2026-05-26',pag:1732},{date:'2026-05-28',pag:1775},{date:'2026-05-29',pag:1786},{date:'2026-05-30',pag:1804},
+      {date:'2026-05-31',pag:1816},{date:'2026-06-01',pag:1854},{date:'2026-06-07',pag:2006},{date:'2026-06-13',pag:2206}
+    ]
+  },
+  {
+    titulo: 'Cuando China Dominó los Mares', autor: 'Louise Levathes', paginas: 252, anio: 2026, mes: 'marzo', estado: 'leido', progreso: 20, progresoPag: 50,
+    readDates: [{date:'2026-02-28',pag:25},{date:'2026-03-02',pag:38},{date:'2026-03-03',pag:45},{date:'2026-03-06',pag:50}]
+  },
+  {
+    titulo: 'El emperador de los mares', autor: 'Jack Weatherford', paginas: 352, anio: 2026, mes: 'junio', estado: 'leyendo', progresoPag: 55,
+    readDates: [{date:'2026-04-04',pag:47},{date:'2026-04-05',pag:52},{date:'2026-06-22',pag:55}]
+  },
+  {
+    titulo: 'Arsenio Lupin contra Herlock Sholmes', autor: 'Maurice Leblanc', paginas: 256, anio: 2026, mes: 'junio', estado: 'leido', progreso: 100, progresoPag: 256,
+    readDates: [{date:'2026-06-14',pag:5},{date:'2026-06-15',pag:41},{date:'2026-06-17',pag:51},{date:'2026-06-18',pag:97},{date:'2026-06-19',pag:113},{date:'2026-06-20',pag:154},{date:'2026-06-21',pag:187},{date:'2026-06-22',pag:256}]
+  },
+  {
+    titulo: 'Cuentos completos [1885-1886]', autor: 'Antón Chéjov', paginas: 1136, anio: 2026, mes: 'junio', estado: 'leyendo', progresoPag: 57,
+    readDates: [{date:'2026-06-27',pag:57}]
+  }
+];
+
+function downloadRecoveryBackupV152(key, data) {
+  try {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type:'application/json;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = key + '.json';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 300);
+  } catch (err) {
+    console.warn('No se pudo descargar respaldo automático:', err);
+  }
+}
+
+function recuperarLecturasDesdeChat() {
+  const ok = confirm('Se fusionarán las lecturas históricas reconstruidas desde este chat. Antes se guardará un respaldo local automático. ¿Continuar?');
+  if (!ok) return;
+
+  try {
+    const backupKey = 'lumen_backup_pre_recuperacion_lectura_20260627_' + Date.now();
+    localStorage.setItem(backupKey, JSON.stringify(db));
+    downloadRecoveryBackupV152(backupKey, db);
+  } catch (err) {
+    console.warn('Backup local falló:', err);
+  }
+
+  if (!db || !Array.isArray(db.entries)) db = { entries: [] };
+  const byTitle = {};
+  db.entries.forEach((e, idx) => {
+    if (e && e.type === 'libro' && e.titulo) byTitle[lumenNormTitleForRecovery(e.titulo)] = { entry:e, idx };
+  });
+
+  let creados = 0, actualizados = 0, fechasAgregadas = 0;
+  const now = Date.now();
+
+  LUMEN_READING_RECOVERY_20260627.forEach(src => {
+    const key = lumenNormTitleForRecovery(src.titulo);
+    let target = byTitle[key] ? byTitle[key].entry : null;
+    if (!target) {
+      target = {
+        id: 'rec_libro_' + key.replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'') + '_20260627',
+        type: 'libro', titulo: src.titulo, autor: src.autor || '', paginas: src.paginas || 0,
+        anio: src.anio || 2026, mes: src.mes || 'junio', estado: src.estado || 'leyendo',
+        progreso: src.progreso || null, progresoPag: src.progresoPag || null,
+        notas: '', cover: '', readDates: [], _createdAt: now
+      };
+      db.entries.push(target);
+      byTitle[key] = { entry: target, idx: db.entries.length - 1 };
+      creados++;
+    } else {
+      actualizados++;
+    }
+
+    // Completar metadatos sin borrar campos existentes valiosos
+    target.type = 'libro';
+    if (!target.autor && src.autor) target.autor = src.autor;
+    if (!target.paginas || target.paginas < src.paginas) target.paginas = src.paginas;
+    if (!target.anio && src.anio) target.anio = src.anio;
+    if (!target.mes && src.mes) target.mes = src.mes;
+    if (src.progresoPag && (!target.progresoPag || target.progresoPag < src.progresoPag)) target.progresoPag = src.progresoPag;
+    if (src.progreso && (!target.progreso || target.progreso < src.progreso)) target.progreso = src.progreso;
+    if (src.estado === 'leido') target.estado = 'leido';
+    else if (!target.estado) target.estado = src.estado || 'leyendo';
+
+    const existing = normalizeReadDates(target.readDates || []);
+    const before = existing.length;
+    target.readDates = mergeReadDates(existing, src.readDates || []);
+    fechasAgregadas += Math.max(0, target.readDates.length - before);
+    target._updatedAt = now;
+  });
+
+  saveDB();
+  try { renderHome(); } catch(e) {}
+  try { renderLibrary(); } catch(e) {}
+  try { renderStats(); } catch(e) {}
+  try { renderHabitos(); } catch(e) {}
+  closeModal('modal-import');
+  showToast(`✓ Recuperación aplicada: ${creados} libros creados, ${actualizados} actualizados, ${fechasAgregadas} fechas agregadas`, 4200);
 }
 
 function handleImport(e) {
