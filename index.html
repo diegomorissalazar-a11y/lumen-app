@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1a1510">
-<title>LUMEN v153 — Biblioteca Personal</title>
+<title>LUMEN v154 — Biblioteca Personal</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231a1510'/><text x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' font-family='Georgia,serif' font-size='14' font-weight='900' font-style='italic' fill='%23c8952a' letter-spacing='0.5'>L</text><rect x='6' y='23' width='20' height='2' rx='1' fill='%238b2020'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
@@ -1974,7 +1974,7 @@ select.input { cursor: pointer; }
     Cerrar sesión
   </button>
   <div style="padding:8px 16px 10px;border-top:1px solid var(--border);font-size:10px;color:var(--ink4);letter-spacing:1px;text-align:right;">
-    LUMEN v153
+    LUMEN v154
   </div>
 </div>
 
@@ -3150,7 +3150,7 @@ function openReadingConsistencyReport() {
   const rows = auditReadingConsistency();
   const lineas = [];
   lineas.push('═══════════════════════════════════════════════');
-  lineas.push('REVISIÓN DE CONSISTENCIA DE LECTURA — LUMEN v153');
+  lineas.push('REVISIÓN DE CONSISTENCIA DE LECTURA — LUMEN v154');
   lineas.push('Generado: ' + new Date().toLocaleString('es-CL', { timeZone: LUMEN_TZ }));
   lineas.push('═══════════════════════════════════════════════');
   lineas.push('');
@@ -4274,6 +4274,67 @@ function updateStars(n) {
   document.querySelectorAll('#rating-stars .star').forEach((s, i) => s.classList.toggle('filled', i < n));
 }
 
+
+// ═══════════════════════════════════
+//  SAFE EDIT MERGE — v154
+// ═══════════════════════════════════
+function mergeEntryForSafeEdit(prev, next) {
+  if (!prev) return next;
+
+  const merged = { ...prev, ...next };
+
+  // Al editar metadatos desde el formulario general no se deben perder
+  // campos operativos que no aparecen en ese formulario. El caso crítico son
+  // los libros en curso: readDates/progresoPag/readingMode alimentan Control
+  // de Plan, heatmaps, rachas y exportador de lectura.
+  const protectedFields = [
+    'readDates',
+    'progresoPag',
+    'readingMode',
+    'notas_lista',
+    'capActual',
+    'capTotal',
+    'temporadaActual',
+    'rutas',
+    'influencias'
+  ];
+
+  protectedFields.forEach(k => {
+    const prevVal = prev[k];
+    const nextVal = next[k];
+    const nextMissing = nextVal === undefined || nextVal === null ||
+      (Array.isArray(nextVal) && nextVal.length === 0 && Array.isArray(prevVal) && prevVal.length > 0);
+
+    if (nextMissing && prevVal !== undefined && prevVal !== null) {
+      merged[k] = prevVal;
+    }
+  });
+
+  // Si un libro tiene historial diario, la última marca manda sobre una
+  // edición general de metadatos. Esto evita que cambiar fecha de adquisición
+  // convierta todo el avance acumulado en lectura de hoy.
+  if (prev.type === 'libro' && next.type === 'libro' && Array.isArray(prev.readDates) && prev.readDates.length) {
+    const ordered = prev.readDates
+      .filter(r => r && (r.date || r.fecha) && Number.isFinite(Number(r.pag)))
+      .sort((a, b) => String(a.date || a.fecha).localeCompare(String(b.date || b.fecha)));
+
+    if (ordered.length) {
+      const lastPag = Number(ordered[ordered.length - 1].pag);
+      if (Number.isFinite(lastPag) && lastPag >= 0) {
+        merged.readDates = prev.readDates;
+        merged.progresoPag = lastPag;
+        merged.readingMode = prev.readingMode || 'pag';
+        if (merged.paginas && Number(merged.paginas) > 0) {
+          merged.progreso = Math.max(0, Math.min(100, Math.round((lastPag / Number(merged.paginas)) * 100)));
+        }
+      }
+    }
+  }
+
+  merged._updatedAt = next._updatedAt || Date.now();
+  return merged;
+}
+
 // ═══════════════════════════════════
 //  SAVE ENTRY
 // ═══════════════════════════════════
@@ -4349,7 +4410,10 @@ function saveEntry() {
   if (editingId) {
     entry._updatedAt = Date.now();
     const idx = db.entries.findIndex(e => e.id === editingId);
-    if (idx >= 0) db.entries[idx] = entry;
+    if (idx >= 0) {
+      const prevEntry = db.entries[idx];
+      db.entries[idx] = mergeEntryForSafeEdit(prevEntry, entry);
+    }
   } else {
     entry._updatedAt = Date.now();
     // Detectar duplicados — mismo título, mismo tipo
