@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1a1510">
-<title>LUMEN v152 — Biblioteca Personal</title>
+<title>LUMEN v153 — Biblioteca Personal</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231a1510'/><text x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' font-family='Georgia,serif' font-size='14' font-weight='900' font-style='italic' fill='%23c8952a' letter-spacing='0.5'>L</text><rect x='6' y='23' width='20' height='2' rx='1' fill='%238b2020'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
@@ -1974,7 +1974,7 @@ select.input { cursor: pointer; }
     Cerrar sesión
   </button>
   <div style="padding:8px 16px 10px;border-top:1px solid var(--border);font-size:10px;color:var(--ink4);letter-spacing:1px;text-align:right;">
-    LUMEN v152
+    LUMEN v153
   </div>
 </div>
 
@@ -2433,6 +2433,9 @@ select.input { cursor: pointer; }
       <div class="divider"></div>
       <button class="btn btn-primary" onclick="recuperarLecturasDesdeChat()" style="margin-bottom:8px;">🧩 Recuperar lecturas históricas desde chat</button>
       <p style="font-size:11px;color:var(--ink4);margin:-2px 0 10px;line-height:1.5;">Fusiona los registros de lectura reconstruidos desde el export del 22-06 y conserva la lectura nueva de Chéjov del 27-06. Antes de fusionar guarda un respaldo local automático.</p>
+      <button class="btn btn-secondary" onclick="openReadingConsistencyReport()" style="margin-bottom:8px;">🩺 Revisar consistencia de lectura</button>
+      <button class="btn btn-secondary" onclick="repairReadingConsistencyBasic()" style="margin-bottom:8px;">🛠 Reparar campos básicos de lectura</button>
+      <p style="font-size:11px;color:var(--ink4);margin:-2px 0 10px;line-height:1.5;">Detecta libros con progreso sin historial, retrocesos de página, registros de 0 páginas y diferencias entre progreso, página actual y última marca diaria. La reparación básica normaliza campos sin inventar historial.</p>
       <button class="btn btn-secondary" onclick="exportJSON()" style="margin-bottom:8px;">⬇ Exportar todo (JSON)</button>
       <button class="btn btn-secondary" onclick="exportarCSVHistoricoCompleto()" style="margin-bottom:8px;">📦 Exportar CSV histórico completo</button>
       <button class="btn btn-secondary" onclick="clearAll()">🗑 Limpiar todos los datos</button>
@@ -2913,6 +2916,7 @@ function loadDB() {
         if (m) e.temporadas = parseInt(m[0]);
       }
     });
+    normalizeAllBookReading(parsed.entries || [], { repairBasic: true, source: 'loadDB' });
     return parsed;
   } catch { return { entries: [] }; }
 }
@@ -2998,6 +3002,188 @@ function getIdiomaValueFromForm() {
   return sel.value;
 }
 
+
+// ═══════════════════════════════════
+//  LECTURA — normalización, auditoría y blindaje v153
+// ═══════════════════════════════════
+function entryTimestamp(entry) {
+  const v = entry && entry._updatedAt;
+  if (typeof v === 'number' && isFinite(v)) return v;
+  if (typeof v === 'string') {
+    const n = Number(v);
+    if (isFinite(n)) return n;
+    const t = Date.parse(v);
+    if (isFinite(t)) return t;
+  }
+  return 0;
+}
+
+function parsePagValue(v) {
+  if (v === null || v === undefined || v === '') return null;
+  const n = Number(v);
+  return isFinite(n) ? Math.max(0, Math.round(n)) : null;
+}
+
+function normalizeDateStr(v) {
+  if (!v) return '';
+  const s = String(v).slice(0, 10);
+  return /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : '';
+}
+
+function normalizeBookReadDates(arr) {
+  if (!Array.isArray(arr)) return [];
+  const map = {};
+  arr.forEach(item => {
+    let date = '', pag = null;
+    if (typeof item === 'string') {
+      date = normalizeDateStr(item);
+    } else if (item && typeof item === 'object') {
+      date = normalizeDateStr(item.date || item.fecha || item.dia);
+      pag = parsePagValue(item.pag ?? item.pagina ?? item.pagActual ?? item.progresoPag);
+    }
+    if (!date) return;
+    // En el mismo día conservar la marca con página más alta: evita que un dato pobre pise uno completo.
+    if (!map[date] || (pag !== null && (map[date].pag === null || pag > map[date].pag))) {
+      map[date] = { date, pag };
+    }
+  });
+  return Object.values(map).sort((a,b) => a.date.localeCompare(b.date));
+}
+
+function mergeBookReadDatesSmart(a, b) {
+  return normalizeBookReadDates([...(Array.isArray(a)?a:[]), ...(Array.isArray(b)?b:[])]);
+}
+
+function bookLastReadPag(entry) {
+  const norm = normalizeBookReadDates(entry && entry.readDates).filter(r => r.pag !== null);
+  return norm.length ? norm[norm.length - 1].pag : null;
+}
+
+function normalizeBookReadingFields(entry, opts = {}) {
+  if (!entry || entry.type !== 'libro') return { changed:false, warnings:[] };
+  let changed = false;
+  const warnings = [];
+  const originalReadDates = entry.readDates;
+  const norm = normalizeBookReadDates(entry.readDates);
+  if (Array.isArray(originalReadDates)) {
+    if (JSON.stringify(originalReadDates) !== JSON.stringify(norm)) {
+      entry.readDates = norm;
+      changed = true;
+    }
+  }
+
+  const total = parsePagValue(entry.paginas);
+  const progPag = parsePagValue(entry.progresoPag);
+  const progPct = parsePagValue(entry.progreso);
+  const lastPag = norm.length ? norm.filter(r => r.pag !== null).slice(-1)[0]?.pag ?? null : null;
+
+  if (!Array.isArray(entry.readDates) && progPct !== null && total) {
+    // Repara campo de página actual, pero no inventa historial diario.
+    const estimated = Math.round((progPct / 100) * total);
+    if (progPag === null && estimated > 0) {
+      entry.progresoPag = estimated;
+      changed = true;
+      warnings.push('Tiene progreso %, se calculó página actual estimada; falta historial diario.');
+    }
+  }
+
+  if (norm.length > 0) {
+    entry.readDates = norm;
+    const last = bookLastReadPag(entry);
+    if (last !== null && (progPag === null || progPag < last)) {
+      entry.progresoPag = last;
+      changed = true;
+    }
+    if (total && last !== null) {
+      const pct = Math.max(0, Math.min(100, Math.round((last / total) * 100)));
+      if (entry.progreso !== pct && (entry.progreso === null || entry.progreso === undefined || Math.abs(Number(entry.progreso) - pct) > 1)) {
+        entry.progreso = pct;
+        changed = true;
+      }
+    }
+  }
+
+  // Advertencias no destructivas
+  const seq = normalizeBookReadDates(entry.readDates).filter(r => r.pag !== null);
+  for (let i = 1; i < seq.length; i++) {
+    const diff = seq[i].pag - seq[i-1].pag;
+    if (diff < 0) warnings.push(`Retroceso de página ${seq[i-1].date}→${seq[i].date}: ${seq[i-1].pag} a ${seq[i].pag}.`);
+    if (diff === 0) warnings.push(`Registro de 0 páginas el ${seq[i].date}.`);
+  }
+  if (seq.length && seq[0].pag === 0) warnings.push(`Primer registro con 0 páginas el ${seq[0].date}.`);
+  if (!seq.length && (entry.progresoPag || entry.progreso)) warnings.push('Tiene progreso, pero no tiene historial diario readDates.');
+  const last = bookLastReadPag(entry);
+  if (last !== null && entry.progresoPag !== null && entry.progresoPag !== undefined && Number(entry.progresoPag) !== Number(last)) {
+    warnings.push(`Diferencia entre progresoPag (${entry.progresoPag}) y última marca readDates (${last}).`);
+  }
+
+  if (changed && opts.stamp !== false) entry._updatedAt = Math.max(entryTimestamp(entry), Date.now());
+  return { changed, warnings };
+}
+
+function normalizeAllBookReading(entries, opts = {}) {
+  let changed = false;
+  (entries || []).forEach(e => {
+    const res = normalizeBookReadingFields(e, opts);
+    if (res.changed) changed = true;
+  });
+  return changed;
+}
+
+function auditReadingConsistency() {
+  const rows = [];
+  db.entries.filter(e => e.type === 'libro').forEach(e => {
+    const copy = JSON.parse(JSON.stringify(e));
+    const res = normalizeBookReadingFields(copy, { stamp:false });
+    const warnings = res.warnings || [];
+    if (warnings.length) {
+      rows.push({ id:e.id, titulo:e.titulo || 'Sin título', warnings, entry:e });
+    }
+  });
+  return rows;
+}
+
+function openReadingConsistencyReport() {
+  const modal = document.getElementById('modal-exportar-lectura');
+  if (modal) modal.style.display = 'flex';
+  const out = document.getElementById('exportar-lectura-output');
+  const rows = auditReadingConsistency();
+  const lineas = [];
+  lineas.push('═══════════════════════════════════════════════');
+  lineas.push('REVISIÓN DE CONSISTENCIA DE LECTURA — LUMEN v153');
+  lineas.push('Generado: ' + new Date().toLocaleString('es-CL', { timeZone: LUMEN_TZ }));
+  lineas.push('═══════════════════════════════════════════════');
+  lineas.push('');
+  if (!rows.length) {
+    lineas.push('Sin anomalías de lectura detectadas.');
+  } else {
+    lineas.push('Anomalías detectadas: ' + rows.length);
+    rows.forEach((r, idx) => {
+      lineas.push('');
+      lineas.push((idx+1) + '. ' + r.titulo);
+      r.warnings.forEach(w => lineas.push('   - ' + w));
+    });
+  }
+  lineas.push('');
+  lineas.push('Nota: los registros con 0 páginas no cuentan como día activo en heatmap, adherencia ni exportación.');
+  lineas.push('');
+  lineas.push('Para reparar campos básicos sin inventar historial, usa el botón “Reparar campos básicos de lectura” del modal de Importar datos.');
+  if (out) out.value = lineas.join('\n');
+}
+
+async function repairReadingConsistencyBasic() {
+  const before = JSON.stringify(db.entries);
+  const changed = normalizeAllBookReading(db.entries, { repairBasic:true, source:'manual' });
+  if (!changed && before === JSON.stringify(db.entries)) {
+    showToast('✓ Sin reparaciones necesarias');
+    return false;
+  }
+  saveDB();
+  renderAll();
+  showToast('✓ Consistencia de lectura reparada');
+  return true;
+}
+
 // ═══════════════════════════════════
 //  SYNC — timestamp por entrada
 // ═══════════════════════════════════
@@ -3025,6 +3211,7 @@ function mergeEntries(local, remote) {
       const m = String(e.coleccion).match(/\d+/);
       if (m) e.temporadas = parseInt(m[0]);
     }
+    normalizeBookReadingFields(e, { stamp:false, source:'merge' });
     return e;
   };
 
@@ -3057,24 +3244,39 @@ function mergeEntries(local, remote) {
     'anio','mes'];  // año y mes de lectura/vista — crítico para el contador del Home
 
   const mergeTwo = (winner, loser) => {
+    // v153: merge conservador. La entrada más nueva gana campos simples,
+    // pero un historial de lectura más completo nunca se pierde por una ficha pobre.
     const result = { ...loser };
     MERGE_FIELDS.forEach(f => {
       const wv = winner[f], lv = loser[f];
-      // Tomar el valor del ganador si es más informativo (no null/undefined/vacío)
       const hasValue = v => v !== null && v !== undefined && v !== '' && v !== 0;
-      if (hasValue(wv)) result[f] = wv;
-      // readDates: merge por date, conservar pag más reciente
-      if (f === 'readDates' && Array.isArray(wv) && Array.isArray(lv)) {
-        result[f] = mergeReadDates(lv, wv);
+
+      if (f === 'readDates') {
+        const mergedReads = mergeBookReadDatesSmart(lv, wv);
+        if (mergedReads.length) result.readDates = mergedReads;
+        return;
       }
-      // notas_lista: unir por id de nota
+
+      if (f === 'progresoPag') {
+        const wPag = parsePagValue(wv);
+        const lPag = parsePagValue(lv);
+        const lastRead = bookLastReadPag({ readDates: result.readDates }) ?? bookLastReadPag(winner) ?? bookLastReadPag(loser);
+        const best = Math.max(wPag || 0, lPag || 0, lastRead || 0);
+        if (best > 0) result.progresoPag = best;
+        return;
+      }
+
+      if (hasValue(wv)) result[f] = wv;
+
       if (f === 'notas_lista' && Array.isArray(wv) && Array.isArray(lv)) {
         const notasMap = {};
         [...lv, ...wv].forEach(n => { notasMap[n.id] = n; });
         result[f] = Object.values(notasMap);
       }
     });
-    result._updatedAt = Math.max(winner._updatedAt||0, loser._updatedAt||0);
+
+    if (result.type === 'libro') normalizeBookReadingFields(result, { stamp:false, source:'mergeTwo' });
+    result._updatedAt = Math.max(entryTimestamp(winner), entryTimestamp(loser));
     result.id = winner.id; // usar el ID del ganador
     return result;
   };
@@ -3086,8 +3288,8 @@ function mergeEntries(local, remote) {
     if (!byId[e.id]) {
       byId[e.id] = e;
     } else {
-      const localTs  = byId[e.id]._updatedAt || 0;
-      const remoteTs = e._updatedAt || 0;
+      const localTs  = entryTimestamp(byId[e.id]);
+      const remoteTs = entryTimestamp(e);
       const winner = remoteTs >= localTs ? e : byId[e.id];
       const loser  = remoteTs >= localTs ? byId[e.id] : e;
       byId[e.id] = mergeTwo(winner, loser);
@@ -3102,8 +3304,8 @@ function mergeEntries(local, remote) {
       byCanon[key] = e;
     } else {
       const existing = byCanon[key];
-      const existTs = existing._updatedAt || 0;
-      const thisTs  = e._updatedAt || 0;
+      const existTs = entryTimestamp(existing);
+      const thisTs  = entryTimestamp(e);
       const winner = thisTs >= existTs ? e : existing;
       const loser  = thisTs >= existTs ? existing : e;
       byCanon[key] = mergeTwo(winner, loser);
@@ -3125,8 +3327,8 @@ function diffEntries(local, remote) {
     if (!loc) {
       nuevas.push(e);
     } else {
-      const remoteTs = e._updatedAt || 0;
-      const localTs  = loc._updatedAt || 0;
+      const remoteTs = entryTimestamp(e);
+      const localTs  = entryTimestamp(loc);
       if (remoteTs > localTs) {
         actualizadas.push({ remote: e, local: loc });
       } else {
@@ -3183,12 +3385,7 @@ function mergeArrayById(local, remote) {
 // Normaliza un readDates de cualquier formato a [{date, pag}]
 // Soporta: string[] (legado), {date,pag}[] (nuevo)
 function normalizeReadDates(arr) {
-  if (!Array.isArray(arr)) return [];
-  return arr.map(item => {
-    if (typeof item === 'string') return { date: item, pag: null };
-    if (item && item.date) return { date: item.date, pag: item.pag ?? null };
-    return null;
-  }).filter(Boolean);
+  return normalizeBookReadDates(arr);
 }
 
 // Extrae solo las fechas como strings para compatibilidad con heatmap/streaks
@@ -3198,13 +3395,7 @@ function readDatesToStrings(arr) {
 
 // Merge de readDates: deduplicar por date, conservar pag más reciente
 function mergeReadDates(a, b) {
-  const map = {};
-  [...normalizeReadDates(a), ...normalizeReadDates(b)].forEach(r => {
-    if (!map[r.date] || (r.pag !== null && map[r.date].pag === null)) {
-      map[r.date] = r;
-    }
-  });
-  return Object.values(map).sort((x,y) => x.date.localeCompare(y.date));
+  return mergeBookReadDatesSmart(a, b);
 }
 
 // Calcula páginas leídas por día desde readDates [{date,pag}]
@@ -3215,13 +3406,8 @@ function calcPagsByDay(readDates) {
   norm.sort((a,b) => a.date.localeCompare(b.date));
   const map = {};
   for (let i = 0; i < norm.length; i++) {
-    if (i === 0) {
-      // Primer registro: no tenemos referencia anterior, asignar 0
-      map[norm[i].date] = 0;
-    } else {
-      const diff = Math.max(0, norm[i].pag - norm[i-1].pag);
-      map[norm[i].date] = diff;
-    }
+    const diff = i === 0 ? Number(norm[i].pag || 0) : Math.max(0, Number(norm[i].pag || 0) - Number(norm[i-1].pag || 0));
+    if (diff > 0) map[norm[i].date] = diff;
   }
   return map;
 }
@@ -3370,6 +3556,7 @@ function diagnoseEntry(entry) {
 // Debounce para evitar demasiadas escrituras a Firestore
 let _saveDebounceTimer = null;
 function saveDB() {
+  normalizeAllBookReading(db.entries || [], { repairBasic:true, source:'saveDB' });
   localStorage.setItem(DB_KEY, JSON.stringify(db));
   if (currentUser) {
     clearTimeout(_saveDebounceTimer);
@@ -3403,6 +3590,7 @@ function saveDB() {
 async function syncToFirestore() {
   if (!currentUser) return;
   try {
+    normalizeAllBookReading(db.entries || [], { repairBasic:true, source:'syncToFirestore' });
     await auth.currentUser.getIdToken(false);
     // Preparar entries: excluir base64, limpiar valores inválidos
     const entriesClean = db.entries.map(e => cleanForFirestore(entryForFirestore(e)));
@@ -3503,7 +3691,7 @@ async function pullAndMerge(uid, silent) {
       // Subir si hubo cambios locales que la nube no tenía
       const localHasNewer = db.entries.some(e => {
         const remoteEntry = remoteEntries.find(r => r.id === e.id);
-        return !remoteEntry || (e._updatedAt || 0) > (remoteEntry._updatedAt || 0);
+        return !remoteEntry || entryTimestamp(e) > entryTimestamp(remoteEntry);
       });
       if (localHasNewer || merged.length !== remoteCount) {
         await syncToFirestore();
@@ -4533,9 +4721,8 @@ function calcReadingDailyPages(year) {
   };
 
   db.entries.filter(e => e.type === 'libro').forEach(e => {
-    const norm = (e.readDates || []).map(r =>
-      typeof r === 'string' ? { date: r, pag: null } : r
-    ).filter(r => r.pag !== null && String(r.date || '').startsWith(String(year)));
+    const norm = normalizeReadDates(e.readDates || [])
+      .filter(r => r.pag !== null && String(r.date || '').startsWith(String(year)));
 
     if (norm.length >= 1) {
       norm.sort((a, b) => String(a.date).localeCompare(String(b.date)));
@@ -12182,7 +12369,9 @@ function generarExportLectura() {
   db.entries.filter(e => e.type === 'libro' && Array.isArray(e.readDates) && e.readDates.length > 0).forEach(libro => {
     const norm = normalizeReadDates(libro.readDates).filter(r => r.pag !== null).sort((a,b) => a.date.localeCompare(b.date));
     for (let i = 0; i < norm.length; i++) {
-      const pags = i === 0 ? norm[i].pag : Math.max(0, norm[i].pag - norm[i-1].pag);
+      const pags = i === 0 ? Number(norm[i].pag || 0) : Math.max(0, Number(norm[i].pag || 0) - Number(norm[i-1].pag || 0));
+      // v153: registros de 0 páginas no cuentan como día activo ni aparecen en export.
+      if (pags <= 0) continue;
       registros.push({
         fecha: norm[i].date,
         titulo: libro.titulo,
