@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1a1510">
-<title>LUMEN v154 — Biblioteca Personal</title>
+<title>LUMEN v157 — Biblioteca Personal</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231a1510'/><text x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' font-family='Georgia,serif' font-size='14' font-weight='900' font-style='italic' fill='%23c8952a' letter-spacing='0.5'>L</text><rect x='6' y='23' width='20' height='2' rx='1' fill='%238b2020'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
@@ -1974,7 +1974,7 @@ select.input { cursor: pointer; }
     Cerrar sesión
   </button>
   <div style="padding:8px 16px 10px;border-top:1px solid var(--border);font-size:10px;color:var(--ink4);letter-spacing:1px;text-align:right;">
-    LUMEN v154
+    LUMEN v157
   </div>
 </div>
 
@@ -2530,7 +2530,9 @@ select.input { cursor: pointer; }
     <div class="modal-body">
       <div class="field">
         <label>Título</label>
-        <input class="input" type="text" id="watching-titulo" placeholder="Nombre de la serie">
+        <input class="input" type="text" id="watching-titulo" placeholder="Nombre de la serie" oninput="renderWatchingTitleSuggestions()" onfocus="renderWatchingTitleSuggestions()" autocomplete="off">
+        <div id="watching-title-suggestions" style="display:none;margin-top:6px;border:1.5px solid var(--border);border-radius:6px;background:#fff;overflow:hidden;box-shadow:var(--shadow);"></div>
+        <div style="font-size:10px;color:var(--ink4);margin-top:4px;line-height:1.4;">Si ya existe en tu biblioteca, selecciona la sugerencia para usar el nombre canónico. Si no existe, puedes dejar el título escrito a mano.</div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
         <div class="field"><label>Creador / Director</label><input class="input" type="text" id="watching-director"></div>
@@ -3150,7 +3152,7 @@ function openReadingConsistencyReport() {
   const rows = auditReadingConsistency();
   const lineas = [];
   lineas.push('═══════════════════════════════════════════════');
-  lineas.push('REVISIÓN DE CONSISTENCIA DE LECTURA — LUMEN v154');
+  lineas.push('REVISIÓN DE CONSISTENCIA DE LECTURA — LUMEN v157');
   lineas.push('Generado: ' + new Date().toLocaleString('es-CL', { timeZone: LUMEN_TZ }));
   lineas.push('═══════════════════════════════════════════════');
   lineas.push('');
@@ -3856,6 +3858,12 @@ function openModal(id) {
   if (id === 'modal-add') {
     // Pre-poblar datalists con datos de la biblioteca
     setTimeout(() => { fillMainAutorList(); fillMainEditorialList(); }, 50);
+  }
+  if (id === 'modal-add-watching') {
+    setTimeout(() => {
+      const sug = document.getElementById('watching-title-suggestions');
+      if (sug) { sug.innerHTML = ''; sug.style.display = 'none'; }
+    }, 50);
   }
 }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
@@ -5305,7 +5313,7 @@ function renderHome() {
       const capActual = parseInt(e.capActual) || 0;
       const capTotal  = parseInt(e.capTotal)  || 0;
       const pct = capTotal > 0 ? Math.round((capActual / capTotal) * 100) : 0;
-      const progresoText = capTotal > 0 ? `Cap. ${capActual} / ${capTotal}` : '📺 Viendo';
+      const progresoText = capTotal > 0 ? `Cap. ${capActual} / ${capTotal} · ${pct}%` : '📺 Viendo';
       const tempText = e.temporadaActual ? `Temp. ${e.temporadaActual}${e.temporadas?' / '+e.temporadas:''}` : (e.temporadas ? `${e.temporadas} temp.` : '');
       const coverHTML = coverUrl(e)
         ? `<img src="${coverUrl(e)}" class="reading-mini-cover" onerror="this.style.display='none'">`
@@ -8370,6 +8378,109 @@ function saveReadingEntry() {
   renderHome();
 }
 
+
+// ── SUGERENCIAS DE SERIES EN CURSO — v156 ───────────────────────────────
+function normalizeSerieTitleForMatch(value) {
+  return String(value || '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[’'`´]/g, '')
+    .replace(/[^a-z0-9]+/g, '')
+    .trim();
+}
+
+function getCanonicalSerieSuggestions(query) {
+  const q = normalizeSerieTitleForMatch(query);
+  if (!q || q.length < 2) return [];
+
+  const byKey = new Map();
+  (db.entries || [])
+    .filter(e => e && e.type === 'serie' && e.titulo)
+    .forEach(e => {
+      const key = normalizeSerieTitleForMatch(e.titulo);
+      if (!key) return;
+      const existing = byKey.get(key);
+      const currentTs = Number(e._updatedAt || 0);
+      const existingTs = existing ? Number(existing._updatedAt || 0) : -1;
+      if (!existing || currentTs > existingTs) byKey.set(key, e);
+    });
+
+  return Array.from(byKey.values())
+    .map(e => {
+      const key = normalizeSerieTitleForMatch(e.titulo);
+      let score = 0;
+      if (key === q) score = 100;
+      else if (key.startsWith(q)) score = 80;
+      else if (key.includes(q)) score = 60;
+      else {
+        const tokens = String(query || '')
+          .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+          .toLowerCase()
+          .split(/[^a-z0-9]+/)
+          .filter(Boolean);
+        const ok = tokens.length && tokens.every(t => key.includes(t));
+        if (ok) score = 45;
+      }
+      return { e, score };
+    })
+    .filter(x => x.score > 0)
+    .sort((a, b) => b.score - a.score || String(a.e.titulo).localeCompare(String(b.e.titulo)))
+    .slice(0, 5)
+    .map(x => x.e);
+}
+
+function renderWatchingTitleSuggestions() {
+  const input = document.getElementById('watching-titulo');
+  const box = document.getElementById('watching-title-suggestions');
+  if (!input || !box) return;
+
+  const suggestions = getCanonicalSerieSuggestions(input.value);
+  if (!suggestions.length) {
+    box.innerHTML = '';
+    box.style.display = 'none';
+    return;
+  }
+
+  box.innerHTML = suggestions.map(e => {
+    const meta = [e.director, e.anio_est, e.temporadas ? 'T' + e.temporadas : '']
+      .filter(Boolean).join(' · ');
+    return `<button type="button" onclick="applyWatchingTitleSuggestion('${String(e.id).replace(/'/g, "\\'")}')" style="width:100%;display:flex;align-items:center;gap:10px;padding:9px 11px;border:none;border-bottom:1px solid var(--cream2);background:#fff;text-align:left;cursor:pointer;font-family:var(--font-sans);">
+      ${e.cover ? `<img src="${escapeHtml(e.cover)}" style="width:26px;height:36px;object-fit:cover;border-radius:2px;background:var(--cream3);flex-shrink:0;">` : `<span style="width:26px;height:36px;display:flex;align-items:center;justify-content:center;background:var(--cream2);border-radius:2px;flex-shrink:0;">📺</span>`}
+      <span style="min-width:0;flex:1;">
+        <span style="display:block;font-size:13px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(e.titulo)}</span>
+        <span style="display:block;font-size:10px;color:var(--ink4);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(meta || 'Serie en biblioteca')}</span>
+      </span>
+      <span style="font-size:10px;color:var(--gold);font-weight:700;letter-spacing:1px;text-transform:uppercase;">Usar</span>
+    </button>`;
+  }).join('') + `<div style="font-size:10px;color:var(--ink4);padding:7px 11px;background:var(--cream2);line-height:1.4;">Puedes ignorar estas sugerencias y guardar el nombre escrito manualmente.</div>`;
+  box.style.display = 'block';
+}
+
+function applyWatchingTitleSuggestion(id) {
+  const serie = (db.entries || []).find(e => e && e.id === id);
+  if (!serie) return;
+
+  const setIfBlank = (fieldId, value) => {
+    const el = document.getElementById(fieldId);
+    if (!el || value === undefined || value === null || value === '') return;
+    if (!String(el.value || '').trim() || el.value === '0') el.value = value;
+  };
+
+  const titleEl = document.getElementById('watching-titulo');
+  if (titleEl) titleEl.value = serie.titulo || titleEl.value;
+
+  setIfBlank('watching-director', serie.director || serie.creador);
+  setIfBlank('watching-anio-est', serie.anio_est);
+  setIfBlank('watching-protagonista', serie.protagonista);
+  setIfBlank('watching-cover', serie.cover);
+  setIfBlank('watching-cap-total', serie.capTotal || serie.capsPorTemp);
+
+  const box = document.getElementById('watching-title-suggestions');
+  if (box) { box.innerHTML = ''; box.style.display = 'none'; }
+  updateWatchingBar();
+  showToast('✓ Nombre canónico aplicado');
+}
+
 function updateWatchingBar() {
   const actual = parseInt(document.getElementById('watching-cap-actual').value) || 0;
   const total  = parseInt(document.getElementById('watching-cap-total').value)  || 0;
@@ -8401,6 +8512,8 @@ function saveWatchingEntry() {
   ['watching-titulo','watching-director','watching-anio-est','watching-protagonista','watching-cap-actual','watching-cap-total','watching-cover'].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = '';
   });
+  const watchingSug = document.getElementById('watching-title-suggestions');
+  if (watchingSug) { watchingSug.innerHTML = ''; watchingSug.style.display = 'none'; }
   document.getElementById('watching-temporadas').value = 1;
   document.getElementById('watching-temporada-actual').value = 1;
   document.getElementById('watching-progress-bar').style.width = '0%';
@@ -9391,6 +9504,40 @@ function renderWeeklyMetaHeatmap() {
 }
 
 // ── COMPARADOR DE AÑOS ──
+function dayOfYearFromDateStr(dateStr) {
+  const [y,m,d] = String(dateStr || '').split('-').map(Number);
+  if (!y || !m || !d) return 0;
+  const start = Date.UTC(y, 0, 1);
+  const current = Date.UTC(y, m - 1, d);
+  return Math.floor((current - start) / 86400000) + 1;
+}
+
+function daysInYearLumen(year) {
+  const y = Number(year);
+  return ((y % 4 === 0 && y % 100 !== 0) || y % 400 === 0) ? 366 : 365;
+}
+
+function activityDaysComparableForYear(year) {
+  const yr = Number(year);
+  const dates = new Set();
+  db.entries.filter(e => e.type === 'libro').forEach(e => {
+    const norm = normalizeReadDates(e.readDates || []);
+    if (!norm.length) return;
+    const conPag = norm.filter(r => r.pag !== null);
+    if (conPag.length) {
+      const byDay = calcPagsByDay(conPag);
+      Object.entries(byDay).forEach(([date, pages]) => {
+        if (String(date).startsWith(String(yr) + '-') && Number(pages) > 0) dates.add(date);
+      });
+    } else {
+      norm.forEach(r => {
+        if (String(r.date || '').startsWith(String(yr) + '-')) dates.add(r.date);
+      });
+    }
+  });
+  return dates.size ? { days: dates.size, denominator: (yr === currentYearSantiago() ? dayOfYearFromDateStr(todaySantiagoStr()) : daysInYearLumen(yr)) } : null;
+}
+
 function renderComparador() {
   const el = document.getElementById('habitos-comparador'); if(!el) return;
   const yrA = parseInt(document.getElementById('comp-year-a')?.value || new Date().getFullYear());
@@ -9405,7 +9552,8 @@ function renderComparador() {
     const autores  = new Set(libros.map(e=>e.autor).filter(Boolean)).size;
     const directores = new Set([...peliculas,...series].map(e=>e.director).filter(Boolean)).size;
     const idiomas  = new Set(libros.map(e=>e.idioma).filter(Boolean)).size;
-    return { libros: libros.length, peliculas: peliculas.length, series: series.length, paginas, autores, directores, idiomas, total: libros.length+peliculas.length+series.length };
+    const diasConLectura = activityDaysComparableForYear(yr);
+    return { libros: libros.length, peliculas: peliculas.length, series: series.length, paginas, autores, directores, idiomas, total: libros.length+peliculas.length+series.length, diasConLectura };
   }
 
   const a = statsForYear(yrA), b = statsForYear(yrB);
@@ -9423,6 +9571,29 @@ function renderComparador() {
       </div>`;
   }
 
+  function rowDiasConLectura(va, vb) {
+    const fmt = (v, muted) => {
+      if (!v || !v.denominator) return '<span style="color:var(--ink4);">—</span>';
+      const pct = Math.round((v.days / v.denominator) * 100);
+      return `${v.days.toLocaleString()} <span style="font-size:13px;color:${muted ? 'var(--ink4)' : 'var(--ink3)'};">(${pct}%)</span>`;
+    };
+    const arrow = (va && vb && vb.days > 0)
+      ? (() => {
+          const pctA = Math.round((va.days / va.denominator) * 100);
+          const pctB = Math.round((vb.days / vb.denominator) * 100);
+          const diff = pctA - pctB;
+          return diff > 0 ? `<span style="color:#7ec98f;">▲${Math.abs(diff)} pts</span>` : diff < 0 ? `<span style="color:#f08080;">▼${Math.abs(diff)} pts</span>` : '<span style="color:var(--ink4);">—</span>';
+        })()
+      : '<span style="color:var(--ink4);">—</span>';
+    return `
+      <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:8px;padding:10px 0;border-bottom:1px solid var(--cream2);align-items:center;" title="Días con páginas registradas / días transcurridos del año.">
+        <div style="font-size:12px;color:var(--ink3);font-weight:700;letter-spacing:1px;text-transform:uppercase;">📅 Días con lectura</div>
+        <div style="font-family:var(--font-serif);font-size:18px;font-weight:700;color:var(--ink);text-align:center;">${fmt(va, false)}</div>
+        <div style="font-family:var(--font-serif);font-size:18px;font-weight:700;color:var(--ink4);text-align:center;">${fmt(vb, true)}</div>
+        <div style="text-align:center;font-size:12px;font-weight:700;">${arrow}</div>
+      </div>`;
+  }
+
   el.innerHTML = `
     <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:8px;padding:0 0 8px;border-bottom:2px solid var(--ink);">
       <div></div>
@@ -9432,6 +9603,7 @@ function renderComparador() {
     </div>
     ${row('📚 Libros leídos', a.libros, b.libros)}
     ${row('📄 Páginas', a.paginas, b.paginas)}
+    ${rowDiasConLectura(a.diasConLectura, b.diasConLectura)}
     ${row('🎬 Películas', a.peliculas, b.peliculas)}
     ${row('📺 Series', a.series, b.series)}
     ${row('✍ Autores únicos', a.autores, b.autores)}
