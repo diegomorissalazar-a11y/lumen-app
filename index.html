@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1a1510">
-<title>LUMEN v157 — Biblioteca Personal</title>
+<title>LUMEN v158 — Biblioteca Personal</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231a1510'/><text x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' font-family='Georgia,serif' font-size='14' font-weight='900' font-style='italic' fill='%23c8952a' letter-spacing='0.5'>L</text><rect x='6' y='23' width='20' height='2' rx='1' fill='%238b2020'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
@@ -119,6 +119,7 @@ select.input { cursor: pointer; }
 .badge-pelicula { background: #f0e8e8; color: var(--red); border: 1px solid #d8c0c0; }
 .badge-serie { background: #e8eef5; color: var(--blue); border: 1px solid #c0ccd8; }
 .badge-disco { background: #f4efe5; color: var(--gold); border: 1px solid #dccb9d; }
+.badge-manga { background:#f2eafa; color:#6b3a8a; border:1px solid #d5c0e4; }
 .badge-leyendo { background: #fff8e8; color: var(--gold); border: 1px solid #e8d8a0; }
 
 /* ── SECTION TITLE ── */
@@ -185,6 +186,7 @@ select.input { cursor: pointer; }
 .entry-card-spine.pelicula { background: var(--red); }
 .entry-card-spine.serie { background: var(--blue); }
 .entry-card-spine.disco { background: var(--gold); }
+.entry-card-spine.manga { background:#6b3a8a; }
 .entry-card-cover { width: 56px; height: 80px; object-fit: cover; flex-shrink: 0; background: var(--cream3); }
 .entry-card-info { padding: 11px 13px; flex: 1; min-width: 0; }
 .entry-card-title { font-family: var(--font-serif); font-size: 15px; font-weight: 700; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -808,6 +810,21 @@ select.input { cursor: pointer; }
     </div>
   </div>
 
+  <!-- LEYENDO MANGAS -->
+  <div style="padding:4px 20px 4px;" id="manga-reading-section">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+      <div class="cr-title" style="margin:0;">— Leyendo mangas —</div>
+      <button class="btn btn-secondary btn-sm" onclick="openMangaQuickAdd()" style="font-size:10px;letter-spacing:1px;">+ Manga en curso</button>
+    </div>
+    <div class="reading-carousel-wrap">
+      <div id="currently-reading-manga-list" class="reading-carousel"></div>
+      <div class="reading-carousel-arrows" id="manga-carousel-arrows">
+        <button class="reading-carousel-arrow" onclick="scrollCarousel('currently-reading-manga-list',-1)">&#8592;</button>
+        <button class="reading-carousel-arrow" onclick="scrollCarousel('currently-reading-manga-list',1)">&#8594;</button>
+      </div>
+    </div>
+  </div>
+
   <div style="padding:8px 20px 4px;">
     <div class="cr-title" style="margin-bottom:8px;">— Últimas películas —</div>
     <div id="recent-peliculas" class="home-recent-list"></div>
@@ -841,6 +858,7 @@ select.input { cursor: pointer; }
       <button class="stats-seg-btn"        data-tab="pelicula" onclick="filterLib('pelicula',this)">🎬 Pelícs.</button>
       <button class="stats-seg-btn"        data-tab="serie"    onclick="filterLib('serie',this)">📺 Series</button>
       <button class="stats-seg-btn"        data-tab="disco"    onclick="filterLib('disco',this)">💿 Discos</button>
+      <button class="stats-seg-btn"        data-tab="manga"    onclick="filterLib('manga',this)">📖 Mangas</button>
       <button class="stats-seg-btn"        data-tab="notas"    onclick="filterLib('notas',this)">📝 Notas</button>
     </div>
   </div>
@@ -880,6 +898,7 @@ select.input { cursor: pointer; }
       <button class="stats-seg-btn" data-seg="peliculas" onclick="switchStatsSeg('peliculas',this)">🎬 Películas</button>
       <button class="stats-seg-btn" data-seg="series" onclick="switchStatsSeg('series',this)">📺 Series</button>
       <button class="stats-seg-btn" data-seg="discos" onclick="switchStatsSeg('discos',this)">💿 Discos</button>
+      <button class="stats-seg-btn" data-seg="mangas" onclick="switchStatsSeg('mangas',this)">📖 Mangas</button>
       <button class="stats-seg-btn" data-seg="global" onclick="switchStatsSeg('global',this)">🌐 Global</button>
     </div>
   </div>
@@ -1117,6 +1136,23 @@ select.input { cursor: pointer; }
       <div id="ds-active-filter" style="margin-bottom:8px;"></div>
       <div id="ds-tabla" style="overflow-x:auto;"></div>
       <div id="ds-pagination" class="table-pagination"></div>
+    </div>
+  </div>
+
+
+  <!-- ── PANEL MANGAS ── -->
+  <div class="stats-panel" id="spanel-mangas">
+    <div style="padding:16px 20px 20px;">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:16px;" id="mg-kpis"></div>
+      <div class="chart-section-title" style="margin-bottom:8px;">Mangas terminados por mes</div>
+      <div class="chart-wrap"><canvas id="mg-chart-mes"></canvas></div>
+      <div class="divider"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+        <div><div class="stat-sublabel">Mangakas</div><div id="mg-top-autor" class="top-interactive"></div></div>
+        <div><div class="stat-sublabel">Editoriales</div><div id="mg-top-editorial" class="top-interactive"></div></div>
+      </div>
+      <div class="divider"></div>
+      <div id="mg-curiosidades"></div>
     </div>
   </div>
 
@@ -2021,6 +2057,7 @@ select.input { cursor: pointer; }
         <button class="type-btn active" data-type="libro" onclick="selectType('libro',this)" style="padding:12px 8px;border:2px solid var(--green);border-radius:4px;background:#e8f0e8;cursor:pointer;font-family:var(--font-sans);font-size:12px;font-weight:700;color:var(--green);letter-spacing:1px;text-transform:uppercase;">📚 Libro</button>
         <button class="type-btn" data-type="pelicula" onclick="selectType('pelicula',this)" style="padding:12px 8px;border:2px solid var(--border);border-radius:4px;background:#fff;cursor:pointer;font-family:var(--font-sans);font-size:12px;font-weight:700;color:var(--ink3);letter-spacing:1px;text-transform:uppercase;">🎬 Película</button>
         <button class="type-btn" data-type="serie" onclick="selectType('serie',this)" style="padding:12px 8px;border:2px solid var(--border);border-radius:4px;background:#fff;cursor:pointer;font-family:var(--font-sans);font-size:12px;font-weight:700;color:var(--ink3);letter-spacing:1px;text-transform:uppercase;">📺 Serie</button>
+        <button class="type-btn" data-type="manga" onclick="selectType('manga',this)" style="padding:12px 8px;border:2px solid var(--border);border-radius:4px;background:#fff;cursor:pointer;font-family:var(--font-sans);font-size:12px;font-weight:700;color:var(--ink3);letter-spacing:1px;text-transform:uppercase;">📖 Manga</button>
         <button class="type-btn" data-type="disco" onclick="selectType('disco',this)" style="padding:12px 8px;border:2px solid var(--border);border-radius:4px;background:#fff;cursor:pointer;font-family:var(--font-sans);font-size:12px;font-weight:700;color:var(--ink3);letter-spacing:1px;text-transform:uppercase;">💿 Disco</button>
       </div>
 
@@ -2340,6 +2377,29 @@ select.input { cursor: pointer; }
       </div>
 
 
+
+      <div id="form-manga" style="display:none;">
+        <div class="field"><label>Título</label><input class="input" type="text" id="fm-titulo" placeholder="Título del manga"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="field"><label>Autor / mangaka</label><input class="input" type="text" id="fm-autor" placeholder="Mangaka"></div>
+          <div class="field"><label>Editorial</label><input class="input" type="text" id="fm-editorial"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="field"><label>Año de publicación</label><input class="input" type="number" id="fm-anio-pub"></div>
+          <div class="field"><label>Estado de publicación</label><select class="input" id="fm-estado-publicacion"><option value="en_emision">En emisión</option><option value="en_pausa">En pausa</option><option value="finalizado">Finalizado</option></select></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="field"><label>Capítulo actual</label><input class="input" type="number" id="fm-cap-actual" min="0" value="0"></div>
+          <div class="field"><label>Capítulos totales</label><input class="input" type="number" id="fm-cap-total" min="0" value="0"></div>
+        </div>
+        <div class="field"><label>Estado personal</label><select class="input" id="fm-estado"><option value="leyendo">Leyendo</option><option value="leido">Leído ✓</option></select></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="field"><label>Mes de término</label><select class="input" id="fm-mes"><option value="">—</option><option>Enero</option><option>Febrero</option><option>Marzo</option><option>Abril</option><option>Mayo</option><option>Junio</option><option>Julio</option><option>Agosto</option><option>Septiembre</option><option>Octubre</option><option>Noviembre</option><option>Diciembre</option></select></div>
+          <div class="field"><label>Año de término</label><input class="input" type="number" id="fm-anio"></div>
+        </div>
+        <div class="field"><label>Portada</label><div id="fm-cover-preview" style="margin-bottom:8px;min-height:0;"></div><div style="display:flex;gap:6px;"><input class="input" type="text" id="fm-cover" placeholder="https://..." oninput="previewMainCover('fm-cover','fm-cover-preview')"><button class="btn-icon" onclick="document.getElementById('fm-cover').value='';document.getElementById('fm-cover-preview').innerHTML='';">✕</button></div><button class="btn btn-secondary btn-sm" onclick="document.getElementById('fm-cover-file').click()" style="width:100%;margin-top:8px;font-size:11px;">📁 Subir imagen</button><input type="file" id="fm-cover-file" accept="image/*" style="display:none;" onchange="handleMainCoverFile(event,'fm-cover','fm-cover-preview')"></div>
+      </div>
+
       <div id="form-disco" style="display:none;">
         <div class="field"><label>Nombre del disco</label><input class="input" type="text" id="fd-titulo" placeholder="Título del disco"></div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
@@ -2387,6 +2447,10 @@ select.input { cursor: pointer; }
     </div>
   </div>
 </div>
+
+
+<!-- ══════ MODAL: PROGRESO MANGA ══════ -->
+<div id="modal-manga-progress" class="modal-overlay"><div class="modal"><div class="modal-handle"></div><div class="modal-header"><div class="modal-title" id="manga-progress-title">Actualizar manga</div><button class="btn-icon" onclick="closeModal('modal-manga-progress')">✕</button></div><div class="modal-body"><input type="hidden" id="manga-progress-id"><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"><div class="field"><label>Capítulo actual</label><input class="input" type="number" id="manga-progress-current" min="0" oninput="updateMangaProgressPreview()"></div><div class="field"><label>Capítulos totales</label><input class="input" type="number" id="manga-progress-total" min="0" oninput="updateMangaProgressPreview()"></div></div><div class="progress-wrap" style="height:8px;margin-bottom:5px;"><div class="progress-fill" id="manga-progress-bar" style="width:0%;background:#6b3a8a;"></div></div><div id="manga-progress-label" style="font-size:12px;color:var(--ink3);margin-bottom:16px;"></div><div class="field"><label>Estado de publicación</label><select class="input" id="manga-progress-publication"><option value="en_emision">En emisión</option><option value="en_pausa">En pausa</option><option value="finalizado">Finalizado</option></select></div><button class="btn btn-primary" onclick="saveMangaProgress()" style="margin-bottom:8px;">Guardar progreso</button><button class="btn btn-secondary" onclick="finishManga()">✓ Terminé</button></div></div></div>
 
 <!-- ══════ MODAL: DETALLE ══════ -->
 <div id="modal-detail" class="modal-overlay">
@@ -12699,5 +12763,125 @@ function copiarExportLectura() {
 }
 
 </script>
+
+<script>
+// ═══════════════════════════════════
+// LUMEN v158 — MÓDULO MANGAS
+// ═══════════════════════════════════
+(function(){
+  const oldSelectType = window.selectType;
+  window.selectType = function(type, btn){
+    if(type !== 'manga') return oldSelectType(type, btn);
+    currentType='manga';
+    document.querySelectorAll('.type-btn').forEach(b=>{b.style.borderColor='var(--border)';b.style.background='#fff';b.style.color='var(--ink3)';});
+    btn.style.borderColor='#6b3a8a';btn.style.background='#f2eafa';btn.style.color='#6b3a8a';
+    ['form-libro','form-pelicula','form-serie','form-disco','form-manga'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display=id==='form-manga'?'block':'none';});
+    document.getElementById('search-label').textContent='Registrar manga manualmente';
+    document.getElementById('add-search').value='';document.getElementById('add-search-results').style.display='none';
+  };
+
+  const oldResetForm=window.resetForm;
+  window.resetForm=function(){
+    oldResetForm();
+    ['fm-titulo','fm-autor','fm-editorial','fm-anio-pub','fm-cap-actual','fm-cap-total','fm-cover','fm-mes','fm-anio'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+    const ep=document.getElementById('fm-estado-publicacion');if(ep)ep.value='en_emision';
+    const es=document.getElementById('fm-estado');if(es)es.value='leyendo';
+    const pr=document.getElementById('fm-cover-preview');if(pr)pr.innerHTML='';
+  };
+
+  const oldOpenModal=window.openModal;
+  window.openModal=function(id){oldOpenModal(id);if(id==='modal-add'&&!editingId){const y=document.getElementById('fm-anio');if(y)y.value=new Date().getFullYear();}};
+
+  const oldSaveEntry=window.saveEntry;
+  window.saveEntry=function(){
+    if(currentType!=='manga') return oldSaveEntry();
+    const titulo=document.getElementById('fm-titulo').value.trim(); if(!titulo){showToast('Ingresa el título');return;}
+    const prev=editingId?db.entries.find(e=>e.id===editingId):null;
+    const estado=document.getElementById('fm-estado').value;
+    const now=new Date();
+    const entry={id:editingId||('e_'+Date.now()),type:'manga',titulo,autor:document.getElementById('fm-autor').value.trim(),editorial:document.getElementById('fm-editorial').value.trim(),anio_pub:parseInt(document.getElementById('fm-anio-pub').value)||null,capActual:parseInt(document.getElementById('fm-cap-actual').value)||0,capTotal:parseInt(document.getElementById('fm-cap-total').value)||0,estado_publicacion:document.getElementById('fm-estado-publicacion').value,estado,mes:estado==='leido'?(document.getElementById('fm-mes').value||MESES[now.getMonth()]):'',anio:estado==='leido'?(parseInt(document.getElementById('fm-anio').value)||now.getFullYear()):null,cover:document.getElementById('fm-cover').value.trim(),notas:document.getElementById('f-notas').value||'',notas_lista:prev?.notas_lista||[],_updatedAt:Date.now()};
+    if(editingId){const i=db.entries.findIndex(e=>e.id===editingId);if(i>=0)db.entries[i]=mergeEntryForSafeEdit(db.entries[i],entry);}else{const dup=db.entries.find(e=>e.type==='manga'&&(e.titulo||'').trim().toLowerCase()===titulo.toLowerCase());if(dup&&!confirm(`Ya tienes un manga con el título "${titulo}". ¿Añadir de todas formas?`))return;db.entries.push(entry);}
+    saveDB();closeModal('modal-add');showToast('✓ Manga guardado');editingId=null;
+    if(currentScreen==='home')renderHome();if(currentScreen==='library')renderLibrary();if(currentScreen==='stats')renderStatsMangas();
+  };
+
+  const oldEntryCardHTML=window.entryCardHTML;
+  window.entryCardHTML=function(e){
+    if(e.type!=='manga')return oldEntryCardHTML(e);
+    const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const pct=e.capTotal>0?Math.min(100,Math.round((e.capActual||0)/e.capTotal*100)):0;
+    const cover=coverUrl(e); const id=String(e.id).replace(/'/g,"\\'");
+    return `<div class="entry-card" onclick="showDetail('${id}')"><div class="entry-card-spine manga"></div>${cover?`<img src="${esc(cover)}" class="entry-card-cover">`:`<div class="entry-card-cover" style="display:flex;align-items:center;justify-content:center;font-size:22px;">📖</div>`}<div class="entry-card-info"><div class="entry-card-title">${esc(e.titulo)}</div><div class="entry-card-sub">${[e.autor,e.editorial,e.anio_pub].filter(Boolean).map(esc).join(' · ')}</div><div class="progress-wrap"><div class="progress-fill" style="width:${pct}%;background:#6b3a8a;"></div></div><div style="font-size:11px;color:#6b3a8a;font-weight:700;margin-top:4px;">Cap. ${e.capActual||0} / ${e.capTotal||0} · ${pct}%</div><div class="entry-card-meta"><span class="badge ${e.estado==='leyendo'?'badge-leyendo':'badge-manga'}">${e.estado==='leyendo'?'Leyendo':'Manga leído'}</span><span style="font-size:10px;color:var(--ink4);">${mangaPublicationLabel(e.estado_publicacion)}</span>${e.notas_lista?.length?`<span style="font-size:10px;color:var(--ink4);">📝 ${e.notas_lista.length}</span>`:''}</div></div></div>`;
+  };
+
+  const oldShowDetail=window.showDetail;
+  window.showDetail=function(id){
+    const e=db.entries.find(x=>x.id===id);if(!e||e.type!=='manga')return oldShowDetail(id);
+    const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const row=(l,v)=>v?`<div style="display:flex;gap:8px;padding:7px 0;border-bottom:1px solid var(--cream2);"><span style="font-size:10px;color:var(--ink4);letter-spacing:1.5px;text-transform:uppercase;font-weight:700;width:110px;flex-shrink:0;">${l}</span><span style="font-size:14px;color:var(--ink2);">${esc(v)}</span></div>`:'';
+    const pct=e.capTotal>0?Math.min(100,Math.round((e.capActual||0)/e.capTotal*100)):0;
+    document.getElementById('detail-title').textContent=e.titulo;
+    let html=(coverUrl(e)?`<img src="${esc(coverUrl(e))}" style="width:80px;height:110px;object-fit:cover;border-radius:3px;float:right;margin:0 0 12px 12px;">`:'')+row('Mangaka',e.autor)+row('Editorial',e.editorial)+row('Publicado',e.anio_pub)+row('Publicación',mangaPublicationLabel(e.estado_publicacion))+row('Progreso',`Cap. ${e.capActual||0} / ${e.capTotal||0} · ${pct}%`)+row('Estado',e.estado==='leido'?'Leído':'Leyendo')+(e.estado==='leido'?row('Terminado',`${e.mes||''} ${e.anio||''}`):'');
+    html+=`<div style="clear:both;"></div>${renderNotasSection(e)}<div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap;">${e.estado==='leyendo'?`<button class="btn btn-primary btn-sm" onclick="closeModal('modal-detail');openMangaProgressModal('${id}')">↑ Actualizar</button>`:''}<button class="btn btn-secondary btn-sm" onclick="editEntry('${id}')">Editar</button><button class="btn btn-secondary btn-sm" onclick="openNotaModal('${id}')">+ Nota</button><button class="btn btn-red btn-sm" onclick="deleteEntry('${id}')">Eliminar</button></div>`;
+    document.getElementById('detail-body').innerHTML=html;openModal('modal-detail');
+  };
+
+  const oldEditEntry=window.editEntry;
+  window.editEntry=function(id){
+    const e=db.entries.find(x=>x.id===id);if(!e||e.type!=='manga')return oldEditEntry(id);
+    closeModal('modal-detail');editingId=id;openModal('modal-add');setTimeout(()=>{selectType('manga',document.querySelector('.type-btn[data-type="manga"]'));document.getElementById('f-notas').value=e.notas||'';const m={titulo:'fm-titulo',autor:'fm-autor',editorial:'fm-editorial',anio_pub:'fm-anio-pub',capActual:'fm-cap-actual',capTotal:'fm-cap-total',cover:'fm-cover',mes:'fm-mes',anio:'fm-anio'};Object.entries(m).forEach(([k,id2])=>{const el=document.getElementById(id2);if(el)el.value=e[k]??'';});document.getElementById('fm-estado-publicacion').value=e.estado_publicacion||'en_emision';document.getElementById('fm-estado').value=e.estado||'leyendo';if(coverUrl(e))previewMainCover('fm-cover','fm-cover-preview');},100);
+  };
+
+  const oldRenderHome=window.renderHome;
+  window.renderHome=function(){oldRenderHome();renderMangaHome();};
+  window.renderMangaHome=function(){
+    const el=document.getElementById('currently-reading-manga-list');if(!el)return;
+    const arr=db.entries.filter(e=>e.type==='manga'&&e.estado==='leyendo');
+    if(!arr.length){el.innerHTML='<div style="font-size:13px;color:var(--ink4);font-style:italic;padding:6px 0;">No hay mangas en lectura.</div>';updateCarouselArrows('currently-reading-manga-list','manga-carousel-arrows',0);return;}
+    el.innerHTML=arr.map(e=>{const pct=e.capTotal>0?Math.min(100,Math.round((e.capActual||0)/e.capTotal*100)):0;return `<div class="reading-mini-card" onclick="showDetail('${e.id}')">${coverUrl(e)?`<img src="${coverUrl(e)}" class="reading-mini-cover">`:`<div class="reading-mini-cover" style="display:flex;align-items:center;justify-content:center;font-size:28px;">📖</div>`}<div class="reading-mini-body"><div class="reading-mini-title">${e.titulo}</div><div class="reading-mini-autor">${e.autor||''}</div><div style="height:3px;background:var(--cream3);border-radius:2px;margin-top:4px;"><div style="height:3px;background:#6b3a8a;border-radius:2px;width:${pct}%;"></div></div><div class="reading-mini-pct" style="color:#6b3a8a;">Cap. ${e.capActual||0} / ${e.capTotal||0} · ${pct}%</div></div><button class="reading-mini-btn" onclick="event.stopPropagation();openMangaProgressModal('${e.id}')">↑ Actualizar</button><button class="reading-mini-btn" onclick="event.stopPropagation();openNotaModal('${e.id}')">📝 Notas</button></div>`;}).join('');
+    updateCarouselArrows('currently-reading-manga-list','manga-carousel-arrows',arr.length);
+  };
+
+  window.openMangaQuickAdd=function(){editingId=null;openModal('modal-add');setTimeout(()=>selectType('manga',document.querySelector('.type-btn[data-type="manga"]')),30);};
+  window.mangaPublicationLabel=function(v){return v==='finalizado'?'Finalizado':v==='en_pausa'?'En pausa':'En emisión';};
+  window.openMangaProgressModal=function(id){const e=db.entries.find(x=>x.id===id);if(!e)return;document.getElementById('manga-progress-id').value=id;document.getElementById('manga-progress-title').textContent=e.titulo;document.getElementById('manga-progress-current').value=e.capActual||0;document.getElementById('manga-progress-total').value=e.capTotal||0;document.getElementById('manga-progress-publication').value=e.estado_publicacion||'en_emision';updateMangaProgressPreview();openModal('modal-manga-progress');};
+  window.updateMangaProgressPreview=function(){const a=parseInt(document.getElementById('manga-progress-current').value)||0,t=parseInt(document.getElementById('manga-progress-total').value)||0,p=t>0?Math.min(100,Math.round(a/t*100)):0;document.getElementById('manga-progress-bar').style.width=p+'%';document.getElementById('manga-progress-label').textContent=t>0?`Cap. ${a} / ${t} · ${p}%`:'';};
+  window.saveMangaProgress=function(){const e=db.entries.find(x=>x.id===document.getElementById('manga-progress-id').value);if(!e)return;e.capActual=parseInt(document.getElementById('manga-progress-current').value)||0;e.capTotal=parseInt(document.getElementById('manga-progress-total').value)||0;e.estado_publicacion=document.getElementById('manga-progress-publication').value;e._updatedAt=Date.now();saveDB();closeModal('modal-manga-progress');showToast('✓ Progreso actualizado');renderHome();if(currentScreen==='library')renderLibrary();};
+  window.finishManga=function(){const e=db.entries.find(x=>x.id===document.getElementById('manga-progress-id').value);if(!e)return;const now=new Date();e.capActual=parseInt(document.getElementById('manga-progress-current').value)||e.capActual||0;e.capTotal=parseInt(document.getElementById('manga-progress-total').value)||e.capTotal||0;e.estado_publicacion=document.getElementById('manga-progress-publication').value;e.estado='leido';e.mes=MESES[now.getMonth()];e.anio=now.getFullYear();e._updatedAt=Date.now();saveDB();closeModal('modal-manga-progress');showToast('✓ Manga terminado');renderHome();if(currentScreen==='library')renderLibrary();};
+
+  const oldTypeLabel=window.typeLabelForNotas,oldTypeIcon=window.typeIcon,oldEntryCreator=window.entryCreator;
+  window.typeLabelForNotas=t=>t==='manga'?'Mangas':oldTypeLabel(t);window.typeIcon=t=>t==='manga'?'📖':oldTypeIcon(t);window.entryCreator=e=>e?.type==='manga'?(e.autor||''):oldEntryCreator(e);
+  const oldRenderNotas=window.renderNotasLibrary;window.renderNotasLibrary=function(q=''){oldRenderNotas(q);};
+
+  const oldSwitchStats=window.switchStatsSeg;
+  window.switchStatsSeg=function(seg,btn){if(seg!=='mangas')return oldSwitchStats(seg,btn);document.querySelectorAll('#stats-seg .stats-seg-btn').forEach(b=>b.classList.toggle('active',b===btn));document.querySelectorAll('.stats-panel').forEach(p=>p.classList.toggle('active',p.id==='spanel-mangas'));renderStatsMangas();};
+  window.renderStatsMangas=function(){
+    const done=db.entries.filter(e=>e.type==='manga'&&e.estado==='leido');const total=db.entries.filter(e=>e.type==='manga').length;const longest=[...done].sort((a,b)=>(b.capTotal||0)-(a.capTotal||0))[0];
+    document.getElementById('mg-kpis').innerHTML=`<div class="stat-box"><div class="stat-num">${done.length}</div><div class="stat-label">Terminados</div></div><div class="stat-box"><div class="stat-num">${total-done.length}</div><div class="stat-label">Leyendo</div></div><div class="stat-box"><div class="stat-num">${longest?.capTotal||0}</div><div class="stat-label">Mayor capítulos</div></div>`;
+    const counts=f=>{const c={};done.forEach(e=>{const v=(e[f]||'').trim();if(v)c[v]=(c[v]||0)+1;});return Object.entries(c).sort((a,b)=>b[1]-a[1]);};
+    const renderTop=(id,arr)=>{const el=document.getElementById(id);el.innerHTML=arr.slice(0,7).map((x,i)=>`<div class="top-int-item"><span class="top-int-rank">${i+1}</span><span class="top-int-name">${x[0]}</span><span class="top-int-count">${x[1]}</span></div>`).join('')||'<div style="font-size:12px;color:var(--ink4);">Sin datos</div>';};renderTop('mg-top-autor',counts('autor'));renderTop('mg-top-editorial',counts('editorial'));
+    document.getElementById('mg-curiosidades').innerHTML=`<div class="card"><div style="font-family:var(--font-serif);font-size:15px;font-weight:700;margin-bottom:8px;">Curiosidades</div><div style="font-size:13px;color:var(--ink2);line-height:1.8;">${longest?`📖 El manga terminado con más capítulos es <b>${longest.titulo}</b>, con <b>${longest.capTotal}</b> capítulos.`:'Aún no hay mangas terminados.'}</div></div>`;
+    if(window.mgChart)window.mgChart.destroy();const vals=MESES.map(m=>done.filter(e=>e.mes===m).length);const ctx=document.getElementById('mg-chart-mes');if(ctx&&window.Chart){window.mgChart=new Chart(ctx,{type:'bar',data:{labels:MESES.map(m=>m.slice(0,3)),datasets:[{label:'Mangas',data:vals,borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{precision:0}},x:{grid:{display:false}}}}});}
+  };
+
+  // Actualizar búsqueda y filtros para manga
+  const oldDoSearch=window.doSearch;window.doSearch=async function(q){if(currentType==='manga'){const el=document.getElementById('add-search-results');el.innerHTML='<div style="padding:12px 14px;font-size:13px;color:var(--ink3);">Los mangas se registran manualmente.</div>';el.style.display='block';return;}return oldDoSearch(q);};
+  const oldRenderLibrary=window.renderLibrary;window.renderLibrary=function(){oldRenderLibrary();};
+
+  // Incluir Mangas en el índice de Notas (la función original fija las categorías)
+  const originalRenderNotasLibrary=window.renderNotasLibrary;
+  window.renderNotasLibrary=function(query=''){
+    originalRenderNotasLibrary(query);
+    // Re-render simple si existen notas manga y no aparecieron por lista fija
+    const mangas=(db.entries||[]).filter(e=>e.type==='manga'&&Array.isArray(e.notas_lista)&&e.notas_lista.length);
+    if(!mangas.length)return;
+    const doc=document.querySelector('.notas-reader-doc');const toc=document.querySelector('#notas-reader-toc .notas-tree > ul > li > details > ul');if(!doc||!toc)return;
+    const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    toc.insertAdjacentHTML('beforeend',`<li><details open><summary>Mangas</summary><ul>${mangas.map(e=>`<li><a class="toc-entry-link" href="#${noteAnchorId(e.id)}">📖 ${esc(e.titulo)}</a></li>`).join('')}</ul></details></li>`);
+    doc.insertAdjacentHTML('beforeend',`<section><h2 class="notas-doc-category" id="${noteCategoryAnchorId('Mangas')}">Mangas</h2>${mangas.map(e=>`<article class="notas-doc-entry" id="${noteAnchorId(e.id)}"><h3 class="notas-doc-entry-title">${esc(e.titulo)}</h3><div class="notas-doc-entry-meta">${esc(e.autor||'')}</div>${e.notas_lista.map((n,i)=>`<div class="notas-doc-note" id="${noteItemAnchorId(e.id,i)}"><div class="notas-doc-note-title">Nota ${i+1}${n.titulo?' — '+esc(n.titulo):''}</div>${n.fecha?`<div class="notas-doc-note-date">${notasFechaLabel(n.fecha)}</div>`:''}<div class="notas-doc-note-text">${renderRichNoteText(n.texto||'')}</div></div>`).join('')}<div class="notas-doc-actions"><button class="btn btn-secondary btn-sm" onclick="showDetail('${e.id}')">Abrir ficha</button><button class="btn btn-secondary btn-sm" onclick="openNotaModal('${e.id}')">+ Nota</button></div></article>`).join('')}</section>`);
+  };
+})();
+</script>
+
 </body>
 </html>
