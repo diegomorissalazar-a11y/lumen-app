@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1a1510">
-<title>LUMEN v158 — Biblioteca Personal</title>
+<title>LUMEN v159 — Biblioteca Personal</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231a1510'/><text x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' font-family='Georgia,serif' font-size='14' font-weight='900' font-style='italic' fill='%23c8952a' letter-spacing='0.5'>L</text><rect x='6' y='23' width='20' height='2' rx='1' fill='%238b2020'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
@@ -644,6 +644,9 @@ select.input { cursor: pointer; }
   }
 }
 
+
+/* ── INVENTARIO FÍSICO v159 ── */
+.inventory-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}.inventory-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}.inventory-card{background:#fff;border:1px solid var(--border);border-radius:6px;padding:12px 14px;margin-bottom:8px;box-shadow:var(--shadow)}.inventory-card-title{font-family:var(--font-serif);font-size:15px;font-weight:700}.inventory-card-sub{font-size:11px;color:var(--ink3);margin-top:3px}.inventory-card-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}.inventory-status{font-size:10px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;padding:3px 7px;border-radius:12px;background:var(--cream2);color:var(--ink3)}.inventory-status.linked{background:#e8f0e8;color:var(--green)}.inventory-status.cart{background:#fff8e8;color:var(--gold)}.inventory-import-row{padding:8px 0;border-bottom:1px solid var(--cream2);font-size:12px}.inventory-import-row:last-child{border-bottom:none}
 </style>
 <!-- Firebase compat SDKs (carga síncrona, sin módulos) -->
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
@@ -852,11 +855,12 @@ select.input { cursor: pointer; }
     <button class="btn btn-sm" style="background:var(--red);color:var(--cream);width:auto;font-size:11px;letter-spacing:1px;" onclick="openAddModal()">+ Añadir</button>
   </div>
   <div style="padding:12px 20px 8px;">
-    <div class="stats-seg" id="lib-seg">
+    <div class="stats-seg" id="lib-seg" style="grid-template-columns:repeat(5,1fr);">
       <button class="stats-seg-btn active" data-tab="todos"    onclick="filterLib('todos',this)">Todos</button>
       <button class="stats-seg-btn"        data-tab="libro"    onclick="filterLib('libro',this)">📚 Libros</button>
       <button class="stats-seg-btn"        data-tab="pelicula" onclick="filterLib('pelicula',this)">🎬 Pelícs.</button>
       <button class="stats-seg-btn"        data-tab="serie"    onclick="filterLib('serie',this)">📺 Series</button>
+      <button class="stats-seg-btn"        data-tab="inventario" onclick="filterLib('inventario',this)">📦 Inventario</button>
       <button class="stats-seg-btn"        data-tab="disco"    onclick="filterLib('disco',this)">💿 Discos</button>
       <button class="stats-seg-btn"        data-tab="manga"    onclick="filterLib('manga',this)">📖 Mangas</button>
       <button class="stats-seg-btn"        data-tab="notas"    onclick="filterLib('notas',this)">📝 Notas</button>
@@ -2010,7 +2014,7 @@ select.input { cursor: pointer; }
     Cerrar sesión
   </button>
   <div style="padding:8px 16px 10px;border-top:1px solid var(--border);font-size:10px;color:var(--ink4);letter-spacing:1px;text-align:right;">
-    LUMEN v157
+    LUMEN v159
   </div>
 </div>
 
@@ -2503,6 +2507,28 @@ select.input { cursor: pointer; }
       <button class="btn btn-secondary" onclick="exportJSON()" style="margin-bottom:8px;">⬇ Exportar todo (JSON)</button>
       <button class="btn btn-secondary" onclick="exportarCSVHistoricoCompleto()" style="margin-bottom:8px;">📦 Exportar CSV histórico completo</button>
       <button class="btn btn-secondary" onclick="clearAll()">🗑 Limpiar todos los datos</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════ MODAL: IMPORTAR INVENTARIO ══════ -->
+<div id="modal-inventory-import" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title">Importar inventario físico</div>
+      <button class="btn-icon" onclick="closeModal('modal-inventory-import')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--ink3);line-height:1.6;margin-bottom:14px;">Carga un CSV con cuatro columnas: <strong>ID, Título, Autor y Editorial</strong>. Antes de guardar, LUMEN revisará coincidencias y posibles ediciones distintas.</p>
+      <div class="import-zone" onclick="document.getElementById('inventory-csv-input').click()">
+        <div class="import-zone-icon">📚</div>
+        <div class="import-zone-text"><strong>Seleccionar CSV de inventario</strong><br>No modifica el historial de lectura.</div>
+      </div>
+      <input type="file" id="inventory-csv-input" accept=".csv,text/csv" style="display:none" onchange="handleInventoryCSV(event)">
+      <div id="inventory-import-preview" style="margin-top:14px;"></div>
+      <button id="inventory-import-confirm" class="btn btn-primary" style="display:none;margin-top:12px;" onclick="confirmInventoryImport()">Confirmar importación</button>
     </div>
   </div>
 </div>
@@ -3216,7 +3242,7 @@ function openReadingConsistencyReport() {
   const rows = auditReadingConsistency();
   const lineas = [];
   lineas.push('═══════════════════════════════════════════════');
-  lineas.push('REVISIÓN DE CONSISTENCIA DE LECTURA — LUMEN v157');
+  lineas.push('REVISIÓN DE CONSISTENCIA DE LECTURA — LUMEN v159');
   lineas.push('Generado: ' + new Date().toLocaleString('es-CL', { timeZone: LUMEN_TZ }));
   lineas.push('═══════════════════════════════════════════════');
   lineas.push('');
@@ -3635,6 +3661,7 @@ function saveDB() {
         desafios: cleanForFirestore(loadDesafios()),
         rutaCustom: cleanForFirestore(loadRutaCustomNodes()),
         rutaProgramas: cleanForFirestore(loadProgramas()),
+        inventory: cleanForFirestore(loadInventory()),
         updatedAt: Date.now()
       };
       firestore.collection('users').doc(currentUser.uid).collection('data').doc('library').set(payload)
@@ -3666,6 +3693,7 @@ async function syncToFirestore() {
       desafios: cleanForFirestore(loadDesafios()),
       rutaCustom: cleanForFirestore(loadRutaCustomNodes()),
       rutaProgramas: cleanForFirestore(loadProgramas()),
+      inventory: cleanForFirestore(loadInventory()),
       normBlacklist: loadNormBlacklist(),
       idiomasAprobados: loadIdiomasAprobados(),
       updatedAt: Date.now()
@@ -3688,6 +3716,16 @@ async function syncToFirestore() {
   }
 }
 
+function mergeInventory(local, remote) {
+  const map = new Map();
+  [...(local||[]), ...(remote||[])].forEach(item => {
+    const key = item.inventoryId || inventoryKey(item, true);
+    const prev = map.get(key);
+    if (!prev || (item._updatedAt||0) >= (prev._updatedAt||0)) map.set(key, item);
+  });
+  return [...map.values()];
+}
+
 async function pullAndMerge(uid, silent) {
   try {
     // Esperar a que el token de auth esté listo antes de acceder a Firestore
@@ -3707,6 +3745,9 @@ async function pullAndMerge(uid, silent) {
       restoreLocalImages(merged);
       db.entries = merged;
       localStorage.setItem(DB_KEY, JSON.stringify(db));
+      if (remote.inventory) {
+        localStorage.setItem(INVENTORY_KEY, JSON.stringify(mergeInventory(loadInventory(), remote.inventory)));
+      }
 
       // Restaurar mapas y desafíos desde Firestore
       if (remote.mapas) {
@@ -3803,6 +3844,9 @@ function subscribeToFirestore(uid) {
     restoreLocalImages(merged);  // recuperar imágenes base64 locales
     db.entries = merged;
     localStorage.setItem(DB_KEY, JSON.stringify(db));
+    if (remote.inventory) {
+      localStorage.setItem(INVENTORY_KEY, JSON.stringify(mergeInventory(loadInventory(), remote.inventory)));
+    }
 
     // Sincronizar mapas y desafíos desde snapshot en tiempo real
     if (remote.mapas) {
@@ -8886,7 +8930,7 @@ async function saveAndLogOut() {
   try {
     await getValidToken();
     await firestore.collection('users').doc(currentUser.uid).collection('data').doc('library').set(
-      cleanForFirestore({ entries: db.entries, updatedAt: Date.now() })
+      cleanForFirestore({ entries: db.entries, inventory: loadInventory(), updatedAt: Date.now() })
     );
     statusEl.textContent = `✓ ${db.entries.length} registros guardados. Cerrando sesión...`;
     setTimeout(() => logOut(), 1200);
@@ -12766,7 +12810,7 @@ function copiarExportLectura() {
 
 <script>
 // ═══════════════════════════════════
-// LUMEN v158 — MÓDULO MANGAS
+// LUMEN v159 — MÓDULO MANGAS
 // ═══════════════════════════════════
 (function(){
   const oldSelectType = window.selectType;
@@ -12881,6 +12925,99 @@ function copiarExportLectura() {
     doc.insertAdjacentHTML('beforeend',`<section><h2 class="notas-doc-category" id="${noteCategoryAnchorId('Mangas')}">Mangas</h2>${mangas.map(e=>`<article class="notas-doc-entry" id="${noteAnchorId(e.id)}"><h3 class="notas-doc-entry-title">${esc(e.titulo)}</h3><div class="notas-doc-entry-meta">${esc(e.autor||'')}</div>${e.notas_lista.map((n,i)=>`<div class="notas-doc-note" id="${noteItemAnchorId(e.id,i)}"><div class="notas-doc-note-title">Nota ${i+1}${n.titulo?' — '+esc(n.titulo):''}</div>${n.fecha?`<div class="notas-doc-note-date">${notasFechaLabel(n.fecha)}</div>`:''}<div class="notas-doc-note-text">${renderRichNoteText(n.texto||'')}</div></div>`).join('')}<div class="notas-doc-actions"><button class="btn btn-secondary btn-sm" onclick="showDetail('${e.id}')">Abrir ficha</button><button class="btn btn-secondary btn-sm" onclick="openNotaModal('${e.id}')">+ Nota</button></div></article>`).join('')}</section>`);
   };
 })();
+
+
+// ═══════════════════════════════════
+// INVENTARIO FÍSICO — LUMEN v159
+// ═══════════════════════════════════
+const INVENTORY_KEY = 'lumen_inventory_v1';
+let inventoryImportPending = [];
+
+function invNorm(value) {
+  return String(value || '').trim().toLowerCase().normalize('NFD')
+    .replace(/[\u0300-\u036f]/g,'').replace(/[“”‘’'"`´]/g,'')
+    .replace(/[^a-z0-9]+/g,' ').replace(/\s+/g,' ').trim();
+}
+function loadInventory() {
+  try {
+    const data = JSON.parse(localStorage.getItem(INVENTORY_KEY) || '[]');
+    return Array.isArray(data) ? data : [];
+  } catch(e) { return []; }
+}
+function saveInventory(items, sync=true) {
+  localStorage.setItem(INVENTORY_KEY, JSON.stringify(items));
+  if (sync) saveDB();
+}
+function inventoryKey(item, includeEditorial=true) {
+  const base = `${invNorm(item.titulo)}||${invNorm(item.autor)}`;
+  return includeEditorial ? `${base}||${invNorm(item.editorial)}` : base;
+}
+function findBookLink(item) {
+  const title = invNorm(item.titulo), author = invNorm(item.autor);
+  if (!title) return null;
+  return db.entries.find(e => e.type === 'libro' && invNorm(e.titulo) === title && (!author || !invNorm(e.autor) || invNorm(e.autor) === author)) || null;
+}
+function relinkInventory(save=true) {
+  const inv = loadInventory(); let changed=false;
+  inv.forEach(item => {
+    const book=findBookLink(item);
+    const next=book?book.id:'';
+    if ((item.linkedEntryId||'') !== next) { item.linkedEntryId=next; item._updatedAt=Date.now(); changed=true; }
+  });
+  if(changed) saveInventory(inv,save);
+  return inv;
+}
+
+const _renderLibraryBeforeInventory = window.renderLibrary;
+window.renderLibrary = function() {
+  if (libFilter === 'inventario') { renderInventory(); return; }
+  const search=document.getElementById('lib-search'); if(search) search.placeholder='Buscar en mi biblioteca...';
+  return _renderLibraryBeforeInventory();
+};
+
+function renderInventory() {
+  const list=document.getElementById('library-list');
+  const search=document.getElementById('lib-search');
+  if(search) search.placeholder='Buscar en mi inventario físico...';
+  const q=invNorm(search?.value||'');
+  let inv=relinkInventory(false);
+  const filtered=inv.filter(x=>!q || [x.titulo,x.autor,x.editorial].some(v=>invNorm(v).includes(q)));
+  const linked=inv.filter(x=>x.linkedEntryId).length;
+  const unread=inv.filter(x=>{const b=db.entries.find(e=>e.id===x.linkedEntryId);return !b || b.estado!=='leido';}).length;
+  const incomplete=inv.filter(x=>!x.titulo||!x.autor||!x.editorial).length;
+  const cart=inv.filter(x=>x.inCart).length;
+  list.innerHTML=`
+    <div class="inventory-toolbar">
+      <button class="btn btn-primary btn-sm" onclick="openInventoryImport()">+ Importar CSV</button>
+      <button class="btn btn-secondary btn-sm" onclick="toggleInventoryCartOnly()">🛒 Carrito (${cart})</button>
+      <span style="font-size:11px;color:var(--ink4);margin-left:auto;">${filtered.length} de ${inv.length}</span>
+    </div>
+    <div class="inventory-kpis">
+      <div class="stat-box"><div class="stat-num">${inv.length}</div><div class="stat-label">Libros físicos</div></div>
+      <div class="stat-box"><div class="stat-num">${linked}</div><div class="stat-label">Vinculados</div></div>
+      <div class="stat-box"><div class="stat-num">${unread}</div><div class="stat-label">No leídos</div></div>
+      <div class="stat-box"><div class="stat-num">${new Set(inv.map(x=>invNorm(x.autor)).filter(Boolean)).size}</div><div class="stat-label">Autores</div></div>
+      <div class="stat-box"><div class="stat-num">${new Set(inv.map(x=>invNorm(x.editorial)).filter(Boolean)).size}</div><div class="stat-label">Editoriales</div></div>
+      <div class="stat-box"><div class="stat-num">${incomplete}</div><div class="stat-label">Incompletos</div></div>
+    </div>
+    <div id="inventory-cards">${filtered.length?filtered.map(inventoryCardHTML).join(''):'<div class="empty"><div class="empty-icon">📦</div><div class="empty-text">Aún no hay libros en el inventario.</div></div>'}</div>`;
+}
+let inventoryCartOnly=false;
+function toggleInventoryCartOnly(){inventoryCartOnly=!inventoryCartOnly;const search=document.getElementById('lib-search');const q=invNorm(search?.value||'');let inv=relinkInventory(false).filter(x=>!inventoryCartOnly||x.inCart).filter(x=>!q||[x.titulo,x.autor,x.editorial].some(v=>invNorm(v).includes(q)));const cards=document.getElementById('inventory-cards');if(cards)cards.innerHTML=inv.length?inv.map(inventoryCardHTML).join(''):'<div class="empty"><div class="empty-icon">🛒</div><div class="empty-text">El carrito está vacío.</div></div>';showToast(inventoryCartOnly?'Mostrando carrito':'Mostrando todo el inventario');}
+function inventoryCardHTML(item){
+  const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const b=db.entries.find(e=>e.id===item.linkedEntryId);
+  const linked=b?`<span class="inventory-status linked">Vinculado${b.estado==='leido'?' · leído':b.estado==='leyendo'?' · leyendo':''}</span>`:'<span class="inventory-status">Sin lectura vinculada</span>';
+  const cart=item.inCart?'<span class="inventory-status cart">En carrito</span>':'';
+  return `<div class="inventory-card"><div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start;"><div><div class="inventory-card-title">${esc(item.titulo||'Sin título')}</div><div class="inventory-card-sub">${[item.autor,item.editorial].filter(Boolean).map(esc).join(' · ')||'Información incompleta'}</div></div><div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end;">${linked}${cart}</div></div><div class="inventory-card-actions"><button class="btn btn-secondary btn-sm" onclick="toggleInventoryCart('${item.inventoryId}')">${item.inCart?'Quitar del carrito':'🛒 Agregar al carrito'}</button>${b&&b.estado==='leyendo'?`<button class="btn btn-secondary btn-sm" onclick="showDetail('${b.id}')">Abrir lectura</button>`:`<button class="btn btn-primary btn-sm" onclick="startInventoryReading('${item.inventoryId}')">Comenzar lectura</button>`}</div></div>`;
+}
+function toggleInventoryCart(id){const inv=loadInventory();const item=inv.find(x=>x.inventoryId===id);if(!item)return;item.inCart=!item.inCart;item._updatedAt=Date.now();saveInventory(inv);renderInventory();}
+function startInventoryReading(id){const inv=loadInventory();const item=inv.find(x=>x.inventoryId===id);if(!item)return;let book=findBookLink(item);if(!book){book={id:'inv_book_'+Date.now(),type:'libro',titulo:item.titulo,autor:item.autor||'',editorial:item.editorial||'',estado:'leyendo',progreso:0,readDates:[],cover:'',notas:'',_updatedAt:Date.now()};db.entries.push(book);}else{book.estado='leyendo';book._updatedAt=Date.now();if(!book.editorial&&item.editorial)book.editorial=item.editorial;}item.linkedEntryId=book.id;item.inCart=false;item._updatedAt=Date.now();localStorage.setItem(INVENTORY_KEY,JSON.stringify(inv));saveDB();renderInventory();renderHome();showToast('✓ Libro agregado a Leyendo ahora');}
+function openInventoryImport(){inventoryImportPending=[];document.getElementById('inventory-import-preview').innerHTML='';document.getElementById('inventory-import-confirm').style.display='none';document.getElementById('inventory-csv-input').value='';openModal('modal-inventory-import');}
+function inventoryCol(row,...names){for(const name of names){const key=Object.keys(row).find(k=>invNorm(k)===invNorm(name));if(key&&String(row[key]||'').trim())return String(row[key]).trim();}return '';}
+function handleInventoryCSV(event){const file=event.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=ev=>analyzeInventoryCSV(ev.target.result);reader.readAsText(file,'UTF-8');}
+function analyzeInventoryCSV(text){const clean=String(text||'').replace(/^\uFEFF/,'');const lines=clean.split(/\r?\n/).filter(x=>x.trim());if(lines.length<2){showToast('CSV vacío');return;}const headers=parseCSVLine(lines[0]);const existing=loadInventory();const exact=new Map(existing.map(x=>[inventoryKey(x,true),x]));const base=new Map();existing.forEach(x=>{const k=inventoryKey(x,false);if(!base.has(k))base.set(k,[]);base.get(k).push(x);});const rows=[];for(let i=1;i<lines.length;i++){const cols=parseCSVLine(lines[i]);const row={};headers.forEach((h,j)=>row[h]=(cols[j]||'').trim());const item={sourceId:inventoryCol(row,'ID','id'),titulo:inventoryCol(row,'Título','Titulo','Nombre'),autor:inventoryCol(row,'Autor'),editorial:inventoryCol(row,'Editorial')};if(!item.titulo){rows.push({...item,status:'incompleto',reason:'Sin título'});continue;}const ek=inventoryKey(item,true),bk=inventoryKey(item,false);if(exact.has(ek)){rows.push({...item,status:'duplicado',existingId:exact.get(ek).inventoryId});}else if(base.has(bk)){rows.push({...item,status:'posible',reason:'Mismo título y autor; editorial distinta o vacía'});}else{const link=findBookLink(item);rows.push({...item,status:link?'vinculado':'nuevo',linkedEntryId:link?.id||''});}}inventoryImportPending=rows;const counts=rows.reduce((a,x)=>(a[x.status]=(a[x.status]||0)+1,a),{});const labels={nuevo:'Nuevos',vinculado:'Nuevos vinculados',duplicado:'Duplicados exactos',posible:'Posibles ediciones',incompleto:'Incompletos'};document.getElementById('inventory-import-preview').innerHTML=`<div class="card" style="box-shadow:none;"><div style="font-family:var(--font-serif);font-weight:700;margin-bottom:8px;">Resultado del análisis</div>${Object.entries(labels).map(([k,l])=>`<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12px;"><span>${l}</span><strong>${counts[k]||0}</strong></div>`).join('')}</div><div style="max-height:230px;overflow:auto;">${rows.map(x=>`<div class="inventory-import-row"><strong>${x.titulo||'Sin título'}</strong><br><span style="color:var(--ink4);">${[x.autor,x.editorial].filter(Boolean).join(' · ')}</span><br><span style="color:${x.status==='duplicado'?'var(--red)':x.status==='posible'?'var(--gold)':'var(--green)'};font-weight:700;">${labels[x.status]}</span></div>`).join('')}</div>`;document.getElementById('inventory-import-confirm').style.display=rows.some(x=>['nuevo','vinculado','posible','incompleto'].includes(x.status))?'block':'none';}
+function confirmInventoryImport(){let inv=loadInventory();const exact=new Set(inv.map(x=>inventoryKey(x,true)));let added=0,skipped=0;inventoryImportPending.forEach((x,i)=>{if(x.status==='duplicado'){skipped++;return;}const k=inventoryKey(x,true);if(exact.has(k)){skipped++;return;}const item={inventoryId:'inv_'+Date.now()+'_'+i,sourceId:x.sourceId||'',titulo:x.titulo||'',autor:x.autor||'',editorial:x.editorial||'',linkedEntryId:x.linkedEntryId||findBookLink(x)?.id||'',inCart:false,_updatedAt:Date.now()};inv.push(item);exact.add(k);added++;});saveInventory(inv);closeModal('modal-inventory-import');renderInventory();showToast(`✓ ${added} libros agregados · ${skipped} omitidos`);}
 </script>
 
 </body>
