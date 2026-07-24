@@ -1,44 +1,41 @@
-# LUMEN v160
+# LUMEN v161 — Restauración de respaldo integral
 
-Fecha: 23-07-2026
+**Fecha:** 23 de julio de 2026
 
 ## Cambios aplicados
 
-- Se agregó **Exportar respaldo integral** al menú de usuario.
-- Se agregó la misma acción dentro de **Importar / Exportar CSV**.
-- El respaldo reúne todas las claves locales de LUMEN (`lumen_*`) en un único JSON.
-- Incluye una copia adicional de la base `db` que está activa en memoria al momento de exportar.
-- Las imágenes en formato base64 se excluyen y se reemplazan por `__local_image__`.
-- El archivo incluye metadatos, versión, fecha, política de imágenes y resumen por bloque.
-- Se mantuvo el exportador JSON anterior para respaldar solo la biblioteca.
+- Se agregó la acción **Restaurar respaldo integral** al menú de usuario.
+- Se agregó la misma acción al modal **Importar datos**.
+- Valida que el archivo corresponda al esquema `lumen_respaldo_integral_v1` de LUMEN.
+- Muestra versión de origen, fecha, cantidad de bloques y registros antes de restaurar.
+- Permite seleccionar los bloques principales o elegirlos individualmente.
+- Antes de aplicar la restauración descarga automáticamente un respaldo de seguridad del estado actual.
+- Conserva portadas locales base64 cuando el respaldo contiene el placeholder `__local_image__` y existe una imagen local equivalente.
+- Al finalizar, registra metadatos de restauración y recarga la app.
 
 ## Archivos modificados
 
 - `index.html`
 - `README.md`
 
-## Módulos no modificados funcionalmente
+## Módulos no modificados
 
-- Autenticación.
-- Sincronización Firebase.
-- Biblioteca e inventario.
-- Historial y métricas de lectura.
-- Películas, series, discos y mangas.
-- Mapas, citas y rutas.
-- Diseño general de LUMEN.
+- Autenticación y login.
+- Guardado y carga desde Firebase.
+- Biblioteca, estadísticas, hábitos, mapas e inventario en su funcionamiento normal.
+- Importadores CSV existentes.
 
 ## Validaciones realizadas
 
-- Revisión de sintaxis JavaScript con `node --check`.
-- Verificación de versión visible v160.
-- Verificación de acceso al respaldo desde ambos lugares.
-- Verificación de exclusión recursiva de imágenes base64.
-- Verificación del nombre y estructura del archivo descargado.
+- Revisión de sintaxis del JavaScript embebido con `node --check`.
+- Confirmación de presencia del exportador v161 y del restaurador integral.
+- Confirmación de que el ZIP contiene `index.html` y `README.md`.
 
-## Prueba breve
+## Prueba sugerida
 
-1. Abrir el menú de usuario y seleccionar `Exportar respaldo integral`.
-2. Confirmar la descarga de `LUMEN_respaldo_integral_v160_YYYY-MM-DD.json`.
-3. Repetir desde `Importar / Exportar CSV`.
-4. Abrir el JSON y comprobar que contiene `schema`, `summary` y `blocks`.
-5. Buscar `data:image`; no debe existir. Las portadas locales deben aparecer como `__local_image__`.
+1. Abrir el menú de usuario.
+2. Pulsar **Restaurar respaldo integral**.
+3. Elegir un JSON generado por **Exportar respaldo integral**.
+4. Revisar el resumen y los bloques seleccionados.
+5. Confirmar la restauración.
+6. Verificar que primero se descargue un respaldo de seguridad y que luego LUMEN se recargue con los datos restaurados.

@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1a1510">
-<title>LUMEN v160 — Biblioteca Personal</title>
+<title>LUMEN v161 — Biblioteca Personal</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231a1510'/><text x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' font-family='Georgia,serif' font-size='14' font-weight='900' font-style='italic' fill='%23c8952a' letter-spacing='0.5'>L</text><rect x='6' y='23' width='20' height='2' rx='1' fill='%238b2020'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
@@ -2013,12 +2013,16 @@ select.input { cursor: pointer; }
     <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;"><path d="M12 3v12"/><polyline points="7 10 12 15 17 10"/><path d="M5 21h14a2 2 0 002-2v-3"/><path d="M3 16v3a2 2 0 002 2"/></svg>
     🛡 Exportar respaldo integral
   </button>
+  <button class="user-menu-item" onclick="closeUserMenu();openIntegralRestorePicker();">
+    <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;"><path d="M12 21V9"/><polyline points="7 14 12 9 17 14"/><path d="M5 3h14a2 2 0 012 2v3"/><path d="M3 8V5a2 2 0 012-2"/></svg>
+    ♻️ Restaurar respaldo integral
+  </button>
   <button class="user-menu-item danger" onclick="confirmLogOut()">
     <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
     Cerrar sesión
   </button>
   <div style="padding:8px 16px 10px;border-top:1px solid var(--border);font-size:10px;color:var(--ink4);letter-spacing:1px;text-align:right;">
-    LUMEN v160
+    LUMEN v161
   </div>
 </div>
 
@@ -2510,6 +2514,9 @@ select.input { cursor: pointer; }
       <p style="font-size:11px;color:var(--ink4);margin:-2px 0 10px;line-height:1.5;">Detecta libros con progreso sin historial, retrocesos de página, registros de 0 páginas y diferencias entre progreso, página actual y última marca diaria. La reparación básica normaliza campos sin inventar historial.</p>
       <button class="btn btn-primary" onclick="exportarRespaldoIntegral()" style="margin-bottom:8px;">🛡 Exportar respaldo integral</button>
       <p style="font-size:11px;color:var(--ink4);margin:-2px 0 10px;line-height:1.5;">Incluye biblioteca, inventario, mapas, rutas, desafíos, configuraciones y demás bloques locales de LUMEN. Las portadas base64 se reemplazan por un placeholder.</p>
+      <button class="btn btn-secondary" onclick="openIntegralRestorePicker()" style="margin-bottom:8px;">♻️ Restaurar respaldo integral</button>
+      <input type="file" id="integral-restore-input" accept=".json,application/json" style="display:none" onchange="handleIntegralRestoreFile(event)">
+      <p style="font-size:11px;color:var(--ink4);margin:-2px 0 10px;line-height:1.5;">Valida el archivo, muestra un resumen y permite elegir qué bloques restaurar. Antes de aplicar, LUMEN descarga un respaldo de seguridad automático.</p>
       <button class="btn btn-secondary" onclick="exportJSON()" style="margin-bottom:8px;">⬇ Exportar todo (JSON)</button>
       <button class="btn btn-secondary" onclick="exportarCSVHistoricoCompleto()" style="margin-bottom:8px;">📦 Exportar CSV histórico completo</button>
       <button class="btn btn-secondary" onclick="clearAll()">🗑 Limpiar todos los datos</button>
@@ -2517,6 +2524,24 @@ select.input { cursor: pointer; }
   </div>
 </div>
 
+
+<!-- ══════ MODAL: RESTAURAR RESPALDO INTEGRAL ══════ -->
+<div id="modal-integral-restore" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title">Restaurar respaldo integral</div>
+      <button class="btn-icon" onclick="closeModal('modal-integral-restore')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div id="integral-restore-summary"></div>
+      <div id="integral-restore-blocks" style="margin-top:12px;"></div>
+      <div style="background:#fff7e6;border:1px solid #e3c98f;border-radius:5px;padding:10px 12px;font-size:11px;line-height:1.5;color:var(--ink2);margin:14px 0;">Antes de restaurar se descargará automáticamente un respaldo de seguridad del estado actual. Las portadas marcadas como <code>__local_image__</code> conservarán la imagen local existente cuando sea posible.</div>
+      <button id="integral-restore-confirm" class="btn btn-primary" onclick="confirmIntegralRestore()">Restaurar bloques seleccionados</button>
+      <button class="btn btn-secondary" onclick="closeModal('modal-integral-restore')" style="margin-top:8px;">Cancelar</button>
+    </div>
+  </div>
+</div>
 
 <!-- ══════ MODAL: IMPORTAR INVENTARIO ══════ -->
 <div id="modal-inventory-import" class="modal-overlay">
@@ -3248,7 +3273,7 @@ function openReadingConsistencyReport() {
   const rows = auditReadingConsistency();
   const lineas = [];
   lineas.push('═══════════════════════════════════════════════');
-  lineas.push('REVISIÓN DE CONSISTENCIA DE LECTURA — LUMEN v160');
+  lineas.push('REVISIÓN DE CONSISTENCIA DE LECTURA — LUMEN v161');
   lineas.push('Generado: ' + new Date().toLocaleString('es-CL', { timeZone: LUMEN_TZ }));
   lineas.push('═══════════════════════════════════════════════');
   lineas.push('');
@@ -8018,7 +8043,7 @@ function exportarRespaldoIntegral() {
     const payload = {
       schema: 'lumen_respaldo_integral_v1',
       app: 'LUMEN',
-      version: 'v160',
+      version: 'v161',
       exportedAt: new Date().toISOString(),
       exportedAtSantiago: todaySantiagoStr(),
       imagePolicy: {
@@ -8034,7 +8059,7 @@ function exportarRespaldoIntegral() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `LUMEN_respaldo_integral_v160_${todaySantiagoStr()}.json`;
+    a.download = `LUMEN_respaldo_integral_v161_${todaySantiagoStr()}.json`;
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -8046,6 +8071,143 @@ function exportarRespaldoIntegral() {
   }
 }
 
+
+
+// ═══════════════════════════════════
+//  RESTAURACIÓN DE RESPALDO INTEGRAL — v161
+// ═══════════════════════════════════
+let pendingIntegralRestore = null;
+
+function openIntegralRestorePicker() {
+  const input = document.getElementById('integral-restore-input');
+  if (!input) return showToast('⚠ No se encontró el selector de respaldo');
+  input.value = '';
+  input.click();
+}
+
+function integralRestoreLabel(key) {
+  const labels = {
+    lumen_db_v1: 'Biblioteca y actividad principal',
+    lumen_inventory_v1: 'Inventario físico',
+    lumen_mapas_v1: 'Mapas e influencias',
+    lumen_desafios_v1: 'Desafíos',
+    lumen_meta_semanal_pags_v1: 'Meta semanal',
+    lumen_ruta_custom_v1: 'Rutas personalizadas',
+    lumen_ruta_programas_v1: 'Programas de rutas',
+    lumen_norm_blacklist_v1: 'Normalizaciones',
+    lumen_last_sync: 'Marca de última sincronización'
+  };
+  if (labels[key]) return labels[key];
+  if (key.includes('backup')) return 'Respaldo histórico · ' + key;
+  return key;
+}
+
+function isIntegralRestoreDefaultKey(key) {
+  return !key.startsWith('__') && !key.includes('_backup_before_') && !key.includes('_backup_before_import');
+}
+
+function handleIntegralRestoreFile(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const payload = JSON.parse(reader.result);
+      if (!payload || payload.app !== 'LUMEN' || payload.schema !== 'lumen_respaldo_integral_v1' || !payload.blocks || typeof payload.blocks !== 'object') {
+        throw new Error('El archivo no corresponde a un respaldo integral compatible de LUMEN.');
+      }
+      const keys = Object.keys(payload.blocks).filter(k => !k.startsWith('__'));
+      if (!keys.length) throw new Error('El respaldo no contiene bloques restaurables.');
+      pendingIntegralRestore = { payload, fileName: file.name, keys };
+      renderIntegralRestorePreview();
+      closeModal('modal-import');
+      openModal('modal-integral-restore');
+    } catch (err) {
+      console.error('Respaldo integral inválido:', err);
+      pendingIntegralRestore = null;
+      showToast('⚠ ' + (err.message || 'No se pudo leer el respaldo'));
+    }
+  };
+  reader.onerror = () => showToast('⚠ No se pudo leer el archivo');
+  reader.readAsText(file);
+}
+
+function renderIntegralRestorePreview() {
+  if (!pendingIntegralRestore) return;
+  const { payload, fileName, keys } = pendingIntegralRestore;
+  const summary = document.getElementById('integral-restore-summary');
+  const blocks = document.getElementById('integral-restore-blocks');
+  const date = payload.exportedAtSantiago || (payload.exportedAt ? String(payload.exportedAt).slice(0,10) : '—');
+  summary.innerHTML = `<div style="font-size:13px;line-height:1.65;color:var(--ink2);"><strong>${escapeHtml(fileName)}</strong><br>Origen: ${escapeHtml(payload.version || 'versión no indicada')} · ${escapeHtml(date)}<br>${keys.length} bloques disponibles</div>`;
+  blocks.innerHTML = `<div style="display:flex;gap:8px;margin-bottom:10px;"><button class="btn btn-secondary" style="padding:8px 10px;font-size:11px;" onclick="setIntegralRestoreChecks(true)">Seleccionar principales</button><button class="btn btn-secondary" style="padding:8px 10px;font-size:11px;" onclick="setIntegralRestoreChecks(false)">Deseleccionar</button></div>` + keys.map(key => {
+    const meta = payload.summary && payload.summary[key] ? payload.summary[key] : {};
+    const checked = isIntegralRestoreDefaultKey(key) ? 'checked' : '';
+    const records = Number.isFinite(meta.records) ? `${meta.records} registros` : (meta.format || payload.blocks[key].format || 'bloque');
+    return `<label style="display:flex;align-items:flex-start;gap:10px;padding:10px 4px;border-bottom:1px solid var(--border);font-size:12px;line-height:1.4;"><input type="checkbox" class="integral-restore-check" value="${escapeHtml(key)}" ${checked} style="margin-top:2px;"><span><strong>${escapeHtml(integralRestoreLabel(key))}</strong><br><span style="color:var(--ink4);">${escapeHtml(records)}</span></span></label>`;
+  }).join('');
+}
+
+function setIntegralRestoreChecks(selectMain) {
+  document.querySelectorAll('.integral-restore-check').forEach(cb => {
+    cb.checked = selectMain ? isIntegralRestoreDefaultKey(cb.value) : false;
+  });
+}
+
+function preserveLocalImages(backupValue, currentValue) {
+  if (backupValue === '__local_image__') return isLumenBase64Image(currentValue) ? currentValue : '';
+  if (Array.isArray(backupValue)) {
+    const currentArray = Array.isArray(currentValue) ? currentValue : [];
+    return backupValue.map((item, index) => {
+      let currentItem = currentArray[index];
+      if (item && typeof item === 'object' && item.id) currentItem = currentArray.find(x => x && x.id === item.id) || currentItem;
+      return preserveLocalImages(item, currentItem);
+    });
+  }
+  if (backupValue && typeof backupValue === 'object') {
+    const out = {};
+    const currentObj = currentValue && typeof currentValue === 'object' ? currentValue : {};
+    Object.keys(backupValue).forEach(key => { out[key] = preserveLocalImages(backupValue[key], currentObj[key]); });
+    return out;
+  }
+  return backupValue;
+}
+
+function downloadCurrentSafetyBackup() {
+  const originalVersion = document.title;
+  exportarRespaldoIntegral();
+  return originalVersion;
+}
+
+function confirmIntegralRestore() {
+  if (!pendingIntegralRestore) return showToast('⚠ No hay respaldo pendiente');
+  const selected = Array.from(document.querySelectorAll('.integral-restore-check:checked')).map(cb => cb.value);
+  if (!selected.length) return showToast('⚠ Selecciona al menos un bloque');
+  if (!confirm(`Se restaurarán ${selected.length} bloques y la app se recargará. ¿Continuar?`)) return;
+  try {
+    downloadCurrentSafetyBackup();
+    const payload = pendingIntegralRestore.payload;
+    selected.forEach(key => {
+      const block = payload.blocks[key];
+      if (!block) return;
+      const currentBlock = readLumenStorageBlock(key);
+      const restored = preserveLocalImages(block.value, currentBlock.exists ? currentBlock.value : null);
+      if (block.format === 'text' && typeof restored === 'string') localStorage.setItem(key, restored);
+      else localStorage.setItem(key, JSON.stringify(restored));
+    });
+    localStorage.setItem('lumen_restore_v1', JSON.stringify({
+      restoredAt: new Date().toISOString(),
+      sourceVersion: payload.version || '',
+      sourceExportedAt: payload.exportedAt || '',
+      blocks: selected
+    }));
+    pendingIntegralRestore = null;
+    showToast('✓ Respaldo restaurado · recargando LUMEN');
+    setTimeout(() => location.reload(), 900);
+  } catch (err) {
+    console.error('Error restaurando respaldo integral:', err);
+    showToast('⚠ No se pudo completar la restauración');
+  }
+}
 
 // ═══════════════════════════════════
 //  EXPORTADOR CSV HISTÓRICO COMPLETO
@@ -12930,7 +13092,7 @@ function copiarExportLectura() {
 
 <script>
 // ═══════════════════════════════════
-// LUMEN v160 — MÓDULO MANGAS
+// LUMEN v161 — MÓDULO MANGAS
 // ═══════════════════════════════════
 (function(){
   const oldSelectType = window.selectType;
@@ -13048,7 +13210,7 @@ function copiarExportLectura() {
 
 
 // ═══════════════════════════════════
-// INVENTARIO FÍSICO — LUMEN v160
+// INVENTARIO FÍSICO — LUMEN v161
 // ═══════════════════════════════════
 const INVENTORY_KEY = 'lumen_inventory_v1';
 let inventoryImportPending = [];
