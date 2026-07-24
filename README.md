@@ -1,18 +1,16 @@
-# LUMEN v159
+# LUMEN v160
 
-Fecha: 19-07-2026
+Fecha: 23-07-2026
 
 ## Cambios aplicados
 
-- Nueva pestaña independiente **Inventario** dentro de Biblioteca.
-- Importación de CSV con cuatro columnas: `ID`, `Título`, `Autor`, `Editorial`.
-- Análisis previo de registros nuevos, vinculados, duplicados exactos, posibles ediciones e incompletos.
-- Vinculación automática del ejemplar físico con libros existentes de LUMEN.
-- Estadísticas del inventario físico.
-- Carrito de lectura.
-- Acción para iniciar una lectura desde el inventario sin duplicar un libro ya existente.
-- Persistencia local y sincronización del inventario con Firestore.
-- Corrección de referencias internas de versión a v159.
+- Se agregó **Exportar respaldo integral** al menú de usuario.
+- Se agregó la misma acción dentro de **Importar / Exportar CSV**.
+- El respaldo reúne todas las claves locales de LUMEN (`lumen_*`) en un único JSON.
+- Incluye una copia adicional de la base `db` que está activa en memoria al momento de exportar.
+- Las imágenes en formato base64 se excluyen y se reemplazan por `__local_image__`.
+- El archivo incluye metadatos, versión, fecha, política de imágenes y resumen por bloque.
+- Se mantuvo el exportador JSON anterior para respaldar solo la biblioteca.
 
 ## Archivos modificados
 
@@ -22,22 +20,25 @@ Fecha: 19-07-2026
 ## Módulos no modificados funcionalmente
 
 - Autenticación.
+- Sincronización Firebase.
+- Biblioteca e inventario.
 - Historial y métricas de lectura.
-- Películas, series y mangas.
+- Películas, series, discos y mangas.
 - Mapas, citas y rutas.
 - Diseño general de LUMEN.
 
 ## Validaciones realizadas
 
 - Revisión de sintaxis JavaScript con `node --check`.
-- Verificación de presencia de la pestaña y modal de inventario.
-- Verificación del flujo importar, analizar, confirmar, vincular, carrito e iniciar lectura.
-- Verificación de persistencia local y payload de sincronización.
+- Verificación de versión visible v160.
+- Verificación de acceso al respaldo desde ambos lugares.
+- Verificación de exclusión recursiva de imágenes base64.
+- Verificación del nombre y estructura del archivo descargado.
 
 ## Prueba breve
 
-1. Abrir Biblioteca > Inventario.
-2. Seleccionar `Importar CSV`.
-3. Cargar un CSV con las cuatro columnas indicadas.
-4. Revisar el resumen y confirmar.
-5. Agregar un libro al carrito y luego usar `Comenzar lectura`.
+1. Abrir el menú de usuario y seleccionar `Exportar respaldo integral`.
+2. Confirmar la descarga de `LUMEN_respaldo_integral_v160_YYYY-MM-DD.json`.
+3. Repetir desde `Importar / Exportar CSV`.
+4. Abrir el JSON y comprobar que contiene `schema`, `summary` y `blocks`.
+5. Buscar `data:image`; no debe existir. Las portadas locales deben aparecer como `__local_image__`.

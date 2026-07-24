@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1a1510">
-<title>LUMEN v159 — Biblioteca Personal</title>
+<title>LUMEN v160 — Biblioteca Personal</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231a1510'/><text x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' font-family='Georgia,serif' font-size='14' font-weight='900' font-style='italic' fill='%23c8952a' letter-spacing='0.5'>L</text><rect x='6' y='23' width='20' height='2' rx='1' fill='%238b2020'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
@@ -2009,12 +2009,16 @@ select.input { cursor: pointer; }
     <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
     📦 Exportar CSV histórico completo
   </button>
+  <button class="user-menu-item" onclick="closeUserMenu();exportarRespaldoIntegral();">
+    <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;"><path d="M12 3v12"/><polyline points="7 10 12 15 17 10"/><path d="M5 21h14a2 2 0 002-2v-3"/><path d="M3 16v3a2 2 0 002 2"/></svg>
+    🛡 Exportar respaldo integral
+  </button>
   <button class="user-menu-item danger" onclick="confirmLogOut()">
     <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
     Cerrar sesión
   </button>
   <div style="padding:8px 16px 10px;border-top:1px solid var(--border);font-size:10px;color:var(--ink4);letter-spacing:1px;text-align:right;">
-    LUMEN v159
+    LUMEN v160
   </div>
 </div>
 
@@ -2504,6 +2508,8 @@ select.input { cursor: pointer; }
       <button class="btn btn-secondary" onclick="openReadingConsistencyReport()" style="margin-bottom:8px;">🩺 Revisar consistencia de lectura</button>
       <button class="btn btn-secondary" onclick="repairReadingConsistencyBasic()" style="margin-bottom:8px;">🛠 Reparar campos básicos de lectura</button>
       <p style="font-size:11px;color:var(--ink4);margin:-2px 0 10px;line-height:1.5;">Detecta libros con progreso sin historial, retrocesos de página, registros de 0 páginas y diferencias entre progreso, página actual y última marca diaria. La reparación básica normaliza campos sin inventar historial.</p>
+      <button class="btn btn-primary" onclick="exportarRespaldoIntegral()" style="margin-bottom:8px;">🛡 Exportar respaldo integral</button>
+      <p style="font-size:11px;color:var(--ink4);margin:-2px 0 10px;line-height:1.5;">Incluye biblioteca, inventario, mapas, rutas, desafíos, configuraciones y demás bloques locales de LUMEN. Las portadas base64 se reemplazan por un placeholder.</p>
       <button class="btn btn-secondary" onclick="exportJSON()" style="margin-bottom:8px;">⬇ Exportar todo (JSON)</button>
       <button class="btn btn-secondary" onclick="exportarCSVHistoricoCompleto()" style="margin-bottom:8px;">📦 Exportar CSV histórico completo</button>
       <button class="btn btn-secondary" onclick="clearAll()">🗑 Limpiar todos los datos</button>
@@ -3242,7 +3248,7 @@ function openReadingConsistencyReport() {
   const rows = auditReadingConsistency();
   const lineas = [];
   lineas.push('═══════════════════════════════════════════════');
-  lineas.push('REVISIÓN DE CONSISTENCIA DE LECTURA — LUMEN v159');
+  lineas.push('REVISIÓN DE CONSISTENCIA DE LECTURA — LUMEN v160');
   lineas.push('Generado: ' + new Date().toLocaleString('es-CL', { timeZone: LUMEN_TZ }));
   lineas.push('═══════════════════════════════════════════════');
   lineas.push('');
@@ -7924,6 +7930,120 @@ function exportJSON() {
   a.download = `LUMEN_backup_${todaySantiagoStr()}.json`;
   a.click();
   showToast('✓ Datos exportados');
+}
+
+function isLumenBase64Image(value) {
+  return typeof value === 'string' && /^data:image\/[a-zA-Z0-9.+-]+;base64,/i.test(value);
+}
+
+function sanitizeLumenBackupValue(value) {
+  if (isLumenBase64Image(value)) return '__local_image__';
+  if (Array.isArray(value)) return value.map(sanitizeLumenBackupValue);
+  if (value && typeof value === 'object') {
+    const clean = {};
+    Object.keys(value).forEach(key => {
+      clean[key] = sanitizeLumenBackupValue(value[key]);
+    });
+    return clean;
+  }
+  return value;
+}
+
+function readLumenStorageBlock(key) {
+  const raw = localStorage.getItem(key);
+  if (raw === null) return { exists: false, value: null, format: 'missing' };
+  try {
+    return { exists: true, value: JSON.parse(raw), format: 'json' };
+  } catch (_) {
+    return { exists: true, value: raw, format: 'text' };
+  }
+}
+
+function countLumenBlock(value) {
+  if (Array.isArray(value)) return value.length;
+  if (value && typeof value === 'object') {
+    if (Array.isArray(value.entries)) return value.entries.length;
+    if (Array.isArray(value.influencias) || Array.isArray(value.rutas)) {
+      return (value.influencias || []).length + (value.rutas || []).length;
+    }
+    return Object.keys(value).length;
+  }
+  return value === null || value === '' ? 0 : 1;
+}
+
+function exportarRespaldoIntegral() {
+  try {
+    const storageKeys = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('lumen_')) storageKeys.push(key);
+    }
+    storageKeys.sort();
+
+    const blocks = {};
+    const summary = {};
+    let replacedImages = 0;
+
+    const replaceAndCount = value => {
+      if (isLumenBase64Image(value)) {
+        replacedImages++;
+        return '__local_image__';
+      }
+      if (Array.isArray(value)) return value.map(replaceAndCount);
+      if (value && typeof value === 'object') {
+        const out = {};
+        Object.keys(value).forEach(k => { out[k] = replaceAndCount(value[k]); });
+        return out;
+      }
+      return value;
+    };
+
+    storageKeys.forEach(key => {
+      const block = readLumenStorageBlock(key);
+      blocks[key] = {
+        format: block.format,
+        value: replaceAndCount(block.value)
+      };
+      summary[key] = {
+        format: block.format,
+        records: countLumenBlock(block.value)
+      };
+    });
+
+    // Asegura la biblioteca en memoria aunque localStorage estuviera desactualizado.
+    const memoryDb = replaceAndCount(db);
+    blocks.__memory_db_snapshot__ = { format: 'json', value: memoryDb };
+    summary.__memory_db_snapshot__ = { format: 'json', records: countLumenBlock(db) };
+
+    const payload = {
+      schema: 'lumen_respaldo_integral_v1',
+      app: 'LUMEN',
+      version: 'v160',
+      exportedAt: new Date().toISOString(),
+      exportedAtSantiago: todaySantiagoStr(),
+      imagePolicy: {
+        base64Excluded: true,
+        replacement: '__local_image__',
+        replacedImages
+      },
+      summary,
+      blocks
+    };
+
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `LUMEN_respaldo_integral_v160_${todaySantiagoStr()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    showToast(`✓ Respaldo integral exportado · ${storageKeys.length} bloques`);
+  } catch (err) {
+    console.error('Error exportando respaldo integral:', err);
+    showToast('⚠ No se pudo exportar el respaldo integral');
+  }
 }
 
 
@@ -12810,7 +12930,7 @@ function copiarExportLectura() {
 
 <script>
 // ═══════════════════════════════════
-// LUMEN v159 — MÓDULO MANGAS
+// LUMEN v160 — MÓDULO MANGAS
 // ═══════════════════════════════════
 (function(){
   const oldSelectType = window.selectType;
@@ -12928,7 +13048,7 @@ function copiarExportLectura() {
 
 
 // ═══════════════════════════════════
-// INVENTARIO FÍSICO — LUMEN v159
+// INVENTARIO FÍSICO — LUMEN v160
 // ═══════════════════════════════════
 const INVENTORY_KEY = 'lumen_inventory_v1';
 let inventoryImportPending = [];
