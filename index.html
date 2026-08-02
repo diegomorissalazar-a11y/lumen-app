@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1a1510">
-<title>LUMEN v161 — Biblioteca Personal</title>
+<title>LUMEN v164 — Biblioteca Personal</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231a1510'/><text x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' font-family='Georgia,serif' font-size='14' font-weight='900' font-style='italic' fill='%23c8952a' letter-spacing='0.5'>L</text><rect x='6' y='23' width='20' height='2' rx='1' fill='%238b2020'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
@@ -2022,7 +2022,7 @@ select.input { cursor: pointer; }
     Cerrar sesión
   </button>
   <div style="padding:8px 16px 10px;border-top:1px solid var(--border);font-size:10px;color:var(--ink4);letter-spacing:1px;text-align:right;">
-    LUMEN v161
+    LUMEN v164
   </div>
 </div>
 
@@ -3273,7 +3273,7 @@ function openReadingConsistencyReport() {
   const rows = auditReadingConsistency();
   const lineas = [];
   lineas.push('═══════════════════════════════════════════════');
-  lineas.push('REVISIÓN DE CONSISTENCIA DE LECTURA — LUMEN v161');
+  lineas.push('REVISIÓN DE CONSISTENCIA DE LECTURA — LUMEN v164');
   lineas.push('Generado: ' + new Date().toLocaleString('es-CL', { timeZone: LUMEN_TZ }));
   lineas.push('═══════════════════════════════════════════════');
   lineas.push('');
@@ -4622,40 +4622,51 @@ function diasHastaHoyEnAnio(year) {
 
 // ── Helper: páginas leídas en un año dado, hasta el mismo mes/día que hoy ──
 // Para el año en curso incluye libros en curso. Para años pasados sólo finalizados.
+function getReadingDailyRecords() {
+  const registros = [];
+  (db.entries || []).filter(e => e.type === 'libro' && Array.isArray(e.readDates) && e.readDates.length > 0).forEach(libro => {
+    const norm = normalizeBookReadDates(libro.readDates).filter(r => r.pag !== null).sort((a,b) => a.date.localeCompare(b.date));
+    for (let i = 0; i < norm.length; i++) {
+      const pags = i === 0 ? Number(norm[i].pag || 0) : Math.max(0, Number(norm[i].pag || 0) - Number(norm[i-1].pag || 0));
+      if (pags <= 0) continue;
+      registros.push({
+        fecha: norm[i].date,
+        titulo: libro.titulo || '',
+        autor: libro.autor || '',
+        pags,
+        pagActual: norm[i].pag,
+        totalPags: libro.paginas || null,
+        libroId: libro.id
+      });
+    }
+  });
+  return registros.sort((a,b) => a.fecha.localeCompare(b.fecha));
+}
+
+function paginasRegistradasEnAnio(year) {
+  const prefijo = String(year) + '-';
+  return getReadingDailyRecords().filter(r => r.fecha.startsWith(prefijo)).reduce((s,r) => s + r.pags, 0);
+}
+
+function paginasRegistradasPorMes(year) {
+  const data = Array(12).fill(0);
+  getReadingDailyRecords().forEach(r => {
+    if (!r.fecha.startsWith(String(year) + '-')) return;
+    const mes = Number(r.fecha.slice(5,7)) - 1;
+    if (mes >= 0 && mes < 12) data[mes] += r.pags;
+  });
+  return data;
+}
+
+// Páginas registradas hasta el mismo mes/día que hoy.
+// La fuente única son las diferencias positivas del historial diario readDates.
 function pagsHastaDia(year) {
   const now = new Date();
-  const mesIdx = now.getMonth(); // 0-based
-  const diaDelMes = now.getDate();
-  const esAnioActual = (year === now.getFullYear());
-
-  if (esAnioActual) {
-    // Finalizados este año + progreso actual de libros en curso
-    const fin = db.entries
-      .filter(e => e.type==='libro' && e.estado==='leido' && e.anio===year)
-      .reduce((a,b) => a+(b.paginas||0), 0);
-    const enCurso = db.entries
-      .filter(e => e.type==='libro' && e.estado==='leyendo')
-      .reduce((a,e) => {
-        const p = e.readingMode==='pag'
-          ? (e.progresoPag||0)
-          : Math.round(((e.progreso||0)/100)*(e.paginas||0));
-        return a + p;
-      }, 0);
-    return fin + enCurso;
-  } else {
-    // Año pasado: sólo libros finalizados, pero sólo los que tienen mes ≤ mes actual
-    // (si no tienen mes, los contamos completo como conservador)
-    return db.entries
-      .filter(e => {
-        if (e.type!=='libro' || e.estado!=='leido' || e.anio!==year) return false;
-        if (!e.mes) return true; // sin mes → incluir
-        const mi = MESES.indexOf(e.mes);
-        if (mi < mesIdx) return true;       // mes anterior → incluir
-        if (mi === mesIdx) return true;     // mismo mes → incluir (no tenemos día exacto)
-        return false;                        // mes posterior → excluir
-      })
-      .reduce((a,b) => a+(b.paginas||0), 0);
-  }
+  const limite = `${year}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+  const prefijo = String(year) + '-';
+  return getReadingDailyRecords()
+    .filter(r => r.fecha.startsWith(prefijo) && r.fecha <= limite)
+    .reduce((s,r) => s + r.pags, 0);
 }
 
 // ═══════════════════════════════════
@@ -5283,7 +5294,7 @@ function renderHome() {
   const series = thisYear.filter(e => e.type === 'serie' && e.estado === 'vista');
   const discos = thisYear.filter(e => e.type === 'disco');
 
-  document.getElementById('hero-title').textContent = pags > 0 ? `${pags.toLocaleString()} páginas\neste año` : 'Mi Biblioteca\nCultural';
+  document.getElementById('hero-title').textContent = pags > 0 ? `${pags.toLocaleString()} páginas registradas\neste año` : 'Mi Biblioteca\nCultural';
   document.getElementById('hero-sub').textContent = `${libros.length} libros · ${peliculas.length} películas · ${series.length} series · ${discos.length} discos`;
 
   renderDesafioCard();
@@ -5293,7 +5304,7 @@ function renderHome() {
     <div class="ys-box">
       <div class="ys-num">${libros.length}</div>
       <div class="ys-label">Libros</div>
-      <div class="ys-sub">${pags.toLocaleString()} págs</div>
+      <div class="ys-sub">${pags.toLocaleString()} págs registradas</div>
     </div>
     <div class="ys-box">
       <div class="ys-num">${peliculas.length}</div>
@@ -6324,34 +6335,41 @@ let yearChartMode = { libros: 'pags', peliculas: 'cantidad', series: 'cantidad' 
 function renderYear() {
   document.getElementById('year-display').textContent = currentYear;
   const yr = db.entries.filter(e => parseInt(e.anio) === currentYear);
-  const libros = yr.filter(e => e.type === 'libro' && e.estado !== 'pendiente');
+  const libros = yr.filter(e => e.type === 'libro' && e.estado === 'leido');
   const peliculas = yr.filter(e => e.type === 'pelicula');
   const series = yr.filter(e => e.type === 'serie' && e.estado === 'vista');
-  const pags = libros.reduce((a,b) => a+(b.paginas||0), 0);
+  const pagsRegistradas = paginasRegistradasEnAnio(currentYear);
+  const pagsTerminados = libros.reduce((a,b) => a+(b.paginas||0), 0);
   const minPels = peliculas.reduce((a,b)=>a+(b.duracion||0),0);
   const minSeries = series.reduce((a,b)=>a+(b.duracion||0),0);
 
-  const prev = db.entries.filter(e => e.anio === currentYear-1);
-  const prevLibros = prev.filter(e => e.type==='libro'&&e.estado!=='pendiente');
-  const prevPags = prevLibros.reduce((a,b)=>a+(b.paginas||0),0);
-  const pagsDir = prevPags > 0 ? (pags >= prevPags ? 'up' : 'down') : '';
-  const pagsVs = prevPags > 0 ? (pags >= prevPags ? `▲ +${(((pags/prevPags)-1)*100).toFixed(0)}%` : `▼ ${(((pags/prevPags)-1)*100).toFixed(0)}%`) + ` vs ${currentYear-1}` : '';
+  const prev = db.entries.filter(e => parseInt(e.anio) === currentYear-1);
+  const prevLibros = prev.filter(e => e.type==='libro'&&e.estado==='leido');
+  const prevRegistradas = paginasRegistradasEnAnio(currentYear-1);
+  const prevTerminados = prevLibros.reduce((a,b)=>a+(b.paginas||0),0);
+  const vs = (actual, anterior) => anterior > 0 ? `${actual>=anterior?'▲':'▼'} ${actual>=anterior?'+':''}${(((actual/anterior)-1)*100).toFixed(0)}% vs ${currentYear-1}` : '';
+  const cls = (actual, anterior) => anterior > 0 ? (actual>=anterior?'up':'down') : '';
 
   const btnStyle = (key, mode) => yearChartMode[key]===mode
     ? 'padding:5px 10px;border-radius:20px;border:none;background:var(--ink);color:var(--cream);font-size:10px;font-weight:700;letter-spacing:1px;cursor:pointer;font-family:var(--font-sans);'
     : 'padding:5px 10px;border-radius:20px;border:1.5px solid var(--border);background:#fff;color:var(--ink3);font-size:10px;font-weight:700;letter-spacing:1px;cursor:pointer;font-family:var(--font-sans);';
 
   document.getElementById('year-content').innerHTML = `
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px;margin-bottom:16px;">
       <div class="stat-box">
         <div class="stat-num">${libros.length}</div>
-        <div class="stat-label">Libros leídos</div>
-        <div class="stat-vs ${pagsDir}">${prevLibros.length>0?(libros.length>=prevLibros.length?'▲':'▼')+' vs '+prevLibros.length+' en '+(currentYear-1):''}</div>
+        <div class="stat-label">Libros terminados</div>
+        <div class="stat-vs ${cls(libros.length,prevLibros.length)}">${prevLibros.length>0?vs(libros.length,prevLibros.length):''}</div>
       </div>
       <div class="stat-box">
-        <div class="stat-num">${pags.toLocaleString()}</div>
-        <div class="stat-label">Páginas</div>
-        <div class="stat-vs ${pagsDir}">${pagsVs}</div>
+        <div class="stat-num">${pagsRegistradas.toLocaleString()}</div>
+        <div class="stat-label">Páginas registradas</div>
+        <div class="stat-vs ${cls(pagsRegistradas,prevRegistradas)}">${vs(pagsRegistradas,prevRegistradas)}</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num">${pagsTerminados.toLocaleString()}</div>
+        <div class="stat-label">Págs. de libros terminados</div>
+        <div class="stat-vs ${cls(pagsTerminados,prevTerminados)}">${vs(pagsTerminados,prevTerminados)}</div>
       </div>
       <div class="stat-box">
         <div class="stat-num">${peliculas.length}</div>
@@ -6365,12 +6383,16 @@ function renderYear() {
       </div>
     </div>
 
+    <div style="font-size:11px;color:var(--ink4);line-height:1.55;margin:-4px 0 14px;padding:10px 12px;background:#fff;border:1px solid var(--border);border-radius:6px;">
+      <b>Páginas registradas</b> usa el historial diario por fecha. <b>Páginas de libros terminados</b> suma la extensión completa de los libros cerrados en ${currentYear}.
+    </div>
+
     <!-- LIBROS CHART -->
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:6px;">
-      <div style="font-family:var(--font-serif);font-size:15px;font-weight:700;font-style:italic;">📚 Libros por mes</div>
+      <div style="font-family:var(--font-serif);font-size:15px;font-weight:700;font-style:italic;">📚 Lectura por mes</div>
       <div style="display:flex;gap:4px;">
-        <button style="${btnStyle('libros','pags')}" onclick="setYearChartMode('libros','pags')">Páginas</button>
-        <button style="${btnStyle('libros','cantidad')}" onclick="setYearChartMode('libros','cantidad')">Cantidad</button>
+        <button style="${btnStyle('libros','pags')}" onclick="setYearChartMode('libros','pags')">Págs. registradas</button>
+        <button style="${btnStyle('libros','cantidad')}" onclick="setYearChartMode('libros','cantidad')">Libros terminados</button>
         <button style="${btnStyle('libros','ritmo')}" onclick="setYearChartMode('libros','ritmo')">Ritmo</button>
       </div>
     </div>
@@ -6397,9 +6419,8 @@ function renderYear() {
     </div>
     <div class="chart-wrap"><canvas id="year-chart-series"></canvas></div>
 
-    <!-- LISTA LIBROS -->
-    <div style="font-family:var(--font-serif);font-size:15px;font-weight:700;font-style:italic;margin:16px 0 8px;">Libros del año</div>
-    ${libros.length===0?'<div style="color:var(--ink4);font-style:italic;font-size:13px;">Ningún libro registrado.</div>':
+    <div style="font-family:var(--font-serif);font-size:15px;font-weight:700;font-style:italic;margin:16px 0 8px;">Libros terminados del año</div>
+    ${libros.length===0?'<div style="color:var(--ink4);font-style:italic;font-size:13px;">Ningún libro terminado.</div>':
       [...libros].sort((a,b)=>{return (MESES.indexOf(b.mes)||0)-(MESES.indexOf(a.mes)||0);}).map(e=>`
       <div style="display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--cream2);align-items:center;">
         ${coverUrl(e)?`<img src="${coverUrl(e)}" style="width:32px;height:45px;object-fit:cover;border-radius:2px;flex-shrink:0;" onerror="this.style.display='none'">`:'<div style="width:32px;height:45px;background:var(--cream3);border-radius:2px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:16px;">📚</div>'}
@@ -6428,11 +6449,11 @@ function renderYearCharts(libros, peliculas, series) {
     if (ctxL) {
       let dataL, labelL, colorL;
       if (yearChartMode.libros === 'pags') {
-        dataL = monthlySum(libros,'paginas'); labelL = 'Páginas'; colorL = 'rgba(200,149,42,0.75)';
+        dataL = paginasRegistradasPorMes(currentYear); labelL = 'Páginas registradas'; colorL = 'rgba(200,149,42,0.75)';
       } else if (yearChartMode.libros === 'cantidad') {
         dataL = monthlyCount(libros); labelL = 'Libros'; colorL = 'rgba(45,90,61,0.75)';
       } else {
-        dataL = monthlySum(libros,'paginas').map((p,i)=>p>0?(p/diasMes[i]).toFixed(1):0); labelL = 'Págs/día'; colorL = 'rgba(200,149,42,0.6)';
+        dataL = paginasRegistradasPorMes(currentYear).map((p,i)=>p>0?(p/diasMes[i]).toFixed(1):0); labelL = 'Págs registradas/día'; colorL = 'rgba(200,149,42,0.6)';
       }
       new Chart(ctxL.getContext('2d'), {
         type: yearChartMode.libros === 'ritmo' ? 'line' : 'bar',
@@ -6749,6 +6770,12 @@ function goPage(key, page) {
 //  STATS LIBROS
 // ═══════════════════════════════════
 let lbChartMode = 'pags';
+let lbPagesSource = 'terminados';
+function setLbPagesSource(source, btn) {
+  lbPagesSource = source;
+  document.querySelectorAll('#lb-pages-source .chart-mode-pill').forEach(b=>b.classList.toggle('active', b===btn));
+  renderStatsLibros();
+}
 
 function setLbChartMode(mode, btn) {
   lbChartMode = mode;
@@ -6766,20 +6793,30 @@ function renderStatsLibros() {
   const allLibros = db.entries.filter(e=>e.type==='libro'&&e.estado==='leido');
   const libros = yr==='todos' ? allLibros : allLibros.filter(e=>e.anio===parseInt(yr)||e.anio===yr);
 
-  // KPIs
-  const totalPags = libros.reduce((a,b)=>a+(b.paginas||0),0);
-  const avgPags = libros.length ? Math.round(totalPags/libros.length) : 0;
+  // KPIs: se distinguen páginas de libros terminados y lectura registrada
+  const totalPagsTerminados = libros.reduce((a,b)=>a+(b.paginas||0),0);
+  const totalPagsRegistradas = yr==='todos'
+    ? getReadingDailyRecords().reduce((s,r)=>s+r.pags,0)
+    : paginasRegistradasEnAnio(parseInt(yr));
+  const totalPags = lbPagesSource==='registradas' ? totalPagsRegistradas : totalPagsTerminados;
+  const avgPags = libros.length ? Math.round(totalPagsTerminados/libros.length) : 0;
   document.getElementById('lb-kpis').innerHTML = `
-    <div class="stat-box"><div class="stat-num">${libros.length}</div><div class="stat-label">Libros</div></div>
-    <div class="stat-box"><div class="stat-num">${totalPags.toLocaleString()}</div><div class="stat-label">Páginas</div></div>
-    <div class="stat-box"><div class="stat-num">${avgPags}</div><div class="stat-label">Pág/libro</div></div>`;
+    <div class="stat-box"><div class="stat-num">${libros.length}</div><div class="stat-label">Libros terminados</div></div>
+    <div class="stat-box"><div class="stat-num">${totalPags.toLocaleString()}</div><div class="stat-label">${lbPagesSource==='registradas'?'Páginas registradas':'Págs. libros terminados'}</div></div>
+    <div class="stat-box"><div class="stat-num">${avgPags}</div><div class="stat-label">Pág/libro terminado</div></div>`;
+  const kpiWrap = document.getElementById('lb-kpis');
+  if (kpiWrap && !document.getElementById('lb-pages-source')) {
+    kpiWrap.insertAdjacentHTML('beforebegin', `<div id="lb-pages-source" class="chart-mode-pills" style="justify-content:center;margin:0 0 12px;"><button class="chart-mode-pill ${lbPagesSource==='terminados'?'active':''}" onclick="setLbPagesSource('terminados',this)">Libros terminados</button><button class="chart-mode-pill ${lbPagesSource==='registradas'?'active':''}" onclick="setLbPagesSource('registradas',this)">Lectura registrada</button></div>`);
+  } else if (document.getElementById('lb-pages-source')) {
+    document.querySelectorAll('#lb-pages-source .chart-mode-pill').forEach((b,i)=>b.classList.toggle('active', (i===0&&lbPagesSource==='terminados')||(i===1&&lbPagesSource==='registradas')));
+  }
 
   // vs best year
   const bestC = bestYear('libro', items=>items.length);
   const bestP = bestYear('libro', items=>items.reduce((a,b)=>a+(b.paginas||0),0));
   if (yr==='todos') {
     document.getElementById('lb-vs-best').innerHTML =
-      `Mejor año libros: <b>${bestC.year||'—'}</b> (${bestC.value}) · Mejor año páginas: <b>${bestP.year||'—'}</b> (${bestP.value.toLocaleString()})`;
+      `Mejor año libros: <b>${bestC.year||'—'}</b> (${bestC.value}) · Mejor año págs. terminadas: <b>${bestP.year||'—'}</b> (${bestP.value.toLocaleString()})`;
   } else {
     document.getElementById('lb-vs-best').innerHTML =
       `${vsTag(libros.length,bestC.value,bestC.year,' libros')}`;
@@ -6801,13 +6838,21 @@ function renderStatsLibros() {
 
 function renderLibrosChart(libros) {
   const diasMes = [31,28,29,31,30,31,30,31,31,30,31,30];
+  const yr = statsState.libros.year;
+  let pagesByMonth;
+  if (lbPagesSource === 'registradas') {
+    if (yr === 'todos') {
+      pagesByMonth = Array(12).fill(0);
+      getReadingDailyRecords().forEach(r => { const m=Number(r.fecha.slice(5,7))-1; if(m>=0&&m<12) pagesByMonth[m]+=r.pags; });
+    } else pagesByMonth = paginasRegistradasPorMes(parseInt(yr));
+  } else pagesByMonth = monthlySum(libros,'paginas');
   setTimeout(() => {
     if (lbChartMode==='pags') {
-      drawBarChart('lb-chart-mes', MESES_SHORT, monthlySum(libros,'paginas'), 'rgba(200,149,42,0.75)');
+      drawBarChart('lb-chart-mes', MESES_SHORT, pagesByMonth, 'rgba(200,149,42,0.75)');
     } else if (lbChartMode==='cantidad') {
       drawBarChart('lb-chart-mes', MESES_SHORT, monthlyCount(libros), 'rgba(45,90,61,0.75)');
     } else {
-      const ritmos = monthlySum(libros,'paginas').map((p,i)=>p>0?parseFloat((p/diasMes[i]).toFixed(1)):0);
+      const ritmos = pagesByMonth.map((p,i)=>p>0?parseFloat((p/diasMes[i]).toFixed(1)):0);
       drawLineChart('lb-chart-mes', MESES_SHORT, ritmos, 'rgb(200,149,42)');
     }
   }, 20);
@@ -11323,7 +11368,9 @@ function buildD3Graph(containerId, nodes, links, colorFn, tooltipEdgeFn, fuenteT
   svg.node().__zoomBehavior = zoomBehavior;
   svg.node().__zoomG = g;
 
-  // ── Ranking por grado: calcular entradas + salidas por nodo ──
+  // ── Métricas del grafo ──
+  // Por defecto el tamaño usa grado total. Un mapa puede entregar sizeMetric
+  // por nodo para representar otra semántica (p. ej. influencias originadas).
   const degree = {};
   nodes.forEach(n => { degree[n.id] = 0; });
   links.forEach(l => {
@@ -11332,11 +11379,17 @@ function buildD3Graph(containerId, nodes, links, colorFn, tooltipEdgeFn, fuenteT
     degree[s] = (degree[s]||0) + 1;
     degree[t] = (degree[t]||0) + 1;
   });
-  const maxDeg = Math.max(1, ...Object.values(degree));
-  // Radio: mínimo 12, máximo 32, escala lineal por grado
+  const visualMetric = {};
+  nodes.forEach(n => {
+    visualMetric[n.id] = Number.isFinite(Number(n.sizeMetric))
+      ? Math.max(0, Number(n.sizeMetric))
+      : (degree[n.id] || 0);
+  });
+  const maxVisualMetric = Math.max(1, ...Object.values(visualMetric));
+  // Radio: tamaño mínimo para 0 y crecimiento lineal hasta 32 px.
   const nodeR = d => {
     const base = d.isEvent ? 11 : 14;
-    const extra = Math.round(((degree[d.id]||0) / maxDeg) * 18);
+    const extra = Math.round(((visualMetric[d.id]||0) / maxVisualMetric) * 18);
     return base + extra;
   };
 
@@ -11384,20 +11437,20 @@ function buildD3Graph(containerId, nodes, links, colorFn, tooltipEdgeFn, fuenteT
     .attr('r', d=>nodeR(d))
     .attr('fill', d=>d.inLibrary?'var(--ink)':(d.isEvent?'#e8e0d0':'#fff'))
     .attr('stroke', d=>d.inLibrary?'var(--gold)':'var(--border)')
-    .attr('stroke-width', d => 1 + Math.min(3, (degree[d.id]||0)));
+    .attr('stroke-width', d => 1 + Math.min(3, (visualMetric[d.id]||0)));
 
   node.append('text').attr('text-anchor','middle').attr('dy',4)
-    .attr('font-size', d => Math.max(9, Math.min(13, 9 + (degree[d.id]||0))))
+    .attr('font-size', d => Math.max(9, Math.min(13, 9 + (visualMetric[d.id]||0))))
     .attr('fill', d=>d.inLibrary?'var(--gold)':'var(--ink3)')
     .text(d=>d.icon||'●');
 
   node.append('text').attr('text-anchor','middle')
     .attr('dy', d => nodeR(d) + 12)
-    .attr('font-size', d => Math.max(9, Math.min(12, 9 + Math.floor((degree[d.id]||0)/2))))
+    .attr('font-size', d => Math.max(9, Math.min(12, 9 + Math.floor((visualMetric[d.id]||0)/2))))
     .attr('fill','var(--ink2)').attr('font-weight','700')
     .text(d=>d.label.length>22?d.label.slice(0,20)+'…':d.label);
 
-  node.append('title').text(d=>`${d.tooltip||d.label}\nConexiones: ${degree[d.id]||0}`);
+  node.append('title').text(d=>d.metricTooltip || `${d.tooltip||d.label}\nConexiones: ${degree[d.id]||0}`);
 
   // ── Popup flotante al hacer click en nodo fuente ──────────
   const popup = g.append('g').attr('class','node-popup').style('display','none');
@@ -11563,11 +11616,21 @@ function renderMapaInfluencias() {
   const libTitles =new Set(db.entries.map(e=>e.titulo));
   const libAutores=new Set(db.entries.map(e=>e.autor).filter(Boolean));
   const nodeSet=new Set(); data.forEach(d=>{nodeSet.add(d.fuente);nodeSet.add(d.destino);});
+  const outDegree = {};
+  const inDegree = {};
+  data.forEach(rel => {
+    outDegree[rel.fuente] = (outDegree[rel.fuente] || 0) + 1;
+    inDegree[rel.destino] = (inDegree[rel.destino] || 0) + 1;
+  });
   const nodes=[...nodeSet].map(name=>({
     id:name, label:name,
     inLibrary:libTitles.has(name)||libAutores.has(name),
     icon:libTitles.has(name)?'📚':(libAutores.has(name)?'✍':'◉'),
-    tooltip:name
+    tooltip:name,
+    // En Influencias la jerarquía visual representa autoría de relaciones:
+    // quien origina más influencias se ve mayor; recibirlas no agranda el nodo.
+    sizeMetric: outDegree[name] || 0,
+    metricTooltip: `${name}\nInfluencias originadas: ${outDegree[name] || 0}\nInfluencias recibidas: ${inDegree[name] || 0}`
   }));
   const links=data.map(d=>({ source:d.fuente, target:d.destino, tipo:d.tipo, id:d.id,
     pagina:d.pagina, texto:d.texto, libro_ref:d.libro_ref }));
@@ -12989,25 +13052,8 @@ function exportarLectura() {
 }
 
 function generarExportLectura() {
-  // Recopilar todos los registros diarios de todos los libros
-  const registros = []; // { fecha, titulo, pags, pagActual, totalPags }
-
-  db.entries.filter(e => e.type === 'libro' && Array.isArray(e.readDates) && e.readDates.length > 0).forEach(libro => {
-    const norm = normalizeReadDates(libro.readDates).filter(r => r.pag !== null).sort((a,b) => a.date.localeCompare(b.date));
-    for (let i = 0; i < norm.length; i++) {
-      const pags = i === 0 ? Number(norm[i].pag || 0) : Math.max(0, Number(norm[i].pag || 0) - Number(norm[i-1].pag || 0));
-      // v153: registros de 0 páginas no cuentan como día activo ni aparecen en export.
-      if (pags <= 0) continue;
-      registros.push({
-        fecha: norm[i].date,
-        titulo: libro.titulo,
-        autor: libro.autor || '',
-        pags,
-        pagActual: norm[i].pag,
-        totalPags: libro.paginas || null
-      });
-    }
-  });
+  // Fuente única compartida con Inicio, Mi Año y Estadísticas.
+  const registros = getReadingDailyRecords();
 
   if (!registros.length) {
     document.getElementById('exportar-lectura-output').value = 'Sin registros de lectura diaria encontrados.';
@@ -13035,6 +13081,8 @@ function generarExportLectura() {
 
   // Resumen global
   const totalPags = registros.reduce((s,r) => s + r.pags, 0);
+  const anioActual = new Date().getFullYear();
+  const totalAnioActual = paginasRegistradasEnAnio(anioActual);
   const diasConLectura = new Set(registros.map(r => r.fecha)).size;
   const semanaKeys = Object.keys(semanas).sort();
   const promPorSemana = semanaKeys.length ? Math.round(totalPags / semanaKeys.length) : 0;
@@ -13042,6 +13090,7 @@ function generarExportLectura() {
   lineas.push('RESUMEN GLOBAL');
   lineas.push('─────────────────────────────────────────────');
   lineas.push('Total páginas registradas : ' + totalPags);
+  lineas.push('Páginas registradas ' + anioActual + ' : ' + totalAnioActual);
   lineas.push('Días con lectura          : ' + diasConLectura);
   lineas.push('Semanas con actividad     : ' + semanaKeys.length);
   lineas.push('Promedio páginas/semana   : ' + promPorSemana);
@@ -13092,7 +13141,7 @@ function copiarExportLectura() {
 
 <script>
 // ═══════════════════════════════════
-// LUMEN v161 — MÓDULO MANGAS
+// LUMEN v164 — MÓDULO MANGAS
 // ═══════════════════════════════════
 (function(){
   const oldSelectType = window.selectType;
@@ -13210,7 +13259,7 @@ function copiarExportLectura() {
 
 
 // ═══════════════════════════════════
-// INVENTARIO FÍSICO — LUMEN v161
+// INVENTARIO FÍSICO — LUMEN v164
 // ═══════════════════════════════════
 const INVENTORY_KEY = 'lumen_inventory_v1';
 let inventoryImportPending = [];
@@ -13300,6 +13349,282 @@ function inventoryCol(row,...names){for(const name of names){const key=Object.ke
 function handleInventoryCSV(event){const file=event.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=ev=>analyzeInventoryCSV(ev.target.result);reader.readAsText(file,'UTF-8');}
 function analyzeInventoryCSV(text){const clean=String(text||'').replace(/^\uFEFF/,'');const lines=clean.split(/\r?\n/).filter(x=>x.trim());if(lines.length<2){showToast('CSV vacío');return;}const headers=parseCSVLine(lines[0]);const existing=loadInventory();const exact=new Map(existing.map(x=>[inventoryKey(x,true),x]));const base=new Map();existing.forEach(x=>{const k=inventoryKey(x,false);if(!base.has(k))base.set(k,[]);base.get(k).push(x);});const rows=[];for(let i=1;i<lines.length;i++){const cols=parseCSVLine(lines[i]);const row={};headers.forEach((h,j)=>row[h]=(cols[j]||'').trim());const item={sourceId:inventoryCol(row,'ID','id'),titulo:inventoryCol(row,'Título','Titulo','Nombre'),autor:inventoryCol(row,'Autor'),editorial:inventoryCol(row,'Editorial')};if(!item.titulo){rows.push({...item,status:'incompleto',reason:'Sin título'});continue;}const ek=inventoryKey(item,true),bk=inventoryKey(item,false);if(exact.has(ek)){rows.push({...item,status:'duplicado',existingId:exact.get(ek).inventoryId});}else if(base.has(bk)){rows.push({...item,status:'posible',reason:'Mismo título y autor; editorial distinta o vacía'});}else{const link=findBookLink(item);rows.push({...item,status:link?'vinculado':'nuevo',linkedEntryId:link?.id||''});}}inventoryImportPending=rows;const counts=rows.reduce((a,x)=>(a[x.status]=(a[x.status]||0)+1,a),{});const labels={nuevo:'Nuevos',vinculado:'Nuevos vinculados',duplicado:'Duplicados exactos',posible:'Posibles ediciones',incompleto:'Incompletos'};document.getElementById('inventory-import-preview').innerHTML=`<div class="card" style="box-shadow:none;"><div style="font-family:var(--font-serif);font-weight:700;margin-bottom:8px;">Resultado del análisis</div>${Object.entries(labels).map(([k,l])=>`<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12px;"><span>${l}</span><strong>${counts[k]||0}</strong></div>`).join('')}</div><div style="max-height:230px;overflow:auto;">${rows.map(x=>`<div class="inventory-import-row"><strong>${x.titulo||'Sin título'}</strong><br><span style="color:var(--ink4);">${[x.autor,x.editorial].filter(Boolean).join(' · ')}</span><br><span style="color:${x.status==='duplicado'?'var(--red)':x.status==='posible'?'var(--gold)':'var(--green)'};font-weight:700;">${labels[x.status]}</span></div>`).join('')}</div>`;document.getElementById('inventory-import-confirm').style.display=rows.some(x=>['nuevo','vinculado','posible','incompleto'].includes(x.status))?'block':'none';}
 function confirmInventoryImport(){let inv=loadInventory();const exact=new Set(inv.map(x=>inventoryKey(x,true)));let added=0,skipped=0;inventoryImportPending.forEach((x,i)=>{if(x.status==='duplicado'){skipped++;return;}const k=inventoryKey(x,true);if(exact.has(k)){skipped++;return;}const item={inventoryId:'inv_'+Date.now()+'_'+i,sourceId:x.sourceId||'',titulo:x.titulo||'',autor:x.autor||'',editorial:x.editorial||'',linkedEntryId:x.linkedEntryId||findBookLink(x)?.id||'',inCart:false,_updatedAt:Date.now()};inv.push(item);exact.add(k);added++;});saveInventory(inv);closeModal('modal-inventory-import');renderInventory();showToast(`✓ ${added} libros agregados · ${skipped} omitidos`);}
+
+
+// ═══════════════════════════════════════════════════════════════
+//  LUMEN v164 — SINCRONIZACIÓN POR BLOQUES (ARQUITECTURA V2)
+//  Mantiene el documento legacy intacto como respaldo y evita el
+//  límite de 1 MiB dividiendo entradas y módulos en varios docs.
+// ═══════════════════════════════════════════════════════════════
+const LUMEN_SYNC_SCHEMA = 'lumen_cloud_v2';
+const LUMEN_SYNC_MANIFEST_DOC = 'library_v2_manifest';
+const LUMEN_SYNC_MODULES_DOC = 'library_v2_modules';
+const LUMEN_SYNC_CHUNK_PREFIX = 'library_v2_entries_';
+const LUMEN_SYNC_CHUNK_TARGET = 430000; // margen amplio bajo el límite Firestore
+
+function lumenUtf8Bytes(value) {
+  try { return new TextEncoder().encode(typeof value === 'string' ? value : JSON.stringify(value)).length; }
+  catch(e) { return unescape(encodeURIComponent(typeof value === 'string' ? value : JSON.stringify(value))).length; }
+}
+
+function cleanForFirestoreV162(obj, depth = 0) {
+  if (depth > 20 || obj === undefined) return null;
+  if (obj === null || typeof obj === 'boolean') return obj;
+  if (typeof obj === 'number') return Number.isFinite(obj) ? obj : null;
+  if (typeof obj === 'string') return isBase64Image(obj) ? '__local_image__' : obj;
+  if (typeof obj === 'function') return null;
+  if (Array.isArray(obj)) return obj.map(v => cleanForFirestoreV162(v, depth + 1)).filter(v => v !== undefined);
+  if (typeof obj === 'object') {
+    const clean = {};
+    Object.entries(obj).forEach(([k,v]) => {
+      if (v === undefined) return;
+      clean[k] = cleanForFirestoreV162(v, depth + 1);
+    });
+    return clean;
+  }
+  return null;
+}
+
+function buildCloudDataV162() {
+  normalizeAllBookReading(db.entries || [], { repairBasic:true, source:'buildCloudDataV162' });
+  const entries = (db.entries || []).map(e => cleanForFirestoreV162(e));
+  const modules = cleanForFirestoreV162({
+    mapas: loadMapas(),
+    desafios: loadDesafios(),
+    rutaCustom: loadRutaCustomNodes(),
+    rutaProgramas: loadProgramas(),
+    inventory: loadInventory(),
+    normBlacklist: loadNormBlacklist(),
+    idiomasAprobados: loadIdiomasAprobados()
+  });
+  return { entries, modules };
+}
+
+function chunkEntriesV162(entries) {
+  const chunks = [];
+  let current = [];
+  let currentBytes = 2;
+  entries.forEach(entry => {
+    const entryBytes = lumenUtf8Bytes(entry) + 1;
+    if (current.length && currentBytes + entryBytes > LUMEN_SYNC_CHUNK_TARGET) {
+      chunks.push(current);
+      current = [];
+      currentBytes = 2;
+    }
+    current.push(entry);
+    currentBytes += entryBytes;
+  });
+  if (current.length || chunks.length === 0) chunks.push(current);
+  return chunks;
+}
+
+function cloudDocRefV162(uid, docId) {
+  return firestore.collection('users').doc(uid).collection('data').doc(docId);
+}
+
+async function writeCloudV162(uid) {
+  const { entries, modules } = buildCloudDataV162();
+  const chunks = chunkEntriesV162(entries);
+  const moduleBytes = lumenUtf8Bytes(modules);
+  if (moduleBytes > 850000) {
+    const err = new Error(`Los módulos auxiliares pesan ${Math.round(moduleBytes/1024)} KB y exceden el margen seguro.`);
+    err.code = 'lumen/modules-too-large';
+    throw err;
+  }
+
+  const oldManifestSnap = await cloudDocRefV162(uid, LUMEN_SYNC_MANIFEST_DOC).get();
+  const oldChunkCount = oldManifestSnap.exists ? Number(oldManifestSnap.data().chunkCount || 0) : 0;
+  const now = Date.now();
+  const batchSize = 400;
+  const operations = [];
+
+  chunks.forEach((chunk, index) => {
+    const id = LUMEN_SYNC_CHUNK_PREFIX + String(index).padStart(3,'0');
+    operations.push({ type:'set', ref:cloudDocRefV162(uid,id), data:{ schema:LUMEN_SYNC_SCHEMA, index, entries:chunk, updatedAt:now } });
+  });
+  operations.push({ type:'set', ref:cloudDocRefV162(uid,LUMEN_SYNC_MODULES_DOC), data:{ schema:LUMEN_SYNC_SCHEMA, ...modules, updatedAt:now } });
+  operations.push({ type:'set', ref:cloudDocRefV162(uid,LUMEN_SYNC_MANIFEST_DOC), data:{
+    schema:LUMEN_SYNC_SCHEMA,
+    appVersion:'v164',
+    entryCount:entries.length,
+    chunkCount:chunks.length,
+    moduleBytes,
+    updatedAt:now
+  }});
+  for (let i = chunks.length; i < oldChunkCount; i++) {
+    const id = LUMEN_SYNC_CHUNK_PREFIX + String(i).padStart(3,'0');
+    operations.push({ type:'delete', ref:cloudDocRefV162(uid,id) });
+  }
+
+  for (let i=0; i<operations.length; i+=batchSize) {
+    const batch = firestore.batch();
+    operations.slice(i,i+batchSize).forEach(op => op.type === 'delete' ? batch.delete(op.ref) : batch.set(op.ref, op.data));
+    await batch.commit();
+  }
+  return { entryCount:entries.length, chunkCount:chunks.length, moduleBytes, updatedAt:now };
+}
+
+async function readCloudV162(uid) {
+  const manifestSnap = await cloudDocRefV162(uid, LUMEN_SYNC_MANIFEST_DOC).get();
+  if (!manifestSnap.exists || manifestSnap.data().schema !== LUMEN_SYNC_SCHEMA) return null;
+  const manifest = manifestSnap.data();
+  const count = Number(manifest.chunkCount || 0);
+  const reads = [];
+  for (let i=0; i<count; i++) {
+    reads.push(cloudDocRefV162(uid, LUMEN_SYNC_CHUNK_PREFIX + String(i).padStart(3,'0')).get());
+  }
+  const [moduleSnap, ...chunkSnaps] = await Promise.all([
+    cloudDocRefV162(uid, LUMEN_SYNC_MODULES_DOC).get(),
+    ...reads
+  ]);
+  const entries = [];
+  chunkSnaps.forEach(s => { if (s.exists && Array.isArray(s.data().entries)) entries.push(...s.data().entries); });
+  const modules = moduleSnap.exists ? moduleSnap.data() : {};
+  return { ...modules, entries, manifest };
+}
+
+async function readCloudCompatibleV162(uid) {
+  const v2 = await readCloudV162(uid);
+  if (v2) return v2;
+  const legacy = await firestore.collection('users').doc(uid).collection('data').doc('library').get();
+  return legacy.exists ? { ...legacy.data(), manifest:{ schema:'legacy', entryCount:(legacy.data().entries||[]).length, chunkCount:1 } } : null;
+}
+
+function applyRemoteModulesV162(remote) {
+  if (remote.inventory) localStorage.setItem(INVENTORY_KEY, JSON.stringify(mergeInventory(loadInventory(), remote.inventory)));
+  if (remote.mapas) {
+    const localMapas = loadMapas();
+    const mergedMapas = {
+      influencias: mergeArrayById(localMapas.influencias||[], remote.mapas.influencias||[]),
+      rutas: mergeArrayById(localMapas.rutas||[], remote.mapas.rutas||[])
+    };
+    localStorage.setItem(MAPAS_KEY, JSON.stringify(mergedMapas));
+    mapas = mergedMapas;
+  }
+  if (Array.isArray(remote.normBlacklist)) { normBlacklist = remote.normBlacklist; saveNormBlacklist(normBlacklist, true); }
+  if (remote.rutaCustom) localStorage.setItem(RUTA_CUSTOM_KEY, JSON.stringify(remote.rutaCustom));
+  if (remote.rutaProgramas) localStorage.setItem(PROGRAMA_KEY, JSON.stringify(remote.rutaProgramas));
+  if (remote.desafios) localStorage.setItem(DESAFIO_KEY, JSON.stringify(remote.desafios));
+  if (Array.isArray(remote.idiomasAprobados)) localStorage.setItem(IDIOMAS_APROBADOS_KEY, JSON.stringify(remote.idiomasAprobados));
+}
+
+async function syncToFirestore() {
+  if (!currentUser) return;
+  try {
+    await getValidToken();
+    const result = await writeCloudV162(currentUser.uid);
+    setSyncStatus('ok');
+    setLastSync();
+    console.info('[LUMEN v164] Sync V2 OK', result);
+    return result;
+  } catch(e) {
+    setSyncStatus('offline');
+    console.error('[LUMEN v164] Sync V2 error:', e.code || '', e.message, e);
+    throw e;
+  }
+}
+
+function saveDB() {
+  normalizeAllBookReading(db.entries || [], { repairBasic:true, source:'saveDB-v164' });
+  localStorage.setItem(DB_KEY, JSON.stringify(db));
+  if (!currentUser) return;
+  clearTimeout(_saveDebounceTimer);
+  _saveDebounceTimer = setTimeout(async () => {
+    setSyncStatus('syncing');
+    try { await syncToFirestore(); }
+    catch(e) { showToast(`⚠ No se pudo sincronizar: ${e.message}`, 4500); }
+  }, 900);
+}
+
+async function manualSaveToCloud() {
+  closeUserMenu();
+  if (!currentUser) { showToast('Inicia sesión primero'); return; }
+  setSyncStatus('syncing');
+  showToast('⏳ Guardando por bloques...', 2200);
+  try {
+    await getValidToken();
+    const result = await writeCloudV162(currentUser.uid);
+    setLastSync();
+    setSyncStatus('ok');
+    showToast(`✓ ${result.entryCount} registros guardados en ${result.chunkCount} bloque${result.chunkCount===1?'':'s'}`, 3800);
+  } catch(e) {
+    setSyncStatus('offline');
+    showToast(`⚠ Error al guardar: ${e.message}`, 5000);
+    console.error('[LUMEN v164] manualSave error:', e);
+  }
+}
+
+async function pullAndMerge(uid, silent) {
+  try {
+    if (auth.currentUser) await auth.currentUser.getIdToken(false);
+    const remote = await readCloudCompatibleV162(uid);
+    if (!remote) { if (!silent) showToast('La nube no tiene datos aún'); return; }
+    const merged = mergeEntries(db.entries, remote.entries || []);
+    restoreLocalImages(merged);
+    db.entries = merged;
+    localStorage.setItem(DB_KEY, JSON.stringify(db));
+    applyRemoteModulesV162(remote);
+    setLastSync();
+    setSyncStatus('ok');
+    if (!silent) showToast(`✓ Nube cargada: ${db.entries.length} registros`, 3200);
+    renderHome();
+  } catch(e) {
+    setSyncStatus('offline');
+    console.error('[LUMEN v164] pull error:', e);
+    if (!silent) showToast(`⚠ Error al cargar: ${e.message}`, 4500);
+  }
+}
+
+async function manualLoadFromCloud() {
+  closeUserMenu();
+  if (!currentUser) { showToast('Inicia sesión primero'); return; }
+  setSyncStatus('syncing');
+  showToast('⏳ Leyendo bloques de nube...', 2200);
+  await pullAndMerge(currentUser.uid, false);
+}
+
+function subscribeToFirestore(uid) {
+  if (unsubscribeSnapshot) unsubscribeSnapshot();
+  const manifestRef = cloudDocRefV162(uid, LUMEN_SYNC_MANIFEST_DOC);
+  unsubscribeSnapshot = manifestRef.onSnapshot({ includeMetadataChanges:false }, async snap => {
+    if (!snap.exists || snap.metadata.hasPendingWrites || isSyncing) return;
+    try {
+      const remote = await readCloudV162(uid);
+      if (!remote) return;
+      const merged = mergeEntries(db.entries, remote.entries || []);
+      restoreLocalImages(merged);
+      db.entries = merged;
+      localStorage.setItem(DB_KEY, JSON.stringify(db));
+      applyRemoteModulesV162(remote);
+      setLastSync();
+      setSyncStatus('ok');
+      renderHome();
+    } catch(e) {
+      console.warn('[LUMEN v164] snapshot error:', e.message);
+    }
+  }, e => {
+    setSyncStatus('offline');
+    console.warn('[LUMEN v164] listener error:', e.message);
+  });
+}
+
+window.lumenSyncDiagnostico = function() {
+  const { entries, modules } = buildCloudDataV162();
+  const chunks = chunkEntriesV162(entries);
+  const report = {
+    version:'v164', schema:LUMEN_SYNC_SCHEMA,
+    registros:entries.length,
+    bloques:chunks.length,
+    bloquesKB:chunks.map(c => Math.round(lumenUtf8Bytes({entries:c})/1024)),
+    modulosKB:Math.round(lumenUtf8Bytes(modules)/1024),
+    localStorageKB:Math.round(lumenUtf8Bytes(localStorage.getItem(DB_KEY)||'')/1024),
+    usuario:currentUser ? currentUser.uid : null
+  };
+  console.table(report);
+  console.info('[LUMEN v164] Diagnóstico completo', report);
+  return report;
+};
+
 </script>
 
 </body>

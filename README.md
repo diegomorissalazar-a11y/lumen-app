@@ -1,17 +1,23 @@
-# LUMEN v161 — Restauración de respaldo integral
+# LUMEN v164 — Métricas de lectura reconciliadas
 
-**Fecha:** 23 de julio de 2026
+**Fecha:** 1 de agosto de 2026
 
 ## Cambios aplicados
 
-- Se agregó la acción **Restaurar respaldo integral** al menú de usuario.
-- Se agregó la misma acción al modal **Importar datos**.
-- Valida que el archivo corresponda al esquema `lumen_respaldo_integral_v1` de LUMEN.
-- Muestra versión de origen, fecha, cantidad de bloques y registros antes de restaurar.
-- Permite seleccionar los bloques principales o elegirlos individualmente.
-- Antes de aplicar la restauración descarga automáticamente un respaldo de seguridad del estado actual.
-- Conserva portadas locales base64 cuando el respaldo contiene el placeholder `__local_image__` y existe una imagen local equivalente.
-- Al finalizar, registra metadatos de restauración y recarga la app.
+- Se creó una fuente única para las páginas registradas basada en las diferencias positivas del historial diario `readDates`.
+- Inicio ahora muestra explícitamente **páginas registradas este año**.
+- Mi Año distingue:
+  - páginas registradas por fecha;
+  - páginas totales de libros terminados;
+  - libros terminados.
+- El gráfico de lectura de Mi Año usa páginas registradas para páginas y ritmo.
+- Estadísticas de libros incorpora un selector entre:
+  - **Libros terminados**;
+  - **Lectura registrada**.
+- Los nombres de los KPI se hicieron explícitos para evitar mezclar ambas métricas.
+- El exportador de lectura usa la misma fuente de registros diarios que Inicio, Mi Año y Estadísticas.
+- El exportador incluye el total de páginas registradas del año actual para facilitar la conciliación.
+- Se conserva la arquitectura de sincronización por bloques y el ajuste de escala de influencias de v163.
 
 ## Archivos modificados
 
@@ -21,21 +27,26 @@
 ## Módulos no modificados
 
 - Autenticación y login.
-- Guardado y carga desde Firebase.
-- Biblioteca, estadísticas, hábitos, mapas e inventario en su funcionamiento normal.
-- Importadores CSV existentes.
+- Modelo de sincronización por bloques de Firebase.
+- Inventario.
+- Discos y mangas.
+- Mapas, salvo conservar la escala de influencias ya incluida en v163.
+- Reglas semanales de lunes a domingo y zona horaria de Santiago.
 
 ## Validaciones realizadas
 
 - Revisión de sintaxis del JavaScript embebido con `node --check`.
-- Confirmación de presencia del exportador v161 y del restaurador integral.
+- Confirmación de versión visible v164.
+- Confirmación de que Inicio, Mi Año, Estadísticas y Exportación comparten la función de páginas registradas.
 - Confirmación de que el ZIP contiene `index.html` y `README.md`.
 
 ## Prueba sugerida
 
-1. Abrir el menú de usuario.
-2. Pulsar **Restaurar respaldo integral**.
-3. Elegir un JSON generado por **Exportar respaldo integral**.
-4. Revisar el resumen y los bloques seleccionados.
-5. Confirmar la restauración.
-6. Verificar que primero se descargue un respaldo de seguridad y que luego LUMEN se recargue con los datos restaurados.
+1. Abrir Inicio y anotar el total de páginas registradas del año.
+2. Abrir Mi Año y comprobar que “Páginas registradas” coincide con Inicio.
+3. Verificar que “Págs. de libros terminados” aparece como indicador separado.
+4. Abrir Estadísticas > Libros.
+5. Alternar entre “Libros terminados” y “Lectura registrada”.
+6. En “Lectura registrada”, comprobar que el total anual coincide con Inicio y Mi Año.
+7. Exportar historial de lectura y comprobar que “Páginas registradas 2026” coincide con las otras vistas.
+8. Confirmar que Guardar en nube y Cargar desde nube siguen funcionando.
