@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1a1510">
-<title>LUMEN v164 — Biblioteca Personal</title>
+<title>LUMEN v165 — Biblioteca Personal</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231a1510'/><text x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' font-family='Georgia,serif' font-size='14' font-weight='900' font-style='italic' fill='%23c8952a' letter-spacing='0.5'>L</text><rect x='6' y='23' width='20' height='2' rx='1' fill='%238b2020'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
@@ -2022,7 +2022,7 @@ select.input { cursor: pointer; }
     Cerrar sesión
   </button>
   <div style="padding:8px 16px 10px;border-top:1px solid var(--border);font-size:10px;color:var(--ink4);letter-spacing:1px;text-align:right;">
-    LUMEN v164
+    LUMEN v165
   </div>
 </div>
 
@@ -2165,6 +2165,36 @@ select.input { cursor: pointer; }
             <button type="button" class="genero-chip" data-g="Religión"        onclick="toggleGenero(this)">Religión</button>
             <button type="button" class="genero-chip" data-g="Mitología"       onclick="toggleGenero(this)">Mitología</button>
           </div>
+        </div>
+        <div class="field" style="background:#fff;border:1px solid var(--border);border-radius:6px;padding:12px 14px;">
+          <label style="margin-bottom:8px;">Inventario físico</label>
+          <label style="display:flex;align-items:center;gap:9px;font-size:13px;color:var(--ink2);letter-spacing:0;text-transform:none;font-weight:700;cursor:pointer;margin:0;">
+            <input type="checkbox" id="f-en-inventario" style="width:18px;height:18px;accent-color:var(--gold);">
+            Este ejemplar está en mi inventario
+          </label>
+          <div style="font-size:10px;color:var(--ink4);margin-top:6px;line-height:1.45;">No crea una segunda lectura: vincula este mismo libro con el inventario físico.</div>
+        </div>
+
+        <div id="historia-fields" style="display:none;background:#fff;border:1px solid var(--border);border-radius:6px;padding:14px;margin-bottom:13px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px;">
+            <div>
+              <div style="font-family:var(--font-serif);font-size:16px;font-weight:700;">Período histórico</div>
+              <div style="font-size:10px;color:var(--ink4);margin-top:2px;">Solo para libros etiquetados como Historia</div>
+            </div>
+            <span style="font-size:20px;">🏛️</span>
+          </div>
+          <div class="field"><label>Línea histórica principal</label><input class="input" type="text" id="hist-linea-principal" placeholder="Ej: Mundo griego, Historia de Chile, Imperio mongol"></div>
+          <div class="field"><label>Líneas relacionadas</label><input class="input" type="text" id="hist-lineas-relacionadas" placeholder="Separadas por coma: Imperio persa, Macedonia"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div class="field"><label>Ámbito geográfico</label><input class="input" type="text" id="hist-ambito" placeholder="Ej: Mediterráneo oriental"></div>
+            <div class="field"><label>Enfoque principal</label><select class="input" id="hist-enfoque"><option value="">—</option><option>Político</option><option>Militar</option><option>Social</option><option>Económico</option><option>Cultural</option><option>Religioso</option><option>Biográfico</option><option>Otro</option></select></div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin:4px 0 8px;">
+            <div style="font-size:10px;color:var(--ink3);letter-spacing:1.5px;text-transform:uppercase;font-weight:700;">Tramos cubiertos por el libro</div>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="addHistoriaPeriod()" style="width:auto;font-size:10px;">+ Período</button>
+          </div>
+          <div id="hist-periodos-list"></div>
+          <div style="font-size:10px;color:var(--ink4);line-height:1.45;margin-top:4px;">Los años a. C. se guardan como negativos (ej.: Salamina = -480). Puedes agregar varios tramos si el libro cubre más de un período.</div>
         </div>
         <div class="field">
           <label>Portada</label>
@@ -3273,7 +3303,7 @@ function openReadingConsistencyReport() {
   const rows = auditReadingConsistency();
   const lineas = [];
   lineas.push('═══════════════════════════════════════════════');
-  lineas.push('REVISIÓN DE CONSISTENCIA DE LECTURA — LUMEN v164');
+  lineas.push('REVISIÓN DE CONSISTENCIA DE LECTURA — LUMEN v165');
   lineas.push('Generado: ' + new Date().toLocaleString('es-CL', { timeZone: LUMEN_TZ }));
   lineas.push('═══════════════════════════════════════════════');
   lineas.push('');
@@ -4055,7 +4085,10 @@ function resetForm() {
   document.getElementById('f-idioma-otro').value = '';
   const origenAdqEl = document.getElementById('f-origen-adq'); if (origenAdqEl) origenAdqEl.value = '';
   const fechaAdqEl = document.getElementById('f-fecha-adq'); if (fechaAdqEl) fechaAdqEl.value = '';
+  const invFlagEl = document.getElementById('f-en-inventario'); if (invFlagEl) invFlagEl.checked = false;
+  resetHistoriaFields();
   resetGeneros();
+  updateHistoriaFieldsVisibility();
   setGenerosCineSeleccionados([]);
   document.getElementById('fp-pais').value = '';
   document.getElementById('fp-basada').value = '';
@@ -4087,7 +4120,59 @@ document.getElementById('f-estado').addEventListener('change', function() {
 
 function toggleGenero(btn) {
   btn.classList.toggle('active');
+  if (btn.closest && btn.closest('#generos-chips')) updateHistoriaFieldsVisibility();
 }
+
+function updateHistoriaFieldsVisibility() {
+  const panel = document.getElementById('historia-fields');
+  if (!panel) return;
+  const isHistory = !!document.querySelector('#generos-chips .genero-chip[data-g="Historia"].active');
+  panel.style.display = isHistory ? 'block' : 'none';
+  if (isHistory && !document.querySelector('#hist-periodos-list .hist-period-row')) addHistoriaPeriod();
+}
+
+function historiaPeriodRowHTML(p={}) {
+  const escAttr = v => String(v ?? '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const precision = p.precision || 'aproximada';
+  const cobertura = p.cobertura || 'periodo';
+  return `<div class="hist-period-row" style="border:1px solid var(--cream3);background:var(--cream2);border-radius:6px;padding:10px;margin-bottom:8px;">
+    <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:8px;"><strong style="font-size:11px;color:var(--ink2);">Tramo histórico</strong><button type="button" class="btn-icon" onclick="removeHistoriaPeriod(this)" title="Eliminar tramo">✕</button></div>
+    <div class="field"><label>Nombre del período / hecho</label><input class="input hp-nombre" type="text" value="${escAttr(p.nombre)}" placeholder="Ej: Guerras médicas / Batalla de Salamina"></div>
+    <div class="field"><label>Tema o proceso</label><input class="input hp-tema" type="text" value="${escAttr(p.tema)}" placeholder="Ej: conflicto greco-persa"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"><div class="field"><label>Año inicial</label><input class="input hp-inicio" type="number" value="${escAttr(p.inicio)}" placeholder="-480"></div><div class="field"><label>Año final</label><input class="input hp-fin" type="number" value="${escAttr(p.fin)}" placeholder="-479"></div></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"><div class="field"><label>Precisión</label><select class="input hp-precision"><option value="exacta" ${precision==='exacta'?'selected':''}>Exacta</option><option value="aproximada" ${precision==='aproximada'?'selected':''}>Aproximada</option><option value="decada" ${precision==='decada'?'selected':''}>Década</option><option value="siglo" ${precision==='siglo'?'selected':''}>Siglo</option><option value="periodo" ${precision==='periodo'?'selected':''}>Período general</option></select></div><div class="field"><label>Cobertura</label><select class="input hp-cobertura"><option value="hecho" ${cobertura==='hecho'?'selected':''}>Hecho puntual</option><option value="reinado" ${cobertura==='reinado'?'selected':''}>Reinado / vida</option><option value="proceso" ${cobertura==='proceso'?'selected':''}>Guerra / proceso</option><option value="decadas" ${cobertura==='decadas'?'selected':''}>Décadas</option><option value="siglo" ${cobertura==='siglo'?'selected':''}>Siglo</option><option value="periodo" ${cobertura==='periodo'?'selected':''}>Período extenso</option><option value="comparacion" ${cobertura==='comparacion'?'selected':''}>Comparación entre épocas</option></select></div></div>
+  </div>`;
+}
+function addHistoriaPeriod(p={}) { const list=document.getElementById('hist-periodos-list'); if(list) list.insertAdjacentHTML('beforeend', historiaPeriodRowHTML(p)); }
+function removeHistoriaPeriod(btn) { const row=btn.closest('.hist-period-row'); if(row) row.remove(); const list=document.getElementById('hist-periodos-list'); if(list && !list.querySelector('.hist-period-row')) addHistoriaPeriod(); }
+function getHistoriaFromForm() {
+  const periodos=[...document.querySelectorAll('#hist-periodos-list .hist-period-row')].map(row=>{
+    const val=cls=>row.querySelector(cls)?.value?.trim?.() || '';
+    const num=cls=>{const raw=row.querySelector(cls)?.value; return raw===''||raw==null?null:Number(raw);};
+    return {nombre:val('.hp-nombre'),tema:val('.hp-tema'),inicio:num('.hp-inicio'),fin:num('.hp-fin'),precision:val('.hp-precision')||'aproximada',cobertura:val('.hp-cobertura')||'periodo'};
+  }).filter(p=>p.nombre||p.tema||p.inicio!==null||p.fin!==null);
+  return {
+    lineaPrincipal: document.getElementById('hist-linea-principal')?.value?.trim() || '',
+    lineasRelacionadas: (document.getElementById('hist-lineas-relacionadas')?.value||'').split(',').map(x=>x.trim()).filter(Boolean),
+    ambitoGeografico: document.getElementById('hist-ambito')?.value?.trim() || '',
+    enfoque: document.getElementById('hist-enfoque')?.value || '',
+    periodos
+  };
+}
+function resetHistoriaFields() {
+  ['hist-linea-principal','hist-lineas-relacionadas','hist-ambito'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  const enf=document.getElementById('hist-enfoque');if(enf)enf.value='';
+  const list=document.getElementById('hist-periodos-list');if(list)list.innerHTML='';
+}
+function setHistoriaFields(historia) {
+  const h=historia||{};
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v||'';};
+  set('hist-linea-principal',h.lineaPrincipal); set('hist-lineas-relacionadas',Array.isArray(h.lineasRelacionadas)?h.lineasRelacionadas.join(', '):h.lineasRelacionadas); set('hist-ambito',h.ambitoGeografico); set('hist-enfoque',h.enfoque);
+  const list=document.getElementById('hist-periodos-list'); if(list) list.innerHTML='';
+  const ps=Array.isArray(h.periodos)?h.periodos:[]; (ps.length?ps:[{}]).forEach(addHistoriaPeriod);
+  updateHistoriaFieldsVisibility();
+}
+function formatHistoriaYear(y) { const n=Number(y); if(!Number.isFinite(n)) return ''; return n<0?`${Math.abs(n)} a. C.`:`${n} d. C.`; }
 
 function getGenerosSeleccionados() {
   return [...document.querySelectorAll('#generos-chips .genero-chip.active')].map(b => b.dataset.g);
@@ -4443,7 +4528,9 @@ function mergeEntryForSafeEdit(prev, next) {
     'capTotal',
     'temporadaActual',
     'rutas',
-    'influencias'
+    'influencias',
+    'historia',
+    'enInventario'
   ];
 
   protectedFields.forEach(k => {
@@ -4483,6 +4570,26 @@ function mergeEntryForSafeEdit(prev, next) {
 }
 
 // ═══════════════════════════════════
+//  INVENTARIO ↔ BIBLIOTECA (v165)
+// ═══════════════════════════════════
+function bookHasInventoryRecord(bookId) { return loadInventory().some(x => x.linkedEntryId === bookId); }
+function syncInventoryFromBook(book) {
+  if (!book || book.type !== 'libro') return;
+  let inv = loadInventory();
+  const linked = inv.filter(x => x.linkedEntryId === book.id);
+  if (book.enInventario) {
+    if (!linked.length) {
+      inv.push({inventoryId:'inv_flag_'+Date.now(),sourceId:'library_flag',titulo:book.titulo||'',autor:book.autor||'',editorial:book.editorial||'',linkedEntryId:book.id,inCart:false,_updatedAt:Date.now()});
+    } else {
+      linked.forEach(x=>{x.titulo=book.titulo||x.titulo;x.autor=book.autor||x.autor;x.editorial=book.editorial||x.editorial;x._updatedAt=Date.now();});
+    }
+  } else if (linked.length) {
+    inv = inv.filter(x => x.linkedEntryId !== book.id);
+  }
+  saveInventory(inv,false);
+}
+
+// ═══════════════════════════════════
 //  SAVE ENTRY
 // ═══════════════════════════════════
 function saveEntry() {
@@ -4503,6 +4610,8 @@ function saveEntry() {
       progreso: parseInt(document.getElementById('f-progreso').value),
       abandono: document.getElementById('f-abandono').value.trim() || null,
       generos: getGenerosSeleccionados(),
+      enInventario: !!document.getElementById('f-en-inventario')?.checked,
+      historia: getGenerosSeleccionados().includes('Historia') ? getHistoriaFromForm() : null,
       cover: document.getElementById('f-cover').value };
   } else if (currentType === 'pelicula') {
     const titulo = document.getElementById('fp-titulo').value.trim();
@@ -4583,6 +4692,10 @@ function saveEntry() {
       showToast(`ℹ También tienes este título como ${typeOtro}`, 3000);
     }
     db.entries.push(entry);
+  }
+  if (currentType === 'libro') {
+    const finalBook = db.entries.find(e => e.id === entry.id);
+    syncInventoryFromBook(finalBook);
   }
   saveDB();
   closeModal('modal-add');
@@ -5822,6 +5935,8 @@ function entryCardHTML(e) {
     ? `<div class="progress-wrap"><div class="progress-fill" style="width:${e.progreso||0}%"></div></div>` : '';
   const notasBadge = (e.notas_lista && e.notas_lista.length > 0)
     ? `<span style="font-size:10px;color:var(--ink4);margin-left:4px;">📝 ${e.notas_lista.length}</span>` : '';
+  const inventoryBadge = e.type === 'libro' && (e.enInventario || bookHasInventoryRecord(e.id))
+    ? `<span style="font-size:9px;background:#fff8e8;border:1px solid #e8d8a0;border-radius:10px;padding:2px 7px;color:var(--gold);font-weight:700;">📦 Inventario</span>` : '';
   const generosHtml = e.type === 'libro' ? (() => {
     const gs = e.generos && e.generos.length > 0 ? e.generos : [];
     const genChips = gs.map(g =>
@@ -5852,6 +5967,7 @@ function entryCardHTML(e) {
           ${badge}
           ${metaLine ? `<span style="font-size:10px;color:var(--ink4);">${metaLine}</span>` : ''}
           ${generosHtml.replace(/openGeneroQuick\('${e.id}'\)/g, `openGeneroQuick('${safeId}')`)}
+          ${inventoryBadge}
           ${notasBadge}
         </div>
       </div>
@@ -5876,6 +5992,19 @@ function showDetail(id) {
     html += row('Adquirido', e.fecha_adquisicion ? fechaCL(e.fecha_adquisicion) : '');
     const espera = libroEsperaInfo(e);
     if (espera) html += row('Tiempo espera', formatDiasEspera(espera.dias));
+    if (e.enInventario || bookHasInventoryRecord(e.id)) html += row('Inventario', 'Sí · ejemplar físico');
+    if (e.historia && (e.generos||[]).includes('Historia')) {
+      const h=e.historia;
+      html += `<div style="clear:both;margin-top:14px;padding:12px 14px;border:1px solid var(--border);background:var(--cream2);border-radius:6px;"><div style="font-family:var(--font-serif);font-size:16px;font-weight:700;margin-bottom:8px;">🏛️ Mapa histórico</div>`;
+      if(h.lineaPrincipal) html += row('Línea principal', h.lineaPrincipal);
+      if(Array.isArray(h.lineasRelacionadas)&&h.lineasRelacionadas.length) html += row('Relacionadas', h.lineasRelacionadas.join(', '));
+      if(h.ambitoGeografico) html += row('Ámbito', h.ambitoGeografico);
+      if(h.enfoque) html += row('Enfoque', h.enfoque);
+      if(Array.isArray(h.periodos)&&h.periodos.length){
+        html += `<div style="margin-top:10px;display:flex;flex-direction:column;gap:7px;">${h.periodos.map(p=>{const rango=[p.inicio!==null&&p.inicio!==undefined?formatHistoriaYear(p.inicio):'',p.fin!==null&&p.fin!==undefined?formatHistoriaYear(p.fin):''].filter(Boolean).join(' → ');return `<div style="background:#fff;border:1px solid var(--border);border-radius:5px;padding:9px 10px;"><div style="font-weight:700;font-size:13px;color:var(--ink);">${esc(p.nombre||p.tema||'Período histórico')}</div>${rango?`<div style="font-size:12px;color:var(--gold);margin-top:2px;">${esc(rango)}</div>`:''}${p.tema&&p.nombre?`<div style="font-size:11px;color:var(--ink3);margin-top:3px;">${esc(p.tema)}</div>`:''}<div style="font-size:10px;color:var(--ink4);margin-top:4px;text-transform:capitalize;">${esc((p.cobertura||'').replace('_',' '))}${p.precision?` · ${esc(p.precision)}`:''}</div></div>`;}).join('')}</div>`;
+      }
+      html += `</div>`;
+    }
     if (e.estado === 'leyendo') html += row('Progreso', e.progreso + '%');
     if (e.estado === 'abandonado' && e.abandono) html += row('Abandonado', e.abandono);
     if (e.generos && e.generos.length) {
@@ -6153,6 +6282,8 @@ function editEntry(id) {
       document.getElementById('abandono-field').style.display  = e.estado==='abandonado' ? 'block' : 'none';
       document.getElementById('f-abandono').value = e.abandono||'';
       setGenerosSeleccionados(e.generos||[]);
+      const invFlag = document.getElementById('f-en-inventario'); if(invFlag) invFlag.checked = !!e.enInventario || bookHasInventoryRecord(e.id);
+      setHistoriaFields(e.historia || null);
     } else if (e.type === 'pelicula') {
       const map = { titulo:'fp-titulo',director:'fp-director',anio_est:'fp-anio-est',duracion:'fp-duracion',fotografia:'fp-foto',musica:'fp-musica',protagonista:'fp-protagonista',guionista:'fp-guionista',cover:'fp-cover',autor_original:'fp-autor-original' };
       Object.entries(map).forEach(([k,id])=>{ const el=document.getElementById(id); if(el) el.value=e[k]||''; });
@@ -13141,7 +13272,7 @@ function copiarExportLectura() {
 
 <script>
 // ═══════════════════════════════════
-// LUMEN v164 — MÓDULO MANGAS
+// LUMEN v165 — MÓDULO MANGAS
 // ═══════════════════════════════════
 (function(){
   const oldSelectType = window.selectType;
@@ -13259,7 +13390,7 @@ function copiarExportLectura() {
 
 
 // ═══════════════════════════════════
-// INVENTARIO FÍSICO — LUMEN v164
+// INVENTARIO FÍSICO — LUMEN v165
 // ═══════════════════════════════════
 const INVENTORY_KEY = 'lumen_inventory_v1';
 let inventoryImportPending = [];
@@ -13343,16 +13474,16 @@ function inventoryCardHTML(item){
   return `<div class="inventory-card"><div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start;"><div><div class="inventory-card-title">${esc(item.titulo||'Sin título')}</div><div class="inventory-card-sub">${[item.autor,item.editorial].filter(Boolean).map(esc).join(' · ')||'Información incompleta'}</div></div><div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end;">${linked}${cart}</div></div><div class="inventory-card-actions"><button class="btn btn-secondary btn-sm" onclick="toggleInventoryCart('${item.inventoryId}')">${item.inCart?'Quitar del carrito':'🛒 Agregar al carrito'}</button>${b&&b.estado==='leyendo'?`<button class="btn btn-secondary btn-sm" onclick="showDetail('${b.id}')">Abrir lectura</button>`:`<button class="btn btn-primary btn-sm" onclick="startInventoryReading('${item.inventoryId}')">Comenzar lectura</button>`}</div></div>`;
 }
 function toggleInventoryCart(id){const inv=loadInventory();const item=inv.find(x=>x.inventoryId===id);if(!item)return;item.inCart=!item.inCart;item._updatedAt=Date.now();saveInventory(inv);renderInventory();}
-function startInventoryReading(id){const inv=loadInventory();const item=inv.find(x=>x.inventoryId===id);if(!item)return;let book=findBookLink(item);if(!book){book={id:'inv_book_'+Date.now(),type:'libro',titulo:item.titulo,autor:item.autor||'',editorial:item.editorial||'',estado:'leyendo',progreso:0,readDates:[],cover:'',notas:'',_updatedAt:Date.now()};db.entries.push(book);}else{book.estado='leyendo';book._updatedAt=Date.now();if(!book.editorial&&item.editorial)book.editorial=item.editorial;}item.linkedEntryId=book.id;item.inCart=false;item._updatedAt=Date.now();localStorage.setItem(INVENTORY_KEY,JSON.stringify(inv));saveDB();renderInventory();renderHome();showToast('✓ Libro agregado a Leyendo ahora');}
+function startInventoryReading(id){const inv=loadInventory();const item=inv.find(x=>x.inventoryId===id);if(!item)return;let book=findBookLink(item);if(!book){book={id:'inv_book_'+Date.now(),type:'libro',titulo:item.titulo,autor:item.autor||'',editorial:item.editorial||'',estado:'leyendo',progreso:0,readDates:[],cover:'',notas:'',enInventario:true,_updatedAt:Date.now()};db.entries.push(book);}else{book.estado='leyendo';book.enInventario=true;book._updatedAt=Date.now();if(!book.editorial&&item.editorial)book.editorial=item.editorial;}item.linkedEntryId=book.id;item.inCart=false;item._updatedAt=Date.now();localStorage.setItem(INVENTORY_KEY,JSON.stringify(inv));saveDB();renderInventory();renderHome();showToast('✓ Libro agregado a Leyendo ahora');}
 function openInventoryImport(){inventoryImportPending=[];document.getElementById('inventory-import-preview').innerHTML='';document.getElementById('inventory-import-confirm').style.display='none';document.getElementById('inventory-csv-input').value='';openModal('modal-inventory-import');}
 function inventoryCol(row,...names){for(const name of names){const key=Object.keys(row).find(k=>invNorm(k)===invNorm(name));if(key&&String(row[key]||'').trim())return String(row[key]).trim();}return '';}
 function handleInventoryCSV(event){const file=event.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=ev=>analyzeInventoryCSV(ev.target.result);reader.readAsText(file,'UTF-8');}
 function analyzeInventoryCSV(text){const clean=String(text||'').replace(/^\uFEFF/,'');const lines=clean.split(/\r?\n/).filter(x=>x.trim());if(lines.length<2){showToast('CSV vacío');return;}const headers=parseCSVLine(lines[0]);const existing=loadInventory();const exact=new Map(existing.map(x=>[inventoryKey(x,true),x]));const base=new Map();existing.forEach(x=>{const k=inventoryKey(x,false);if(!base.has(k))base.set(k,[]);base.get(k).push(x);});const rows=[];for(let i=1;i<lines.length;i++){const cols=parseCSVLine(lines[i]);const row={};headers.forEach((h,j)=>row[h]=(cols[j]||'').trim());const item={sourceId:inventoryCol(row,'ID','id'),titulo:inventoryCol(row,'Título','Titulo','Nombre'),autor:inventoryCol(row,'Autor'),editorial:inventoryCol(row,'Editorial')};if(!item.titulo){rows.push({...item,status:'incompleto',reason:'Sin título'});continue;}const ek=inventoryKey(item,true),bk=inventoryKey(item,false);if(exact.has(ek)){rows.push({...item,status:'duplicado',existingId:exact.get(ek).inventoryId});}else if(base.has(bk)){rows.push({...item,status:'posible',reason:'Mismo título y autor; editorial distinta o vacía'});}else{const link=findBookLink(item);rows.push({...item,status:link?'vinculado':'nuevo',linkedEntryId:link?.id||''});}}inventoryImportPending=rows;const counts=rows.reduce((a,x)=>(a[x.status]=(a[x.status]||0)+1,a),{});const labels={nuevo:'Nuevos',vinculado:'Nuevos vinculados',duplicado:'Duplicados exactos',posible:'Posibles ediciones',incompleto:'Incompletos'};document.getElementById('inventory-import-preview').innerHTML=`<div class="card" style="box-shadow:none;"><div style="font-family:var(--font-serif);font-weight:700;margin-bottom:8px;">Resultado del análisis</div>${Object.entries(labels).map(([k,l])=>`<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12px;"><span>${l}</span><strong>${counts[k]||0}</strong></div>`).join('')}</div><div style="max-height:230px;overflow:auto;">${rows.map(x=>`<div class="inventory-import-row"><strong>${x.titulo||'Sin título'}</strong><br><span style="color:var(--ink4);">${[x.autor,x.editorial].filter(Boolean).join(' · ')}</span><br><span style="color:${x.status==='duplicado'?'var(--red)':x.status==='posible'?'var(--gold)':'var(--green)'};font-weight:700;">${labels[x.status]}</span></div>`).join('')}</div>`;document.getElementById('inventory-import-confirm').style.display=rows.some(x=>['nuevo','vinculado','posible','incompleto'].includes(x.status))?'block':'none';}
-function confirmInventoryImport(){let inv=loadInventory();const exact=new Set(inv.map(x=>inventoryKey(x,true)));let added=0,skipped=0;inventoryImportPending.forEach((x,i)=>{if(x.status==='duplicado'){skipped++;return;}const k=inventoryKey(x,true);if(exact.has(k)){skipped++;return;}const item={inventoryId:'inv_'+Date.now()+'_'+i,sourceId:x.sourceId||'',titulo:x.titulo||'',autor:x.autor||'',editorial:x.editorial||'',linkedEntryId:x.linkedEntryId||findBookLink(x)?.id||'',inCart:false,_updatedAt:Date.now()};inv.push(item);exact.add(k);added++;});saveInventory(inv);closeModal('modal-inventory-import');renderInventory();showToast(`✓ ${added} libros agregados · ${skipped} omitidos`);}
+function confirmInventoryImport(){let inv=loadInventory();const exact=new Set(inv.map(x=>inventoryKey(x,true)));let added=0,skipped=0;inventoryImportPending.forEach((x,i)=>{if(x.status==='duplicado'){skipped++;return;}const k=inventoryKey(x,true);if(exact.has(k)){skipped++;return;}const item={inventoryId:'inv_'+Date.now()+'_'+i,sourceId:x.sourceId||'',titulo:x.titulo||'',autor:x.autor||'',editorial:x.editorial||'',linkedEntryId:x.linkedEntryId||findBookLink(x)?.id||'',inCart:false,_updatedAt:Date.now()};inv.push(item);exact.add(k);added++;});saveInventory(inv,false);inv.forEach(item=>{if(item.linkedEntryId){const b=db.entries.find(e=>e.id===item.linkedEntryId);if(b&&b.type==='libro'&&!b.enInventario){b.enInventario=true;b._updatedAt=Date.now();}}});saveDB();closeModal('modal-inventory-import');renderInventory();showToast(`✓ ${added} libros agregados · ${skipped} omitidos`);}
 
 
 // ═══════════════════════════════════════════════════════════════
-//  LUMEN v164 — SINCRONIZACIÓN POR BLOQUES (ARQUITECTURA V2)
+//  LUMEN v165 — SINCRONIZACIÓN POR BLOQUES (ARQUITECTURA V2)
 //  Mantiene el documento legacy intacto como respaldo y evita el
 //  límite de 1 MiB dividiendo entradas y módulos en varios docs.
 // ═══════════════════════════════════════════════════════════════
@@ -13515,11 +13646,11 @@ async function syncToFirestore() {
     const result = await writeCloudV162(currentUser.uid);
     setSyncStatus('ok');
     setLastSync();
-    console.info('[LUMEN v164] Sync V2 OK', result);
+    console.info('[LUMEN v165] Sync V2 OK', result);
     return result;
   } catch(e) {
     setSyncStatus('offline');
-    console.error('[LUMEN v164] Sync V2 error:', e.code || '', e.message, e);
+    console.error('[LUMEN v165] Sync V2 error:', e.code || '', e.message, e);
     throw e;
   }
 }
@@ -13550,7 +13681,7 @@ async function manualSaveToCloud() {
   } catch(e) {
     setSyncStatus('offline');
     showToast(`⚠ Error al guardar: ${e.message}`, 5000);
-    console.error('[LUMEN v164] manualSave error:', e);
+    console.error('[LUMEN v165] manualSave error:', e);
   }
 }
 
@@ -13570,7 +13701,7 @@ async function pullAndMerge(uid, silent) {
     renderHome();
   } catch(e) {
     setSyncStatus('offline');
-    console.error('[LUMEN v164] pull error:', e);
+    console.error('[LUMEN v165] pull error:', e);
     if (!silent) showToast(`⚠ Error al cargar: ${e.message}`, 4500);
   }
 }
@@ -13600,11 +13731,11 @@ function subscribeToFirestore(uid) {
       setSyncStatus('ok');
       renderHome();
     } catch(e) {
-      console.warn('[LUMEN v164] snapshot error:', e.message);
+      console.warn('[LUMEN v165] snapshot error:', e.message);
     }
   }, e => {
     setSyncStatus('offline');
-    console.warn('[LUMEN v164] listener error:', e.message);
+    console.warn('[LUMEN v165] listener error:', e.message);
   });
 }
 
@@ -13621,7 +13752,7 @@ window.lumenSyncDiagnostico = function() {
     usuario:currentUser ? currentUser.uid : null
   };
   console.table(report);
-  console.info('[LUMEN v164] Diagnóstico completo', report);
+  console.info('[LUMEN v165] Diagnóstico completo', report);
   return report;
 };
 
