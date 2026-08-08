@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1a1510">
-<title>LUMEN v166 — Biblioteca Personal</title>
+<title>LUMEN v167 — Biblioteca Personal</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231a1510'/><text x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' font-family='Georgia,serif' font-size='14' font-weight='900' font-style='italic' fill='%23c8952a' letter-spacing='0.5'>L</text><rect x='6' y='23' width='20' height='2' rx='1' fill='%238b2020'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
@@ -644,6 +644,9 @@ select.input { cursor: pointer; }
   }
 }
 
+
+/* ── INVENTARIO INTEGRADO v167 ── */
+.inventory-chip {padding:5px 11px;border-radius:20px;border:1.5px solid #b888d8;background:#f7effc;color:#6b3a8a;font-size:11px;font-weight:700;letter-spacing:.5px;cursor:pointer;font-family:var(--font-sans);transition:all .15s}.inventory-chip.active{background:#6b3a8a;color:#fff;border-color:#6b3a8a;box-shadow:0 1px 4px rgba(107,58,138,.22)}.inventory-data-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}.inventory-stat-section{background:#fff;border:1px solid var(--border);border-radius:6px;padding:12px 14px;margin-bottom:10px}.inventory-stat-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--cream2);font-size:12px}.inventory-stat-row:last-child{border-bottom:none}.inventory-stat-name{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.inventory-stat-bar{width:70px;height:5px;background:var(--cream3);border-radius:3px;overflow:hidden}.inventory-stat-bar-fill{height:100%;background:var(--gold);border-radius:3px}@media(max-width:640px){.inventory-data-grid{grid-template-columns:repeat(2,1fr)}}
 
 /* ── INVENTARIO FÍSICO v159 ── */
 .inventory-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}.inventory-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}.inventory-card{background:#fff;border:1px solid var(--border);border-radius:6px;padding:12px 14px;margin-bottom:8px;box-shadow:var(--shadow)}.inventory-card-title{font-family:var(--font-serif);font-size:15px;font-weight:700}.inventory-card-sub{font-size:11px;color:var(--ink3);margin-top:3px}.inventory-card-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}.inventory-status{font-size:10px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;padding:3px 7px;border-radius:12px;background:var(--cream2);color:var(--ink3)}.inventory-status.linked{background:#e8f0e8;color:var(--green)}.inventory-status.cart{background:#fff8e8;color:var(--gold)}.inventory-import-row{padding:8px 0;border-bottom:1px solid var(--cream2);font-size:12px}.inventory-import-row:last-child{border-bottom:none}
@@ -2061,7 +2064,7 @@ select.input { cursor: pointer; }
     Cerrar sesión
   </button>
   <div style="padding:8px 16px 10px;border-top:1px solid var(--border);font-size:10px;color:var(--ink4);letter-spacing:1px;text-align:right;">
-    LUMEN v166
+    LUMEN v167
   </div>
 </div>
 
@@ -2203,15 +2206,10 @@ select.input { cursor: pointer; }
             <button type="button" class="genero-chip" data-g="Entrevista"      onclick="toggleGenero(this)">Entrevista</button>
             <button type="button" class="genero-chip" data-g="Religión"        onclick="toggleGenero(this)">Religión</button>
             <button type="button" class="genero-chip" data-g="Mitología"       onclick="toggleGenero(this)">Mitología</button>
+            <button type="button" id="f-inventory-chip" class="inventory-chip" onclick="toggleInventoryChip()">📦 Inventario</button>
+            <input type="checkbox" id="f-en-inventario" style="display:none;">
           </div>
-        </div>
-        <div class="field" style="background:#fff;border:1px solid var(--border);border-radius:6px;padding:12px 14px;">
-          <label style="margin-bottom:8px;">Inventario físico</label>
-          <label style="display:flex;align-items:center;gap:9px;font-size:13px;color:var(--ink2);letter-spacing:0;text-transform:none;font-weight:700;cursor:pointer;margin:0;">
-            <input type="checkbox" id="f-en-inventario" style="width:18px;height:18px;accent-color:var(--gold);">
-            Este ejemplar está en mi inventario
-          </label>
-          <div style="font-size:10px;color:var(--ink4);margin-top:6px;line-height:1.45;">No crea una segunda lectura: vincula este mismo libro con el inventario físico.</div>
+          <div style="font-size:10px;color:var(--ink4);margin-top:6px;line-height:1.4;">📦 Inventario indica que posees físicamente ese ejemplar; no crea un segundo libro.</div>
         </div>
 
         <div id="historia-fields" style="display:none;background:#fff;border:1px solid var(--border);border-radius:6px;padding:14px;margin-bottom:13px;">
@@ -2613,6 +2611,15 @@ select.input { cursor: pointer; }
 </div>
 
 <!-- ══════ MODAL: IMPORTAR INVENTARIO ══════ -->
+<!-- ══════ MODAL: DATOS DE INVENTARIO v167 ══════ -->
+<div id="modal-inventory-data" class="modal-overlay">
+  <div class="modal" style="max-height:90dvh;">
+    <div class="modal-handle"></div>
+    <div class="modal-header"><div><div class="modal-title">📊 Datos del inventario</div><div style="font-size:10px;color:var(--ink4);margin-top:3px;letter-spacing:1px;text-transform:uppercase;">Biblioteca física</div></div><button class="btn-icon" onclick="closeModal('modal-inventory-data')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+    <div class="modal-body" id="inventory-data-body"></div>
+  </div>
+</div>
+
 <div id="modal-inventory-import" class="modal-overlay">
   <div class="modal">
     <div class="modal-handle"></div>
@@ -3342,7 +3349,7 @@ function openReadingConsistencyReport() {
   const rows = auditReadingConsistency();
   const lineas = [];
   lineas.push('═══════════════════════════════════════════════');
-  lineas.push('REVISIÓN DE CONSISTENCIA DE LECTURA — LUMEN v166');
+  lineas.push('REVISIÓN DE CONSISTENCIA DE LECTURA — LUMEN v167');
   lineas.push('Generado: ' + new Date().toLocaleString('es-CL', { timeZone: LUMEN_TZ }));
   lineas.push('═══════════════════════════════════════════════');
   lineas.push('');
@@ -4124,7 +4131,7 @@ function resetForm() {
   document.getElementById('f-idioma-otro').value = '';
   const origenAdqEl = document.getElementById('f-origen-adq'); if (origenAdqEl) origenAdqEl.value = '';
   const fechaAdqEl = document.getElementById('f-fecha-adq'); if (fechaAdqEl) fechaAdqEl.value = '';
-  const invFlagEl = document.getElementById('f-en-inventario'); if (invFlagEl) invFlagEl.checked = false;
+  const invFlagEl = document.getElementById('f-en-inventario'); if (invFlagEl) invFlagEl.checked = false; syncInventoryChipState();
   resetHistoriaFields();
   resetGeneros();
   updateHistoriaFieldsVisibility();
@@ -4612,6 +4619,9 @@ function mergeEntryForSafeEdit(prev, next) {
 //  INVENTARIO ↔ BIBLIOTECA (v165)
 // ═══════════════════════════════════
 function bookHasInventoryRecord(bookId) { return loadInventory().some(x => x.linkedEntryId === bookId); }
+function syncInventoryChipState(){const cb=document.getElementById('f-en-inventario'),chip=document.getElementById('f-inventory-chip');if(!cb||!chip)return;chip.classList.toggle('active',!!cb.checked);chip.setAttribute('aria-pressed',cb.checked?'true':'false');chip.title=cb.checked?'Quitar del inventario físico':'Agregar al inventario físico';}
+function toggleInventoryChip(){const cb=document.getElementById('f-en-inventario');if(!cb)return;cb.checked=!cb.checked;syncInventoryChipState();}
+
 function syncInventoryFromBook(book) {
   if (!book || book.type !== 'libro') return;
   let inv = loadInventory();
@@ -5975,7 +5985,7 @@ function entryCardHTML(e) {
   const notasBadge = (e.notas_lista && e.notas_lista.length > 0)
     ? `<span style="font-size:10px;color:var(--ink4);margin-left:4px;">📝 ${e.notas_lista.length}</span>` : '';
   const inventoryBadge = e.type === 'libro' && (e.enInventario || bookHasInventoryRecord(e.id))
-    ? `<span style="font-size:9px;background:#fff8e8;border:1px solid #e8d8a0;border-radius:10px;padding:2px 7px;color:var(--gold);font-weight:700;">📦 Inventario</span>` : '';
+    ? `<span style="font-size:9px;background:#f7effc;border:1px solid #b888d8;border-radius:10px;padding:2px 7px;color:#6b3a8a;font-weight:700;">📦 Inventario</span>` : '';
   const generosHtml = e.type === 'libro' ? (() => {
     const gs = e.generos && e.generos.length > 0 ? e.generos : [];
     const genChips = gs.map(g =>
@@ -6321,7 +6331,7 @@ function editEntry(id) {
       document.getElementById('abandono-field').style.display  = e.estado==='abandonado' ? 'block' : 'none';
       document.getElementById('f-abandono').value = e.abandono||'';
       setGenerosSeleccionados(e.generos||[]);
-      const invFlag = document.getElementById('f-en-inventario'); if(invFlag) invFlag.checked = !!e.enInventario || bookHasInventoryRecord(e.id);
+      const invFlag = document.getElementById('f-en-inventario'); if(invFlag) invFlag.checked = !!e.enInventario || bookHasInventoryRecord(e.id); syncInventoryChipState();
       setHistoriaFields(e.historia || null);
     } else if (e.type === 'pelicula') {
       const map = { titulo:'fp-titulo',director:'fp-director',anio_est:'fp-anio-est',duracion:'fp-duracion',fotografia:'fp-foto',musica:'fp-musica',protagonista:'fp-protagonista',guionista:'fp-guionista',cover:'fp-cover',autor_original:'fp-autor-original' };
@@ -9005,7 +9015,7 @@ function saveReadingEntry() {
     // Evita dejar un alta a medias y muestra el error real en pantalla.
     if (created) db.entries = db.entries.filter(e => e.id!==entry.id);
     else if (before) Object.assign(entry,before);
-    console.error('[LUMEN v166] Error al iniciar lectura:', err);
+    console.error('[LUMEN v167] Error al iniciar lectura:', err);
     const msg = err && (err.name==='QuotaExceededError' || /quota/i.test(err.message||''))
       ? 'No se pudo guardar: almacenamiento local lleno'
       : `No se pudo guardar la lectura${err?.message?': '+err.message:''}`;
@@ -13572,50 +13582,24 @@ window.renderLibrary = function() {
   return _renderLibraryBeforeInventory();
 };
 
-function renderInventory() {
-  const list=document.getElementById('library-list');
-  const search=document.getElementById('lib-search');
-  if(search) search.placeholder='Buscar en mi inventario físico...';
-  const q=invNorm(search?.value||'');
-  const inv=relinkInventory(false);
-  const filtered=inv.filter(x=>!q || [x.titulo,x.autor,x.editorial].some(v=>invNorm(v).includes(q)));
-  const linked=inv.filter(x=>x.linkedEntryId).length;
-  const read=inv.filter(x=>{const b=db.entries.find(e=>e.id===x.linkedEntryId);return !!b&&b.estado==='leido';}).length;
-  const ratio=inv.length?Math.round(read/inv.length*100):0;
-  const incomplete=inv.filter(x=>!x.titulo||!x.autor||!x.editorial).length;
-  list.innerHTML=`
-    <div class="inventory-toolbar">
-      <button class="btn btn-primary btn-sm" onclick="openInventoryImport()">+ Importar CSV</button>
-      <span style="font-size:11px;color:var(--ink4);margin-left:auto;">${filtered.length} de ${inv.length}</span>
-    </div>
-    <div class="inventory-kpis">
-      <div class="stat-box"><div class="stat-num">${inv.length}</div><div class="stat-label">Libros físicos</div></div>
-      <div class="stat-box"><div class="stat-num">${linked}</div><div class="stat-label">Vinculados</div></div>
-      <div class="stat-box"><div class="stat-num" style="font-size:28px;">${read} de ${inv.length}</div><div class="stat-label">Leídos · ${ratio}%</div></div>
-      <div class="stat-box"><div class="stat-num">${new Set(inv.map(x=>invNorm(x.autor)).filter(Boolean)).size}</div><div class="stat-label">Autores</div></div>
-      <div class="stat-box"><div class="stat-num">${new Set(inv.map(x=>invNorm(x.editorial)).filter(Boolean)).size}</div><div class="stat-label">Editoriales</div></div>
-      <div class="stat-box"><div class="stat-num">${incomplete}</div><div class="stat-label">Incompletos</div></div>
-    </div>
-    <div style="font-size:11px;color:var(--ink4);margin:-2px 0 12px;line-height:1.5;">El estado de lectura viene del libro vinculado en Biblioteca. Inventario solo indica qué ejemplares físicos posees.</div>
-    <div id="inventory-cards">${filtered.length?filtered.map(inventoryCardHTML).join(''):'<div class="empty"><div class="empty-icon">📦</div><div class="empty-text">Aún no hay libros en el inventario.</div></div>'}</div>`;
+function inventoryBooksUnified(){
+  const inv=relinkInventory(false),invByBook=new Map(inv.filter(x=>x.linkedEntryId).map(x=>[x.linkedEntryId,x]));
+  const books=db.entries.filter(e=>e.type==='libro'&&(e.enInventario||invByBook.has(e.id)));
+  const unlinked=inv.filter(x=>!x.linkedEntryId&&!findBookLink(x));
+  return {books,unlinked,inventory:inv};
 }
-function inventoryCardHTML(item){
-  const esc2=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  const b=db.entries.find(e=>e.id===item.linkedEntryId) || findBookLink(item);
-  if(b && !item.linkedEntryId) item.linkedEntryId=b.id;
-  let badge='<span class="inventory-status">Sin vincular</span>', actions='';
-  if(b){
-    const state=b.estado||'pendiente';
-    const label=state==='leido'?'Vinculado · leído':state==='leyendo'?'Vinculado · leyendo':state==='abandonado'?'Vinculado · abandonado':'Vinculado · pendiente';
-    badge=`<span class="inventory-status linked">${label}</span>`;
-    if(state==='leido') actions=`<button class="btn btn-secondary btn-sm" onclick="showDetail('${b.id}')">Abrir ficha</button>`;
-    else if(state==='leyendo') actions=`<button class="btn btn-secondary btn-sm" onclick="showDetail('${b.id}')">Continuar lectura</button>`;
-    else actions=`<button class="btn btn-primary btn-sm" onclick="startInventoryReading('${item.inventoryId}')">Comenzar lectura</button><button class="btn btn-secondary btn-sm" onclick="showDetail('${b.id}')">Abrir ficha</button>`;
-  } else {
-    actions=`<button class="btn btn-primary btn-sm" onclick="startInventoryReading('${item.inventoryId}')">Comenzar lectura</button>`;
-  }
-  return `<div class="inventory-card"><div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start;"><div><div class="inventory-card-title">${esc2(item.titulo||'Sin título')}</div><div class="inventory-card-sub">${[item.autor,item.editorial].filter(Boolean).map(esc2).join(' · ')||'Información incompleta'}</div></div><div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end;">${badge}</div></div><div class="inventory-card-actions">${actions}</div></div>`;
+function renderInventory(){
+  const list=document.getElementById('library-list'),search=document.getElementById('lib-search');if(search)search.placeholder='Buscar en mi inventario físico...';
+  const q=invNorm(search?.value||''),data=inventoryBooksUnified();
+  let books=data.books.filter(e=>!q||[e.titulo,e.autor,e.editorial].some(v=>invNorm(v).includes(q)));
+  books=books.sort((a,b)=>{if(a.estado==='leyendo'&&b.estado!=='leyendo')return-1;if(b.estado==='leyendo'&&a.estado!=='leyendo')return 1;const mi=MESES.indexOf(a.mes),mj=MESES.indexOf(b.mes),ai=(a.anio||0)*100+(mi>=0?mi:0),bi=(b.anio||0)*100+(mj>=0?mj:0);return bi-ai||String(b.id).localeCompare(String(a.id));});
+  const unlinked=data.unlinked.filter(x=>!q||[x.titulo,x.autor,x.editorial].some(v=>invNorm(v).includes(q))),visible=books.length+unlinked.length,total=data.books.length+data.unlinked.length;
+  list.innerHTML=`<div class="inventory-toolbar"><button class="btn btn-primary btn-sm" onclick="openInventoryImport()">+ Importar CSV</button><button class="btn btn-secondary btn-sm" onclick="openInventoryData()">📊 Ver datos del inventario</button><span style="font-size:11px;color:var(--ink4);margin-left:auto;">${visible} de ${total}</span></div>${books.length?books.map(e=>entryCardHTML(e)).join(''):''}${unlinked.length?`<div style="font-size:10px;color:var(--ink4);font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin:14px 0 7px;">Pendientes de vincular</div>${unlinked.map(inventoryUnlinkedCardHTML).join('')}`:''}${!visible?'<div class="empty"><div class="empty-icon">📦</div><div class="empty-text">Aún no hay libros en el inventario.</div></div>':''}`;
 }
+function inventoryUnlinkedCardHTML(item){const esc2=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');return `<div class="inventory-card"><div class="inventory-card-title">${esc2(item.titulo||'Sin título')}</div><div class="inventory-card-sub">${[item.autor,item.editorial].filter(Boolean).map(esc2).join(' · ')||'Información incompleta'}</div><div class="inventory-card-actions"><span class="inventory-status">Sin vincular</span><button class="btn btn-primary btn-sm" onclick="startInventoryReading('${item.inventoryId}')">Crear / comenzar lectura</button></div></div>`;}
+function inventoryTopRows(entries,getter,limit=8){const counts=new Map();entries.forEach(e=>{let vals=getter(e);if(!Array.isArray(vals))vals=[vals];vals.filter(Boolean).forEach(v=>{const k=String(v).trim();if(k)counts.set(k,(counts.get(k)||0)+1);});});return[...counts.entries()].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0])).slice(0,limit);}
+function inventoryStatRows(rows){if(!rows.length)return'<div style="font-size:12px;color:var(--ink4);font-style:italic;">Sin datos suficientes.</div>';const max=Math.max(...rows.map(x=>x[1]),1);return rows.map(([name,count])=>`<div class="inventory-stat-row"><div class="inventory-stat-name">${String(name).replace(/&/g,'&amp;').replace(/</g,'&lt;')}</div><div class="inventory-stat-bar"><div class="inventory-stat-bar-fill" style="width:${Math.round(count/max*100)}%"></div></div><strong>${count}</strong></div>`).join('');}
+function openInventoryData(){const body=document.getElementById('inventory-data-body');if(!body)return;const data=inventoryBooksUnified(),books=data.books,total=books.length+data.unlinked.length,read=books.filter(e=>e.estado==='leido').length,reading=books.filter(e=>e.estado==='leyendo').length,pending=books.filter(e=>e.estado==='pendiente'||!e.estado).length,abandoned=books.filter(e=>e.estado==='abandonado').length,ratio=total?Math.round(read/total*100):0;body.innerHTML=`<div class="inventory-data-grid"><div class="stat-box"><div class="stat-num">${total}</div><div class="stat-label">Libros físicos</div></div><div class="stat-box"><div class="stat-num" style="font-size:28px;">${read} de ${total}</div><div class="stat-label">Leídos · ${ratio}%</div></div><div class="stat-box"><div class="stat-num">${reading}</div><div class="stat-label">Leyendo</div></div><div class="stat-box"><div class="stat-num">${pending}</div><div class="stat-label">Pendientes</div></div><div class="stat-box"><div class="stat-num">${abandoned}</div><div class="stat-label">Abandonados</div></div><div class="stat-box"><div class="stat-num">${data.unlinked.length}</div><div class="stat-label">Sin vincular</div></div></div><div class="inventory-stat-section"><div class="chart-section-title" style="margin-bottom:6px;">Autores del inventario</div>${inventoryStatRows(inventoryTopRows(books,e=>e.autor))}</div><div class="inventory-stat-section"><div class="chart-section-title" style="margin-bottom:6px;">Editoriales del inventario</div>${inventoryStatRows(inventoryTopRows(books,e=>e.editorial))}</div><div class="inventory-stat-section"><div class="chart-section-title" style="margin-bottom:6px;">Géneros del inventario</div>${inventoryStatRows(inventoryTopRows(books,e=>e.generos||[]))}</div><div style="font-size:11px;color:var(--ink4);line-height:1.5;margin-top:8px;">El estado de lectura se toma siempre del mismo registro de Biblioteca. Inventario solo indica propiedad física.</div>`;openModal('modal-inventory-data');}
 function startInventoryReading(id){
   const inv=loadInventory();const item=inv.find(x=>x.inventoryId===id);if(!item)return;
   let book=findBookLink(item);
@@ -13623,7 +13607,7 @@ function startInventoryReading(id){
   if(!book){book={id:'inv_book_'+Date.now(),type:'libro',titulo:item.titulo,autor:item.autor||'',editorial:item.editorial||'',estado:'leyendo',progreso:0,readDates:[],cover:'',notas:'',enInventario:true,startDate:new Date().toISOString(),_updatedAt:Date.now()};db.entries.push(book);}
   else{book.estado='leyendo';book.enInventario=true;book.startDate=book.startDate||new Date().toISOString();book._updatedAt=Date.now();if(!book.editorial&&item.editorial)book.editorial=item.editorial;}
   item.linkedEntryId=book.id;item._updatedAt=Date.now();
-  try{localStorage.setItem(INVENTORY_KEY,JSON.stringify(inv));saveDB();}catch(err){console.error('[LUMEN v166] Inventario → lectura:',err);showToast('⚠ No se pudo iniciar la lectura: '+(err.message||'error local'),4500);return;}
+  try{localStorage.setItem(INVENTORY_KEY,JSON.stringify(inv));saveDB();}catch(err){console.error('[LUMEN v167] Inventario → lectura:',err);showToast('⚠ No se pudo iniciar la lectura: '+(err.message||'error local'),4500);return;}
   renderInventory();renderHome();showToast('✓ Libro agregado a Leyendo ahora');
 }
 function openInventoryImport(){inventoryImportPending=[];document.getElementById('inventory-import-preview').innerHTML='';document.getElementById('inventory-import-confirm').style.display='none';document.getElementById('inventory-csv-input').value='';openModal('modal-inventory-import');}
@@ -13797,11 +13781,11 @@ async function syncToFirestore() {
     const result = await writeCloudV162(currentUser.uid);
     setSyncStatus('ok');
     setLastSync();
-    console.info('[LUMEN v166] Sync V2 OK', result);
+    console.info('[LUMEN v167] Sync V2 OK', result);
     return result;
   } catch(e) {
     setSyncStatus('offline');
-    console.error('[LUMEN v166] Sync V2 error:', e.code || '', e.message, e);
+    console.error('[LUMEN v167] Sync V2 error:', e.code || '', e.message, e);
     throw e;
   }
 }
@@ -13832,7 +13816,7 @@ async function manualSaveToCloud() {
   } catch(e) {
     setSyncStatus('offline');
     showToast(`⚠ Error al guardar: ${e.message}`, 5000);
-    console.error('[LUMEN v166] manualSave error:', e);
+    console.error('[LUMEN v167] manualSave error:', e);
   }
 }
 
@@ -13852,7 +13836,7 @@ async function pullAndMerge(uid, silent) {
     renderHome();
   } catch(e) {
     setSyncStatus('offline');
-    console.error('[LUMEN v166] pull error:', e);
+    console.error('[LUMEN v167] pull error:', e);
     if (!silent) showToast(`⚠ Error al cargar: ${e.message}`, 4500);
   }
 }
@@ -13882,11 +13866,11 @@ function subscribeToFirestore(uid) {
       setSyncStatus('ok');
       renderHome();
     } catch(e) {
-      console.warn('[LUMEN v166] snapshot error:', e.message);
+      console.warn('[LUMEN v167] snapshot error:', e.message);
     }
   }, e => {
     setSyncStatus('offline');
-    console.warn('[LUMEN v166] listener error:', e.message);
+    console.warn('[LUMEN v167] listener error:', e.message);
   });
 }
 
@@ -13903,7 +13887,7 @@ window.lumenSyncDiagnostico = function() {
     usuario:currentUser ? currentUser.uid : null
   };
   console.table(report);
-  console.info('[LUMEN v166] Diagnóstico completo', report);
+  console.info('[LUMEN v167] Diagnóstico completo', report);
   return report;
 };
 

@@ -1,59 +1,56 @@
-# LUMEN v166 — Lectura en curso, inventario y mapa histórico
+# LUMEN v167 — Inventario integrado
 
 **Fecha:** 8 de agosto de 2026
 
+## Base utilizada
+
+- LUMEN v166 — lectura, inventario y mapa histórico.
+
 ## Cambios aplicados
 
-### 1. Corrección de “Empezar a seguir”
-- Se reforzó `saveReadingEntry()` para que el botón de **Lectura en curso** no quede silencioso ante un error.
-- Valida los campos del formulario antes de usarlos.
-- Si un libro pendiente/leyendo ya existe en Biblioteca, reutiliza ese registro en vez de crear un duplicado.
-- Mantiene metadatos existentes cuando el formulario no aporta un valor nuevo.
-- Registra `_updatedAt` y conserva `startDate`.
-- Si el guardado local falla, revierte el alta parcial y muestra el error en pantalla.
-- Si el fallo corresponde a cuota de almacenamiento, muestra explícitamente **“almacenamiento local lleno”**.
+- Se simplificó el alta de libros al inventario físico: **Inventario** ahora aparece como una etiqueta/chip junto a los géneros del libro.
+- La etiqueta **📦 Inventario** usa un color propio y se activa/desactiva con un toque.
+- El flag sigue usando el mismo campo `enInventario`; no crea un segundo libro ni un estado de lectura paralelo.
+- La pestaña **Inventario** ahora se comporta como la vista de **Libros**: usa las mismas tarjetas completas, portadas, autor, editorial, estado, géneros, notas y acceso a ficha.
+- Se retiraron los KPI de la vista principal del Inventario.
+- Se agregó el botón **📊 Ver datos del inventario**.
+- El nuevo modal de datos muestra KPI de biblioteca física y estadísticas de autores, editoriales y géneros.
+- El ratio de lectura usa el estado real del mismo libro de Biblioteca (`leido`, `leyendo`, `pendiente`, `abandonado`).
+- Los registros importados por CSV que todavía no están vinculados se muestran aparte como **Pendientes de vincular**.
+- Se conserva el importador CSV de inventario.
 
-### 2. Inventario físico corregido
-- Se eliminó del Inventario toda la lógica visible de **carrito**.
-- Inventario vuelve a representar únicamente los ejemplares físicos que posee el usuario.
-- El estado de lectura se deriva del libro vinculado en Biblioteca; no mantiene un segundo estado paralelo.
-- Nuevo KPI principal: **Leídos X de Y · %**.
-- Las tarjetas ahora responden al estado real:
-  - leído → `Abrir ficha`;
-  - leyendo → `Continuar lectura`;
-  - pendiente/abandonado → `Comenzar lectura`;
-  - sin vínculo → `Comenzar lectura` creando/vinculando el libro.
-- Un libro ya leído no puede ser convertido accidentalmente a “leyendo” desde Inventario.
+## Archivos modificados
 
-### 3. Mapa histórico v1
-- Se agregó una nueva pestaña **🕰 Historia** dentro de Mapas.
-- Usa los datos históricos estructurados incorporados en v165.
-- Muestra los libros y sus tramos sobre una línea de tiempo real.
-- Admite años a. C. mediante valores negativos y los presenta como `a. C.` en la interfaz.
-- Cada tramo aparece como barra entre año inicial y final; un hecho puntual aparece como barra mínima.
-- Diferencia visualmente libros leídos, leyendo y pendientes.
-- Permite filtrar por:
-  - línea histórica principal;
-  - estado de lectura.
-- Muestra KPIs de libros históricos, tramos fechados y tramos sin fecha.
-- Los libros históricos sin fechas suficientes quedan listados como **Sin fecha suficiente** en vez de inventar una ubicación temporal.
-- Tocar un tramo abre la ficha del libro.
+- `index.html`
+- `README.md`
 
-## Arquitectura conservada
-- Se mantiene la sincronización Firebase por bloques de v165.
-- Se conserva el exportador y restaurador integral.
-- Se conservan las métricas reconciliadas de lectura.
-- No se modifican Discos, Mangas, Películas, Series ni los mapas existentes de Influencias y Rutas.
+## Módulos conservados
 
-## Pruebas sugeridas
+- Corrección de **Empezar a seguir** de v166.
+- Arquitectura Firebase / sincronización por bloques.
+- Respaldo y restauración integral.
+- Métricas reconciliadas de lectura.
+- Mapa de influencias y escala por influencias originadas.
+- Fichas históricas y mapa de línea de tiempo de Historia.
+- Discos, mangas, películas y series.
+- Reglas semanales y zona horaria de Santiago.
 
-1. Abrir **Inicio → + Lectura en curso**, completar título y pulsar **Empezar a seguir**.
-2. Repetir la prueba con y sin portada y verificar que el modal cierre y el libro aparezca en “Leyendo ahora”.
-3. Probar con un libro pendiente ya existente y confirmar que se actualiza sin duplicarse.
-4. Abrir **Biblioteca → Inventario** y confirmar que ya no aparece Carrito.
-5. Con un inventario de 1 libro leído, verificar **Leídos 1 de 1 · 100%**.
-6. Confirmar que una tarjeta leída no muestre “Comenzar lectura”.
-7. Editar un libro, marcar **Historia** y cargar al menos un período con años inicial/final.
-8. Abrir **Mapas → Historia** y comprobar que el libro aparece en la línea de tiempo.
-9. Probar un tramo a. C., por ejemplo `-480` a `-479`.
-10. Probar filtros por línea histórica y estado de lectura.
+## Validaciones realizadas
+
+- Revisión de sintaxis del JavaScript embebido con `node --check`.
+- Confirmación de versión visible v167.
+- Confirmación de que la etiqueta Inventario conserva el campo `enInventario`.
+- Confirmación de que la vista Inventario reutiliza las tarjetas de Biblioteca.
+- Confirmación de que los KPI ya no aparecen en la vista principal.
+- Confirmación de presencia del modal **Ver datos del inventario**.
+- Confirmación de que el ZIP contiene `index.html` y `README.md`.
+
+## Prueba sugerida
+
+1. Editar un libro y tocar **📦 Inventario** junto a sus géneros.
+2. Guardar y comprobar que aparece el badge de Inventario en Biblioteca.
+3. Abrir **Biblioteca → Inventario** y verificar que el libro se muestra con la misma tarjeta completa que en Libros.
+4. Confirmar que la pantalla principal de Inventario no muestra KPI.
+5. Pulsar **📊 Ver datos del inventario** y comprobar total físico, leídos, ratio, estados, autores, editoriales y géneros.
+6. Desmarcar **📦 Inventario**, guardar y comprobar que el libro desaparece de la pestaña Inventario sin borrarse de Biblioteca.
+7. Guardar en nube y cargar desde otro dispositivo para verificar que el flag se conserva.
