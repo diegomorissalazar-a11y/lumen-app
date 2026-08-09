@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1a1510">
-<title>LUMEN v167 — Biblioteca Personal</title>
+<title>LUMEN v168 — Biblioteca Personal</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231a1510'/><text x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' font-family='Georgia,serif' font-size='14' font-weight='900' font-style='italic' fill='%23c8952a' letter-spacing='0.5'>L</text><rect x='6' y='23' width='20' height='2' rx='1' fill='%238b2020'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
@@ -646,7 +646,9 @@ select.input { cursor: pointer; }
 
 
 /* ── INVENTARIO INTEGRADO v167 ── */
-.inventory-chip {padding:5px 11px;border-radius:20px;border:1.5px solid #b888d8;background:#f7effc;color:#6b3a8a;font-size:11px;font-weight:700;letter-spacing:.5px;cursor:pointer;font-family:var(--font-sans);transition:all .15s}.inventory-chip.active{background:#6b3a8a;color:#fff;border-color:#6b3a8a;box-shadow:0 1px 4px rgba(107,58,138,.22)}.inventory-data-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}.inventory-stat-section{background:#fff;border:1px solid var(--border);border-radius:6px;padding:12px 14px;margin-bottom:10px}.inventory-stat-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--cream2);font-size:12px}.inventory-stat-row:last-child{border-bottom:none}.inventory-stat-name{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.inventory-stat-bar{width:70px;height:5px;background:var(--cream3);border-radius:3px;overflow:hidden}.inventory-stat-bar-fill{height:100%;background:var(--gold);border-radius:3px}@media(max-width:640px){.inventory-data-grid{grid-template-columns:repeat(2,1fr)}}
+.inventory-chip {padding:5px 11px;border-radius:20px;border:1.5px solid #b888d8;background:#f7effc;color:#6b3a8a;font-size:11px;font-weight:700;letter-spacing:.5px;cursor:pointer;font-family:var(--font-sans);transition:all .15s}.inventory-chip.active{background:#6b3a8a;color:#fff;border-color:#6b3a8a;box-shadow:0 1px 4px rgba(107,58,138,.22)}
+.inventory-quick-chip{font-size:9px;border:1px solid #b888d8;border-radius:10px;padding:2px 7px;background:#fff;color:#6b3a8a;font-weight:700;cursor:pointer;font-family:var(--font-sans);white-space:nowrap;line-height:1.35}.inventory-quick-chip.active{background:#6b3a8a;color:#fff;border-color:#6b3a8a}.inventory-quick-chip:active{transform:scale(.98)}
+.map-tabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));border-bottom:2px solid var(--border);background:#fff;width:100%;overflow:hidden;flex-shrink:0}.map-tab-btn{min-width:0;padding:9px 2px 10px;border:none;background:none;font-family:var(--font-sans);font-size:9px;font-weight:700;letter-spacing:.75px;text-transform:uppercase;cursor:pointer;color:var(--ink4);border-bottom:2px solid transparent;margin-bottom:-2px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;line-height:1.12;text-align:center;overflow-wrap:anywhere}.map-tab-btn.active{color:var(--gold);border-bottom-color:var(--gold)}.map-tab-icon{display:block;font-size:16px;line-height:1}.inventory-data-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}.inventory-stat-section{background:#fff;border:1px solid var(--border);border-radius:6px;padding:12px 14px;margin-bottom:10px}.inventory-stat-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--cream2);font-size:12px}.inventory-stat-row:last-child{border-bottom:none}.inventory-stat-name{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.inventory-stat-bar{width:70px;height:5px;background:var(--cream3);border-radius:3px;overflow:hidden}.inventory-stat-bar-fill{height:100%;background:var(--gold);border-radius:3px}@media(max-width:640px){.inventory-data-grid{grid-template-columns:repeat(2,1fr)}.map-tab-btn{font-size:8px;letter-spacing:.45px;padding-left:1px;padding-right:1px}.map-tab-icon{font-size:15px}}
 
 /* ── INVENTARIO FÍSICO v159 ── */
 .inventory-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}.inventory-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}.inventory-card{background:#fff;border:1px solid var(--border);border-radius:6px;padding:12px 14px;margin-bottom:8px;box-shadow:var(--shadow)}.inventory-card-title{font-family:var(--font-serif);font-size:15px;font-weight:700}.inventory-card-sub{font-size:11px;color:var(--ink3);margin-top:3px}.inventory-card-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}.inventory-status{font-size:10px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;padding:3px 7px;border-radius:12px;background:var(--cream2);color:var(--ink3)}.inventory-status.linked{background:#e8f0e8;color:var(--green)}.inventory-status.cart{background:#fff8e8;color:var(--gold)}.inventory-import-row{padding:8px 0;border-bottom:1px solid var(--cream2);font-size:12px}.inventory-import-row:last-child{border-bottom:none}
@@ -1246,26 +1248,21 @@ select.input { cursor: pointer; }
     </div>
   </div>
   <!-- Tabs -->
-  <div style="display:flex;border-bottom:2px solid var(--border);background:#fff;">
-    <button id="mapa-tab-influencias" onclick="switchMapaTab('influencias')"
-      style="flex:1;padding:12px;border:none;background:none;font-family:var(--font-sans);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;color:var(--gold);border-bottom:2px solid var(--gold);margin-bottom:-2px;">
-      🔗 Influencias
+  <div class="map-tabs" id="map-tabs">
+    <button id="mapa-tab-influencias" class="map-tab-btn active" onclick="switchMapaTab('influencias')">
+      <span class="map-tab-icon">🔗</span><span>Influencias</span>
     </button>
-    <button id="mapa-tab-rutas" onclick="switchMapaTab('rutas')"
-      style="flex:1;padding:12px;border:none;background:none;font-family:var(--font-sans);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;color:var(--ink4);border-bottom:2px solid transparent;margin-bottom:-2px;">
-      🗺 Rutas de lectura
+    <button id="mapa-tab-rutas" class="map-tab-btn" onclick="switchMapaTab('rutas')">
+      <span class="map-tab-icon">🗺</span><span>Rutas<br>lectura</span>
     </button>
-    <button id="mapa-tab-peliculas" onclick="switchMapaTab('peliculas')"
-      style="flex:1;padding:12px;border:none;background:none;font-family:var(--font-sans);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;color:var(--ink4);border-bottom:2px solid transparent;margin-bottom:-2px;">
-      🎬 Películas
+    <button id="mapa-tab-peliculas" class="map-tab-btn" onclick="switchMapaTab('peliculas')">
+      <span class="map-tab-icon">🎬</span><span>Películas</span>
     </button>
-    <button id="mapa-tab-historia" onclick="switchMapaTab('historia')"
-      style="flex:1;padding:12px;border:none;background:none;font-family:var(--font-sans);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;color:var(--ink4);border-bottom:2px solid transparent;margin-bottom:-2px;">
-      🕰 Historia
+    <button id="mapa-tab-historia" class="map-tab-btn" onclick="switchMapaTab('historia')">
+      <span class="map-tab-icon">🕰</span><span>Historia</span>
     </button>
-    <button id="mapa-tab-normalizar" onclick="switchMapaTab('normalizar')"
-      style="flex:1;padding:12px;border:none;background:none;font-family:var(--font-sans);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;color:var(--ink4);border-bottom:2px solid transparent;margin-bottom:-2px;">
-      🧹 Normalizar
+    <button id="mapa-tab-normalizar" class="map-tab-btn" onclick="switchMapaTab('normalizar')">
+      <span class="map-tab-icon">🧹</span><span>Normalizar</span>
     </button>
   </div>
 
@@ -2064,7 +2061,7 @@ select.input { cursor: pointer; }
     Cerrar sesión
   </button>
   <div style="padding:8px 16px 10px;border-top:1px solid var(--border);font-size:10px;color:var(--ink4);letter-spacing:1px;text-align:right;">
-    LUMEN v167
+    LUMEN v168
   </div>
 </div>
 
@@ -3349,7 +3346,7 @@ function openReadingConsistencyReport() {
   const rows = auditReadingConsistency();
   const lineas = [];
   lineas.push('═══════════════════════════════════════════════');
-  lineas.push('REVISIÓN DE CONSISTENCIA DE LECTURA — LUMEN v167');
+  lineas.push('REVISIÓN DE CONSISTENCIA DE LECTURA — LUMEN v168');
   lineas.push('Generado: ' + new Date().toLocaleString('es-CL', { timeZone: LUMEN_TZ }));
   lineas.push('═══════════════════════════════════════════════');
   lineas.push('');
@@ -4619,6 +4616,29 @@ function mergeEntryForSafeEdit(prev, next) {
 //  INVENTARIO ↔ BIBLIOTECA (v165)
 // ═══════════════════════════════════
 function bookHasInventoryRecord(bookId) { return loadInventory().some(x => x.linkedEntryId === bookId); }
+function toggleBookInventoryQuick(bookId) {
+  const book=(db.entries||[]).find(e=>e&&e.id===bookId&&e.type==='libro');
+  if(!book){showToast('Libro no encontrado');return;}
+  const inv=loadInventory();
+  const linked=inv.filter(x=>x.linkedEntryId===bookId);
+  const active=!!book.enInventario||linked.length>0;
+  if(active){
+    if(!confirm('¿Quitar este libro de tu inventario físico?')) return;
+    book.enInventario=false;
+    const nextInv=inv.filter(x=>x.linkedEntryId!==bookId);
+    try{saveInventory(nextInv,false);book._updatedAt=Date.now();saveDB();}
+    catch(err){console.error('[LUMEN v168] Quitar inventario:',err);showToast('⚠ No se pudo actualizar el inventario',4000);return;}
+    showToast('✓ Quitado del inventario');
+  }else{
+    book.enInventario=true;
+    book._updatedAt=Date.now();
+    try{saveDB();}
+    catch(err){console.error('[LUMEN v168] Agregar inventario:',err);book.enInventario=false;showToast('⚠ No se pudo actualizar el inventario',4000);return;}
+    showToast('✓ Agregado al inventario');
+  }
+  if(currentScreen==='library') renderLibrary();
+}
+
 function syncInventoryChipState(){const cb=document.getElementById('f-en-inventario'),chip=document.getElementById('f-inventory-chip');if(!cb||!chip)return;chip.classList.toggle('active',!!cb.checked);chip.setAttribute('aria-pressed',cb.checked?'true':'false');chip.title=cb.checked?'Quitar del inventario físico':'Agregar al inventario físico';}
 function toggleInventoryChip(){const cb=document.getElementById('f-en-inventario');if(!cb)return;cb.checked=!cb.checked;syncInventoryChipState();}
 
@@ -5984,8 +6004,10 @@ function entryCardHTML(e) {
     ? `<div class="progress-wrap"><div class="progress-fill" style="width:${e.progreso||0}%"></div></div>` : '';
   const notasBadge = (e.notas_lista && e.notas_lista.length > 0)
     ? `<span style="font-size:10px;color:var(--ink4);margin-left:4px;">📝 ${e.notas_lista.length}</span>` : '';
-  const inventoryBadge = e.type === 'libro' && (e.enInventario || bookHasInventoryRecord(e.id))
-    ? `<span style="font-size:9px;background:#f7effc;border:1px solid #b888d8;border-radius:10px;padding:2px 7px;color:#6b3a8a;font-weight:700;">📦 Inventario</span>` : '';
+  const inventoryBadge = e.type === 'libro' ? (() => {
+    const inInventory = !!e.enInventario || bookHasInventoryRecord(e.id);
+    return `<button class="inventory-quick-chip${inInventory?' active':''}" onclick="event.stopPropagation();toggleBookInventoryQuick('${String(e.id).replace(/\'/g,"\\'")}')" title="${inInventory?'Quitar del inventario físico':'Agregar al inventario físico'}">📦 ${inInventory?'Inventario':'+ Inventario'}</button>`;
+  })() : '';
   const generosHtml = e.type === 'libro' ? (() => {
     const gs = e.generos && e.generos.length > 0 ? e.generos : [];
     const genChips = gs.map(g =>
@@ -9015,7 +9037,7 @@ function saveReadingEntry() {
     // Evita dejar un alta a medias y muestra el error real en pantalla.
     if (created) db.entries = db.entries.filter(e => e.id!==entry.id);
     else if (before) Object.assign(entry,before);
-    console.error('[LUMEN v167] Error al iniciar lectura:', err);
+    console.error('[LUMEN v168] Error al iniciar lectura:', err);
     const msg = err && (err.name==='QuotaExceededError' || /quota/i.test(err.message||''))
       ? 'No se pudo guardar: almacenamiento local lleno'
       : `No se pudo guardar la lectura${err?.message?': '+err.message:''}`;
@@ -10292,7 +10314,11 @@ function switchMapaTab(tab) {
   document.getElementById('mapa-normalizar-panel').style.display  = tab==='normalizar'?'flex':'none';
   ['influencias','rutas','peliculas','historia','normalizar'].forEach(t=>{
     const btn=document.getElementById('mapa-tab-'+t);
-    if(btn){ btn.style.color=t===tab?'var(--gold)':'var(--ink4)'; btn.style.borderBottom=t===tab?'2px solid var(--gold)':'2px solid transparent'; }
+    if(btn){
+      btn.classList.toggle('active', t===tab);
+      btn.style.color=t===tab?'var(--gold)':'var(--ink4)';
+      btn.style.borderBottom=t===tab?'2px solid var(--gold)':'2px solid transparent';
+    }
   });
   if (tab==='influencias') renderMapaInfluencias();
   else if (tab==='rutas') renderMapaRutas();
@@ -13607,7 +13633,7 @@ function startInventoryReading(id){
   if(!book){book={id:'inv_book_'+Date.now(),type:'libro',titulo:item.titulo,autor:item.autor||'',editorial:item.editorial||'',estado:'leyendo',progreso:0,readDates:[],cover:'',notas:'',enInventario:true,startDate:new Date().toISOString(),_updatedAt:Date.now()};db.entries.push(book);}
   else{book.estado='leyendo';book.enInventario=true;book.startDate=book.startDate||new Date().toISOString();book._updatedAt=Date.now();if(!book.editorial&&item.editorial)book.editorial=item.editorial;}
   item.linkedEntryId=book.id;item._updatedAt=Date.now();
-  try{localStorage.setItem(INVENTORY_KEY,JSON.stringify(inv));saveDB();}catch(err){console.error('[LUMEN v167] Inventario → lectura:',err);showToast('⚠ No se pudo iniciar la lectura: '+(err.message||'error local'),4500);return;}
+  try{localStorage.setItem(INVENTORY_KEY,JSON.stringify(inv));saveDB();}catch(err){console.error('[LUMEN v168] Inventario → lectura:',err);showToast('⚠ No se pudo iniciar la lectura: '+(err.message||'error local'),4500);return;}
   renderInventory();renderHome();showToast('✓ Libro agregado a Leyendo ahora');
 }
 function openInventoryImport(){inventoryImportPending=[];document.getElementById('inventory-import-preview').innerHTML='';document.getElementById('inventory-import-confirm').style.display='none';document.getElementById('inventory-csv-input').value='';openModal('modal-inventory-import');}
@@ -13781,11 +13807,11 @@ async function syncToFirestore() {
     const result = await writeCloudV162(currentUser.uid);
     setSyncStatus('ok');
     setLastSync();
-    console.info('[LUMEN v167] Sync V2 OK', result);
+    console.info('[LUMEN v168] Sync V2 OK', result);
     return result;
   } catch(e) {
     setSyncStatus('offline');
-    console.error('[LUMEN v167] Sync V2 error:', e.code || '', e.message, e);
+    console.error('[LUMEN v168] Sync V2 error:', e.code || '', e.message, e);
     throw e;
   }
 }
@@ -13816,7 +13842,7 @@ async function manualSaveToCloud() {
   } catch(e) {
     setSyncStatus('offline');
     showToast(`⚠ Error al guardar: ${e.message}`, 5000);
-    console.error('[LUMEN v167] manualSave error:', e);
+    console.error('[LUMEN v168] manualSave error:', e);
   }
 }
 
@@ -13836,7 +13862,7 @@ async function pullAndMerge(uid, silent) {
     renderHome();
   } catch(e) {
     setSyncStatus('offline');
-    console.error('[LUMEN v167] pull error:', e);
+    console.error('[LUMEN v168] pull error:', e);
     if (!silent) showToast(`⚠ Error al cargar: ${e.message}`, 4500);
   }
 }
@@ -13866,11 +13892,11 @@ function subscribeToFirestore(uid) {
       setSyncStatus('ok');
       renderHome();
     } catch(e) {
-      console.warn('[LUMEN v167] snapshot error:', e.message);
+      console.warn('[LUMEN v168] snapshot error:', e.message);
     }
   }, e => {
     setSyncStatus('offline');
-    console.warn('[LUMEN v167] listener error:', e.message);
+    console.warn('[LUMEN v168] listener error:', e.message);
   });
 }
 
@@ -13887,7 +13913,7 @@ window.lumenSyncDiagnostico = function() {
     usuario:currentUser ? currentUser.uid : null
   };
   console.table(report);
-  console.info('[LUMEN v167] Diagnóstico completo', report);
+  console.info('[LUMEN v168] Diagnóstico completo', report);
   return report;
 };
 
