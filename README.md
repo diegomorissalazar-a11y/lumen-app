@@ -1,17 +1,18 @@
-# LUMEN v168 — Acceso rápido a Inventario y navegación de Mapas
+# LUMEN v169 — Sincronización completa de campos entre dispositivos
 
-**Fecha:** 8 de agosto de 2026
+**Fecha:** 15 de agosto de 2026
 
 ## Cambios aplicados
 
-- En **Biblioteca → Libros**, cada tarjeta de libro muestra ahora un chip accionable de inventario:
-  - `📦 + Inventario` cuando el libro no forma parte del inventario físico.
-  - `📦 Inventario` cuando ya está marcado.
-- Un toque en `+ Inventario` agrega el mismo registro de libro al inventario físico, sin abrir modales, sin duplicarlo y sin modificar su estado de lectura.
-- Al quitar un libro del inventario se solicita confirmación para evitar eliminaciones accidentales.
-- El estado de lectura (`Leído`, `Leyendo`, `Pendiente`, etc.) se mantiene en el mismo registro y continúa alimentando los datos del inventario.
-- Se corrigió la barra de navegación de **Mapas** para las cinco pestañas: Influencias, Rutas, Películas, Historia y Normalizar.
-- En móvil, las cinco pestañas usan una grilla de ancho fijo al viewport, icono y etiqueta compacta; **Normalizar ya no se desplaza fuera de pantalla**.
+- Se corrigió el merge de entradas entre teléfono y computador para que no dependa de una lista fija de campos.
+- La entrada más reciente ahora transmite todos sus campos, incluidos los incorporados en versiones posteriores.
+- Se sincroniza correctamente el flag `enInventario`, por lo que los libros marcados desde Biblioteca en el teléfono aparecen también en Inventario del computador.
+- Se sincroniza el objeto `historia` completo, incluidos línea histórica, ámbito y períodos.
+- Los valores válidos `false`, `0`, cadenas vacías y arreglos vacíos pueden propagarse cuando representan una edición real; esto permite, por ejemplo, quitar un libro del inventario desde otro dispositivo.
+- Se mantiene fusión especial para `readDates` y `notas_lista` para no perder historial acumulativo.
+- Se mantiene protección contra retrocesos accidentales de progreso por página al fusionar historiales.
+- El diagnóstico manual de diferencias ahora contempla `enInventario` e `historia`.
+- El manifest y diagnóstico de sincronización informan versión v169.
 
 ## Archivos modificados
 
@@ -20,29 +21,29 @@
 
 ## Módulos no modificados
 
-- Autenticación y login.
-- Arquitectura Firebase por bloques.
-- Restauración y exportación integral.
+- Login y autenticación.
+- Estructura Firestore V2 por bloques.
+- Diseño de Biblioteca e Inventario.
+- Mapa de influencias, rutas, películas e Historia.
 - Métricas de lectura.
-- Línea de tiempo histórica y sus datos.
-- Influencias, rutas y mapas en su lógica interna.
 - Discos y mangas.
 - Reglas semanales y zona horaria.
 
 ## Validaciones realizadas
 
-- Revisión de sintaxis del JavaScript embebido con `node --check`.
-- Confirmación de versión visible `v168`.
-- Confirmación de acción rápida `📦 + Inventario` en tarjetas de libros.
-- Confirmación de que la acción no crea un segundo registro de Biblioteca.
-- Confirmación de layout responsive de cinco pestañas en Mapas sin ancho mínimo que fuerce desbordamiento.
-- Confirmación de presencia de `index.html` y `README.md` en el ZIP.
+- Revisión de sintaxis de todo el JavaScript embebido mediante `node --check`.
+- Confirmación de versión visible v169.
+- Confirmación de `appVersion: v169` en manifest V2.
+- Revisión del merge para propagación de `enInventario: true` y `enInventario: false`.
+- Revisión del merge para propagación del objeto `historia` y de campos futuros no predefinidos.
+- Confirmación de conservación de la fusión acumulativa de `readDates` y `notas_lista`.
 
 ## Prueba sugerida
 
-1. Abrir **Biblioteca → Libros** y localizar un libro leído que no esté en inventario.
-2. Pulsar `📦 + Inventario` directamente en su tarjeta.
-3. Confirmar que el chip cambia a `📦 Inventario` y que el libro aparece en la pestaña Inventario conservando su estado `Leído`.
-4. Abrir **Mapas** en el teléfono y recorrer las cinco pestañas.
-5. Confirmar que `Normalizar` queda completamente visible y alineado dentro del ancho de pantalla.
-6. Guardar en nube y comprobar en otro dispositivo que el flag de inventario se conserva.
+1. En el teléfono, pulsar **Guardar en nube** y confirmar que finaliza correctamente.
+2. En el computador, pulsar **Cargar desde nube**.
+3. Abrir Biblioteca → Inventario y comprobar que el total coincide con el teléfono (en la prueba reportada: 104 libros físicos, 101 leídos y 3 leyendo).
+4. Marcar un libro nuevo como **+ Inventario** en el computador y guardar en nube.
+5. Cargar en el teléfono y confirmar que aparece marcado allí.
+6. Quitar un libro del inventario en uno de los dispositivos, guardar/cargar y confirmar que también se quita en el otro.
+7. Editar un libro de Historia con un período, sincronizar y verificar el mismo contenido en el segundo dispositivo.
