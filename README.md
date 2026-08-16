@@ -1,49 +1,69 @@
-# LUMEN v169 — Sincronización completa de campos entre dispositivos
+# LUMEN v170 — Modelo canónico de libros, citas e Historia
 
 **Fecha:** 15 de agosto de 2026
 
 ## Cambios aplicados
 
-- Se corrigió el merge de entradas entre teléfono y computador para que no dependa de una lista fija de campos.
-- La entrada más reciente ahora transmite todos sus campos, incluidos los incorporados en versiones posteriores.
-- Se sincroniza correctamente el flag `enInventario`, por lo que los libros marcados desde Biblioteca en el teléfono aparecen también en Inventario del computador.
-- Se sincroniza el objeto `historia` completo, incluidos línea histórica, ámbito y períodos.
-- Los valores válidos `false`, `0`, cadenas vacías y arreglos vacíos pueden propagarse cuando representan una edición real; esto permite, por ejemplo, quitar un libro del inventario desde otro dispositivo.
-- Se mantiene fusión especial para `readDates` y `notas_lista` para no perder historial acumulativo.
-- Se mantiene protección contra retrocesos accidentales de progreso por página al fusionar historiales.
-- El diagnóstico manual de diferencias ahora contempla `enInventario` e `historia`.
-- El manifest y diagnóstico de sincronización informan versión v169.
+- Se consolidó la ficha de **Libro** como fuente canónica para los módulos de LUMEN.
+- Cada libro incorpora referencias canónicas estables para:
+  - autor (`autorId` / `autorIds`);
+  - editorial (`editorialId`);
+  - esquema de libro (`_canonicalModel`).
+- Los IDs canónicos son determinísticos: una misma forma normalizada de autor o editorial produce el mismo identificador en Biblioteca, Inventario, Mapas y sincronización.
+- Se agregaron a la ficha de libro los datos bibliográficos **Edición** y **Ciudad / lugar de publicación**.
+- Los mismos datos están disponibles al iniciar una **Lectura en curso**, para que el libro creado desde Seguimiento mantenga la misma ficha bibliográfica.
+- Las relaciones de **Influencias** ahora almacenan referencias estables cuando pueden resolverse contra Biblioteca:
+  - `fuente_autor_id`;
+  - `fuente_libro_id`;
+  - `destino_autor_id`;
+  - `destino_libro_id`;
+  - `evidencia_libro_id`;
+  - `editorial_id`.
+- La referencia ISO 690 de una influencia se genera desde el **libro leído / libro evidencia** seleccionado como destino, reutilizando autor, título, editorial, año, edición y lugar de publicación de su ficha de Biblioteca.
+- Editorial, año, edición y ciudad del bloque ISO pasan a ser datos derivados de Biblioteca y ya no una segunda fuente editable dentro de Influencias.
+- Se eliminó el autocompletado incorrecto que tomaba la editorial/año del primer libro disponible del autor citado.
+- Las relaciones antiguas se normalizan de forma compatible al cargarse: si LUMEN puede identificar el libro de evidencia, vincula sus IDs y actualiza la bibliografía canónica sin eliminar los campos históricos de la relación.
+- Las Rutas conservan el formato anterior, pero agregan `fuente_libro_id` y `destino_libro_id` cuando sus nodos corresponden a libros de Biblioteca.
+- El objeto `historia` queda identificado con el esquema `lumen_historia_v1` y continúa perteneciendo al mismo registro canónico del libro.
+- La normalización canónica se ejecuta también al hacer merge y antes de guardar/sincronizar, manteniendo compatibilidad con el modelo por bloques de Firestore de v169.
 
 ## Archivos modificados
 
 - `index.html`
 - `README.md`
 
-## Módulos no modificados
+## Módulos no modificados funcionalmente
 
 - Login y autenticación.
-- Estructura Firestore V2 por bloques.
-- Diseño de Biblioteca e Inventario.
-- Mapa de influencias, rutas, películas e Historia.
+- Arquitectura Firebase por bloques.
+- Inventario y su ratio de lectura.
 - Métricas de lectura.
 - Discos y mangas.
-- Reglas semanales y zona horaria.
+- Visual de Historia y Gephi, salvo que ahora consumen datos con referencias canónicas cuando están disponibles.
+- Reglas semanales y zona horaria de Santiago.
+
+## Compatibilidad
+
+- Se mantienen los campos de texto existentes (`autor`, `editorial`, `fuente`, `destino`, `libro_ref`) para que datos, exportaciones y relaciones antiguas sigan funcionando.
+- Los nuevos IDs se agregan como referencias estables; no se eliminan datos previos.
+- El merge extensible de v169 continúa conservando `enInventario`, `historia` y futuros campos de la ficha.
 
 ## Validaciones realizadas
 
-- Revisión de sintaxis de todo el JavaScript embebido mediante `node --check`.
-- Confirmación de versión visible v169.
-- Confirmación de `appVersion: v169` en manifest V2.
-- Revisión del merge para propagación de `enInventario: true` y `enInventario: false`.
-- Revisión del merge para propagación del objeto `historia` y de campos futuros no predefinidos.
-- Confirmación de conservación de la fusión acumulativa de `readDates` y `notas_lista`.
+- Revisión de sintaxis de todo el JavaScript embebido con `node --check`.
+- Confirmación de versión visible v170.
+- Confirmación de campos Edición y Ciudad / lugar de publicación en alta/edición de libro y Lectura en curso.
+- Confirmación de generación de IDs canónicos para autores, editoriales y libros vinculados en Influencias.
+- Confirmación de referencia ISO derivada del libro destino/evidencia.
+- Confirmación de que `historia` sigue dentro de la entrada del libro y recibe `schema: lumen_historia_v1`.
+- Confirmación de normalización canónica durante merge y guardado V2.
 
 ## Prueba sugerida
 
-1. En el teléfono, pulsar **Guardar en nube** y confirmar que finaliza correctamente.
-2. En el computador, pulsar **Cargar desde nube**.
-3. Abrir Biblioteca → Inventario y comprobar que el total coincide con el teléfono (en la prueba reportada: 104 libros físicos, 101 leídos y 3 leyendo).
-4. Marcar un libro nuevo como **+ Inventario** en el computador y guardar en nube.
-5. Cargar en el teléfono y confirmar que aparece marcado allí.
-6. Quitar un libro del inventario en uno de los dispositivos, guardar/cargar y confirmar que también se quita en el otro.
-7. Editar un libro de Historia con un período, sincronizar y verificar el mismo contenido en el segundo dispositivo.
+1. Editar un libro existente y completar editorial, año, edición y ciudad/lugar de publicación.
+2. Guardarlo y volver a abrir la ficha para verificar los datos.
+3. Crear o editar una influencia usando ese libro como **Libro influido / destino**.
+4. Verificar que la vista previa ISO muestre automáticamente la bibliografía del libro leído y que editorial/año/edición/ciudad no deban escribirse otra vez en Influencias.
+5. Guardar la relación y volver a abrir su detalle.
+6. Probar el mismo libro en móvil y computador mediante Guardar/Cargar desde nube y verificar que autor/editorial, inventario e Historia coincidan.
+7. Editar un libro de Historia, cambiar un período y confirmar que el cambio aparece en el otro dispositivo y en la línea de tiempo.

@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1a1510">
-<title>LUMEN v169 — Biblioteca Personal</title>
+<title>LUMEN v170 — Biblioteca Personal</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231a1510'/><text x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' font-family='Georgia,serif' font-size='14' font-weight='900' font-style='italic' fill='%23c8952a' letter-spacing='0.5'>L</text><rect x='6' y='23' width='20' height='2' rx='1' fill='%238b2020'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
@@ -1714,25 +1714,26 @@ select.input { cursor: pointer; }
             placeholder="Título de la obra (si no está en biblioteca)..."
             style="display:none;">
         </div>
-        <!-- Campos ISO: editorial, año, edición, ciudad -->
+        <!-- Referencia ISO: datos canónicos del libro leído / evidencia -->
+        <div style="font-size:10px;color:var(--ink4);line-height:1.45;margin:2px 0 8px;">La referencia ISO se genera desde la ficha canónica del libro destino. Si un dato está incorrecto, corrígelo en Biblioteca.</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
           <div class="field" style="margin-bottom:0;">
             <label>Editorial</label>
-            <input class="input" type="text" id="inf-editorial" placeholder="Editorial...">
+            <input class="input" type="text" id="inf-editorial" placeholder="Desde ficha del libro" readonly>
           </div>
           <div class="field" style="margin-bottom:0;">
             <label>Año de publicación</label>
-            <input class="input" type="text" id="inf-anio-pub" placeholder="1949">
+            <input class="input" type="text" id="inf-anio-pub" placeholder="Desde ficha del libro" readonly>
           </div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
           <div class="field" style="margin-bottom:0;">
             <label>Ciudad</label>
-            <input class="input" type="text" id="inf-ciudad" placeholder="Londres...">
+            <input class="input" type="text" id="inf-ciudad" placeholder="Desde ficha del libro" readonly>
           </div>
           <div class="field" style="margin-bottom:0;">
             <label>Edición</label>
-            <input class="input" type="text" id="inf-edicion" placeholder="2ª ed.">
+            <input class="input" type="text" id="inf-edicion" placeholder="Desde ficha del libro" readonly>
           </div>
         </div>
         <!-- Ubicación de la cita -->
@@ -1822,7 +1823,7 @@ select.input { cursor: pointer; }
       <!-- 4. Destino — el libro influido (cualquier estado) -->
       <div class="field">
         <label>Libro influido / destino</label>
-        <select class="input" id="inf-destino-sel">
+        <select class="input" id="inf-destino-sel" onchange="onInfDestinoSelChange()">
           <option value="">— Selecciona el libro —</option>
         </select>
       </div>
@@ -2061,7 +2062,7 @@ select.input { cursor: pointer; }
     Cerrar sesión
   </button>
   <div style="padding:8px 16px 10px;border-top:1px solid var(--border);font-size:10px;color:var(--ink4);letter-spacing:1px;text-align:right;">
-    LUMEN v169
+    LUMEN v170
   </div>
 </div>
 
@@ -2137,6 +2138,10 @@ select.input { cursor: pointer; }
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
           <div class="field"><label>Páginas</label><input class="input" type="number" id="f-paginas" min="1"></div>
           <div class="field"><label>Año publicación</label><input class="input" type="number" id="f-anio-pub"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="field"><label>Edición</label><input class="input" type="text" id="f-edicion" placeholder="Ej: 2ª ed. / edición digital"></div>
+          <div class="field"><label>Ciudad / lugar de publicación</label><input class="input" type="text" id="f-ciudad-pub" placeholder="Ej: Santiago, Madrid"></div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
           <div class="field"><label>Traductor</label><input class="input" type="text" id="f-traductor"></div>
@@ -2662,6 +2667,10 @@ select.input { cursor: pointer; }
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
         <div class="field"><label>Páginas totales</label><input class="input" type="number" id="reading-paginas" min="1" placeholder="300"></div>
         <div class="field"><label>Año publicación</label><input class="input" type="number" id="reading-anio-pub"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div class="field"><label>Edición</label><input class="input" type="text" id="reading-edicion" placeholder="Ej: edición digital"></div>
+        <div class="field"><label>Ciudad / lugar publicación</label><input class="input" type="text" id="reading-ciudad-pub" placeholder="Ej: Santiago"></div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
         <div class="field"><label>Traductor</label><input class="input" type="text" id="reading-traductor"></div>
@@ -3346,7 +3355,7 @@ function openReadingConsistencyReport() {
   const rows = auditReadingConsistency();
   const lineas = [];
   lineas.push('═══════════════════════════════════════════════');
-  lineas.push('REVISIÓN DE CONSISTENCIA DE LECTURA — LUMEN v169');
+  lineas.push('REVISIÓN DE CONSISTENCIA DE LECTURA — LUMEN v170');
   lineas.push('Generado: ' + new Date().toLocaleString('es-CL', { timeZone: LUMEN_TZ }));
   lineas.push('═══════════════════════════════════════════════');
   lineas.push('');
@@ -3390,6 +3399,114 @@ function stampEntry(entry) {
   return entry;
 }
 
+// ═══════════════════════════════════
+//  MODELO CANÓNICO — libros / autores / editoriales (v170)
+// ═══════════════════════════════════
+function canonicalText(value) {
+  return String(value || '').trim().toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/[’‘`´]/g,"'").replace(/\s+/g,' ');
+}
+function canonicalEntityId(prefix, value) {
+  const norm = canonicalText(value);
+  if (!norm) return '';
+  let h = 2166136261;
+  for (let i=0;i<norm.length;i++) { h ^= norm.charCodeAt(i); h = Math.imul(h,16777619); }
+  const slug = norm.replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'').slice(0,42) || 'item';
+  return `${prefix}_${slug}_${(h>>>0).toString(36)}`;
+}
+function splitCanonicalAuthors(value) {
+  return String(value || '').split(/\s*;\s*/).map(x=>x.trim()).filter(Boolean);
+}
+function ensureBookCanonicalRefs(entry) {
+  if (!entry || entry.type !== 'libro') return entry;
+  const authors = splitCanonicalAuthors(entry.autor);
+  entry.autorIds = authors.map(a=>canonicalEntityId('aut',a)).filter(Boolean);
+  entry.autorId = entry.autorIds[0] || '';
+  entry.editorialId = entry.editorial ? canonicalEntityId('edi',entry.editorial) : '';
+  entry._canonicalModel = 'lumen_book_v1';
+  if (entry.historia && typeof entry.historia === 'object') {
+    entry.historia.schema = entry.historia.schema || 'lumen_historia_v1';
+  }
+  return entry;
+}
+function findBookCanonicalById(id) {
+  return (db.entries||[]).find(e=>e && e.type==='libro' && e.id===id) || null;
+}
+function findBookCanonicalByTitle(title, author='') {
+  const nt=canonicalText(title), na=canonicalText(author);
+  if (!nt) return null;
+  const candidates=(db.entries||[]).filter(e=>e&&e.type==='libro'&&canonicalText(e.titulo)===nt);
+  if (!na) return candidates[0]||null;
+  return candidates.find(e=>splitCanonicalAuthors(e.autor).some(a=>canonicalText(a)===na)) || candidates[0] || null;
+}
+function getSelectedOptionData(selectId, key) {
+  const sel=document.getElementById(selectId); if(!sel) return '';
+  const opt=sel.options && sel.selectedIndex>=0 ? sel.options[sel.selectedIndex] : null;
+  return opt?.dataset?.[key] || '';
+}
+function getInfluenceEvidenceBook() {
+  const id=getSelectedOptionData('inf-destino-sel','entryId');
+  return findBookCanonicalById(id) || findBookCanonicalByTitle(document.getElementById('inf-destino-sel')?.value || '');
+}
+function getInfluenceSourceBook() {
+  const id=getSelectedOptionData('inf-obra-sel','entryId');
+  if (id) return findBookCanonicalById(id);
+  return findBookCanonicalByTitle(getInfObra(), getInfFuente());
+}
+function canonicalBookBibliography(book) {
+  if (!book) return {autor:'',titulo:'',editorial:'',anio:'',ciudad:'',edicion:''};
+  return {
+    autor: book.autor || '', titulo: book.titulo || '', editorial: book.editorial || '',
+    anio: book.anio_pub || '', ciudad: book.ciudad_publicacion || book.ciudad || '', edicion: book.edicion || ''
+  };
+}
+function ensureInfluenceCanonicalRefs(inf) {
+  if (!inf) return inf;
+  const sourceBook = inf.fuente_libro_id ? findBookCanonicalById(inf.fuente_libro_id) : findBookCanonicalByTitle(inf.obra, inf.fuente);
+  const evidenceBook = inf.evidencia_libro_id ? findBookCanonicalById(inf.evidencia_libro_id) :
+    (inf.destino_libro_id ? findBookCanonicalById(inf.destino_libro_id) : findBookCanonicalByTitle(inf.libro_ref || inf.destino_titulo));
+  inf.fuente_autor_id = inf.fuente_autor_id || canonicalEntityId('aut', inf.fuente);
+  if (sourceBook) {
+    ensureBookCanonicalRefs(sourceBook);
+    inf.fuente_libro_id = sourceBook.id;
+    inf.fuente_autor_id = sourceBook.autorId || inf.fuente_autor_id;
+    inf.fuente = sourceBook.autor || inf.fuente;
+    inf.obra = sourceBook.titulo || inf.obra;
+  }
+  if (evidenceBook) {
+    ensureBookCanonicalRefs(evidenceBook);
+    const bib=canonicalBookBibliography(evidenceBook);
+    inf.destino_libro_id = evidenceBook.id;
+    inf.evidencia_libro_id = evidenceBook.id;
+    inf.destino_autor_id = evidenceBook.autorId || canonicalEntityId('aut', evidenceBook.autor);
+    inf.editorial_id = evidenceBook.editorialId || canonicalEntityId('edi', evidenceBook.editorial);
+    inf.libro_ref = evidenceBook.titulo || inf.libro_ref;
+    inf.destino_titulo = evidenceBook.titulo || inf.destino_titulo;
+    inf.destino_autor = evidenceBook.autor || inf.destino_autor;
+    inf.destino = evidenceBook.autor || inf.destino;
+    inf.editorial = bib.editorial || '';
+    inf.anio_pub = bib.anio || '';
+    inf.ciudad = bib.ciudad || '';
+    inf.edicion = bib.edicion || '';
+  }
+  inf._canonicalModel = 'lumen_influence_v1';
+  return inf;
+}
+function normalizeMapasCanonical(input) {
+  const m=input || {influencias:[],rutas:[]};
+  m.influencias=(m.influencias||[]).map(ensureInfluenceCanonicalRefs);
+  // Las rutas conservan texto por compatibilidad, pero referencian libros cuando es posible.
+  m.rutas=(m.rutas||[]).map(r=>{
+    if(!r) return r;
+    const f=findBookCanonicalByTitle(r.fuente), d=findBookCanonicalByTitle(r.destino);
+    if(f) r.fuente_libro_id=f.id;
+    if(d) r.destino_libro_id=d.id;
+    return r;
+  });
+  return m;
+}
+
 function mergeEntries(local, remote) {
   const normalizeEntry = e => {
     if (e.type) {
@@ -3408,6 +3525,7 @@ function mergeEntries(local, remote) {
       if (m) e.temporadas = parseInt(m[0]);
     }
     normalizeBookReadingFields(e, { stamp:false, source:'merge' });
+    ensureBookCanonicalRefs(e);
     return e;
   };
 
@@ -3430,7 +3548,7 @@ function mergeEntries(local, remote) {
     return `${base}||${e.anio||''}`;
   };
 
-  // v169 — merge extensible: la entrada más reciente gana TODOS sus campos,
+  // v170 — merge extensible: la entrada más reciente gana TODOS sus campos,
   // incluidos los agregados en versiones futuras (p. ej. enInventario e historia).
   // Solo aplicamos una fusión especial donde realmente existe historial acumulativo.
   const mergeTwo = (winner, loser) => {
@@ -3990,6 +4108,7 @@ function subscribeToFirestore(uid) {
 }
 
 let db = loadDB();
+(db.entries||[]).forEach(ensureBookCanonicalRefs);
 
 // ═══════════════════════════════════
 //  NAVIGATION
@@ -4099,7 +4218,7 @@ function selectType(type, btn) {
 }
 
 function resetForm() {
-  ['f-titulo','f-autor','f-editorial','f-paginas','f-anio-pub','f-traductor','f-idioma','f-cover','f-notas','f-origen-adq','f-fecha-adq',
+  ['f-titulo','f-autor','f-editorial','f-paginas','f-anio-pub','f-edicion','f-ciudad-pub','f-traductor','f-idioma','f-cover','f-notas','f-origen-adq','f-fecha-adq',
    'fp-titulo','fp-director','fp-anio-est','fp-duracion','fp-foto','fp-musica','fp-protagonista','fp-guionista','fp-cover','fp-elenco','fp-productora',
    'fs-titulo','fs-director','fs-anio-est','fs-duracion','fs-caps-por-temp','fs-min-episodio','fs-musica','fs-protagonista','fs-guionista','fs-cover','fs-elenco',
    'fd-titulo','fd-artista','fd-anio-pub','fd-productor','fd-discografica','fd-musicos','fd-colaboraciones','fd-mes','fd-anio-escuchado','fd-cover']
@@ -4187,6 +4306,7 @@ function getHistoriaFromForm() {
     return {nombre:val('.hp-nombre'),tema:val('.hp-tema'),inicio:num('.hp-inicio'),fin:num('.hp-fin'),precision:val('.hp-precision')||'aproximada',cobertura:val('.hp-cobertura')||'periodo'};
   }).filter(p=>p.nombre||p.tema||p.inicio!==null||p.fin!==null);
   return {
+    schema: 'lumen_historia_v1',
     lineaPrincipal: document.getElementById('hist-linea-principal')?.value?.trim() || '',
     lineasRelacionadas: (document.getElementById('hist-lineas-relacionadas')?.value||'').split(',').map(x=>x.trim()).filter(Boolean),
     ambitoGeografico: document.getElementById('hist-ambito')?.value?.trim() || '',
@@ -4619,13 +4739,13 @@ function toggleBookInventoryQuick(bookId) {
     book.enInventario=false;
     const nextInv=inv.filter(x=>x.linkedEntryId!==bookId);
     try{saveInventory(nextInv,false);book._updatedAt=Date.now();saveDB();}
-    catch(err){console.error('[LUMEN v169] Quitar inventario:',err);showToast('⚠ No se pudo actualizar el inventario',4000);return;}
+    catch(err){console.error('[LUMEN v170] Quitar inventario:',err);showToast('⚠ No se pudo actualizar el inventario',4000);return;}
     showToast('✓ Quitado del inventario');
   }else{
     book.enInventario=true;
     book._updatedAt=Date.now();
     try{saveDB();}
-    catch(err){console.error('[LUMEN v169] Agregar inventario:',err);book.enInventario=false;showToast('⚠ No se pudo actualizar el inventario',4000);return;}
+    catch(err){console.error('[LUMEN v170] Agregar inventario:',err);book.enInventario=false;showToast('⚠ No se pudo actualizar el inventario',4000);return;}
     showToast('✓ Agregado al inventario');
   }
   if(currentScreen==='library') renderLibrary();
@@ -4661,6 +4781,8 @@ function saveEntry() {
     entry = { ...entry, titulo, autor: document.getElementById('f-autor').value, editorial: document.getElementById('f-editorial').value,
       paginas: parseInt(document.getElementById('f-paginas').value) || 0,
       anio_pub: parseInt(document.getElementById('f-anio-pub').value) || (editingId ? (db.entries.find(e=>e.id===editingId)||{}).anio_pub||null : null),
+      edicion: document.getElementById('f-edicion')?.value?.trim() || '',
+      ciudad_publicacion: document.getElementById('f-ciudad-pub')?.value?.trim() || '',
       traductor: document.getElementById('f-traductor').value,
       idioma: getIdiomaValueFromForm(),
       mes: document.getElementById('f-mes').value,
@@ -4724,6 +4846,7 @@ function saveEntry() {
       anio: parseInt(document.getElementById('fs-anio-visto').value) || new Date().getFullYear(),
       cover: document.getElementById('fs-cover').value };
   }
+  if (entry.type === 'libro') ensureBookCanonicalRefs(entry);
   if (editingId) {
     entry._updatedAt = Date.now();
     const idx = db.entries.findIndex(e => e.id === editingId);
@@ -6050,7 +6173,7 @@ function showDetail(id) {
   const row = (label, val) => val ? `<div style="display:flex;gap:8px;padding:7px 0;border-bottom:1px solid var(--cream2);"><span style="font-size:10px;color:var(--ink4);letter-spacing:1.5px;text-transform:uppercase;font-weight:700;width:110px;flex-shrink:0;padding-top:2px;">${label}</span><span style="font-size:14px;color:var(--ink2);">${esc(val)}</span></div>` : '';
   if (coverUrl(e)) html += `<img src="${esc(coverUrl(e))}" style="width:80px;height:110px;object-fit:cover;border-radius:3px;float:right;margin:0 0 12px 12px;" onerror="this.style.display='none'">`;
   if (e.type === 'libro') {
-    html += row('Autor', e.autor) + row('Editorial', e.editorial) + row('Páginas', e.paginas) + row('Publicado', e.anio_pub) + row('Traductor', e.traductor) + row('Idioma orig.', e.idioma) + row('Leído', `${e.mes||''} ${e.anio||''}`);
+    html += row('Autor', e.autor) + row('Editorial', e.editorial) + row('Edición', e.edicion) + row('Ciudad / lugar pub.', e.ciudad_publicacion||e.ciudad) + row('Páginas', e.paginas) + row('Publicado', e.anio_pub) + row('Traductor', e.traductor) + row('Idioma orig.', e.idioma) + row('Leído', `${e.mes||''} ${e.anio||''}`);
     html += row('Origen', origenAdquisicionLabel(e.origen_adquisicion));
     html += row('Adquirido', e.fecha_adquisicion ? fechaCL(e.fecha_adquisicion) : '');
     const espera = libroEsperaInfo(e);
@@ -6328,6 +6451,8 @@ function editEntry(id) {
       // (parseInt evita mostrar null/undefined, pero preserva 0 como vacío)
       const anioPublEl = document.getElementById('f-anio-pub');
       if (anioPublEl) anioPublEl.value = (e.anio_pub && parseInt(e.anio_pub) > 0) ? parseInt(e.anio_pub) : '';
+      const edicionEl=document.getElementById('f-edicion'); if(edicionEl) edicionEl.value=e.edicion||'';
+      const ciudadPubEl=document.getElementById('f-ciudad-pub'); if(ciudadPubEl) ciudadPubEl.value=e.ciudad_publicacion||e.ciudad||'';
       // Mostrar preview de portada si existe
       if (coverUrl(e)) { document.getElementById('f-cover').value = coverUrl(e); previewMainCover('f-cover','f-cover-preview'); }
       // Idioma: populate dynamic select
@@ -8953,7 +9078,7 @@ function fillReadingIdiomaList() {
 function openReadingModal() {
   // Limpiar todos los campos antes de abrir
   ['reading-titulo','reading-autor','reading-editorial',
-   'reading-paginas','reading-anio-pub','reading-traductor','reading-idioma','reading-cover']
+   'reading-paginas','reading-anio-pub','reading-edicion','reading-ciudad-pub','reading-traductor','reading-idioma','reading-cover']
     .forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
   document.getElementById('reading-cover-preview').innerHTML = '';
   // Pre-poblar datalists con datos de la biblioteca
@@ -9005,6 +9130,8 @@ function saveReadingEntry() {
     editorial: val('reading-editorial').trim() || entry.editorial || '',
     paginas: paginas || entry.paginas || 0,
     anio_pub: parseInt(val('reading-anio-pub')) || entry.anio_pub || null,
+    edicion: val('reading-edicion').trim() || entry.edicion || '',
+    ciudad_publicacion: val('reading-ciudad-pub').trim() || entry.ciudad_publicacion || entry.ciudad || '',
     traductor: val('reading-traductor').trim() || entry.traductor || '',
     idioma: val('reading-idioma').trim() || entry.idioma || '',
     cover: val('reading-cover').trim() || entry.cover || '',
@@ -9015,6 +9142,8 @@ function saveReadingEntry() {
     startDate: entry.startDate || new Date().toISOString(),
     _updatedAt: now
   });
+
+  ensureBookCanonicalRefs(entry);
 
   // Si estaba marcado en inventario, conservar y reforzar el vínculo físico.
   if (entry.enInventario) {
@@ -9029,7 +9158,7 @@ function saveReadingEntry() {
     // Evita dejar un alta a medias y muestra el error real en pantalla.
     if (created) db.entries = db.entries.filter(e => e.id!==entry.id);
     else if (before) Object.assign(entry,before);
-    console.error('[LUMEN v169] Error al iniciar lectura:', err);
+    console.error('[LUMEN v170] Error al iniciar lectura:', err);
     const msg = err && (err.name==='QuotaExceededError' || /quota/i.test(err.message||''))
       ? 'No se pudo guardar: almacenamiento local lleno'
       : `No se pudo guardar la lectura${err?.message?': '+err.message:''}`;
@@ -10282,10 +10411,11 @@ function renderComparador() {
 // ═══════════════════════════════════
 const MAPAS_KEY = 'lumen_mapas_v1';
 function loadMapas() {
-  try { const r=localStorage.getItem(MAPAS_KEY); return r?JSON.parse(r):{influencias:[],rutas:[]}; }
+  try { const r=localStorage.getItem(MAPAS_KEY); return normalizeMapasCanonical(r?JSON.parse(r):{influencias:[],rutas:[]}); }
   catch { return {influencias:[],rutas:[]}; }
 }
 function saveMapas() {
+  mapas = normalizeMapasCanonical(mapas);
   localStorage.setItem(MAPAS_KEY, JSON.stringify(mapas));
   // Subir a Firestore con debounce
   if (currentUser) {
@@ -10424,7 +10554,7 @@ function rellenarInfFuenteSel() {
   if (!sel) return;
   sel.innerHTML = '<option value="">— Selecciona un autor —</option>';
   getAutoresBiblioteca().forEach(a => {
-    const o = document.createElement('option'); o.value = a; o.textContent = a; sel.appendChild(o);
+    const o = document.createElement('option'); o.value = a; o.textContent = a; o.dataset.authorId=canonicalEntityId('aut',a); sel.appendChild(o);
   });
   const oOtro = document.createElement('option');
   oOtro.value = '__otro__'; oOtro.textContent = '✏ No está en la lista...';
@@ -10440,7 +10570,7 @@ function rellenarInfObraSel(autor) {
     const libros = getLibrosPorAutor(autor);
     libros.forEach(e => {
       const o = document.createElement('option');
-      o.value = e.titulo; o.textContent = e.anio_pub ? `${e.titulo} (${e.anio_pub})` : e.titulo;
+      o.value = e.titulo; o.textContent = e.anio_pub ? `${e.titulo} (${e.anio_pub})` : e.titulo; o.dataset.entryId=e.id;
       sel.appendChild(o);
     });
   }
@@ -10455,8 +10585,10 @@ function rellenarInfDestinoSel() {
   if (!sel) return;
   sel.innerHTML = '<option value="">— Selecciona el libro —</option>';
   getTodosLibros().forEach(e => {
+    ensureBookCanonicalRefs(e);
     const o = document.createElement('option');
     o.value = e.titulo;
+    o.dataset.entryId = e.id;
     o.textContent = e.anio ? `${e.titulo} (${e.anio})` : e.titulo;
     sel.appendChild(o);
   });
@@ -10491,17 +10623,9 @@ function onInfFuenteSelChange() {
     libre.style.display = 'none'; hint.style.display = 'none'; libre.value = '';
     // Autocompletar obra si el autor está en biblioteca
     rellenarInfObraSel(sel.value);
-    // Intentar autocompletar editorial/ciudad/año desde primer libro del autor
-    if (sel.value && sel.value !== '__otro__') {
-      const libros = getLibrosPorAutor(sel.value);
-      if (libros.length > 0) {
-        const ref = libros[0];
-        const editorialEl = document.getElementById('inf-editorial');
-        const anioEl      = document.getElementById('inf-anio-pub');
-        if (editorialEl && !editorialEl.value) editorialEl.value = ref.editorial||'';
-        if (anioEl && !anioEl.value)           anioEl.value      = ref.anio_pub||'';
-      }
-    }
+    // La bibliografía ISO no se toma del primer libro del autor citado.
+    // Se toma del libro leído / destino seleccionado (fuente canónica de evidencia).
+    syncInfCanonicalBibliography();
     actualizarIsoPreview();
   }
 }
@@ -10517,19 +10641,23 @@ function onInfObraSelChange() {
     libre.style.display = 'block'; libre.focus();
   } else {
     libre.style.display = 'none'; libre.value = '';
-    // Autocompletar editorial/año desde libro seleccionado
-    if (sel.value) {
-      const entry = db.entries.find(e => e.titulo === sel.value);
-      if (entry) {
-        const editorialEl = document.getElementById('inf-editorial');
-        const anioEl      = document.getElementById('inf-anio-pub');
-        const ciudadEl    = document.getElementById('inf-ciudad');
-        if (editorialEl) editorialEl.value = entry.editorial||editorialEl.value;
-        if (anioEl)      anioEl.value      = entry.anio_pub||anioEl.value;
-      }
-    }
+    // La obra citada identifica la relación; la referencia ISO permanece
+    // vinculada al libro leído / destino, no duplica su bibliografía.
+    syncInfCanonicalBibliography();
     actualizarIsoPreview();
   }
+}
+
+function syncInfCanonicalBibliography() {
+  const book=getInfluenceEvidenceBook();
+  const b=canonicalBookBibliography(book);
+  const set=(id,v)=>{const el=document.getElementById(id); if(el) el.value=(v??'').toString();};
+  set('inf-editorial', b.editorial); set('inf-anio-pub', b.anio); set('inf-ciudad', b.ciudad); set('inf-edicion', b.edicion);
+  return book;
+}
+function onInfDestinoSelChange() {
+  syncInfCanonicalBibliography();
+  actualizarIsoPreview();
 }
 
 function onInfUbicacionChange() {
@@ -10561,12 +10689,14 @@ function actualizarIsoPreview() {
   const tipo = document.getElementById('inf-tipo')?.value;
   if (tipo !== 'cita_directa') { preview.style.display = 'none'; return; }
 
-  const autor     = getInfFuente();
-  const obra      = getInfObra();
-  const editorial = document.getElementById('inf-editorial')?.value.trim();
-  const anio      = document.getElementById('inf-anio-pub')?.value.trim();
-  const ciudad    = document.getElementById('inf-ciudad')?.value.trim();
-  const edicion   = document.getElementById('inf-edicion')?.value.trim();
+  const evidence  = syncInfCanonicalBibliography();
+  const bib       = canonicalBookBibliography(evidence);
+  const autor     = bib.autor || '';
+  const obra      = bib.titulo || '';
+  const editorial = bib.editorial || '';
+  const anio      = bib.anio || '';
+  const ciudad    = bib.ciudad || '';
+  const edicion   = bib.edicion || '';
   const ubTipo    = document.getElementById('inf-ubicacion-tipo')?.value;
   const ubDetalle = document.getElementById('inf-ubicacion-detalle')?.value.trim();
 
@@ -10582,7 +10712,7 @@ function actualizarIsoPreview() {
   if (anio)    cita += anio + '. ';
   if (ubDetalle) cita += (ubLabel[ubTipo]||'') + ' ' + ubDetalle + '.';
 
-  preview.innerHTML = `<div style="font-size:9px;letter-spacing:1.2px;text-transform:uppercase;color:var(--ink4);font-family:var(--font-sans);margin-bottom:4px;font-weight:700;">Vista previa ISO 690</div>${cita.trim()}`;
+  preview.innerHTML = `<div style="font-size:9px;letter-spacing:1.2px;text-transform:uppercase;color:var(--ink4);font-family:var(--font-sans);margin-bottom:4px;font-weight:700;">Referencia ISO 690 · libro leído</div>${cita.trim()}`;
   preview.style.display = 'block';
 }
 
@@ -10901,6 +11031,8 @@ function openModalInfluencia(editId, presetTipo) {
     rellenarInfObraSel('');
     actualizarIsoPreview();
   }
+  syncInfCanonicalBibliography();
+  actualizarIsoPreview();
   openModal('modal-influencia');
 }
 
@@ -10915,14 +11047,25 @@ function saveInfluencia() {
   const destino = destinoMeta.destinoNodo || destinoLibro;
 
   const obra = getInfObra();
+  const sourceBook = getInfluenceSourceBook();
+  const evidenceBook = getInfluenceEvidenceBook();
+  if (evidenceBook) ensureBookCanonicalRefs(evidenceBook);
+  const evidenceBib = canonicalBookBibliography(evidenceBook);
+  const fuenteAutorId = getSelectedOptionData('inf-fuente-sel','authorId') || canonicalEntityId('aut', fuente);
 
   const obj = {
     id:               editId || 'inf_' + Date.now(),
     tipo, fuente, destino, obra,
-    editorial:        document.getElementById('inf-editorial')?.value.trim()||'',
-    anio_pub:         document.getElementById('inf-anio-pub')?.value.trim()||'',
-    ciudad:           document.getElementById('inf-ciudad')?.value.trim()||'',
-    edicion:          document.getElementById('inf-edicion')?.value.trim()||'',
+    editorial:        evidenceBib.editorial || '',
+    editorial_id:     evidenceBook?.editorialId || canonicalEntityId('edi', evidenceBib.editorial),
+    anio_pub:         evidenceBib.anio || '',
+    ciudad:           evidenceBib.ciudad || '',
+    edicion:          evidenceBib.edicion || '',
+    fuente_autor_id:  fuenteAutorId,
+    fuente_libro_id:  sourceBook?.id || '',
+    destino_libro_id: evidenceBook?.id || '',
+    destino_autor_id: evidenceBook?.autorId || canonicalEntityId('aut', destinoMeta.destinoAutor || destino),
+    evidencia_libro_id:evidenceBook?.id || '',
     ubicacion_tipo:   document.getElementById('inf-ubicacion-tipo')?.value||'pagina',
     ubicacion_detalle:document.getElementById('inf-ubicacion-detalle')?.value.trim()||'',
     texto:            (tipo==='cita_indirecta'
@@ -10949,6 +11092,7 @@ function saveInfluencia() {
     createdAt:        editId ? (mapas.influencias.find(x=>x.id===editId)?.createdAt||Date.now()) : Date.now()
   };
 
+  ensureInfluenceCanonicalRefs(obj);
   if (editId) { const i=mapas.influencias.findIndex(x=>x.id===editId); if(i>=0) mapas.influencias[i]=obj; }
   else mapas.influencias.push(obj);
   saveMapas();
@@ -11002,6 +11146,9 @@ function openInfluenciaDetalle(id) {
       ${fieldRow('Edición', inf.edicion)}
       ${fieldRow('Nota', inf.nota, true)}
       ${fieldRow('Tags', tags)}
+      ${fieldRow('Libro evidencia', inf.evidencia_libro_id ? (findBookCanonicalById(inf.evidencia_libro_id)?.titulo || inf.libro_ref) : inf.libro_ref)}
+      ${fieldRow('ID libro evidencia', inf.evidencia_libro_id)}
+      ${fieldRow('ID autor fuente', inf.fuente_autor_id)}
       ${fieldRow('ID importación', inf.id_import)}
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
@@ -13625,7 +13772,7 @@ function startInventoryReading(id){
   if(!book){book={id:'inv_book_'+Date.now(),type:'libro',titulo:item.titulo,autor:item.autor||'',editorial:item.editorial||'',estado:'leyendo',progreso:0,readDates:[],cover:'',notas:'',enInventario:true,startDate:new Date().toISOString(),_updatedAt:Date.now()};db.entries.push(book);}
   else{book.estado='leyendo';book.enInventario=true;book.startDate=book.startDate||new Date().toISOString();book._updatedAt=Date.now();if(!book.editorial&&item.editorial)book.editorial=item.editorial;}
   item.linkedEntryId=book.id;item._updatedAt=Date.now();
-  try{localStorage.setItem(INVENTORY_KEY,JSON.stringify(inv));saveDB();}catch(err){console.error('[LUMEN v169] Inventario → lectura:',err);showToast('⚠ No se pudo iniciar la lectura: '+(err.message||'error local'),4500);return;}
+  try{localStorage.setItem(INVENTORY_KEY,JSON.stringify(inv));saveDB();}catch(err){console.error('[LUMEN v170] Inventario → lectura:',err);showToast('⚠ No se pudo iniciar la lectura: '+(err.message||'error local'),4500);return;}
   renderInventory();renderHome();showToast('✓ Libro agregado a Leyendo ahora');
 }
 function openInventoryImport(){inventoryImportPending=[];document.getElementById('inventory-import-preview').innerHTML='';document.getElementById('inventory-import-confirm').style.display='none';document.getElementById('inventory-csv-input').value='';openModal('modal-inventory-import');}
@@ -13799,17 +13946,20 @@ async function syncToFirestore() {
     const result = await writeCloudV162(currentUser.uid);
     setSyncStatus('ok');
     setLastSync();
-    console.info('[LUMEN v169] Sync V2 OK', result);
+    console.info('[LUMEN v170] Sync V2 OK', result);
     return result;
   } catch(e) {
     setSyncStatus('offline');
-    console.error('[LUMEN v169] Sync V2 error:', e.code || '', e.message, e);
+    console.error('[LUMEN v170] Sync V2 error:', e.code || '', e.message, e);
     throw e;
   }
 }
 
 function saveDB() {
-  normalizeAllBookReading(db.entries || [], { repairBasic:true, source:'saveDB-v164' });
+  normalizeAllBookReading(db.entries || [], { repairBasic:true, source:'saveDB-v170' });
+  (db.entries||[]).forEach(ensureBookCanonicalRefs);
+  mapas = normalizeMapasCanonical(mapas);
+  localStorage.setItem(MAPAS_KEY, JSON.stringify(mapas));
   localStorage.setItem(DB_KEY, JSON.stringify(db));
   if (!currentUser) return;
   clearTimeout(_saveDebounceTimer);
@@ -13834,7 +13984,7 @@ async function manualSaveToCloud() {
   } catch(e) {
     setSyncStatus('offline');
     showToast(`⚠ Error al guardar: ${e.message}`, 5000);
-    console.error('[LUMEN v169] manualSave error:', e);
+    console.error('[LUMEN v170] manualSave error:', e);
   }
 }
 
@@ -13854,7 +14004,7 @@ async function pullAndMerge(uid, silent) {
     renderHome();
   } catch(e) {
     setSyncStatus('offline');
-    console.error('[LUMEN v169] pull error:', e);
+    console.error('[LUMEN v170] pull error:', e);
     if (!silent) showToast(`⚠ Error al cargar: ${e.message}`, 4500);
   }
 }
@@ -13884,11 +14034,11 @@ function subscribeToFirestore(uid) {
       setSyncStatus('ok');
       renderHome();
     } catch(e) {
-      console.warn('[LUMEN v169] snapshot error:', e.message);
+      console.warn('[LUMEN v170] snapshot error:', e.message);
     }
   }, e => {
     setSyncStatus('offline');
-    console.warn('[LUMEN v169] listener error:', e.message);
+    console.warn('[LUMEN v170] listener error:', e.message);
   });
 }
 
@@ -13905,7 +14055,7 @@ window.lumenSyncDiagnostico = function() {
     usuario:currentUser ? currentUser.uid : null
   };
   console.table(report);
-  console.info('[LUMEN v169] Diagnóstico completo', report);
+  console.info('[LUMEN v170] Diagnóstico completo', report);
   return report;
 };
 
