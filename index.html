@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1a1510">
-<title>LUMEN v172 — Biblioteca Personal</title>
+<title>LUMEN v173 — Biblioteca Personal</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231a1510'/><text x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' font-family='Georgia,serif' font-size='14' font-weight='900' font-style='italic' fill='%23c8952a' letter-spacing='0.5'>L</text><rect x='6' y='23' width='20' height='2' rx='1' fill='%238b2020'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
@@ -2067,7 +2067,7 @@ select.input { cursor: pointer; }
     Cerrar sesión
   </button>
   <div style="padding:8px 16px 10px;border-top:1px solid var(--border);font-size:10px;color:var(--ink4);letter-spacing:1px;text-align:right;">
-    LUMEN v172
+    LUMEN v173
   </div>
 </div>
 
@@ -3372,7 +3372,7 @@ function openReadingConsistencyReport() {
   const rows = auditReadingConsistency();
   const lineas = [];
   lineas.push('═══════════════════════════════════════════════');
-  lineas.push('REVISIÓN DE CONSISTENCIA DE LECTURA — LUMEN v172');
+  lineas.push('REVISIÓN DE CONSISTENCIA DE LECTURA — LUMEN v173');
   lineas.push('Generado: ' + new Date().toLocaleString('es-CL', { timeZone: LUMEN_TZ }));
   lineas.push('═══════════════════════════════════════════════');
   lineas.push('');
@@ -3680,7 +3680,7 @@ function diffEntries(local, remote) {
 function setLastSync() {
   const now = new Date();
   const ts = now.toLocaleTimeString('es', {hour:'2-digit', minute:'2-digit'}) + ' · ' + now.toLocaleDateString('es', {day:'2-digit', month:'short'});
-  localStorage.setItem(LAST_SYNC_KEY, now.toISOString());
+  safeLocalSetItem(LAST_SYNC_KEY, now.toISOString());
   const el = document.getElementById('menu-last-sync');
   if (el) el.innerHTML = `Última sync: ${ts}<br><span style="color:var(--ink2);font-weight:700;">${db.entries.length} registros</span>`;
 }
@@ -3894,7 +3894,7 @@ function diagnoseEntry(entry) {
 let _saveDebounceTimer = null;
 function saveDB() {
   normalizeAllBookReading(db.entries || [], { repairBasic:true, source:'saveDB' });
-  localStorage.setItem(DB_KEY, JSON.stringify(db));
+  safeLocalSetItem(DB_KEY, JSON.stringify(lightweightLocalDB(db)), {prune:true});
   if (currentUser) {
     clearTimeout(_saveDebounceTimer);
     _saveDebounceTimer = setTimeout(() => {
@@ -3989,9 +3989,9 @@ async function pullAndMerge(uid, silent) {
       // Restaurar imágenes base64 locales que no van a Firestore
       restoreLocalImages(merged);
       db.entries = merged;
-      localStorage.setItem(DB_KEY, JSON.stringify(db));
+      safeLocalSetItem(DB_KEY, JSON.stringify(lightweightLocalDB(db)), {prune:true});
       if (remote.inventory) {
-        localStorage.setItem(INVENTORY_KEY, JSON.stringify(mergeInventory(loadInventory(), remote.inventory)));
+        safeLocalSetItem(INVENTORY_KEY, JSON.stringify(mergeInventory(loadInventory(), remote.inventory)));
       }
 
       // Restaurar mapas y desafíos desde Firestore
@@ -4001,7 +4001,7 @@ async function pullAndMerge(uid, silent) {
           influencias: mergeArrayById(localMapas.influencias||[], remote.mapas.influencias||[]),
           rutas:       mergeArrayById(localMapas.rutas||[],       remote.mapas.rutas||[])
         };
-        localStorage.setItem(MAPAS_KEY, JSON.stringify(mergedMapas));
+        safeLocalSetItem(MAPAS_KEY, JSON.stringify(mergedMapas));
         mapas = mergedMapas;
       }
       if (remote.normBlacklist && Array.isArray(remote.normBlacklist)) {
@@ -4016,12 +4016,12 @@ async function pullAndMerge(uid, silent) {
           if (!merged[tipo]) merged[tipo] = [];
           arr.forEach(n => { if (!merged[tipo].includes(n)) merged[tipo].push(n); });
         });
-        localStorage.setItem(RUTA_CUSTOM_KEY, JSON.stringify(merged));
+        safeLocalSetItem(RUTA_CUSTOM_KEY, JSON.stringify(merged));
       }
       if (remote.rutaProgramas) {
         const localProg = loadProgramas();
         const mergedProg = [...new Set([...localProg, ...remote.rutaProgramas])];
-        localStorage.setItem(PROGRAMA_KEY, JSON.stringify(mergedProg));
+        safeLocalSetItem(PROGRAMA_KEY, JSON.stringify(mergedProg));
       }
       if (remote.desafios) {
         // Desafíos: merge por año — conservar el más reciente
@@ -4032,7 +4032,7 @@ async function pullAndMerge(uid, silent) {
             mergedDes[yr] = val;
           }
         });
-        localStorage.setItem(DESAFIO_KEY, JSON.stringify(mergedDes));
+        safeLocalSetItem(DESAFIO_KEY, JSON.stringify(mergedDes));
       }
 
       // Si había una diferencia grande y no es silencioso, avisar DESPUÉS de tener los datos
@@ -4088,9 +4088,9 @@ function subscribeToFirestore(uid) {
     const merged = mergeEntries(db.entries, remote.entries || []);
     restoreLocalImages(merged);  // recuperar imágenes base64 locales
     db.entries = merged;
-    localStorage.setItem(DB_KEY, JSON.stringify(db));
+    safeLocalSetItem(DB_KEY, JSON.stringify(lightweightLocalDB(db)), {prune:true});
     if (remote.inventory) {
-      localStorage.setItem(INVENTORY_KEY, JSON.stringify(mergeInventory(loadInventory(), remote.inventory)));
+      safeLocalSetItem(INVENTORY_KEY, JSON.stringify(mergeInventory(loadInventory(), remote.inventory)));
     }
 
     // Sincronizar mapas y desafíos desde snapshot en tiempo real
@@ -4100,7 +4100,7 @@ function subscribeToFirestore(uid) {
         influencias: mergeArrayById(localMapas.influencias||[], remote.mapas.influencias||[]),
         rutas:       mergeArrayById(localMapas.rutas||[],       remote.mapas.rutas||[])
       };
-      localStorage.setItem(MAPAS_KEY, JSON.stringify(mergedMapas));
+      safeLocalSetItem(MAPAS_KEY, JSON.stringify(mergedMapas));
       mapas = mergedMapas;
     }
     if (remote.normBlacklist && Array.isArray(remote.normBlacklist)) {
@@ -4114,12 +4114,12 @@ function subscribeToFirestore(uid) {
         if (!merged[tipo]) merged[tipo] = [];
         arr.forEach(n => { if (!merged[tipo].includes(n)) merged[tipo].push(n); });
       });
-      localStorage.setItem(RUTA_CUSTOM_KEY, JSON.stringify(merged));
+      safeLocalSetItem(RUTA_CUSTOM_KEY, JSON.stringify(merged));
     }
     if (remote.rutaProgramas) {
       const localProg = loadProgramas();
       const mergedProg = [...new Set([...localProg, ...remote.rutaProgramas])];
-      localStorage.setItem(PROGRAMA_KEY, JSON.stringify(mergedProg));
+      safeLocalSetItem(PROGRAMA_KEY, JSON.stringify(mergedProg));
     }
     if (remote.desafios) {
       const localDes = loadDesafios();
@@ -4129,7 +4129,7 @@ function subscribeToFirestore(uid) {
           mergedDes[yr] = val;
         }
       });
-      localStorage.setItem(DESAFIO_KEY, JSON.stringify(mergedDes));
+      safeLocalSetItem(DESAFIO_KEY, JSON.stringify(mergedDes));
     }
 
     setSyncStatus('ok');
@@ -4140,6 +4140,7 @@ function subscribeToFirestore(uid) {
 
 let db = loadDB();
 (db.entries||[]).forEach(ensureBookCanonicalRefs);
+setTimeout(() => compactLocalDBOnStartup(), 300);
 
 // ═══════════════════════════════════
 //  NAVIGATION
@@ -4781,13 +4782,13 @@ function toggleBookInventoryQuick(bookId) {
     book.enInventario=false;
     const nextInv=inv.filter(x=>x.linkedEntryId!==bookId);
     try{saveInventory(nextInv,false);book._updatedAt=Date.now();saveDB();}
-    catch(err){console.error('[LUMEN v172] Quitar inventario:',err);showToast('⚠ No se pudo actualizar el inventario',4000);return;}
+    catch(err){console.error('[LUMEN v173] Quitar inventario:',err);showToast('⚠ No se pudo actualizar el inventario',4000);return;}
     showToast('✓ Quitado del inventario');
   }else{
     book.enInventario=true;
     book._updatedAt=Date.now();
     try{saveDB();}
-    catch(err){console.error('[LUMEN v172] Agregar inventario:',err);book.enInventario=false;showToast('⚠ No se pudo actualizar el inventario',4000);return;}
+    catch(err){console.error('[LUMEN v173] Agregar inventario:',err);book.enInventario=false;showToast('⚠ No se pudo actualizar el inventario',4000);return;}
     showToast('✓ Agregado al inventario');
   }
   if(currentScreen==='library') renderLibrary();
@@ -5038,7 +5039,7 @@ function loadDesafios() {
   catch { return {}; }
 }
 function saveDesafios(d) {
-  localStorage.setItem(DESAFIO_KEY, JSON.stringify(d));
+  safeLocalSetItem(DESAFIO_KEY, JSON.stringify(d));
   if (currentUser) {
     clearTimeout(_saveDebounceTimer);
     _saveDebounceTimer = setTimeout(() => syncToFirestore(), 800);
@@ -5136,7 +5137,7 @@ function getMetaSemanalPags() {
 function setMetaSemanalPags(val) {
   const meta = parseInt(val, 10);
   if (!Number.isFinite(meta) || meta < 1) return false;
-  localStorage.setItem(META_SEMANAL_PAGS_KEY, String(meta));
+  safeLocalSetItem(META_SEMANAL_PAGS_KEY, String(meta));
   return true;
 }
 
@@ -8005,7 +8006,7 @@ function recuperarLecturasDesdeChat() {
 
   try {
     const backupKey = 'lumen_backup_pre_recuperacion_lectura_20260627_' + Date.now();
-    localStorage.setItem(backupKey, JSON.stringify(db));
+    safeLocalSetItem(backupKey, JSON.stringify(db));
     downloadRecoveryBackupV152(backupKey, db);
   } catch (err) {
     console.warn('Backup local falló:', err);
@@ -8611,10 +8612,10 @@ function confirmIntegralRestore() {
       if (!block) return;
       const currentBlock = readLumenStorageBlock(key);
       const restored = preserveLocalImages(block.value, currentBlock.exists ? currentBlock.value : null);
-      if (block.format === 'text' && typeof restored === 'string') localStorage.setItem(key, restored);
-      else localStorage.setItem(key, JSON.stringify(restored));
+      if (block.format === 'text' && typeof restored === 'string') safeLocalSetItem(key, restored);
+      else safeLocalSetItem(key, JSON.stringify(restored));
     });
-    localStorage.setItem('lumen_restore_v1', JSON.stringify({
+    safeLocalSetItem('lumen_restore_v1', JSON.stringify({
       restoredAt: new Date().toISOString(),
       sourceVersion: payload.version || '',
       sourceExportedAt: payload.exportedAt || '',
@@ -9207,7 +9208,7 @@ function saveReadingEntry() {
   if (entry.enInventario) {
     const inv = loadInventory();
     const linked = inv.find(x => x.linkedEntryId===entry.id) || findBookLink({titulo:entry.titulo,autor:entry.autor,editorial:entry.editorial});
-    if (linked && !linked.linkedEntryId) { linked.linkedEntryId=entry.id; linked._updatedAt=now; localStorage.setItem(INVENTORY_KEY,JSON.stringify(inv)); }
+    if (linked && !linked.linkedEntryId) { linked.linkedEntryId=entry.id; linked._updatedAt=now; safeLocalSetItem(INVENTORY_KEY,JSON.stringify(inv)); }
   }
 
   try {
@@ -9216,7 +9217,7 @@ function saveReadingEntry() {
     // Evita dejar un alta a medias y muestra el error real en pantalla.
     if (created) db.entries = db.entries.filter(e => e.id!==entry.id);
     else if (before) Object.assign(entry,before);
-    console.error('[LUMEN v172] Error al iniciar lectura:', err);
+    console.error('[LUMEN v173] Error al iniciar lectura:', err);
     const msg = err && (err.name==='QuotaExceededError' || /quota/i.test(err.message||''))
       ? 'No se pudo guardar: almacenamiento local lleno'
       : `No se pudo guardar la lectura${err?.message?': '+err.message:''}`;
@@ -9868,7 +9869,7 @@ async function manualLoadFromCloud() {
           influencias: mergeArrayById(localMapas.influencias||[], remote.mapas.influencias||[]),
           rutas:       mergeArrayById(localMapas.rutas||[],       remote.mapas.rutas||[])
         };
-        localStorage.setItem(MAPAS_KEY, JSON.stringify(mergedMapas));
+        safeLocalSetItem(MAPAS_KEY, JSON.stringify(mergedMapas));
         mapas = mergedMapas;
       }
       if (remote.normBlacklist && Array.isArray(remote.normBlacklist)) {
@@ -9883,13 +9884,13 @@ async function manualLoadFromCloud() {
             mergedDes[yr] = val;
           }
         });
-        localStorage.setItem(DESAFIO_KEY, JSON.stringify(mergedDes));
+        safeLocalSetItem(DESAFIO_KEY, JSON.stringify(mergedDes));
       }
 
       const now = Date.now();
       merged.forEach(e => { if (!e._updatedAt) e._updatedAt = now; });
       db.entries = merged;
-      localStorage.setItem(DB_KEY, JSON.stringify(db));
+      safeLocalSetItem(DB_KEY, JSON.stringify(lightweightLocalDB(db)), {prune:true});
       setLastSync();
       setSyncStatus('ok');
       await syncToFirestore();
@@ -10475,7 +10476,7 @@ function loadMapas() {
 }
 function saveMapas() {
   mapas = normalizeMapasCanonical(mapas);
-  localStorage.setItem(MAPAS_KEY, JSON.stringify(mapas));
+  safeLocalSetItem(MAPAS_KEY, JSON.stringify(mapas));
   // Subir a Firestore con debounce
   if (currentUser) {
     clearTimeout(_saveDebounceTimer);
@@ -10983,8 +10984,8 @@ function confirmInfJsonImport() {
   if (!nuevos.length) { showToast('No hay relaciones nuevas para importar'); return; }
   const ts = Date.now();
   try {
-    localStorage.setItem('lumen_mapas_backup_before_influencias_import_' + ts, JSON.stringify(mapas));
-    localStorage.setItem('lumen_mapas_v1_backup_before_import', JSON.stringify({ createdAt:ts, mapas }));
+    safeLocalSetItem('lumen_mapas_backup_before_influencias_import_' + ts, JSON.stringify(mapas));
+    safeLocalSetItem('lumen_mapas_v1_backup_before_import', JSON.stringify({ createdAt:ts, mapas }));
   } catch(e) { console.warn('No se pudo crear backup previo', e); }
   mapas.influencias = mapas.influencias || [];
   mapas.influencias.push(...nuevos);
@@ -11216,7 +11217,7 @@ function saveProgramaCustom(nombre) {
   nombre = (nombre||'').trim();
   if (!nombre) return;
   const arr = loadProgramas();
-  if (!arr.some(p => p.trim() === nombre)) { arr.push(nombre); localStorage.setItem(PROGRAMA_KEY, JSON.stringify(arr)); }
+  if (!arr.some(p => p.trim() === nombre)) { arr.push(nombre); safeLocalSetItem(PROGRAMA_KEY, JSON.stringify(arr)); }
 }
 function rellenarProgramaSel() {
   const sel      = document.getElementById('ruta-programa-sel');
@@ -11263,7 +11264,7 @@ function saveRutaCustomNode(tipo, titulo) {
   // Comparar sin espacios para evitar duplicados por trim
   if (!map[tipo].some(t => t.trim() === titulo)) {
     map[tipo].push(titulo);
-    localStorage.setItem(RUTA_CUSTOM_KEY, JSON.stringify(map));
+    safeLocalSetItem(RUTA_CUSTOM_KEY, JSON.stringify(map));
   }
 }
 function getRutaCustomNodes(tipo) {
@@ -12646,7 +12647,7 @@ function loadNormBlacklist() {
   catch { return []; }
 }
 function saveNormBlacklist(list, localOnly) {
-  localStorage.setItem(NORM_BLACKLIST_KEY, JSON.stringify(list));
+  safeLocalSetItem(NORM_BLACKLIST_KEY, JSON.stringify(list));
   if (!localOnly && currentUser) {
     clearTimeout(_saveDebounceTimer);
     _saveDebounceTimer = setTimeout(() => syncToFirestore(), 800);
@@ -13074,7 +13075,7 @@ function guardarElencoEditor() {
     db.entries[dbIdx].elenco     = lineas;
     db.entries[dbIdx]._updatedAt = Date.now();
     // Guardar en localStorage inmediatamente
-    localStorage.setItem(DB_KEY, JSON.stringify(db));
+    safeLocalSetItem(DB_KEY, JSON.stringify(lightweightLocalDB(db)), {prune:true});
     // Sync a Firestore con debounce largo para no saturar
     if (currentUser) {
       clearTimeout(_saveDebounceTimer);
@@ -13119,7 +13120,7 @@ function loadIdiomasAprobados() {
 }
 
 function saveIdiomasAprobados(lista, localOnly) {
-  localStorage.setItem(IDIOMAS_APROBADOS_KEY, JSON.stringify(lista));
+  safeLocalSetItem(IDIOMAS_APROBADOS_KEY, JSON.stringify(lista));
   if (!localOnly && currentUser) {
     clearTimeout(_saveDebounceTimer);
     _saveDebounceTimer = setTimeout(() => syncToFirestore(), 800);
@@ -13370,7 +13371,7 @@ function saveWikiRollback() {
   const snapshot = db.entries
     .filter(e => e.type === 'pelicula')
     .map(e => ({ id: e.id, pais: e.pais, productora: e.productora, generos_cine: e.generos_cine }));
-  localStorage.setItem(WIKI_ROLLBACK_KEY, JSON.stringify({ ts: Date.now(), snapshot }));
+  safeLocalSetItem(WIKI_ROLLBACK_KEY, JSON.stringify({ ts: Date.now(), snapshot }));
 }
 
 function rollbackWikiImport() {
@@ -13756,7 +13757,7 @@ function loadInventory() {
   } catch(e) { return []; }
 }
 function saveInventory(items, sync=true) {
-  localStorage.setItem(INVENTORY_KEY, JSON.stringify(items));
+  safeLocalSetItem(INVENTORY_KEY, JSON.stringify(items));
   if (sync) saveDB();
 }
 function inventoryKey(item, includeEditorial=true) {
@@ -13811,7 +13812,7 @@ function startInventoryReading(id){
   if(!book){book={id:'inv_book_'+Date.now(),type:'libro',titulo:item.titulo,autor:item.autor||'',editorial:item.editorial||'',estado:'leyendo',progreso:0,readDates:[],cover:'',notas:'',enInventario:true,startDate:new Date().toISOString(),_updatedAt:Date.now()};db.entries.push(book);}
   else{book.estado='leyendo';book.enInventario=true;book.startDate=book.startDate||new Date().toISOString();book._updatedAt=Date.now();if(!book.editorial&&item.editorial)book.editorial=item.editorial;}
   item.linkedEntryId=book.id;item._updatedAt=Date.now();
-  try{localStorage.setItem(INVENTORY_KEY,JSON.stringify(inv));saveDB();}catch(err){console.error('[LUMEN v172] Inventario → lectura:',err);showToast('⚠ No se pudo iniciar la lectura: '+(err.message||'error local'),4500);return;}
+  try{safeLocalSetItem(INVENTORY_KEY,JSON.stringify(inv));saveDB();}catch(err){console.error('[LUMEN v173] Inventario → lectura:',err);showToast('⚠ No se pudo iniciar la lectura: '+(err.message||'error local'),4500);return;}
   renderInventory();renderHome();showToast('✓ Libro agregado a Leyendo ahora');
 }
 function openInventoryImport(){inventoryImportPending=[];document.getElementById('inventory-import-preview').innerHTML='';document.getElementById('inventory-import-confirm').style.display='none';document.getElementById('inventory-csv-input').value='';openModal('modal-inventory-import');}
@@ -13961,21 +13962,193 @@ async function readCloudCompatibleV162(uid) {
 }
 
 function applyRemoteModulesV162(remote) {
-  if (remote.inventory) localStorage.setItem(INVENTORY_KEY, JSON.stringify(mergeInventory(loadInventory(), remote.inventory)));
+  if (remote.inventory) safeLocalSetItem(INVENTORY_KEY, JSON.stringify(mergeInventory(loadInventory(), remote.inventory)));
   if (remote.mapas) {
     const localMapas = loadMapas();
     const mergedMapas = {
       influencias: mergeArrayById(localMapas.influencias||[], remote.mapas.influencias||[]),
       rutas: mergeArrayById(localMapas.rutas||[], remote.mapas.rutas||[])
     };
-    localStorage.setItem(MAPAS_KEY, JSON.stringify(mergedMapas));
+    safeLocalSetItem(MAPAS_KEY, JSON.stringify(mergedMapas));
     mapas = mergedMapas;
   }
   if (Array.isArray(remote.normBlacklist)) { normBlacklist = remote.normBlacklist; saveNormBlacklist(normBlacklist, true); }
-  if (remote.rutaCustom) localStorage.setItem(RUTA_CUSTOM_KEY, JSON.stringify(remote.rutaCustom));
-  if (remote.rutaProgramas) localStorage.setItem(PROGRAMA_KEY, JSON.stringify(remote.rutaProgramas));
-  if (remote.desafios) localStorage.setItem(DESAFIO_KEY, JSON.stringify(remote.desafios));
-  if (Array.isArray(remote.idiomasAprobados)) localStorage.setItem(IDIOMAS_APROBADOS_KEY, JSON.stringify(remote.idiomasAprobados));
+  if (remote.rutaCustom) safeLocalSetItem(RUTA_CUSTOM_KEY, JSON.stringify(remote.rutaCustom));
+  if (remote.rutaProgramas) safeLocalSetItem(PROGRAMA_KEY, JSON.stringify(remote.rutaProgramas));
+  if (remote.desafios) safeLocalSetItem(DESAFIO_KEY, JSON.stringify(remote.desafios));
+  if (Array.isArray(remote.idiomasAprobados)) safeLocalSetItem(IDIOMAS_APROBADOS_KEY, JSON.stringify(remote.idiomasAprobados));
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// v173 — Persistencia local robusta para Safari/iOS
+// Las portadas base64 se respaldan en IndexedDB y localStorage
+// conserva solo el modelo liviano. Así un QuotaExceededError no
+// interrumpe los botones de Guardar/Terminé ni deja modales abiertos.
+// ═══════════════════════════════════════════════════════════════
+const LUMEN_ASSET_DB = 'lumen_assets_v1';
+const LUMEN_ASSET_STORE = 'images';
+let _assetDbPromise = null;
+
+function openLumenAssetDB() {
+  if (_assetDbPromise) return _assetDbPromise;
+  _assetDbPromise = new Promise((resolve, reject) => {
+    if (!window.indexedDB) { reject(new Error('IndexedDB no disponible')); return; }
+    const req = indexedDB.open(LUMEN_ASSET_DB, 1);
+    req.onupgradeneeded = () => {
+      const idb = req.result;
+      if (!idb.objectStoreNames.contains(LUMEN_ASSET_STORE)) idb.createObjectStore(LUMEN_ASSET_STORE);
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error || new Error('No se pudo abrir IndexedDB'));
+  });
+  return _assetDbPromise;
+}
+
+function localAssetKey(entryId, field='cover') { return `${entryId || 'sin-id'}:${field}`; }
+
+async function putLocalAsset(key, value) {
+  if (!value || !isBase64Image(value)) return false;
+  const idb = await openLumenAssetDB();
+  return new Promise((resolve, reject) => {
+    const tx = idb.transaction(LUMEN_ASSET_STORE, 'readwrite');
+    tx.objectStore(LUMEN_ASSET_STORE).put(value, key);
+    tx.oncomplete = () => resolve(true);
+    tx.onerror = () => reject(tx.error || new Error('No se pudo guardar la imagen local'));
+  });
+}
+
+async function getLocalAsset(key) {
+  try {
+    const idb = await openLumenAssetDB();
+    return await new Promise((resolve, reject) => {
+      const tx = idb.transaction(LUMEN_ASSET_STORE, 'readonly');
+      const req = tx.objectStore(LUMEN_ASSET_STORE).get(key);
+      req.onsuccess = () => resolve(req.result || null);
+      req.onerror = () => reject(req.error);
+    });
+  } catch (_) { return null; }
+}
+
+function lightweightLocalDB(sourceDb) {
+  const clone = JSON.parse(JSON.stringify(sourceDb || {entries:[]}));
+  (clone.entries || []).forEach(e => {
+    Object.keys(e || {}).forEach(k => {
+      if (isBase64Image(e[k])) e[k] = '__local_image__';
+    });
+  });
+  return clone;
+}
+
+async function stashLocalImages(entries) {
+  const jobs = [];
+  (entries || []).forEach(e => {
+    Object.keys(e || {}).forEach(k => {
+      if (isBase64Image(e[k])) jobs.push(putLocalAsset(localAssetKey(e.id, k), e[k]).catch(err => console.warn('[LUMEN v173] asset IDB:', err)));
+    });
+  });
+  if (jobs.length) await Promise.all(jobs);
+  return jobs.length;
+}
+
+async function hydrateLocalImagesFromIDB() {
+  let restored = 0;
+  const jobs = [];
+  (db.entries || []).forEach(e => {
+    Object.keys(e || {}).forEach(k => {
+      if (e[k] === '__local_image__') {
+        jobs.push(getLocalAsset(localAssetKey(e.id, k)).then(v => { if (v) { e[k] = v; restored++; } }));
+      }
+    });
+  });
+  if (jobs.length) await Promise.all(jobs);
+  if (restored) {
+    console.info(`[LUMEN v173] ${restored} imagen(es) restauradas desde IndexedDB`);
+    try { refreshCurrentScreen(); } catch (_) {}
+  }
+  return restored;
+}
+
+function isQuotaExceeded(err) {
+  return !!err && (err.name === 'QuotaExceededError' || err.name === 'NS_ERROR_DOM_QUOTA_REACHED' || err.code === 22 || /quota/i.test(err.message || ''));
+}
+
+function pruneTransientLocalBackups() {
+  const patterns = [
+    /^lumen_mapas_backup_before_/,
+    /^lumen_mapas_v1_backup_before_import$/,
+    /^lumen_db_v1_backup_/,
+    /^lumen_wiki_rollback/,
+    /^lumen_restore_v1$/
+  ];
+  const doomed = [];
+  for (let i=0; i<localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k && patterns.some(rx => rx.test(k))) doomed.push(k);
+  }
+  doomed.forEach(k => { try { localStorage.removeItem(k); } catch (_) {} });
+  if (doomed.length) console.info('[LUMEN v173] backups locales transitorios limpiados:', doomed.length);
+  return doomed.length;
+}
+
+function safeLocalSetItem(key, value, opts={}) {
+  try {
+    localStorage.setItem(key, value);
+    return true;
+  } catch (err) {
+    if (!isQuotaExceeded(err)) {
+      console.error('[LUMEN v173] localStorage error:', key, err);
+      return false;
+    }
+    console.warn('[LUMEN v173] Cuota local excedida en', key);
+    if (opts.prune !== false) pruneTransientLocalBackups();
+    try { localStorage.setItem(key, value); return true; }
+    catch (err2) { console.warn('[LUMEN v173] Reintento local falló:', key, err2); return false; }
+  }
+}
+
+function persistDBLocal() {
+  normalizeAllBookReading(db.entries || [], { repairBasic:true, source:'persistDBLocal-v173' });
+  (db.entries || []).forEach(ensureBookCanonicalRefs);
+
+  // Guardar imágenes de forma asíncrona fuera de localStorage.
+  stashLocalImages(db.entries || []).catch(err => console.warn('[LUMEN v173] No se pudieron migrar todas las imágenes:', err));
+
+  // Primera opción: snapshot completo, para mantener compatibilidad si cabe.
+  const full = JSON.stringify(db);
+  if (safeLocalSetItem(DB_KEY, full, {prune:false})) return { ok:true, compact:false };
+
+  // Si Safari está al límite, persistir el modelo liviano; las imágenes quedan en IndexedDB.
+  const light = JSON.stringify(lightweightLocalDB(db));
+  try { localStorage.removeItem(DB_KEY); } catch (_) {}
+  if (safeLocalSetItem(DB_KEY, light, {prune:true})) {
+    console.info('[LUMEN v173] DB local compactada; portadas movidas a IndexedDB');
+    return { ok:true, compact:true };
+  }
+
+  // No lanzar excepción: la app mantiene el modelo en memoria y la nube V2 aún puede guardarlo.
+  console.error('[LUMEN v173] No fue posible persistir el snapshot local ni siquiera compactado.');
+  return { ok:false, compact:true };
+}
+
+async function compactLocalDBOnStartup() {
+  try {
+    const hasBase64 = (db.entries || []).some(e => Object.values(e || {}).some(v => isBase64Image(v)));
+    if (!hasBase64) { await hydrateLocalImagesFromIDB(); return; }
+    await stashLocalImages(db.entries || []);
+    const light = JSON.stringify(lightweightLocalDB(db));
+    try { localStorage.setItem(DB_KEY, light); }
+    catch (err) {
+      if (isQuotaExceeded(err)) {
+        pruneTransientLocalBackups();
+        try { localStorage.removeItem(DB_KEY); } catch (_) {}
+        localStorage.setItem(DB_KEY, light);
+      } else throw err;
+    }
+    console.info('[LUMEN v173] Migración local inicial completada.');
+  } catch (err) {
+    console.warn('[LUMEN v173] Migración local inicial no completada:', err);
+  }
 }
 
 async function syncToFirestore() {
@@ -13985,28 +14158,36 @@ async function syncToFirestore() {
     const result = await writeCloudV162(currentUser.uid);
     setSyncStatus('ok');
     setLastSync();
-    console.info('[LUMEN v172] Sync V2 OK', result);
+    console.info('[LUMEN v173] Sync V2 OK', result);
     return result;
   } catch(e) {
     setSyncStatus('offline');
-    console.error('[LUMEN v172] Sync V2 error:', e.code || '', e.message, e);
+    console.error('[LUMEN v173] Sync V2 error:', e.code || '', e.message, e);
     throw e;
   }
 }
 
 function saveDB() {
-  normalizeAllBookReading(db.entries || [], { repairBasic:true, source:'saveDB-v170' });
+  normalizeAllBookReading(db.entries || [], { repairBasic:true, source:'saveDB-v173' });
   (db.entries||[]).forEach(ensureBookCanonicalRefs);
   mapas = normalizeMapasCanonical(mapas);
-  localStorage.setItem(MAPAS_KEY, JSON.stringify(mapas));
-  localStorage.setItem(DB_KEY, JSON.stringify(db));
-  if (!currentUser) return;
+  safeLocalSetItem(MAPAS_KEY, JSON.stringify(mapas), {prune:true});
+  const localResult = persistDBLocal();
+  if (!localResult.ok) {
+    // No bloquear la UX: el cambio sigue en memoria y se intenta sincronizar por bloques.
+    console.warn('[LUMEN v173] Guardado local parcial; se intentará nube V2.');
+  }
+  if (!currentUser) {
+    if (!localResult.ok) showToast('⚠ Cambio guardado solo en esta sesión. Libera espacio para persistirlo.', 4500);
+    return localResult.ok;
+  }
   clearTimeout(_saveDebounceTimer);
   _saveDebounceTimer = setTimeout(async () => {
     setSyncStatus('syncing');
     try { await syncToFirestore(); }
     catch(e) { showToast(`⚠ No se pudo sincronizar: ${e.message}`, 4500); }
-  }, 900);
+  }, 650);
+  return true;
 }
 
 async function manualSaveToCloud() {
@@ -14023,7 +14204,7 @@ async function manualSaveToCloud() {
   } catch(e) {
     setSyncStatus('offline');
     showToast(`⚠ Error al guardar: ${e.message}`, 5000);
-    console.error('[LUMEN v172] manualSave error:', e);
+    console.error('[LUMEN v173] manualSave error:', e);
   }
 }
 
@@ -14035,7 +14216,7 @@ async function pullAndMerge(uid, silent) {
     const merged = mergeEntries(db.entries, remote.entries || []);
     restoreLocalImages(merged);
     db.entries = merged;
-    localStorage.setItem(DB_KEY, JSON.stringify(db));
+    safeLocalSetItem(DB_KEY, JSON.stringify(lightweightLocalDB(db)), {prune:true});
     applyRemoteModulesV162(remote);
     setLastSync();
     setSyncStatus('ok');
@@ -14043,7 +14224,7 @@ async function pullAndMerge(uid, silent) {
     renderHome();
   } catch(e) {
     setSyncStatus('offline');
-    console.error('[LUMEN v172] pull error:', e);
+    console.error('[LUMEN v173] pull error:', e);
     if (!silent) showToast(`⚠ Error al cargar: ${e.message}`, 4500);
   }
 }
@@ -14067,17 +14248,17 @@ function subscribeToFirestore(uid) {
       const merged = mergeEntries(db.entries, remote.entries || []);
       restoreLocalImages(merged);
       db.entries = merged;
-      localStorage.setItem(DB_KEY, JSON.stringify(db));
+      safeLocalSetItem(DB_KEY, JSON.stringify(lightweightLocalDB(db)), {prune:true});
       applyRemoteModulesV162(remote);
       setLastSync();
       setSyncStatus('ok');
       renderHome();
     } catch(e) {
-      console.warn('[LUMEN v172] snapshot error:', e.message);
+      console.warn('[LUMEN v173] snapshot error:', e.message);
     }
   }, e => {
     setSyncStatus('offline');
-    console.warn('[LUMEN v172] listener error:', e.message);
+    console.warn('[LUMEN v173] listener error:', e.message);
   });
 }
 
@@ -14094,7 +14275,7 @@ window.lumenSyncDiagnostico = function() {
     usuario:currentUser ? currentUser.uid : null
   };
   console.table(report);
-  console.info('[LUMEN v172] Diagnóstico completo', report);
+  console.info('[LUMEN v173] Diagnóstico completo', report);
   return report;
 };
 

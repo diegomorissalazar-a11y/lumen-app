@@ -1,55 +1,50 @@
-# LUMEN v171 — Ritmo histórico y línea de tiempo navegable
+# LUMEN v173 — Persistencia local robusta y corrección de clicks
 
 **Fecha:** 16 de agosto de 2026
 
 ## Cambios aplicados
 
-- Se corrigió el KPI de ritmo lector de Inicio.
-- El año actual usa páginas registradas hasta hoy divididas por los días transcurridos del año.
-- La comparación `vs año anterior` usa siempre el resultado final del año anterior: páginas totales de libros terminados dividido por 365/366 días.
-- El `mejor año` se obtiene entre todos los años históricos cerrados con la misma regla anual.
-- Se agregó proyección de cierre del año actual y diferencia estimada contra el récord histórico.
-- Se rediseñó la línea de tiempo de Historia para agrupar todos los libros de una misma línea histórica en una sola fila.
-- Los libros que se solapan temporalmente se apilan dentro de la misma línea, permitiendo comparar coberturas complementarias o coincidentes.
-- Al seleccionar una línea histórica se activa zoom automático al rango temporal de esa línea.
-- El nombre de cada línea también se puede tocar para entrar directamente a su zoom.
-- Las barras muestran libro, período y fechas; al tocarlas se abre la ficha del libro.
-- Se mantuvieron visibles los vacíos temporales para preparar futuras sugerencias de próximas lecturas.
-- Se agregó filtro `En inventario · no leídos` para visualizar libros disponibles que podrían cubrir períodos aún pendientes.
-- Se incorporaron IDs canónicos determinísticos para líneas históricas (`lineaPrincipalId`) y períodos (`periodoId`), manteniendo compatibilidad con los nombres actuales.
-- Las líneas relacionadas reciben también IDs canónicos para futuras conexiones entre líneas históricas.
+- Se corrigió la causa común de botones de guardado que parecían no responder cuando Safari/iOS devolvía `QuotaExceededError`.
+- `saveDB()` ya no deja la ejecución interrumpida por una escritura fallida en `localStorage`, por lo que los flujos Guardar / Terminé / notas / Historia / Inventario / mangas / series pueden completar el cierre del modal después de persistir el cambio.
+- Se agregó almacenamiento de portadas locales base64 en **IndexedDB** (`lumen_assets_v1`) para sacar imágenes pesadas del objeto principal guardado en `localStorage`.
+- Se agregó migración automática al iniciar: si existen portadas base64 locales, se respaldan en IndexedDB y el snapshot de `localStorage` se compacta con placeholders.
+- Se agregó hidratación de portadas desde IndexedDB cuando el dispositivo dispone de la imagen local.
+- Se agregó fallback de persistencia liviana si Safari alcanza la cuota y limpieza limitada de respaldos locales transitorios antiguos antes de reintentar.
+- Las escrituras auxiliares de `localStorage` usadas por acciones de la app pasan por el guardado seguro para evitar que un error de cuota corte un click.
+- Se conserva la sincronización Firestore V2 por bloques de v172.
+- Auditoría estática de handlers inline: no se detectaron referencias personalizadas faltantes; `_syncConfirmFn` es dinámica por diseño.
 
 ## Archivos modificados
 
 - `index.html`
-- `README.md`
 
-## Módulos no modificados
+## Módulos no modificados funcionalmente
 
-- Arquitectura de sincronización Firebase V2 por bloques.
-- Inventario integrado y su sincronización.
-- Modelo canónico de libros, autores y editoriales de v170.
-- Gephi de influencias y rutas de lectura.
-- Discos, mangas y películas.
-- Importadores y exportadores existentes.
-- Reglas semanales y zona horaria de Santiago.
+- Cálculo de lectura y KPIs.
+- Inventario y sus estadísticas.
+- Gephi / Influencias.
+- Línea de tiempo histórica.
+- Rutas de lectura.
+- Películas, series, discos y mangas, salvo la capa común de persistencia al guardar.
+- Autenticación y modelo Firestore V2.
 
 ## Validaciones realizadas
 
-- Revisión de sintaxis del JavaScript embebido con `node --check`.
-- Confirmación de versión visible v171.
-- Confirmación de permanencia del modelo V2 de sincronización.
-- Confirmación de generación de IDs históricos sin eliminar campos legacy.
-- Confirmación de agrupación del render por `lineaPrincipalId`.
-- Confirmación de cálculo del año anterior y mejor histórico usando años cerrados completos.
+- Sintaxis de todo el JavaScript embebido validada con `node --check`.
+- Confirmación de versión visible `v173`.
+- Auditoría de 206 referencias de funciones usadas por eventos inline (`onclick`, `onchange`, `oninput`, etc.).
+- Confirmación de que las escrituras directas de `localStorage` fuera de la capa segura fueron eliminadas.
+- Confirmación de que `saveDB()` devuelve sin lanzar `QuotaExceededError` y mantiene el intento de sincronización V2.
+- ZIP verificado con `index.html` y `README.md`.
 
-## Prueba sugerida
+## Pruebas sugeridas
 
-1. Abrir Inicio y verificar que aparezca comparación contra 2025 si existen libros terminados en 2025.
-2. Verificar que `Mejor` muestre el año histórico con mayor promedio anual final y la proyección 2026 contra ese récord.
-3. Abrir Mapas → Historia.
-4. Confirmar que tres libros con `Historia de Eurasia` aparezcan en una sola fila.
-5. Seleccionar `Historia de Eurasia` en el filtro y comprobar que el eje haga zoom automáticamente.
-6. Comprobar que libros con períodos solapados se apilen y sigan siendo legibles.
-7. Probar el filtro `En inventario · no leídos`.
-8. Guardar en nube desde un dispositivo y cargar desde otro para comprobar que los campos históricos sigan sincronizándose.
+1. Abrir v173 en el iPhone y esperar unos segundos para que ejecute la migración local de portadas.
+2. Abrir una lectura en curso, cambiar la página y pulsar **Guardar**. Debe guardar y cerrar el modal.
+3. Repetir con **Terminé** en un libro de prueba o cuando corresponda.
+4. Editar una nota y guardar; el modal debe cerrarse normalmente.
+5. Editar Historia desde su acceso rápido y guardar.
+6. Marcar/desmarcar Inventario desde Biblioteca.
+7. Probar una edición de película/serie y una actualización de manga si existen registros disponibles.
+8. Verificar que ya no aparezca `The quota has been exceeded` durante estos guardados.
+9. Pulsar **Guardar en nube** y luego cargar desde el computador para confirmar persistencia entre dispositivos.
