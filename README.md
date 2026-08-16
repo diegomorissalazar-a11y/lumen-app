@@ -1,69 +1,55 @@
-# LUMEN v170 — Modelo canónico de libros, citas e Historia
+# LUMEN v171 — Ritmo histórico y línea de tiempo navegable
 
-**Fecha:** 15 de agosto de 2026
+**Fecha:** 16 de agosto de 2026
 
 ## Cambios aplicados
 
-- Se consolidó la ficha de **Libro** como fuente canónica para los módulos de LUMEN.
-- Cada libro incorpora referencias canónicas estables para:
-  - autor (`autorId` / `autorIds`);
-  - editorial (`editorialId`);
-  - esquema de libro (`_canonicalModel`).
-- Los IDs canónicos son determinísticos: una misma forma normalizada de autor o editorial produce el mismo identificador en Biblioteca, Inventario, Mapas y sincronización.
-- Se agregaron a la ficha de libro los datos bibliográficos **Edición** y **Ciudad / lugar de publicación**.
-- Los mismos datos están disponibles al iniciar una **Lectura en curso**, para que el libro creado desde Seguimiento mantenga la misma ficha bibliográfica.
-- Las relaciones de **Influencias** ahora almacenan referencias estables cuando pueden resolverse contra Biblioteca:
-  - `fuente_autor_id`;
-  - `fuente_libro_id`;
-  - `destino_autor_id`;
-  - `destino_libro_id`;
-  - `evidencia_libro_id`;
-  - `editorial_id`.
-- La referencia ISO 690 de una influencia se genera desde el **libro leído / libro evidencia** seleccionado como destino, reutilizando autor, título, editorial, año, edición y lugar de publicación de su ficha de Biblioteca.
-- Editorial, año, edición y ciudad del bloque ISO pasan a ser datos derivados de Biblioteca y ya no una segunda fuente editable dentro de Influencias.
-- Se eliminó el autocompletado incorrecto que tomaba la editorial/año del primer libro disponible del autor citado.
-- Las relaciones antiguas se normalizan de forma compatible al cargarse: si LUMEN puede identificar el libro de evidencia, vincula sus IDs y actualiza la bibliografía canónica sin eliminar los campos históricos de la relación.
-- Las Rutas conservan el formato anterior, pero agregan `fuente_libro_id` y `destino_libro_id` cuando sus nodos corresponden a libros de Biblioteca.
-- El objeto `historia` queda identificado con el esquema `lumen_historia_v1` y continúa perteneciendo al mismo registro canónico del libro.
-- La normalización canónica se ejecuta también al hacer merge y antes de guardar/sincronizar, manteniendo compatibilidad con el modelo por bloques de Firestore de v169.
+- Se corrigió el KPI de ritmo lector de Inicio.
+- El año actual usa páginas registradas hasta hoy divididas por los días transcurridos del año.
+- La comparación `vs año anterior` usa siempre el resultado final del año anterior: páginas totales de libros terminados dividido por 365/366 días.
+- El `mejor año` se obtiene entre todos los años históricos cerrados con la misma regla anual.
+- Se agregó proyección de cierre del año actual y diferencia estimada contra el récord histórico.
+- Se rediseñó la línea de tiempo de Historia para agrupar todos los libros de una misma línea histórica en una sola fila.
+- Los libros que se solapan temporalmente se apilan dentro de la misma línea, permitiendo comparar coberturas complementarias o coincidentes.
+- Al seleccionar una línea histórica se activa zoom automático al rango temporal de esa línea.
+- El nombre de cada línea también se puede tocar para entrar directamente a su zoom.
+- Las barras muestran libro, período y fechas; al tocarlas se abre la ficha del libro.
+- Se mantuvieron visibles los vacíos temporales para preparar futuras sugerencias de próximas lecturas.
+- Se agregó filtro `En inventario · no leídos` para visualizar libros disponibles que podrían cubrir períodos aún pendientes.
+- Se incorporaron IDs canónicos determinísticos para líneas históricas (`lineaPrincipalId`) y períodos (`periodoId`), manteniendo compatibilidad con los nombres actuales.
+- Las líneas relacionadas reciben también IDs canónicos para futuras conexiones entre líneas históricas.
 
 ## Archivos modificados
 
 - `index.html`
 - `README.md`
 
-## Módulos no modificados funcionalmente
+## Módulos no modificados
 
-- Login y autenticación.
-- Arquitectura Firebase por bloques.
-- Inventario y su ratio de lectura.
-- Métricas de lectura.
-- Discos y mangas.
-- Visual de Historia y Gephi, salvo que ahora consumen datos con referencias canónicas cuando están disponibles.
+- Arquitectura de sincronización Firebase V2 por bloques.
+- Inventario integrado y su sincronización.
+- Modelo canónico de libros, autores y editoriales de v170.
+- Gephi de influencias y rutas de lectura.
+- Discos, mangas y películas.
+- Importadores y exportadores existentes.
 - Reglas semanales y zona horaria de Santiago.
-
-## Compatibilidad
-
-- Se mantienen los campos de texto existentes (`autor`, `editorial`, `fuente`, `destino`, `libro_ref`) para que datos, exportaciones y relaciones antiguas sigan funcionando.
-- Los nuevos IDs se agregan como referencias estables; no se eliminan datos previos.
-- El merge extensible de v169 continúa conservando `enInventario`, `historia` y futuros campos de la ficha.
 
 ## Validaciones realizadas
 
-- Revisión de sintaxis de todo el JavaScript embebido con `node --check`.
-- Confirmación de versión visible v170.
-- Confirmación de campos Edición y Ciudad / lugar de publicación en alta/edición de libro y Lectura en curso.
-- Confirmación de generación de IDs canónicos para autores, editoriales y libros vinculados en Influencias.
-- Confirmación de referencia ISO derivada del libro destino/evidencia.
-- Confirmación de que `historia` sigue dentro de la entrada del libro y recibe `schema: lumen_historia_v1`.
-- Confirmación de normalización canónica durante merge y guardado V2.
+- Revisión de sintaxis del JavaScript embebido con `node --check`.
+- Confirmación de versión visible v171.
+- Confirmación de permanencia del modelo V2 de sincronización.
+- Confirmación de generación de IDs históricos sin eliminar campos legacy.
+- Confirmación de agrupación del render por `lineaPrincipalId`.
+- Confirmación de cálculo del año anterior y mejor histórico usando años cerrados completos.
 
 ## Prueba sugerida
 
-1. Editar un libro existente y completar editorial, año, edición y ciudad/lugar de publicación.
-2. Guardarlo y volver a abrir la ficha para verificar los datos.
-3. Crear o editar una influencia usando ese libro como **Libro influido / destino**.
-4. Verificar que la vista previa ISO muestre automáticamente la bibliografía del libro leído y que editorial/año/edición/ciudad no deban escribirse otra vez en Influencias.
-5. Guardar la relación y volver a abrir su detalle.
-6. Probar el mismo libro en móvil y computador mediante Guardar/Cargar desde nube y verificar que autor/editorial, inventario e Historia coincidan.
-7. Editar un libro de Historia, cambiar un período y confirmar que el cambio aparece en el otro dispositivo y en la línea de tiempo.
+1. Abrir Inicio y verificar que aparezca comparación contra 2025 si existen libros terminados en 2025.
+2. Verificar que `Mejor` muestre el año histórico con mayor promedio anual final y la proyección 2026 contra ese récord.
+3. Abrir Mapas → Historia.
+4. Confirmar que tres libros con `Historia de Eurasia` aparezcan en una sola fila.
+5. Seleccionar `Historia de Eurasia` en el filtro y comprobar que el eje haga zoom automáticamente.
+6. Comprobar que libros con períodos solapados se apilen y sigan siendo legibles.
+7. Probar el filtro `En inventario · no leídos`.
+8. Guardar en nube desde un dispositivo y cargar desde otro para comprobar que los campos históricos sigan sincronizándose.

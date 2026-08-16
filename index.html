@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1a1510">
-<title>LUMEN v170 — Biblioteca Personal</title>
+<title>LUMEN v171 — Biblioteca Personal</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231a1510'/><text x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' font-family='Georgia,serif' font-size='14' font-weight='900' font-style='italic' fill='%23c8952a' letter-spacing='0.5'>L</text><rect x='6' y='23' width='20' height='2' rx='1' fill='%238b2020'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
@@ -653,22 +653,26 @@ select.input { cursor: pointer; }
 /* ── INVENTARIO FÍSICO v159 ── */
 .inventory-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}.inventory-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}.inventory-card{background:#fff;border:1px solid var(--border);border-radius:6px;padding:12px 14px;margin-bottom:8px;box-shadow:var(--shadow)}.inventory-card-title{font-family:var(--font-serif);font-size:15px;font-weight:700}.inventory-card-sub{font-size:11px;color:var(--ink3);margin-top:3px}.inventory-card-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}.inventory-status{font-size:10px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;padding:3px 7px;border-radius:12px;background:var(--cream2);color:var(--ink3)}.inventory-status.linked{background:#e8f0e8;color:var(--green)}.inventory-status.cart{background:#fff8e8;color:var(--gold)}.inventory-import-row{padding:8px 0;border-bottom:1px solid var(--cream2);font-size:12px}.inventory-import-row:last-child{border-bottom:none}
 
-/* ── MAPA HISTÓRICO v166 ── */
+/* ── MAPA HISTÓRICO v171 ── */
 .hist-map-toolbar{padding:9px 12px;display:flex;gap:7px;align-items:center;flex-wrap:wrap;border-bottom:1px solid var(--border);background:#faf8f4;flex-shrink:0}
-.hist-map-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;padding:10px 12px;background:var(--cream2);border-bottom:1px solid var(--border);flex-shrink:0}
-.hist-map-kpi{background:#fff;border:1px solid var(--border);border-radius:6px;padding:8px 6px;text-align:center}.hist-map-kpi strong{font-family:var(--font-serif);font-size:20px;display:block}.hist-map-kpi span{font-size:8px;letter-spacing:1px;text-transform:uppercase;color:var(--ink4)}
+.hist-map-summary{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:7px 12px;background:var(--cream2);border-bottom:1px solid var(--border);font-size:10px;color:var(--ink3);letter-spacing:.5px;flex-shrink:0}
+.hist-map-summary strong{color:var(--ink);font-size:11px}.hist-summary-dot{color:var(--gold)}
 .hist-timeline-scroll{flex:1;overflow:auto;background:var(--cream);padding:16px 12px 30px;-webkit-overflow-scrolling:touch}
 .hist-timeline{position:relative;min-height:280px;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:var(--shadow);overflow:visible}
-.hist-axis{position:absolute;left:34px;right:24px;top:48px;height:2px;background:var(--ink3)}
+.hist-axis{position:absolute;top:48px;height:2px;background:var(--ink3)}
 .hist-axis-tick{position:absolute;top:39px;width:1px;height:18px;background:var(--border)}
 .hist-axis-label{position:absolute;top:15px;transform:translateX(-50%);font-size:10px;color:var(--ink4);white-space:nowrap;font-weight:700}
-.hist-row{position:relative;height:78px;border-top:1px solid var(--cream2);margin-top:0}.hist-row:first-of-type{border-top:none}
-.hist-row-label{position:absolute;left:8px;top:10px;width:110px;font-size:10px;font-weight:700;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;z-index:2}
-.hist-bar{position:absolute;top:31px;height:32px;min-width:12px;border:2px solid var(--gold);background:#fff8e8;border-radius:6px;padding:5px 7px;font-size:10px;font-weight:700;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;box-shadow:0 1px 4px rgba(26,21,16,.10)}
-.hist-bar.read{background:#e8f0e8;border-color:var(--green)}.hist-bar.reading{background:#fff8e8;border-color:var(--gold)}.hist-bar.pending{background:#fff;border-color:var(--border)}
+.hist-line-row{position:relative;border-top:1px solid var(--cream2);min-height:66px}.hist-line-row:first-of-type{border-top:none}
+.hist-line-label{position:absolute;left:8px;top:9px;width:124px;z-index:4;font-size:10px;font-weight:700;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
+.hist-line-label:hover{color:var(--gold);text-decoration:underline;text-decoration-style:dotted}
+.hist-line-guide{position:absolute;top:28px;border-top:1px dashed var(--cream3);z-index:0}
+.hist-book-bar{position:absolute;height:34px;min-width:16px;border:2px solid var(--gold);background:#fff8e8;border-radius:6px;padding:4px 7px;cursor:pointer;box-shadow:0 1px 4px rgba(26,21,16,.10);overflow:hidden;white-space:nowrap;text-overflow:ellipsis;z-index:2;font-size:10px;color:var(--ink2)}
+.hist-book-bar.read{background:#e8f0e8;border-color:var(--green)}.hist-book-bar.reading{background:#fff8e8;border-color:var(--gold)}.hist-book-bar.pending{background:#fff;border-color:var(--border);border-style:dashed}.hist-book-bar.inventory{box-shadow:inset 0 -3px 0 rgba(107,58,138,.35),0 1px 4px rgba(26,21,16,.10)}
+.hist-book-title{font-weight:700;overflow:hidden;text-overflow:ellipsis}.hist-book-meta{font-size:8.5px;color:var(--ink3);margin-top:1px;overflow:hidden;text-overflow:ellipsis}
 .hist-undated{margin:10px 12px 0;padding:10px 12px;border:1px dashed var(--border);border-radius:6px;background:#fff;font-size:11px;color:var(--ink3)}
 .hist-empty{padding:50px 20px;text-align:center;color:var(--ink4);font-family:var(--font-serif);font-style:italic}
-@media(max-width:640px){.hist-map-summary{grid-template-columns:repeat(3,1fr)}.hist-row-label{width:88px}.hist-axis{left:24px;right:16px}.hist-timeline-scroll{padding-left:8px;padding-right:8px}}
+.hist-zoom-hint{font-size:9px;color:var(--ink4);margin-left:auto;white-space:nowrap}
+@media(max-width:640px){.hist-map-summary{padding:6px 8px}.hist-line-label{width:92px}.hist-timeline-scroll{padding-left:8px;padding-right:8px}.hist-zoom-hint{width:100%;margin-left:0}.hist-map-toolbar select{max-width:calc(50vw - 18px)!important}}
 </style>
 <!-- Firebase compat SDKs (carga síncrona, sin módulos) -->
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
@@ -1378,9 +1382,10 @@ select.input { cursor: pointer; }
         <option value="">Todas las líneas históricas</option>
       </select>
       <select id="hist-estado-filter" class="input" style="width:auto;padding:6px 8px;font-size:11px;" onchange="renderMapaHistoria()">
-        <option value="">Todos los estados</option><option value="leido">Leídos</option><option value="leyendo">Leyendo</option><option value="pendiente">Pendientes</option>
+        <option value="">Todos los estados</option><option value="leido">Leídos</option><option value="leyendo">Leyendo</option><option value="pendiente">Pendientes</option><option value="inventario_no_leido">En inventario · no leídos</option>
       </select>
       <span id="hist-map-count" style="font-size:11px;color:var(--ink4);margin-left:auto;"></span>
+      <span class="hist-zoom-hint">Selecciona una línea para hacer zoom automático</span>
     </div>
     <div class="hist-map-summary" id="hist-map-summary"></div>
     <div class="hist-timeline-scroll" id="hist-timeline-scroll">
@@ -2062,7 +2067,7 @@ select.input { cursor: pointer; }
     Cerrar sesión
   </button>
   <div style="padding:8px 16px 10px;border-top:1px solid var(--border);font-size:10px;color:var(--ink4);letter-spacing:1px;text-align:right;">
-    LUMEN v170
+    LUMEN v171
   </div>
 </div>
 
@@ -3355,7 +3360,7 @@ function openReadingConsistencyReport() {
   const rows = auditReadingConsistency();
   const lineas = [];
   lineas.push('═══════════════════════════════════════════════');
-  lineas.push('REVISIÓN DE CONSISTENCIA DE LECTURA — LUMEN v170');
+  lineas.push('REVISIÓN DE CONSISTENCIA DE LECTURA — LUMEN v171');
   lineas.push('Generado: ' + new Date().toLocaleString('es-CL', { timeZone: LUMEN_TZ }));
   lineas.push('═══════════════════════════════════════════════');
   lineas.push('');
@@ -3425,9 +3430,23 @@ function ensureBookCanonicalRefs(entry) {
   entry.autorId = entry.autorIds[0] || '';
   entry.editorialId = entry.editorial ? canonicalEntityId('edi',entry.editorial) : '';
   entry._canonicalModel = 'lumen_book_v1';
-  if (entry.historia && typeof entry.historia === 'object') {
-    entry.historia.schema = entry.historia.schema || 'lumen_historia_v1';
-  }
+  if (entry.historia && typeof entry.historia === 'object') ensureHistoriaCanonicalRefs(entry);
+  return entry;
+}
+function ensureHistoriaCanonicalRefs(entry) {
+  if (!entry || entry.type !== 'libro' || !entry.historia || typeof entry.historia !== 'object') return entry;
+  const h=entry.historia;
+  const linea=String(h.lineaPrincipal||'').trim();
+  h.schema='lumen_historia_v2';
+  h.lineaPrincipalId=linea ? canonicalEntityId('histline',linea) : '';
+  const relacionadas=Array.isArray(h.lineasRelacionadas)?h.lineasRelacionadas:[];
+  h.lineasRelacionadasIds=relacionadas.map(x=>canonicalEntityId('histline',x)).filter(Boolean);
+  h.periodos=(Array.isArray(h.periodos)?h.periodos:[]).map(p=>{
+    const q={...p};
+    const base=String(q.nombre||q.tema||`${q.inicio??''}_${q.fin??''}`).trim();
+    q.periodoId=q.periodoId || canonicalEntityId('histperiod',`${h.lineaPrincipalId||linea}|${base}`);
+    return q;
+  });
   return entry;
 }
 function findBookCanonicalById(id) {
@@ -4305,13 +4324,18 @@ function getHistoriaFromForm() {
     const num=cls=>{const raw=row.querySelector(cls)?.value; return raw===''||raw==null?null:Number(raw);};
     return {nombre:val('.hp-nombre'),tema:val('.hp-tema'),inicio:num('.hp-inicio'),fin:num('.hp-fin'),precision:val('.hp-precision')||'aproximada',cobertura:val('.hp-cobertura')||'periodo'};
   }).filter(p=>p.nombre||p.tema||p.inicio!==null||p.fin!==null);
+  const lineaPrincipal=document.getElementById('hist-linea-principal')?.value?.trim() || '';
+  const lineasRelacionadas=(document.getElementById('hist-lineas-relacionadas')?.value||'').split(',').map(x=>x.trim()).filter(Boolean);
+  const lineaPrincipalId=lineaPrincipal ? canonicalEntityId('histline',lineaPrincipal) : '';
   return {
-    schema: 'lumen_historia_v1',
-    lineaPrincipal: document.getElementById('hist-linea-principal')?.value?.trim() || '',
-    lineasRelacionadas: (document.getElementById('hist-lineas-relacionadas')?.value||'').split(',').map(x=>x.trim()).filter(Boolean),
+    schema: 'lumen_historia_v2',
+    lineaPrincipal,
+    lineaPrincipalId,
+    lineasRelacionadas,
+    lineasRelacionadasIds: lineasRelacionadas.map(x=>canonicalEntityId('histline',x)).filter(Boolean),
     ambitoGeografico: document.getElementById('hist-ambito')?.value?.trim() || '',
     enfoque: document.getElementById('hist-enfoque')?.value || '',
-    periodos
+    periodos: periodos.map(p=>({...p,periodoId:canonicalEntityId('histperiod',`${lineaPrincipalId||lineaPrincipal}|${p.nombre||p.tema||`${p.inicio??''}_${p.fin??''}`}`)}))
   };
 }
 function resetHistoriaFields() {
@@ -4739,13 +4763,13 @@ function toggleBookInventoryQuick(bookId) {
     book.enInventario=false;
     const nextInv=inv.filter(x=>x.linkedEntryId!==bookId);
     try{saveInventory(nextInv,false);book._updatedAt=Date.now();saveDB();}
-    catch(err){console.error('[LUMEN v170] Quitar inventario:',err);showToast('⚠ No se pudo actualizar el inventario',4000);return;}
+    catch(err){console.error('[LUMEN v171] Quitar inventario:',err);showToast('⚠ No se pudo actualizar el inventario',4000);return;}
     showToast('✓ Quitado del inventario');
   }else{
     book.enInventario=true;
     book._updatedAt=Date.now();
     try{saveDB();}
-    catch(err){console.error('[LUMEN v170] Agregar inventario:',err);book.enInventario=false;showToast('⚠ No se pudo actualizar el inventario',4000);return;}
+    catch(err){console.error('[LUMEN v171] Agregar inventario:',err);book.enInventario=false;showToast('⚠ No se pudo actualizar el inventario',4000);return;}
     showToast('✓ Agregado al inventario');
   }
   if(currentScreen==='library') renderLibrary();
@@ -4964,6 +4988,20 @@ function pagsHastaDia(year) {
   return getReadingDailyRecords()
     .filter(r => r.fecha.startsWith(prefijo) && r.fecha <= limite)
     .reduce((s,r) => s + r.pags, 0);
+}
+
+function diasEnAnio(year) {
+  const y=Number(year); return (y%4===0 && (y%100!==0 || y%400===0)) ? 366 : 365;
+}
+function paginasFinalesLibrosEnAnio(year) {
+  const y=Number(year);
+  return (db.entries||[]).filter(e=>e&&e.type==='libro'&&e.estado==='leido'&&Number(e.anio)===y)
+    .reduce((sum,e)=>sum+(Number(e.paginas)||0),0);
+}
+function historicoRitmoAnualAntesDe(year) {
+  const y=Number(year);
+  const years=[...new Set((db.entries||[]).filter(e=>e&&e.type==='libro'&&e.estado==='leido'&&Number(e.anio)<y&&Number(e.anio)>0).map(e=>Number(e.anio)))].sort((a,b)=>a-b);
+  return years.map(anio=>{const paginas=paginasFinalesLibrosEnAnio(anio);return {anio,paginas,dias:diasEnAnio(anio),ritmo:paginas/diasEnAnio(anio)};}).filter(x=>x.paginas>0);
 }
 
 // ═══════════════════════════════════
@@ -5620,46 +5658,25 @@ function renderHome() {
     </div>`;
 
   // ── RITMO HERO CARD ──────────────
-  const now = new Date();
   const dayOfYear = diasHastaHoyEnAnio(yr);
-  const pagsEsteAnio = pagsHastaDia(yr);
+  const pagsEsteAnio = paginasRegistradasEnAnio(yr);
   const ritmoActual = dayOfYear > 0 ? pagsEsteAnio / dayOfYear : 0;
-
-  // Histórico: calcular ritmo para todos los años pasados
-  const allYears = [...new Set(db.entries.filter(e=>e.type==='libro'&&e.anio&&e.anio<yr).map(e=>e.anio))];
   const prevYear = yr - 1;
-  
-  // Año anterior (fijo: yr-1)
-  const prevPags = pagsHastaDia(prevYear);
-  const prevDias = diasHastaHoyEnAnio(prevYear);
-  const ritmoPrev = prevDias > 0 && prevPags > 0 ? prevPags / prevDias : 0;
-
-  // Mejor año histórico (excluyendo año actual y anterior)
-  let bestRitmo = 0, bestYear = null;
-  allYears.filter(y => y !== prevYear).forEach(y => {
-    const p = pagsHastaDia(y);
-    const d = diasHastaHoyEnAnio(y);
-    const r = d > 0 ? p / d : 0;
-    if (r > bestRitmo) { bestRitmo = r; bestYear = y; }
-  });
-  // Si no hay mejor año distinto al anterior, usar el mejor de todos
-  if (!bestYear) {
-    allYears.forEach(y => {
-      const p = pagsHastaDia(y); const d = diasHastaHoyEnAnio(y);
-      const r = d > 0 ? p / d : 0;
-      if (r > bestRitmo) { bestRitmo = r; bestYear = y; }
-    });
-  }
-
+  const prevPags = paginasFinalesLibrosEnAnio(prevYear);
+  const ritmoPrev = prevPags > 0 ? prevPags / diasEnAnio(prevYear) : 0;
+  const historico = historicoRitmoAnualAntesDe(yr);
+  const best = historico.reduce((acc,x)=>!acc||x.ritmo>acc.ritmo?x:acc,null);
+  const bestRitmo = best?.ritmo || 0, bestYear = best?.anio || null, bestPags=best?.paginas||0;
+  const proyeccion = ritmoActual * diasEnAnio(yr);
   const diffPrev = ritmoPrev > 0 ? ritmoActual - ritmoPrev : 0;
   const pctPrev  = ritmoPrev > 0 ? Math.round((diffPrev/ritmoPrev)*100) : 0;
   const upPrev   = diffPrev >= 0;
   const colorPrev = upPrev ? '#7ec98f' : '#f08080';
-
   const diffBest = bestRitmo > 0 ? ritmoActual - bestRitmo : 0;
   const pctBest  = bestRitmo > 0 ? Math.round((diffBest/bestRitmo)*100) : 0;
   const upBest   = diffBest >= 0;
   const colorBest = upBest ? '#7ec98f' : '#f08080';
+  const projDiff = bestPags>0 ? Math.round(proyeccion-bestPags) : 0;
 
   document.getElementById('ritmo-hero-card').innerHTML = pagsEsteAnio > 0 ? `
     <div class="ritmo-hero" style="grid-template-columns:1fr 1fr 1fr;">
@@ -5673,7 +5690,7 @@ function renderHome() {
           <div class="ritmo-hero-vs-label">vs ${prevYear}</div>
           <div class="ritmo-hero-vs-num" style="color:${colorPrev};">${ritmoPrev.toFixed(1)}</div>
           <div class="ritmo-hero-vs-pct" style="color:${colorPrev};">${upPrev?'▲':'▼'} ${Math.abs(pctPrev)}%</div>
-          <div class="ritmo-hero-vs-context">${upPrev?'+':''}${diffPrev.toFixed(1)} págs/día</div>
+          <div class="ritmo-hero-vs-context">${prevPags.toLocaleString()} págs / ${diasEnAnio(prevYear)} días<br>${upPrev?'+':''}${diffPrev.toFixed(1)} págs/día</div>
         ` : `<div class="ritmo-hero-vs-label" style="font-size:11px;color:rgba(245,240,232,0.4);">Sin datos<br>${prevYear}</div>`}
       </div>
       <div class="ritmo-hero-vs">
@@ -5681,7 +5698,7 @@ function renderHome() {
           <div class="ritmo-hero-vs-label">mejor · ${bestYear}</div>
           <div class="ritmo-hero-vs-num" style="color:${colorBest};">${bestRitmo.toFixed(1)}</div>
           <div class="ritmo-hero-vs-pct" style="color:${colorBest};">${upBest?'▲':'▼'} ${Math.abs(pctBest)}%</div>
-          <div class="ritmo-hero-vs-context">${upBest?'+':''}${diffBest.toFixed(1)} págs/día</div>
+          <div class="ritmo-hero-vs-context">Récord ${bestPags.toLocaleString()} págs<br>Proy. ${yr}: ${Math.round(proyeccion).toLocaleString()} (${projDiff>=0?'+':''}${projDiff.toLocaleString()})</div>
         ` : `<div class="ritmo-hero-vs-label" style="font-size:11px;color:rgba(245,240,232,0.4);">Sin histórico<br>aún</div>`}
       </div>
     </div>` : '';
@@ -9158,7 +9175,7 @@ function saveReadingEntry() {
     // Evita dejar un alta a medias y muestra el error real en pantalla.
     if (created) db.entries = db.entries.filter(e => e.id!==entry.id);
     else if (before) Object.assign(entry,before);
-    console.error('[LUMEN v170] Error al iniciar lectura:', err);
+    console.error('[LUMEN v171] Error al iniciar lectura:', err);
     const msg = err && (err.name==='QuotaExceededError' || /quota/i.test(err.message||''))
       ? 'No se pudo guardar: almacenamiento local lleno'
       : `No se pudo guardar la lectura${err?.message?': '+err.message:''}`;
@@ -10449,61 +10466,41 @@ function switchMapaTab(tab) {
   else if (tab==='normalizar') initNormalizacion();
 }
 
-// ── Mapa histórico / línea de tiempo v166 ──
+// ── Mapa histórico / línea de tiempo v171 ──
 function histEsc(v){return String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\"/g,'&quot;');}
-function histFormatYear(y){
-  const n=Number(y); if(!Number.isFinite(n)) return '—';
-  return n<0 ? `${Math.abs(Math.round(n))} a. C.` : `${Math.round(n)} d. C.`;
-}
+function histFormatYear(y){ const n=Number(y); if(!Number.isFinite(n)) return '—'; return n<0 ? `${Math.abs(Math.round(n))} a. C.` : `${Math.round(n)} d. C.`; }
 function getHistoriaTimelineItems(){
   const out=[];
   (db.entries||[]).filter(e=>e&&e.type==='libro'&&e.historia).forEach(e=>{
-    const h=e.historia||{}; const periods=Array.isArray(h.periodos)?h.periodos:[];
-    periods.forEach((p,i)=>{
-      let a=p.inicio, b=p.fin;
-      a=(a===null||a===''||a===undefined)?null:Number(a); b=(b===null||b===''||b===undefined)?null:Number(b);
-      if(Number.isFinite(a)&&!Number.isFinite(b)) b=a;
-      if(Number.isFinite(b)&&!Number.isFinite(a)) a=b;
-      out.push({entry:e,period:p,index:i,linea:h.lineaPrincipal||'Sin línea histórica',inicio:Number.isFinite(a)?a:null,fin:Number.isFinite(b)?b:null});
-    });
-    if(!periods.length) out.push({entry:e,period:{nombre:'Sin período fechado'},index:0,linea:h.lineaPrincipal||'Sin línea histórica',inicio:null,fin:null});
+    ensureHistoriaCanonicalRefs(e);
+    const h=e.historia||{}, periods=Array.isArray(h.periodos)?h.periodos:[];
+    const linea=h.lineaPrincipal||'Sin línea histórica', lineaId=h.lineaPrincipalId||canonicalEntityId('histline',linea);
+    periods.forEach((p,i)=>{let a=p.inicio,b=p.fin;a=(a===null||a===''||a===undefined)?null:Number(a);b=(b===null||b===''||b===undefined)?null:Number(b);if(Number.isFinite(a)&&!Number.isFinite(b))b=a;if(Number.isFinite(b)&&!Number.isFinite(a))a=b;out.push({entry:e,period:p,index:i,linea,lineaId,periodoId:p.periodoId||'',inicio:Number.isFinite(a)?a:null,fin:Number.isFinite(b)?b:null});});
+    if(!periods.length) out.push({entry:e,period:{nombre:'Sin período fechado'},index:0,linea,lineaId,periodoId:'',inicio:null,fin:null});
   });
   return out;
 }
+function histLaneLayout(items){const sorted=[...items].sort((a,b)=>a.inicio-b.inicio||a.fin-b.fin),lanes=[];return sorted.map(it=>{let lane=0;while(lane<lanes.length&&it.inicio<=lanes[lane])lane++;if(lane===lanes.length)lanes.push(it.fin);else lanes[lane]=it.fin;return {...it,lane};});}
+function selectHistoriaLine(lineaId){const sel=document.getElementById('hist-linea-filter');if(!sel)return;sel.value=lineaId||'';renderMapaHistoria();document.getElementById('hist-timeline-scroll')?.scrollTo({left:0,behavior:'smooth'});}
 function renderMapaHistoria(){
-  const content=document.getElementById('hist-map-content'); if(!content)return;
-  let all=getHistoriaTimelineItems();
-  const lines=[...new Set(all.map(x=>x.linea).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'));
-  const lineSel=document.getElementById('hist-linea-filter');
-  if(lineSel){ const cur=lineSel.value; lineSel.innerHTML='<option value="">Todas las líneas históricas</option>'+lines.map(x=>`<option value="${histEsc(x)}">${histEsc(x)}</option>`).join(''); if(lines.includes(cur))lineSel.value=cur; }
-  const lf=lineSel?.value||''; const sf=document.getElementById('hist-estado-filter')?.value||'';
-  let items=all.filter(x=>(!lf||x.linea===lf)&&(!sf||x.entry.estado===sf));
-  const uniqueBooks=new Set(items.map(x=>x.entry.id)).size;
-  const dated=items.filter(x=>Number.isFinite(x.inicio)&&Number.isFinite(x.fin));
-  const undated=items.filter(x=>!Number.isFinite(x.inicio)||!Number.isFinite(x.fin));
-  const count=document.getElementById('hist-map-count');if(count)count.textContent=`${uniqueBooks} libro${uniqueBooks===1?'':'s'} · ${items.length} tramo${items.length===1?'':'s'}`;
-  const sum=document.getElementById('hist-map-summary');if(sum)sum.innerHTML=`<div class="hist-map-kpi"><strong>${uniqueBooks}</strong><span>Libros históricos</span></div><div class="hist-map-kpi"><strong>${dated.length}</strong><span>Tramos fechados</span></div><div class="hist-map-kpi"><strong>${undated.length}</strong><span>Sin fechar</span></div>`;
+  const content=document.getElementById('hist-map-content');if(!content)return;
+  const all=getHistoriaTimelineItems(),lineMap=new Map();all.forEach(x=>{if(x.lineaId&&!lineMap.has(x.lineaId))lineMap.set(x.lineaId,x.linea);});
+  const lines=[...lineMap.entries()].sort((a,b)=>a[1].localeCompare(b[1],'es')),lineSel=document.getElementById('hist-linea-filter');
+  if(lineSel){const cur=lineSel.value;lineSel.innerHTML='<option value="">Todas las líneas históricas</option>'+lines.map(([id,n])=>`<option value="${histEsc(id)}">${histEsc(n)}</option>`).join('');if(lines.some(([id])=>id===cur))lineSel.value=cur;}
+  const lf=lineSel?.value||'',sf=document.getElementById('hist-estado-filter')?.value||'';let items=all.filter(x=>!lf||x.lineaId===lf);
+  if(sf==='inventario_no_leido')items=items.filter(x=>x.entry.enInventario&&x.entry.estado!=='leido');else if(sf)items=items.filter(x=>x.entry.estado===sf);
+  const uniqueBooks=new Set(items.map(x=>x.entry.id)).size,dated=items.filter(x=>Number.isFinite(x.inicio)&&Number.isFinite(x.fin)),undated=items.filter(x=>!Number.isFinite(x.inicio)||!Number.isFinite(x.fin)),visibleLines=new Set(items.map(x=>x.lineaId)).size;
+  const count=document.getElementById('hist-map-count');if(count)count.textContent=`${visibleLines} línea${visibleLines===1?'':'s'} · ${uniqueBooks} libro${uniqueBooks===1?'':'s'}`;
+  const sum=document.getElementById('hist-map-summary');if(sum)sum.innerHTML=`<strong>${visibleLines}</strong> líneas <span class="hist-summary-dot">•</span> <strong>${uniqueBooks}</strong> libros <span class="hist-summary-dot">•</span> <strong>${dated.length}</strong> tramos fechados${undated.length?` <span class="hist-summary-dot">•</span> <strong>${undated.length}</strong> sin fechar`:''}${lf?` <span class="hist-summary-dot">•</span> zoom automático activo`:''}`;
   if(!items.length){content.innerHTML='<div class="hist-empty">No hay libros históricos con este filtro.<br><span style="font-family:var(--font-sans);font-style:normal;font-size:11px;">Marca un libro con la etiqueta Historia y agrega sus períodos en la ficha.</span></div>';return;}
   if(!dated.length){content.innerHTML='<div class="hist-empty">Hay libros históricos, pero aún no tienen años para construir la línea de tiempo.</div>'+renderHistUndated(undated);return;}
-
-  let min=Math.min(...dated.map(x=>x.inicio)), max=Math.max(...dated.map(x=>x.fin));
-  if(min===max){min-=10;max+=10;} const span=max-min;
-  const pad=Math.max(1,span*.04); min-=pad;max+=pad;
-  const width=Math.max(720, Math.min(2200, 720 + span*0.45));
-  const rows=[...dated].sort((a,b)=>a.inicio-b.inicio || a.fin-b.fin);
-  const axisTop=48, rowH=78, topRows=76;
-  const x=y=>34+((y-min)/(max-min))*(width-58);
-  const tickCount=6;
-  let axis=`<div class="hist-axis"></div>`;
-  for(let i=0;i<tickCount;i++){const y=min+(max-min)*(i/(tickCount-1));const px=x(y);axis+=`<div class="hist-axis-tick" style="left:${px}px"></div><div class="hist-axis-label" style="left:${px}px">${histFormatYear(y)}</div>`;}
-  const rowHtml=rows.map((it,idx)=>{
-    const left=x(it.inicio), right=x(it.fin), bw=Math.max(16,right-left);
-    const cls=it.entry.estado==='leido'?'read':it.entry.estado==='leyendo'?'reading':'pending';
-    const label=it.period.nombre||it.period.tema||it.entry.titulo;
-    const title=`${it.entry.titulo} — ${label} (${histFormatYear(it.inicio)}${it.fin!==it.inicio?' → '+histFormatYear(it.fin):''})`;
-    return `<div class="hist-row" style="height:${rowH}px"><div class="hist-row-label" title="${histEsc(it.linea)}">${histEsc(it.linea)}</div><div class="hist-bar ${cls}" title="${histEsc(title)}" onclick="showDetail('${it.entry.id}')" style="left:${left}px;width:${bw}px;max-width:${Math.max(120,width-left-12)}px">${histEsc(it.entry.titulo)} · ${histEsc(label)}</div></div>`;
-  }).join('');
-  content.innerHTML=`<div class="hist-timeline" style="width:${width}px;min-height:${topRows+rows.length*rowH}px;padding-top:${topRows}px">${axis}${rowHtml}</div>${renderHistUndated(undated)}`;
+  let min=Math.min(...dated.map(x=>x.inicio)),max=Math.max(...dated.map(x=>x.fin));if(min===max){min-=10;max+=10;}const rawSpan=max-min,pad=Math.max(1,rawSpan*(lf?.035:.025));min-=pad;max+=pad;const span=max-min;
+  const width=lf?Math.max(820,Math.min(1800,820+Math.sqrt(Math.max(1,span))*34)):Math.max(900,Math.min(2600,900+Math.sqrt(Math.max(1,span))*38));
+  const chartLeft=lf?118:148,chartRight=28,x=y=>chartLeft+((y-min)/(max-min))*(width-chartLeft-chartRight),tickCount=6;let axis=`<div class="hist-axis" style="left:${chartLeft}px;right:${chartRight}px"></div>`;
+  for(let i=0;i<tickCount;i++){const y=min+(max-min)*(i/(tickCount-1)),px=x(y);axis+=`<div class="hist-axis-tick" style="left:${px}px"></div><div class="hist-axis-label" style="left:${px}px">${histFormatYear(y)}</div>`;}
+  const grouped=new Map();dated.forEach(it=>{if(!grouped.has(it.lineaId))grouped.set(it.lineaId,{name:it.linea,items:[]});grouped.get(it.lineaId).items.push(it);});const groups=[...grouped.entries()].sort((a,b)=>a[1].name.localeCompare(b[1].name,'es'));let cursor=70;const rows=[];
+  groups.forEach(([lineId,g])=>{const laid=histLaneLayout(g.items),laneCount=Math.max(1,...laid.map(x=>x.lane+1)),rowHeight=46+laneCount*39;const bars=laid.map(it=>{const left=x(it.inicio),right=x(it.fin),bw=Math.max(18,right-left),cls=it.entry.estado==='leido'?'read':it.entry.estado==='leyendo'?'reading':'pending',inv=it.entry.enInventario&&it.entry.estado!=='leido'?' inventory':'',label=it.period.nombre||it.period.tema||'Período',dates=`${histFormatYear(it.inicio)}${it.fin!==it.inicio?' → '+histFormatYear(it.fin):''}`,title=`${it.entry.titulo} — ${label} (${dates})`,top=34+it.lane*39;return `<div class="hist-book-bar ${cls}${inv}" title="${histEsc(title)}" onclick="showDetail('${it.entry.id}')" style="left:${left}px;top:${top}px;width:${bw}px;max-width:${Math.max(120,width-left-12)}px"><div class="hist-book-title">${histEsc(it.entry.titulo)}</div><div class="hist-book-meta">${histEsc(label)} · ${histEsc(dates)}</div></div>`;}).join('');rows.push(`<div class="hist-line-row" style="height:${rowHeight}px"><div class="hist-line-label" title="${histEsc(g.name)} · tocar para ampliar" onclick="selectHistoriaLine('${histEsc(lineId)}')">${histEsc(g.name)}</div><div class="hist-line-guide" style="left:${chartLeft}px;right:${chartRight}px"></div>${bars}</div>`);cursor+=rowHeight;});
+  content.innerHTML=`<div class="hist-timeline" style="width:${width}px;min-height:${cursor}px;padding-top:70px">${axis}${rows.join('')}</div>${renderHistUndated(undated)}`;
 }
 function renderHistUndated(items){if(!items.length)return'';const books=[...new Map(items.map(x=>[x.entry.id,x.entry])).values()];return `<div class="hist-undated"><strong>Sin fecha suficiente (${books.length})</strong><div style="margin-top:6px;line-height:1.7;">${books.map(e=>`<span style="cursor:pointer;text-decoration:underline;text-decoration-style:dotted;" onclick="showDetail('${e.id}')">${histEsc(e.titulo)}</span>`).join(' · ')}</div></div>`;}
 
@@ -13772,7 +13769,7 @@ function startInventoryReading(id){
   if(!book){book={id:'inv_book_'+Date.now(),type:'libro',titulo:item.titulo,autor:item.autor||'',editorial:item.editorial||'',estado:'leyendo',progreso:0,readDates:[],cover:'',notas:'',enInventario:true,startDate:new Date().toISOString(),_updatedAt:Date.now()};db.entries.push(book);}
   else{book.estado='leyendo';book.enInventario=true;book.startDate=book.startDate||new Date().toISOString();book._updatedAt=Date.now();if(!book.editorial&&item.editorial)book.editorial=item.editorial;}
   item.linkedEntryId=book.id;item._updatedAt=Date.now();
-  try{localStorage.setItem(INVENTORY_KEY,JSON.stringify(inv));saveDB();}catch(err){console.error('[LUMEN v170] Inventario → lectura:',err);showToast('⚠ No se pudo iniciar la lectura: '+(err.message||'error local'),4500);return;}
+  try{localStorage.setItem(INVENTORY_KEY,JSON.stringify(inv));saveDB();}catch(err){console.error('[LUMEN v171] Inventario → lectura:',err);showToast('⚠ No se pudo iniciar la lectura: '+(err.message||'error local'),4500);return;}
   renderInventory();renderHome();showToast('✓ Libro agregado a Leyendo ahora');
 }
 function openInventoryImport(){inventoryImportPending=[];document.getElementById('inventory-import-preview').innerHTML='';document.getElementById('inventory-import-confirm').style.display='none';document.getElementById('inventory-csv-input').value='';openModal('modal-inventory-import');}
@@ -13946,11 +13943,11 @@ async function syncToFirestore() {
     const result = await writeCloudV162(currentUser.uid);
     setSyncStatus('ok');
     setLastSync();
-    console.info('[LUMEN v170] Sync V2 OK', result);
+    console.info('[LUMEN v171] Sync V2 OK', result);
     return result;
   } catch(e) {
     setSyncStatus('offline');
-    console.error('[LUMEN v170] Sync V2 error:', e.code || '', e.message, e);
+    console.error('[LUMEN v171] Sync V2 error:', e.code || '', e.message, e);
     throw e;
   }
 }
@@ -13984,7 +13981,7 @@ async function manualSaveToCloud() {
   } catch(e) {
     setSyncStatus('offline');
     showToast(`⚠ Error al guardar: ${e.message}`, 5000);
-    console.error('[LUMEN v170] manualSave error:', e);
+    console.error('[LUMEN v171] manualSave error:', e);
   }
 }
 
@@ -14004,7 +14001,7 @@ async function pullAndMerge(uid, silent) {
     renderHome();
   } catch(e) {
     setSyncStatus('offline');
-    console.error('[LUMEN v170] pull error:', e);
+    console.error('[LUMEN v171] pull error:', e);
     if (!silent) showToast(`⚠ Error al cargar: ${e.message}`, 4500);
   }
 }
@@ -14034,11 +14031,11 @@ function subscribeToFirestore(uid) {
       setSyncStatus('ok');
       renderHome();
     } catch(e) {
-      console.warn('[LUMEN v170] snapshot error:', e.message);
+      console.warn('[LUMEN v171] snapshot error:', e.message);
     }
   }, e => {
     setSyncStatus('offline');
-    console.warn('[LUMEN v170] listener error:', e.message);
+    console.warn('[LUMEN v171] listener error:', e.message);
   });
 }
 
@@ -14055,7 +14052,7 @@ window.lumenSyncDiagnostico = function() {
     usuario:currentUser ? currentUser.uid : null
   };
   console.table(report);
-  console.info('[LUMEN v170] Diagnóstico completo', report);
+  console.info('[LUMEN v171] Diagnóstico completo', report);
   return report;
 };
 
