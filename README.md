@@ -1,50 +1,168 @@
-# LUMEN v173 — Persistencia local robusta y corrección de clicks
+# LUMEN v175 — Influencias canónicas y ficha bibliográfica JSON
 
-**Fecha:** 16 de agosto de 2026
+**Fecha:** 19 de agosto de 2026  
+**Base:** LUMEN v174
 
 ## Cambios aplicados
 
-- Se corrigió la causa común de botones de guardado que parecían no responder cuando Safari/iOS devolvía `QuotaExceededError`.
-- `saveDB()` ya no deja la ejecución interrumpida por una escritura fallida en `localStorage`, por lo que los flujos Guardar / Terminé / notas / Historia / Inventario / mangas / series pueden completar el cierre del modal después de persistir el cambio.
-- Se agregó almacenamiento de portadas locales base64 en **IndexedDB** (`lumen_assets_v1`) para sacar imágenes pesadas del objeto principal guardado en `localStorage`.
-- Se agregó migración automática al iniciar: si existen portadas base64 locales, se respaldan en IndexedDB y el snapshot de `localStorage` se compacta con placeholders.
-- Se agregó hidratación de portadas desde IndexedDB cuando el dispositivo dispone de la imagen local.
-- Se agregó fallback de persistencia liviana si Safari alcanza la cuota y limpieza limitada de respaldos locales transitorios antiguos antes de reintentar.
-- Las escrituras auxiliares de `localStorage` usadas por acciones de la app pasan por el guardado seguro para evitar que un error de cuota corte un click.
-- Se conserva la sincronización Firestore V2 por bloques de v172.
-- Auditoría estática de handlers inline: no se detectaron referencias personalizadas faltantes; `_syncConfirmFn` es dinámica por diseño.
+### 1. Autores canónicos en Influencias
+- Los autores usados en Biblioteca e Influencias quedan disponibles en un selector reutilizable.
+- Un autor nuevo puede escribirse libremente la primera vez; al guardarse queda cristalizado con un `authorId` canónico.
+- Al editar una influencia se puede escoger otro autor canónico y volver a vincular la relación sin crear otro nodo.
+- Coincidencias normalizadas altas solicitan confirmación antes de crear una entidad nueva.
+- Umbral base: 90% de similitud normalizada. También se reconoce de forma estricta una variante breve del nombre cuando el apellido coincide exactamente, útil para transliteraciones como `Lev Tolstói` / `León Tolstói`.
+- Las variantes confirmadas quedan guardadas como alias del autor canónico.
+- El grafo de Influencias ahora construye los nodos usando `authorId`, no solamente el texto visible del nombre.
+
+### 2. Importador JSON de influencias
+- Se corrigió la lectura de `evidencia.pagina`.
+- Se corrigió la lectura de `evidencia.texto`.
+- Se añadió soporte para `evidencia.loc` y `evidencia.capitulo`.
+- El libro destino se resuelve contra la ficha canónica de Biblioteca usando título + autor.
+- Editorial, año de edición, ciudad y edición se obtienen desde la ficha del libro cuando existe.
+- La vista previa avisa cuando la ficha bibliográfica del libro destino está incompleta.
+
+### 3. Referencia ISO visible
+- El detalle de una influencia muestra la referencia ISO 690 generada desde la ficha canónica del libro leído.
+- Página, LOC o capítulo quedan incorporados a la referencia.
+- La lista de relaciones muestra de forma más visible la ubicación de la evidencia.
+- La relación puede guardarse aunque la ficha bibliográfica esté incompleta; queda visible la advertencia para completarla después.
+
+### 4. Ficha bibliográfica JSON
+- En `Biblioteca → Editar libro` se agregó **📥 Cargar JSON bibliográfico**.
+- El importador acepta `lumen_ficha_bibliografica_v1`.
+- Antes de aplicar, muestra una comparación entre datos actuales y datos nuevos.
+- Se guardan por separado:
+  - datos de la edición consultada;
+  - datos históricos/originales de la obra;
+  - historial de ediciones.
+- Si existe un período original de dos años, el año principal de publicación original usa el año inicial/más antiguo.
+- Se incorporan ISBN, ciudad, colección, número/descripción de edición, traductores, prólogo, introducción, notas e impresor cuando vienen en el JSON.
+
+### 5. Editoriales y traductores canónicos
+- Editoriales y traductores también reciben IDs canónicos reutilizables.
+- Las coincidencias altas pueden confirmarse antes de crear una nueva entidad.
+- Las variantes confirmadas quedan como alias.
+- Los catálogos canónicos se incluyen en la sincronización V2 por bloques.
+
+## Modelo bibliográfico v1
+
+```json
+{
+  "schema": "lumen_ficha_bibliografica_v1",
+  "libro": {
+    "titulo": "",
+    "autor": "",
+    "obra_original": {
+      "titulo_original": "",
+      "idioma_original": "",
+      "anio_publicacion_original": null,
+      "periodo_inicio": null,
+      "periodo_fin": null
+    },
+    "edicion_consultada": {
+      "editorial": "",
+      "ciudad": "",
+      "pais": "",
+      "anio": null,
+      "mes": "",
+      "numero_edicion": null,
+      "descripcion_edicion": "",
+      "isbn": "",
+      "coleccion": "",
+      "traductores": [],
+      "prologo": [],
+      "introduccion": [],
+      "notas": [],
+      "impresor": ""
+    },
+    "historial_ediciones": [
+      {
+        "numero": null,
+        "mes": "",
+        "anio": null
+      }
+    ]
+  }
+}
+```
+
+## Prompt recomendado para generar el JSON desde fotos
+
+Usar este texto en el chat junto con las fotografías de la página legal, créditos, portada o páginas editoriales del libro:
+
+> Analiza estas fotografías de un libro y genera **solo un JSON válido**, sin explicación adicional, usando el schema `lumen_ficha_bibliografica_v1` que aparece abajo.  
+>  
+> Reglas:  
+> 1. No inventes información. Si un dato no aparece o no puede leerse con seguridad, usa `null`, `""` o `[]` según corresponda.  
+> 2. Distingue estrictamente entre la **edición que estoy leyendo** y la **fecha histórica/original de la obra**.  
+> 3. `edicion_consultada.anio` corresponde al año de esta edición/ejemplar.  
+> 4. `obra_original.anio_publicacion_original` corresponde a la primera publicación histórica de la obra, solo si las fotografías permiten determinarla.  
+> 5. Si la obra o volumen cubre un rango de publicación, guarda `periodo_inicio` y `periodo_fin` y usa el año más antiguo como `anio_publicacion_original`.  
+> 6. Conserva todos los traductores visibles como elementos separados de `traductores`.  
+> 7. Registra todas las ediciones explícitamente indicadas en `historial_ediciones`.  
+> 8. Normaliza solo espacios y errores evidentes de lectura; conserva los nombres editoriales y personales tal como aparecen en la fuente. LUMEN se encargará después de la normalización canónica.  
+> 9. ISBN debe conservar guiones si aparecen impresos.  
+> 10. No deduzcas ciudad, país, traductor, año original ni número de edición por conocimiento externo.
+>
+> ```json
+> {
+>   "schema": "lumen_ficha_bibliografica_v1",
+>   "libro": {
+>     "titulo": "",
+>     "autor": "",
+>     "obra_original": {
+>       "titulo_original": "",
+>       "idioma_original": "",
+>       "anio_publicacion_original": null,
+>       "periodo_inicio": null,
+>       "periodo_fin": null
+>     },
+>     "edicion_consultada": {
+>       "editorial": "",
+>       "ciudad": "",
+>       "pais": "",
+>       "anio": null,
+>       "mes": "",
+>       "numero_edicion": null,
+>       "descripcion_edicion": "",
+>       "isbn": "",
+>       "coleccion": "",
+>       "traductores": [],
+>       "prologo": [],
+>       "introduccion": [],
+>       "notas": [],
+>       "impresor": ""
+>     },
+>     "historial_ediciones": []
+>   }
+> }
+> ```
 
 ## Archivos modificados
-
 - `index.html`
+- `README.md`
 
-## Módulos no modificados funcionalmente
-
-- Cálculo de lectura y KPIs.
-- Inventario y sus estadísticas.
-- Gephi / Influencias.
+## Módulos no modificados
+- Autenticación / login.
+- Arquitectura Firebase V2 por bloques.
+- Inventario y ratio de lectura.
 - Línea de tiempo histórica.
 - Rutas de lectura.
-- Películas, series, discos y mangas, salvo la capa común de persistencia al guardar.
-- Autenticación y modelo Firestore V2.
+- Películas, series, discos y mangas.
+- Métricas de Inicio y Hábitos.
 
 ## Validaciones realizadas
-
-- Sintaxis de todo el JavaScript embebido validada con `node --check`.
-- Confirmación de versión visible `v173`.
-- Auditoría de 206 referencias de funciones usadas por eventos inline (`onclick`, `onchange`, `oninput`, etc.).
-- Confirmación de que las escrituras directas de `localStorage` fuera de la capa segura fueron eliminadas.
-- Confirmación de que `saveDB()` devuelve sin lanzar `QuotaExceededError` y mantiene el intento de sincronización V2.
-- ZIP verificado con `index.html` y `README.md`.
+- Revisión de sintaxis de todos los scripts JavaScript embebidos con `node --check`.
+- Confirmación de versión visible `v175`.
+- Confirmación de existencia del modal de JSON bibliográfico y botón en ficha de libro.
+- Confirmación de soporte para `evidencia.pagina`, `evidencia.texto`, `evidencia.loc` y `evidencia.capitulo`.
+- Confirmación de construcción del grafo por IDs canónicos de autor.
+- Confirmación de inclusión de catálogos canónicos en sincronización V2.
 
 ## Pruebas sugeridas
-
-1. Abrir v173 en el iPhone y esperar unos segundos para que ejecute la migración local de portadas.
-2. Abrir una lectura en curso, cambiar la página y pulsar **Guardar**. Debe guardar y cerrar el modal.
-3. Repetir con **Terminé** en un libro de prueba o cuando corresponda.
-4. Editar una nota y guardar; el modal debe cerrarse normalmente.
-5. Editar Historia desde su acceso rápido y guardar.
-6. Marcar/desmarcar Inventario desde Biblioteca.
-7. Probar una edición de película/serie y una actualización de manga si existen registros disponibles.
-8. Verificar que ya no aparezca `The quota has been exceeded` durante estos guardados.
-9. Pulsar **Guardar en nube** y luego cargar desde el computador para confirmar persistencia entre dispositivos.
+1. Editar una influencia que diga `Lev Tolstói` y seleccionar el autor canónico existente correspondiente. Guardar y confirmar que el grafo usa un solo nodo.
+2. Importar el JSON de ejemplo con `evidencia.pagina: "723"` y verificar que aparece `p. 723` y el texto citado.
+3. Abrir el detalle de la relación y comprobar que aparece la referencia ISO 690.
+4. Editar un libro, cargar un JSON bibliográfico y revisar la comparación antes de aplicar.
+5. Guardar en nube y cargar desde otro dispositivo para comprobar que autores/editoriales/traductores canónicos se conservan.

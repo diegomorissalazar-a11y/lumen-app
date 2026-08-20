@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1a1510">
-<title>LUMEN v173 — Biblioteca Personal</title>
+<title>LUMEN v175 — Biblioteca Personal</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231a1510'/><text x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' font-family='Georgia,serif' font-size='14' font-weight='900' font-style='italic' fill='%23c8952a' letter-spacing='0.5'>L</text><rect x='6' y='23' width='20' height='2' rx='1' fill='%238b2020'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
@@ -1614,6 +1614,28 @@ select.input { cursor: pointer; }
   </div>
 </div>
 
+<!-- ══════ MODAL: JSON BIBLIOGRÁFICO ══════ -->
+<div id="modal-bib-json" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title">📚 Datos bibliográficos</div>
+      <button class="btn-icon" onclick="closeModal('modal-bib-json')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="bib-json-target">
+      <p style="font-size:11px;color:var(--ink3);line-height:1.55;margin-bottom:10px;">Pega un JSON <strong>lumen_ficha_bibliografica_v1</strong>. LUMEN compara los datos con la ficha y no sobrescribe nada sin mostrarte los cambios.</p>
+      <textarea id="bib-json-text" class="input" rows="13" spellcheck="false" placeholder='{"schema":"lumen_ficha_bibliografica_v1","libro":{"titulo":"...","autor":"...","obra_original":{"anio_publicacion_original":1885,"periodo_inicio":1885,"periodo_fin":1886},"edicion_consultada":{"editorial":"...","ciudad":"...","anio":2016,"numero_edicion":3,"isbn":"...","traductores":["..."]}}}'></textarea>
+      <button class="btn btn-secondary" onclick="previewBibliographicJson()" style="width:100%;margin-top:8px;">Revisar JSON</button>
+      <div id="bib-json-preview" style="display:none;margin-top:10px;border:1px solid var(--border);border-radius:6px;overflow:hidden;background:#fff;"></div>
+      <div style="display:flex;gap:8px;margin-top:10px;">
+        <button id="bib-json-apply" class="btn btn-primary" onclick="applyBibliographicJson()" style="display:none;flex:1;">✓ Aplicar cambios</button>
+        <button class="btn btn-secondary" onclick="closeModal('modal-bib-json')" style="flex:1;">Cancelar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ══════ MODAL: CARGAR INFLUENCIAS JSON ══════ -->
 <div id="modal-inf-json" class="modal-overlay">
   <div class="modal">
@@ -1721,6 +1743,10 @@ select.input { cursor: pointer; }
         </div>
         <!-- Referencia ISO: datos canónicos del libro leído / evidencia -->
         <div style="font-size:10px;color:var(--ink4);line-height:1.45;margin:2px 0 8px;">La referencia ISO se genera desde la ficha canónica del libro destino. Si un dato está incorrecto, corrígelo en Biblioteca.</div>
+        <div id="inf-bib-warning" style="display:none;background:#fff8e8;border:1px solid #d8b66a;border-radius:6px;padding:9px 10px;margin:0 0 9px;font-size:11px;color:var(--ink2);line-height:1.5;">
+          <strong>⚠ Ficha bibliográfica incompleta</strong><br><span id="inf-bib-warning-text"></span>
+          <button type="button" onclick="openBibliographyForInfluence()" style="margin-top:7px;padding:6px 9px;border:1px solid var(--border);background:#fff;border-radius:4px;font-weight:700;cursor:pointer;">📥 Completar con JSON</button>
+        </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
           <div class="field" style="margin-bottom:0;">
             <label>Editorial</label>
@@ -1746,6 +1772,7 @@ select.input { cursor: pointer; }
           <label>Ubicación en la obra</label>
           <select class="input" id="inf-ubicacion-tipo" onchange="onInfUbicacionChange()" style="margin-bottom:6px;">
             <option value="pagina">Página</option>
+            <option value="loc">LOC</option>
             <option value="capitulo">Capítulo</option>
             <option value="epigrafe">Epígrafe</option>
             <option value="dedicatoria">Dedicatoria</option>
@@ -2067,7 +2094,7 @@ select.input { cursor: pointer; }
     Cerrar sesión
   </button>
   <div style="padding:8px 16px 10px;border-top:1px solid var(--border);font-size:10px;color:var(--ink4);letter-spacing:1px;text-align:right;">
-    LUMEN v173
+    LUMEN v175
   </div>
 </div>
 
@@ -2156,6 +2183,10 @@ select.input { cursor: pointer; }
             <input class="input" type="text" id="f-idioma-otro" placeholder="Escribe el idioma..." style="display:none;margin-top:6px;" oninput="normalizeIdiomaOtroInput(this)">
           </div>
         </div>
+        <div class="field">
+          <button type="button" class="btn btn-secondary" onclick="openBibliographicJsonModal(editingId||'__form__')" style="width:100%;">📥 Cargar JSON bibliográfico</button>
+          <div style="font-size:10px;color:var(--ink4);margin-top:5px;line-height:1.45;">Completa edición, ISBN, traductores y fecha original desde la página legal del libro. Los cambios se revisan antes de aplicarse.</div>
+        </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
           <div class="field"><label>Mes lectura</label>
             <select class="input" id="f-mes"><option value="">—</option>
@@ -2220,25 +2251,11 @@ select.input { cursor: pointer; }
         </div>
 
         <div id="historia-fields" style="display:none;background:#fff;border:1px solid var(--border);border-radius:6px;padding:14px;margin-bottom:13px;">
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px;">
-            <div>
-              <div style="font-family:var(--font-serif);font-size:16px;font-weight:700;">Período histórico</div>
-              <div style="font-size:10px;color:var(--ink4);margin-top:2px;">Solo para libros etiquetados como Historia</div>
-            </div>
-            <span style="font-size:20px;">🏛️</span>
-          </div>
-          <div class="field"><label>Línea histórica principal</label><input class="input" type="text" id="hist-linea-principal" placeholder="Ej: Mundo griego, Historia de Chile, Imperio mongol"></div>
-          <div class="field"><label>Líneas relacionadas</label><input class="input" type="text" id="hist-lineas-relacionadas" placeholder="Separadas por coma: Imperio persa, Macedonia"></div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-            <div class="field"><label>Ámbito geográfico</label><input class="input" type="text" id="hist-ambito" placeholder="Ej: Mediterráneo oriental"></div>
-            <div class="field"><label>Enfoque principal</label><select class="input" id="hist-enfoque"><option value="">—</option><option>Político</option><option>Militar</option><option>Social</option><option>Económico</option><option>Cultural</option><option>Religioso</option><option>Biográfico</option><option>Otro</option></select></div>
-          </div>
-          <div style="display:flex;align-items:center;justify-content:space-between;margin:4px 0 8px;">
-            <div style="font-size:10px;color:var(--ink3);letter-spacing:1.5px;text-transform:uppercase;font-weight:700;">Tramos cubiertos por el libro</div>
-            <button type="button" class="btn btn-secondary btn-sm" onclick="addHistoriaPeriod()" style="width:auto;font-size:10px;">+ Período</button>
-          </div>
-          <div id="hist-periodos-list"></div>
-          <div style="font-size:10px;color:var(--ink4);line-height:1.45;margin-top:4px;">Los años a. C. se guardan como negativos (ej.: Salamina = -480). Puedes agregar varios tramos si el libro cubre más de un período.</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px;"><div><div style="font-family:var(--font-serif);font-size:16px;font-weight:700;">Historia</div><div style="font-size:10px;color:var(--ink4);margin-top:2px;">Línea, fechas y conexiones históricas</div></div><span style="font-size:20px;">🏛️</span></div>
+          <div class="field"><label>Línea histórica</label><input class="input" type="text" id="hist-linea-principal" list="hist-lineas-catalogo" placeholder="Ej: Historia de Eurasia"><datalist id="hist-lineas-catalogo"></datalist></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"><div class="field"><label>Fecha inicial</label><input class="input" type="number" id="hist-fecha-inicio" placeholder="-480"></div><div class="field"><label>Fecha final</label><input class="input" type="number" id="hist-fecha-fin" placeholder="-479"></div></div>
+          <div class="field"><label>Conecta con otras líneas históricas</label><div id="hist-related-lines" style="display:flex;flex-wrap:wrap;gap:6px;"></div><div style="font-size:10px;color:var(--ink4);margin-top:5px;line-height:1.4;">Opcional. Este libro queda como evidencia de la conexión entre líneas.</div></div>
+          <div style="font-size:10px;color:var(--ink4);line-height:1.45;">Los años a. C. se guardan como negativos. Las líneas ya usadas quedan disponibles para reutilizarlas.</div>
         </div>
         <div class="field">
           <label>Portada</label>
@@ -2544,7 +2561,7 @@ select.input { cursor: pointer; }
 
 <!-- ══════ MODAL: DETALLE ══════ -->
 <!-- ══════ MODAL: HISTORIA RÁPIDA ══════ -->
-<div id="modal-historia-quick" class="modal-overlay"><div class="modal"><div class="modal-handle"></div><div class="modal-header"><div><div class="modal-title">🏛 Historia</div><div id="histq-book" style="font-size:11px;color:var(--ink4);margin-top:3px;"></div></div><button class="btn-icon" onclick="closeModal('modal-historia-quick')">✕</button></div><div class="modal-body"><input type="hidden" id="histq-entry-id"><div class="field"><label>Línea histórica principal</label><input class="input" id="histq-linea"></div><div class="field"><label>Líneas relacionadas</label><input class="input" id="histq-relacionadas" placeholder="Separadas por coma"></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"><div class="field"><label>Ámbito geográfico</label><input class="input" id="histq-ambito"></div><div class="field"><label>Enfoque</label><select class="input" id="histq-enfoque"><option value="">—</option><option>Político</option><option>Militar</option><option>Social</option><option>Económico</option><option>Cultural</option><option>Religioso</option><option>Biográfico</option><option>Otro</option></select></div></div><div style="display:flex;align-items:center;justify-content:space-between;margin:6px 0 8px;"><strong style="font-size:11px;color:var(--ink3);letter-spacing:1px;text-transform:uppercase;">Períodos</strong><button type="button" class="btn btn-secondary btn-sm" style="width:auto" onclick="addHistoriaQuickPeriod()">+ Período</button></div><div id="histq-periodos"></div><button class="btn btn-primary" onclick="saveHistoriaQuick()">Guardar Historia</button></div></div></div>
+<div id="modal-historia-quick" class="modal-overlay"><div class="modal"><div class="modal-handle"></div><div class="modal-header"><div><div class="modal-title">🏛 Historia</div><div id="histq-book" style="font-size:11px;color:var(--ink4);margin-top:3px;"></div></div><button class="btn-icon" onclick="closeModal('modal-historia-quick')">✕</button></div><div class="modal-body"><input type="hidden" id="histq-entry-id"><div class="field"><label>Línea histórica</label><input class="input" id="histq-linea" list="histq-lineas-catalogo" placeholder="Selecciona o escribe una nueva"><datalist id="histq-lineas-catalogo"></datalist></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"><div class="field"><label>Fecha inicial</label><input class="input" type="number" id="histq-inicio" placeholder="-480"></div><div class="field"><label>Fecha final</label><input class="input" type="number" id="histq-fin" placeholder="-479"></div></div><div class="field"><label>Conecta con otras líneas históricas</label><div id="histq-related-lines" style="display:flex;flex-wrap:wrap;gap:6px;"></div><div style="font-size:10px;color:var(--ink4);margin-top:5px;line-height:1.4;">Opcional. Este libro queda como evidencia de la conexión entre líneas.</div></div><button class="btn btn-primary" onclick="saveHistoriaQuick()">Guardar Historia</button></div></div></div>
 
 <div id="modal-detail" class="modal-overlay">
   <div class="modal">
@@ -3372,7 +3389,7 @@ function openReadingConsistencyReport() {
   const rows = auditReadingConsistency();
   const lineas = [];
   lineas.push('═══════════════════════════════════════════════');
-  lineas.push('REVISIÓN DE CONSISTENCIA DE LECTURA — LUMEN v173');
+  lineas.push('REVISIÓN DE CONSISTENCIA DE LECTURA — LUMEN v175');
   lineas.push('Generado: ' + new Date().toLocaleString('es-CL', { timeZone: LUMEN_TZ }));
   lineas.push('═══════════════════════════════════════════════');
   lineas.push('');
@@ -3432,34 +3449,83 @@ function canonicalEntityId(prefix, value) {
   const slug = norm.replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'').slice(0,42) || 'item';
   return `${prefix}_${slug}_${(h>>>0).toString(36)}`;
 }
+const CANONICAL_ENTITIES_KEY = 'lumen_canonical_entities_v1';
+function emptyCanonicalEntities(){return {schema:'lumen_entities_v1',authors:{},publishers:{},translators:{}};}
+function loadCanonicalEntities(){
+  try { const x=JSON.parse(localStorage.getItem(CANONICAL_ENTITIES_KEY)||'null'); return x&&x.authors?x:emptyCanonicalEntities(); }
+  catch { return emptyCanonicalEntities(); }
+}
+function saveCanonicalEntities(c){ safeLocalSetItem(CANONICAL_ENTITIES_KEY,JSON.stringify(c||emptyCanonicalEntities()),{prune:true}); }
+function catalogBucket(kind,c){ c=c||loadCanonicalEntities(); return kind==='aut'?c.authors:(kind==='edi'?c.publishers:c.translators); }
+function levenshtein(a,b){
+  a=canonicalText(a); b=canonicalText(b); if(a===b)return 0; if(!a.length)return b.length; if(!b.length)return a.length;
+  const v0=Array(b.length+1).fill(0),v1=Array(b.length+1).fill(0); for(let j=0;j<=b.length;j++)v0[j]=j;
+  for(let i=0;i<a.length;i++){v1[0]=i+1;for(let j=0;j<b.length;j++){const cost=a[i]===b[j]?0:1;v1[j+1]=Math.min(v1[j]+1,v0[j+1]+1,v0[j]+cost);}for(let j=0;j<=b.length;j++)v0[j]=v1[j];}
+  return v1[b.length];
+}
+function entitySimilarity(a,b){const x=canonicalText(a),y=canonicalText(b); if(!x||!y)return 0; return 1-levenshtein(x,y)/Math.max(x.length,y.length);}
+function allKnownEntityNames(kind){
+  const c=loadCanonicalEntities(), b=catalogBucket(kind,c), out=[];
+  Object.values(b).forEach(e=>{if(e?.nombreCanonico)out.push({id:e.id,name:e.nombreCanonico,registered:true});(e?.aliases||[]).forEach(a=>out.push({id:e.id,name:a,registered:true,alias:true}));});
+  if(kind==='aut'){
+    (db?.entries||[]).filter(e=>e?.type==='libro').forEach(e=>splitCanonicalAuthors(e.autor).forEach(n=>out.push({id:e.autorId||canonicalEntityId('aut',n),name:n,registered:false})));
+    (typeof mapas!=='undefined'?(mapas.influencias||[]):[]).forEach(i=>{if(i.fuente)out.push({id:i.fuente_autor_id||canonicalEntityId('aut',i.fuente),name:i.fuente,registered:false});if(i.destino_autor)out.push({id:i.destino_autor_id||canonicalEntityId('aut',i.destino_autor),name:i.destino_autor,registered:false});});
+  } else if(kind==='edi') (db?.entries||[]).filter(e=>e?.type==='libro'&&e.editorial).forEach(e=>out.push({id:e.editorialId||canonicalEntityId('edi',e.editorial),name:e.editorial,registered:false}));
+  else (db?.entries||[]).filter(e=>e?.type==='libro'&&e.traductor).forEach(e=>String(e.traductor).split(/\s*;\s*|\s*,\s*(?=[A-ZÁÉÍÓÚÑ])/).filter(Boolean).forEach(n=>out.push({id:canonicalEntityId('tra',n),name:n,registered:false})));
+  const seen=new Set(); return out.filter(x=>{const k=x.id+'|'+canonicalText(x.name);if(seen.has(k))return false;seen.add(k);return true;});
+}
+function findCanonicalEntity(kind,name){
+  const norm=canonicalText(name); if(!norm)return null; const c=loadCanonicalEntities(),b=catalogBucket(kind,c);
+  for(const e of Object.values(b)){if(canonicalText(e.nombreCanonico)===norm || (e.aliases||[]).some(a=>canonicalText(a)===norm))return e;}
+  return null;
+}
+function registerCanonicalEntity(kind,name,preferredId=''){
+  name=String(name||'').trim(); if(!name)return {id:'',nombreCanonico:'',aliases:[]}; const c=loadCanonicalEntities(),b=catalogBucket(kind,c);
+  const existing=findCanonicalEntity(kind,name); if(existing)return existing;
+  const id=preferredId||canonicalEntityId(kind,name); const e=b[id]||{id,nombreCanonico:name,aliases:[]}; if(!e.nombreCanonico)e.nombreCanonico=name; b[id]=e; saveCanonicalEntities(c); return e;
+}
+function addCanonicalAlias(kind,id,alias){
+  alias=String(alias||'').trim(); if(!id||!alias)return; const c=loadCanonicalEntities(),b=catalogBucket(kind,c),e=b[id]; if(!e)return;
+  if(canonicalText(alias)!==canonicalText(e.nombreCanonico) && !(e.aliases||[]).some(a=>canonicalText(a)===canonicalText(alias))){e.aliases=e.aliases||[];e.aliases.push(alias);saveCanonicalEntities(c);}
+}
+function resolveCanonicalEntity(kind,name,interactive=false){
+  name=String(name||'').trim(); if(!name)return {id:'',nombreCanonico:'',aliases:[]}; const exact=findCanonicalEntity(kind,name); if(exact)return exact;
+  const candidates=allKnownEntityNames(kind).filter(x=>canonicalText(x.name)!==canonicalText(name)); let best=null;
+  candidates.forEach(x=>{const sim=entitySimilarity(name,x.name);if(!best||sim>best.sim)best={...x,sim};});
+  const nParts=canonicalText(name).split(' '), bParts=best?canonicalText(best.name).split(' '):[];
+  const sameSurname=best&&nParts.length>1&&bParts.length>1&&nParts[nParts.length-1]===bParts[bParts.length-1];
+  const strictVariant=best&&sameSurname&&best.sim>=0.83&&levenshtein(nParts[0]||'',bParts[0]||'')<=2;
+  if(interactive && best && (best.sim>=0.90||strictVariant)){
+    const pct=Math.round(best.sim*100); if(confirm(`¿“${name}” es la misma entidad que “${best.name}”?\nCoincidencia normalizada: ${pct}%${strictVariant&&best.sim<0.90?' · mismo apellido y variante breve de nombre':''}`)){
+      let target=findCanonicalEntity(kind,best.name)||registerCanonicalEntity(kind,best.name,best.id); addCanonicalAlias(kind,target.id,name); return target;
+    }
+  }
+  return registerCanonicalEntity(kind,name);
+}
+function canonicalNameById(kind,id,fallback=''){const b=catalogBucket(kind);return b[id]?.nombreCanonico||fallback;}
 function splitCanonicalAuthors(value) {
   return String(value || '').split(/\s*;\s*/).map(x=>x.trim()).filter(Boolean);
 }
 function ensureBookCanonicalRefs(entry) {
   if (!entry || entry.type !== 'libro') return entry;
   const authors = splitCanonicalAuthors(entry.autor);
-  entry.autorIds = authors.map(a=>canonicalEntityId('aut',a)).filter(Boolean);
-  entry.autorId = entry.autorIds[0] || '';
-  entry.editorialId = entry.editorial ? canonicalEntityId('edi',entry.editorial) : '';
-  entry._canonicalModel = 'lumen_book_v1';
+  const ars=authors.map(a=>resolveCanonicalEntity('aut',a,false));
+  entry.autorIds=ars.map(x=>x.id).filter(Boolean); entry.autorId=entry.autorIds[0]||'';
+  if(ars[0]?.nombreCanonico && authors.length===1) entry.autor=ars[0].nombreCanonico;
+  const pub=entry.editorial?resolveCanonicalEntity('edi',entry.editorial,false):null;
+  entry.editorialId=pub?.id||''; if(pub?.nombreCanonico)entry.editorial=pub.nombreCanonico;
+  const trads=(entry.bibliografia?.edicionConsultada?.traductores||String(entry.traductor||'').split(/\s*;\s*/).filter(Boolean));
+  entry.traductorIds=trads.map(t=>resolveCanonicalEntity('tra',t,false).id).filter(Boolean);
+  entry._canonicalModel = 'lumen_book_v2';
   if (entry.historia && typeof entry.historia === 'object') ensureHistoriaCanonicalRefs(entry);
   return entry;
 }
 function ensureHistoriaCanonicalRefs(entry) {
-  if (!entry || entry.type !== 'libro' || !entry.historia || typeof entry.historia !== 'object') return entry;
-  const h=entry.historia;
-  const linea=String(h.lineaPrincipal||'').trim();
-  h.schema='lumen_historia_v2';
-  h.lineaPrincipalId=linea ? canonicalEntityId('histline',linea) : '';
-  const relacionadas=Array.isArray(h.lineasRelacionadas)?h.lineasRelacionadas:[];
-  h.lineasRelacionadasIds=relacionadas.map(x=>canonicalEntityId('histline',x)).filter(Boolean);
-  h.periodos=(Array.isArray(h.periodos)?h.periodos:[]).map(p=>{
-    const q={...p};
-    const base=String(q.nombre||q.tema||`${q.inicio??''}_${q.fin??''}`).trim();
-    q.periodoId=q.periodoId || canonicalEntityId('histperiod',`${h.lineaPrincipalId||linea}|${base}`);
-    return q;
-  });
-  return entry;
+  if(!entry||entry.type!=='libro'||!entry.historia||typeof entry.historia!=='object')return entry;
+  const h=entry.historia,linea=String(h.lineaPrincipal||'').trim();h.schema='lumen_historia_v3';h.lineaPrincipalId=linea?canonicalEntityId('histline',linea):'';
+  const rel=Array.isArray(h.lineasRelacionadas)?h.lineasRelacionadas:[];h.lineasRelacionadasIds=(Array.isArray(h.lineasRelacionadasIds)&&h.lineasRelacionadasIds.length?h.lineasRelacionadasIds:rel.map(x=>canonicalEntityId('histline',x))).filter(Boolean);
+  const b=historyBounds(h);h.fechaInicio=b.inicio;h.fechaFin=b.fin;if(!Array.isArray(h.periodos)||!h.periodos.length)h.periodos=(b.inicio!==null||b.fin!==null)?[{nombre:'',tema:'',inicio:b.inicio,fin:b.fin,precision:'aproximada',cobertura:'periodo'}]:[];
+  h.periodos=h.periodos.map(p=>{const q={...p},base=String(q.nombre||q.tema||`${q.inicio??''}_${q.fin??''}`).trim();q.periodoId=q.periodoId||canonicalEntityId('histperiod',`${h.lineaPrincipalId||linea}|${base}`);return q});if(linea)registerHistoricalLine(linea);return entry;
 }
 function findBookCanonicalById(id) {
   return (db.entries||[]).find(e=>e && e.type==='libro' && e.id===id) || null;
@@ -3486,11 +3552,24 @@ function getInfluenceSourceBook() {
   return findBookCanonicalByTitle(getInfObra(), getInfFuente());
 }
 function canonicalBookBibliography(book) {
-  if (!book) return {autor:'',titulo:'',editorial:'',anio:'',ciudad:'',edicion:''};
+  if (!book) return {autor:'',titulo:'',editorial:'',anio:'',ciudad:'',edicion:'',isbn:'',traductores:[]};
+  const ed=book.bibliografia?.edicionConsultada||{};
   return {
-    autor: book.autor || '', titulo: book.titulo || '', editorial: book.editorial || '',
-    anio: book.anio_pub || '', ciudad: book.ciudad_publicacion || book.ciudad || '', edicion: book.edicion || ''
+    autor: book.autor||'', titulo:book.titulo||'', editorial:ed.editorial||book.editorial||'',
+    anio: ed.anio||book.anio_pub||'', ciudad:ed.ciudad||book.ciudad_publicacion||book.ciudad||'',
+    edicion: ed.descripcionEdicion||ed.numeroEdicion||book.edicion||'', isbn:ed.isbn||book.isbn||'',
+    traductores: Array.isArray(ed.traductores)?ed.traductores:splitCanonicalAuthors(book.traductor||'')
   };
+}
+function bibliographyMissing(book){
+  const b=canonicalBookBibliography(book), missing=[];
+  if(!b.editorial)missing.push('editorial'); if(!b.anio)missing.push('año de edición'); if(!b.ciudad)missing.push('ciudad');
+  if(!b.edicion)missing.push('edición'); return missing;
+}
+function formatIsoBookReference(book,ubTipo='',ubDetalle=''){
+  const b=canonicalBookBibliography(book); if(!book)return '';
+  const ubLabel={pagina:'p.',loc:'LOC',capitulo:'cap.',epigrafe:'Epígrafe:',dedicatoria:'Dedicatoria',titulo:'[Título]',otro:''};
+  let x=''; if(b.autor)x+=b.autor.toUpperCase()+'. '; if(b.titulo)x+=b.titulo+'. '; if(b.edicion)x+=b.edicion+'. '; if(b.ciudad)x+=b.ciudad+': '; if(b.editorial)x+=b.editorial+', '; if(b.anio)x+=b.anio+'. '; if(ubDetalle)x+=(ubLabel[ubTipo]||'')+' '+ubDetalle+'.'; return x.trim();
 }
 function ensureInfluenceCanonicalRefs(inf) {
   if (!inf) return inf;
@@ -3941,6 +4020,7 @@ async function syncToFirestore() {
       inventory: cleanForFirestore(loadInventory()),
       normBlacklist: loadNormBlacklist(),
       idiomasAprobados: loadIdiomasAprobados(),
+    historicalLines: historicalLinesCatalog(),
       updatedAt: Date.now()
     };
     await firestore.collection('users').doc(currentUser.uid).collection('data').doc('library').set(payload);
@@ -4315,61 +4395,10 @@ function toggleGenero(btn) {
   if (btn.closest && btn.closest('#generos-chips')) updateHistoriaFieldsVisibility();
 }
 
-function updateHistoriaFieldsVisibility() {
-  const panel = document.getElementById('historia-fields');
-  if (!panel) return;
-  const isHistory = !!document.querySelector('#generos-chips .genero-chip[data-g="Historia"].active');
-  panel.style.display = isHistory ? 'block' : 'none';
-  if (isHistory && !document.querySelector('#hist-periodos-list .hist-period-row')) addHistoriaPeriod();
-}
-
-function historiaPeriodRowHTML(p={}) {
-  const escAttr = v => String(v ?? '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  const precision = p.precision || 'aproximada';
-  const cobertura = p.cobertura || 'periodo';
-  return `<div class="hist-period-row" style="border:1px solid var(--cream3);background:var(--cream2);border-radius:6px;padding:10px;margin-bottom:8px;">
-    <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:8px;"><strong style="font-size:11px;color:var(--ink2);">Tramo histórico</strong><button type="button" class="btn-icon" onclick="removeHistoriaPeriod(this)" title="Eliminar tramo">✕</button></div>
-    <div class="field"><label>Nombre del período / hecho</label><input class="input hp-nombre" type="text" value="${escAttr(p.nombre)}" placeholder="Ej: Guerras médicas / Batalla de Salamina"></div>
-    <div class="field"><label>Tema o proceso</label><input class="input hp-tema" type="text" value="${escAttr(p.tema)}" placeholder="Ej: conflicto greco-persa"></div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"><div class="field"><label>Año inicial</label><input class="input hp-inicio" type="number" value="${escAttr(p.inicio)}" placeholder="-480"></div><div class="field"><label>Año final</label><input class="input hp-fin" type="number" value="${escAttr(p.fin)}" placeholder="-479"></div></div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"><div class="field"><label>Precisión</label><select class="input hp-precision"><option value="exacta" ${precision==='exacta'?'selected':''}>Exacta</option><option value="aproximada" ${precision==='aproximada'?'selected':''}>Aproximada</option><option value="decada" ${precision==='decada'?'selected':''}>Década</option><option value="siglo" ${precision==='siglo'?'selected':''}>Siglo</option><option value="periodo" ${precision==='periodo'?'selected':''}>Período general</option></select></div><div class="field"><label>Cobertura</label><select class="input hp-cobertura"><option value="hecho" ${cobertura==='hecho'?'selected':''}>Hecho puntual</option><option value="reinado" ${cobertura==='reinado'?'selected':''}>Reinado / vida</option><option value="proceso" ${cobertura==='proceso'?'selected':''}>Guerra / proceso</option><option value="decadas" ${cobertura==='decadas'?'selected':''}>Décadas</option><option value="siglo" ${cobertura==='siglo'?'selected':''}>Siglo</option><option value="periodo" ${cobertura==='periodo'?'selected':''}>Período extenso</option><option value="comparacion" ${cobertura==='comparacion'?'selected':''}>Comparación entre épocas</option></select></div></div>
-  </div>`;
-}
-function addHistoriaPeriod(p={}) { const list=document.getElementById('hist-periodos-list'); if(list) list.insertAdjacentHTML('beforeend', historiaPeriodRowHTML(p)); }
-function removeHistoriaPeriod(btn) { const row=btn.closest('.hist-period-row'); if(row) row.remove(); const list=document.getElementById('hist-periodos-list'); if(list && !list.querySelector('.hist-period-row')) addHistoriaPeriod(); }
-function getHistoriaFromForm() {
-  const periodos=[...document.querySelectorAll('#hist-periodos-list .hist-period-row')].map(row=>{
-    const val=cls=>row.querySelector(cls)?.value?.trim?.() || '';
-    const num=cls=>{const raw=row.querySelector(cls)?.value; return raw===''||raw==null?null:Number(raw);};
-    return {nombre:val('.hp-nombre'),tema:val('.hp-tema'),inicio:num('.hp-inicio'),fin:num('.hp-fin'),precision:val('.hp-precision')||'aproximada',cobertura:val('.hp-cobertura')||'periodo'};
-  }).filter(p=>p.nombre||p.tema||p.inicio!==null||p.fin!==null);
-  const lineaPrincipal=document.getElementById('hist-linea-principal')?.value?.trim() || '';
-  const lineasRelacionadas=(document.getElementById('hist-lineas-relacionadas')?.value||'').split(',').map(x=>x.trim()).filter(Boolean);
-  const lineaPrincipalId=lineaPrincipal ? canonicalEntityId('histline',lineaPrincipal) : '';
-  return {
-    schema: 'lumen_historia_v2',
-    lineaPrincipal,
-    lineaPrincipalId,
-    lineasRelacionadas,
-    lineasRelacionadasIds: lineasRelacionadas.map(x=>canonicalEntityId('histline',x)).filter(Boolean),
-    ambitoGeografico: document.getElementById('hist-ambito')?.value?.trim() || '',
-    enfoque: document.getElementById('hist-enfoque')?.value || '',
-    periodos: periodos.map(p=>({...p,periodoId:canonicalEntityId('histperiod',`${lineaPrincipalId||lineaPrincipal}|${p.nombre||p.tema||`${p.inicio??''}_${p.fin??''}`}`)}))
-  };
-}
-function resetHistoriaFields() {
-  ['hist-linea-principal','hist-lineas-relacionadas','hist-ambito'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-  const enf=document.getElementById('hist-enfoque');if(enf)enf.value='';
-  const list=document.getElementById('hist-periodos-list');if(list)list.innerHTML='';
-}
-function setHistoriaFields(historia) {
-  const h=historia||{};
-  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v||'';};
-  set('hist-linea-principal',h.lineaPrincipal); set('hist-lineas-relacionadas',Array.isArray(h.lineasRelacionadas)?h.lineasRelacionadas.join(', '):h.lineasRelacionadas); set('hist-ambito',h.ambitoGeografico); set('hist-enfoque',h.enfoque);
-  const list=document.getElementById('hist-periodos-list'); if(list) list.innerHTML='';
-  const ps=Array.isArray(h.periodos)?h.periodos:[]; (ps.length?ps:[{}]).forEach(addHistoriaPeriod);
-  updateHistoriaFieldsVisibility();
-}
+function updateHistoriaFieldsVisibility(){const panel=document.getElementById('historia-fields');if(!panel)return;const active=!!document.querySelector('#generos-chips .genero-chip[data-g="Historia"].active');panel.style.display=active?'block':'none';if(active){fillHistoricalLineDatalists();const rel=document.getElementById('hist-related-lines');if(rel&&!rel.querySelector('[data-line-id]'))renderHistoricalLineChoices('hist-related-lines',[])}}
+function getHistoriaFromForm(){const lineaPrincipal=document.getElementById('hist-linea-principal')?.value?.trim()||'',lineaPrincipalId=registerHistoricalLine(lineaPrincipal),ri=document.getElementById('hist-fecha-inicio')?.value,rf=document.getElementById('hist-fecha-fin')?.value,inicio=ri===''||ri==null?null:Number(ri),fin=rf===''||rf==null?null:Number(rf),lineasRelacionadasIds=selectedHistoricalLineIds('hist-related-lines',lineaPrincipalId),lineasRelacionadas=historicalLineNamesFromIds(lineasRelacionadasIds);return{schema:'lumen_historia_v3',lineaPrincipal,lineaPrincipalId,fechaInicio:inicio,fechaFin:fin,lineasRelacionadas,lineasRelacionadasIds,periodos:(inicio!==null||fin!==null)?[{nombre:'',tema:'',inicio:inicio??fin,fin:fin??inicio,precision:'aproximada',cobertura:'periodo',periodoId:canonicalEntityId('histperiod',`${lineaPrincipalId||lineaPrincipal}|${inicio??fin}_${fin??inicio}`)}]:[]}}
+function resetHistoriaFields(){['hist-linea-principal','hist-fecha-inicio','hist-fecha-fin'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});renderHistoricalLineChoices('hist-related-lines',[])}
+function setHistoriaFields(historia){const h=historia||{},b=historyBounds(h),set=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v??''};set('hist-linea-principal',h.lineaPrincipal||'');set('hist-fecha-inicio',b.inicio);set('hist-fecha-fin',b.fin);updateHistoriaFieldsVisibility();fillHistoricalLineDatalists();renderHistoricalLineChoices('hist-related-lines',h.lineasRelacionadasIds||[])}
 function formatHistoriaYear(y) { const n=Number(y); if(!Number.isFinite(n)) return ''; return n<0?`${Math.abs(n)} a. C.`:`${n} d. C.`; }
 
 function getGenerosSeleccionados() {
@@ -4782,13 +4811,13 @@ function toggleBookInventoryQuick(bookId) {
     book.enInventario=false;
     const nextInv=inv.filter(x=>x.linkedEntryId!==bookId);
     try{saveInventory(nextInv,false);book._updatedAt=Date.now();saveDB();}
-    catch(err){console.error('[LUMEN v173] Quitar inventario:',err);showToast('⚠ No se pudo actualizar el inventario',4000);return;}
+    catch(err){console.error('[LUMEN v175] Quitar inventario:',err);showToast('⚠ No se pudo actualizar el inventario',4000);return;}
     showToast('✓ Quitado del inventario');
   }else{
     book.enInventario=true;
     book._updatedAt=Date.now();
     try{saveDB();}
-    catch(err){console.error('[LUMEN v173] Agregar inventario:',err);book.enInventario=false;showToast('⚠ No se pudo actualizar el inventario',4000);return;}
+    catch(err){console.error('[LUMEN v175] Agregar inventario:',err);book.enInventario=false;showToast('⚠ No se pudo actualizar el inventario',4000);return;}
     showToast('✓ Agregado al inventario');
   }
   if(currentScreen==='library') renderLibrary();
@@ -4839,6 +4868,8 @@ function saveEntry() {
       enInventario: !!document.getElementById('f-en-inventario')?.checked,
       historia: getGenerosSeleccionados().includes('Historia') ? getHistoriaFromForm() : null,
       cover: document.getElementById('f-cover').value };
+    if (editingId) { const prev=db.entries.find(e=>e.id===editingId); if(prev?.bibliografia) entry.bibliografia=prev.bibliografia; if(prev?.isbn)entry.isbn=prev.isbn; if(prev?.anio_publicacion_original!=null)entry.anio_publicacion_original=prev.anio_publicacion_original; if(prev?.periodo_publicacion_inicio!=null)entry.periodo_publicacion_inicio=prev.periodo_publicacion_inicio; if(prev?.periodo_publicacion_fin!=null)entry.periodo_publicacion_fin=prev.periodo_publicacion_fin; }
+    if (!editingId && _pendingFormBibliography) { entry.bibliografia=_pendingFormBibliography; const bo=_pendingFormBibliography.obraOriginal||{},be=_pendingFormBibliography.edicionConsultada||{}; if(be.isbn)entry.isbn=be.isbn;if(bo.anioPublicacionOriginal!=null)entry.anio_publicacion_original=Number(bo.anioPublicacionOriginal);if(bo.periodoInicio!=null)entry.periodo_publicacion_inicio=Number(bo.periodoInicio);if(bo.periodoFin!=null)entry.periodo_publicacion_fin=Number(bo.periodoFin); _pendingFormBibliography=null; }
   } else if (currentType === 'pelicula') {
     const titulo = document.getElementById('fp-titulo').value.trim();
     if (!titulo) { showToast('Ingresa el título'); return; }
@@ -6201,14 +6232,8 @@ function entryCardHTML(e) {
     </div>`;
 }
 
-function historiaQuickPeriodHTML(p={}) {
-  const escQ=v=>String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
-  const opts=(vals,cur)=>vals.map(x=>`<option ${cur===x?'selected':''}>${x}</option>`).join('');
-  return `<div class="histq-row" style="background:#fff;border:1px solid var(--border);border-radius:6px;padding:10px;margin-bottom:8px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;"><strong style="font-size:11px;">Tramo histórico</strong><button type="button" class="btn-icon" onclick="this.closest('.histq-row').remove()">✕</button></div><div class="field"><label>Período / hecho</label><input class="input histq-nombre" value="${escQ(p.nombre)}"></div><div class="field"><label>Tema / proceso</label><input class="input histq-tema" value="${escQ(p.tema)}"></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"><div class="field"><label>Año inicio</label><input type="number" class="input histq-inicio" value="${p.inicio??''}"></div><div class="field"><label>Año fin</label><input type="number" class="input histq-fin" value="${p.fin??''}"></div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"><div class="field"><label>Precisión</label><select class="input histq-precision"><option value="">—</option>${opts(['Exacta','Aproximada','Década','Siglo','Período general'],p.precision)}</select></div><div class="field"><label>Cobertura</label><select class="input histq-cobertura"><option value="">—</option>${opts(['Hecho puntual','Reinado o vida','Guerra o proceso','Décadas','Siglo','Período extenso','Comparación entre épocas'],p.cobertura)}</select></div></div></div>`;
-}
-function addHistoriaQuickPeriod(p={}) { const el=document.getElementById('histq-periodos'); if(el) el.insertAdjacentHTML('beforeend',historiaQuickPeriodHTML(p)); }
-function openHistoriaQuick(entryId) { const e=(db.entries||[]).find(x=>x.id===entryId); if(!e||e.type!=='libro'||!(e.generos||[]).includes('Historia')) return; const h=e.historia||{}; document.getElementById('histq-entry-id').value=e.id; document.getElementById('histq-book').textContent=e.titulo||''; document.getElementById('histq-linea').value=h.lineaPrincipal||''; document.getElementById('histq-relacionadas').value=(h.lineasRelacionadas||[]).join(', '); document.getElementById('histq-ambito').value=h.ambitoGeografico||''; document.getElementById('histq-enfoque').value=h.enfoque||''; const list=document.getElementById('histq-periodos'); list.innerHTML=''; (Array.isArray(h.periodos)&&h.periodos.length?h.periodos:[{}]).forEach(addHistoriaQuickPeriod); openModal('modal-historia-quick'); }
-function saveHistoriaQuick() { const id=document.getElementById('histq-entry-id').value, e=(db.entries||[]).find(x=>x.id===id); if(!e)return; const periods=[...document.querySelectorAll('#histq-periodos .histq-row')].map(r=>{const num=sel=>{const v=r.querySelector(sel)?.value;return v===''?null:Number(v)};return {nombre:r.querySelector('.histq-nombre')?.value.trim()||'',tema:r.querySelector('.histq-tema')?.value.trim()||'',inicio:num('.histq-inicio'),fin:num('.histq-fin'),precision:r.querySelector('.histq-precision')?.value||'',cobertura:r.querySelector('.histq-cobertura')?.value||''};}).filter(p=>p.nombre||p.tema||p.inicio!==null||p.fin!==null); e.historia={...(e.historia||{}),schema:'lumen_historia_v2',lineaPrincipal:document.getElementById('histq-linea').value.trim(),lineasRelacionadas:document.getElementById('histq-relacionadas').value.split(',').map(x=>x.trim()).filter(Boolean),ambitoGeografico:document.getElementById('histq-ambito').value.trim(),enfoque:document.getElementById('histq-enfoque').value,periodos:periods}; ensureHistoriaCanonicalRefs(e); e._updatedAt=Date.now(); saveDB(); closeModal('modal-historia-quick'); showToast('✓ Historia actualizada'); if(currentScreen==='library')renderLibrary(); if(currentScreen==='mapas')renderMapaHistoria(); }
+function openHistoriaQuick(entryId){const e=(db.entries||[]).find(x=>x.id===entryId);if(!e||e.type!=='libro'||!(e.generos||[]).includes('Historia'))return;const launch=()=>{const h=e.historia||{},b=historyBounds(h);document.getElementById('histq-entry-id').value=e.id;document.getElementById('histq-book').textContent=e.titulo||'';document.getElementById('histq-linea').value=h.lineaPrincipal||'';document.getElementById('histq-inicio').value=b.inicio??'';document.getElementById('histq-fin').value=b.fin??'';fillHistoricalLineDatalists();renderHistoricalLineChoices('histq-related-lines',h.lineasRelacionadasIds||[]);openModal('modal-historia-quick')};const d=document.getElementById('modal-detail');if(d?.classList.contains('open')){closeModal('modal-detail');setTimeout(launch,140)}else launch()}
+function saveHistoriaQuick(){const id=document.getElementById('histq-entry-id').value,e=(db.entries||[]).find(x=>x.id===id);if(!e)return;const lineaPrincipal=document.getElementById('histq-linea').value.trim(),lineaPrincipalId=registerHistoricalLine(lineaPrincipal),ri=document.getElementById('histq-inicio').value,rf=document.getElementById('histq-fin').value,inicio=ri===''?null:Number(ri),fin=rf===''?null:Number(rf),lineasRelacionadasIds=selectedHistoricalLineIds('histq-related-lines',lineaPrincipalId),lineasRelacionadas=historicalLineNamesFromIds(lineasRelacionadasIds);e.historia={...(e.historia||{}),schema:'lumen_historia_v3',lineaPrincipal,lineaPrincipalId,fechaInicio:inicio,fechaFin:fin,lineasRelacionadas,lineasRelacionadasIds,periodos:(inicio!==null||fin!==null)?[{nombre:'',tema:'',inicio:inicio??fin,fin:fin??inicio,precision:'aproximada',cobertura:'periodo',periodoId:canonicalEntityId('histperiod',`${lineaPrincipalId||lineaPrincipal}|${inicio??fin}_${fin??inicio}`)}]:[]};ensureHistoriaCanonicalRefs(e);e._updatedAt=Date.now();const ok=saveDB();if(ok!==false){closeModal('modal-historia-quick');showToast('✓ Historia actualizada');if(currentScreen==='library')renderLibrary();if(currentScreen==='mapas')renderMapaHistoria()}}
 
 // ═══════════════════════════════════
 //  DETAIL MODAL
@@ -6244,7 +6269,7 @@ function showDetail(id) {
     if (e.estado === 'leyendo') html += row('Progreso', e.progreso + '%');
     if (e.estado === 'abandonado' && e.abandono) html += row('Abandonado', e.abandono);
     if (e.generos && e.generos.length) {
-      const chips = e.generos.map(g=>`<span ${g==='Historia'?`onclick="event.stopPropagation();closeModal('modal-detail');openHistoriaQuick('${e.id}')"`:''} style="font-size:11px;background:${g==='Historia'?'#fff4dc':'var(--cream2)'};border:1px solid ${g==='Historia'?'#d9b96f':'var(--border)'};border-radius:12px;padding:2px 9px;color:${g==='Historia'?'#8b6010':'var(--ink2)'};${g==='Historia'?'cursor:pointer;font-weight:700;':''}">${g}</span>`).join(' ');
+      const chips = e.generos.map(g=>`<span ${g==='Historia'?`onclick="event.stopPropagation();openHistoriaQuick('${e.id}')"`:''} style="font-size:11px;background:${g==='Historia'?'#fff4dc':'var(--cream2)'};border:1px solid ${g==='Historia'?'#d9b96f':'var(--border)'};border-radius:12px;padding:2px 9px;color:${g==='Historia'?'#8b6010':'var(--ink2)'};${g==='Historia'?'cursor:pointer;font-weight:700;':''}">${g}</span>`).join(' ');
       html += `<div style="display:flex;gap:8px;padding:7px 0;border-bottom:1px solid var(--cream2);align-items:flex-start;"><span style="font-size:10px;color:var(--ink4);letter-spacing:1.5px;text-transform:uppercase;font-weight:700;width:110px;flex-shrink:0;padding-top:4px;">Géneros</span><div style="display:flex;flex-wrap:wrap;gap:4px;">${chips}</div></div>`;
     }
   } else if (e.type === 'pelicula') {
@@ -9217,7 +9242,7 @@ function saveReadingEntry() {
     // Evita dejar un alta a medias y muestra el error real en pantalla.
     if (created) db.entries = db.entries.filter(e => e.id!==entry.id);
     else if (before) Object.assign(entry,before);
-    console.error('[LUMEN v173] Error al iniciar lectura:', err);
+    console.error('[LUMEN v175] Error al iniciar lectura:', err);
     const msg = err && (err.name==='QuotaExceededError' || /quota/i.test(err.message||''))
       ? 'No se pudo guardar: almacenamiento local lleno'
       : `No se pudo guardar la lectura${err?.message?': '+err.message:''}`;
@@ -10407,7 +10432,8 @@ function renderComparador() {
     const directores = new Set([...peliculas,...series].map(e=>e.director).filter(Boolean)).size;
     const idiomas  = new Set(libros.map(e=>e.idioma).filter(Boolean)).size;
     const diasConLectura = activityDaysComparableForYear(yr);
-    return { libros: libros.length, peliculas: peliculas.length, series: series.length, paginas, autores, directores, idiomas, total: libros.length+peliculas.length+series.length, diasConLectura };
+    const ritmoDen=yr===currentYr?dayOfYearFromDateStr(todaySantiagoStr()):daysInYearLumen(yr); const ritmoPromedio=ritmoDen>0?paginas/ritmoDen:0;
+    return { libros: libros.length, peliculas: peliculas.length, series: series.length, paginas, ritmoPromedio, autores, directores, idiomas, total: libros.length+peliculas.length+series.length, diasConLectura };
   }
 
   const a = statsForYear(yrA), b = statsForYear(yrB);
@@ -10424,6 +10450,8 @@ function renderComparador() {
         <div style="text-align:center;font-size:12px;font-weight:700;">${arrow}</div>
       </div>`;
   }
+
+  function rowRitmo(va,vb){const diff=va-vb,pct=vb>0?Math.round(diff/vb*100):0,arrow=diff>0?`<span style="color:#7ec98f;">▲${Math.abs(pct)}%</span>`:diff<0?`<span style="color:#f08080;">▼${Math.abs(pct)}%</span>`:'<span style="color:var(--ink4);">—</span>',fmt=v=>`${Number(v||0).toLocaleString('es-CL',{minimumFractionDigits:1,maximumFractionDigits:1})}<div style="font-family:var(--font-sans);font-size:9px;color:var(--ink4);font-weight:400;">págs/día</div>`;return `<div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:8px;padding:10px 0;border-bottom:1px solid var(--cream2);align-items:center;"><div style="font-size:12px;color:var(--ink3);font-weight:700;letter-spacing:1px;text-transform:uppercase;">📈 Ritmo promedio</div><div style="font-family:var(--font-serif);font-size:18px;font-weight:700;color:var(--ink);text-align:center;">${fmt(va)}</div><div style="font-family:var(--font-serif);font-size:18px;font-weight:700;color:var(--ink4);text-align:center;">${fmt(vb)}</div><div style="text-align:center;font-size:12px;font-weight:700;">${arrow}</div></div>`}
 
   function rowDiasConLectura(va, vb) {
     const fmt = (v, muted) => {
@@ -10457,6 +10485,7 @@ function renderComparador() {
     </div>
     ${row('📚 Libros leídos', a.libros, b.libros)}
     ${row('📄 Páginas', a.paginas, b.paginas)}
+    ${rowRitmo(a.ritmoPromedio,b.ritmoPromedio)}
     ${rowDiasConLectura(a.diasConLectura, b.diasConLectura)}
     ${row('🎬 Películas', a.peliculas, b.peliculas)}
     ${row('📺 Series', a.series, b.series)}
@@ -10542,7 +10571,7 @@ function renderMapaHistoria(){
   const chartLeft=lf?118:148,chartRight=28,x=y=>chartLeft+((y-min)/(max-min))*(width-chartLeft-chartRight),tickCount=6;let axis=`<div class="hist-axis" style="left:${chartLeft}px;right:${chartRight}px"></div>`;
   for(let i=0;i<tickCount;i++){const y=min+(max-min)*(i/(tickCount-1)),px=x(y);axis+=`<div class="hist-axis-tick" style="left:${px}px"></div><div class="hist-axis-label" style="left:${px}px">${histFormatYear(y)}</div>`;}
   const grouped=new Map();dated.forEach(it=>{if(!grouped.has(it.lineaId))grouped.set(it.lineaId,{name:it.linea,items:[]});grouped.get(it.lineaId).items.push(it);});const groups=[...grouped.entries()].sort((a,b)=>a[1].name.localeCompare(b[1].name,'es'));let cursor=70;const rows=[];
-  groups.forEach(([lineId,g])=>{const laid=histLaneLayout(g.items),laneCount=Math.max(1,...laid.map(x=>x.lane+1)),rowHeight=46+laneCount*39;const bars=laid.map(it=>{const left=x(it.inicio),right=x(it.fin),bw=Math.max(18,right-left),cls=it.entry.estado==='leido'?'read':it.entry.estado==='leyendo'?'reading':'pending',inv=it.entry.enInventario&&it.entry.estado!=='leido'?' inventory':'',label=it.period.nombre||it.period.tema||'Período',dates=`${histFormatYear(it.inicio)}${it.fin!==it.inicio?' → '+histFormatYear(it.fin):''}`,title=`${it.entry.titulo} — ${label} (${dates})`,top=34+it.lane*39;return `<div class="hist-book-bar ${cls}${inv}" title="${histEsc(title)}" onclick="showDetail('${it.entry.id}')" style="left:${left}px;top:${top}px;width:${bw}px;max-width:${Math.max(120,width-left-12)}px"><div class="hist-book-title">${histEsc(it.entry.titulo)}</div><div class="hist-book-meta">${histEsc(label)} · ${histEsc(dates)}</div></div>`;}).join('');rows.push(`<div class="hist-line-row" style="height:${rowHeight}px"><div class="hist-line-label" title="${histEsc(g.name)} · tocar para ampliar" onclick="selectHistoriaLine('${histEsc(lineId)}')">${histEsc(g.name)}</div><div class="hist-line-guide" style="left:${chartLeft}px;right:${chartRight}px"></div>${bars}</div>`);cursor+=rowHeight;});
+  groups.forEach(([lineId,g])=>{const laid=histLaneLayout(g.items),laneCount=Math.max(1,...laid.map(x=>x.lane+1)),rowHeight=46+laneCount*39;const bars=laid.map(it=>{const left=x(it.inicio),right=x(it.fin),bw=Math.max(18,right-left),cls=it.entry.estado==='leido'?'read':it.entry.estado==='leyendo'?'reading':'pending',inv=it.entry.enInventario&&it.entry.estado!=='leido'?' inventory':'',label=it.period.nombre||it.period.tema||'',dates=`${histFormatYear(it.inicio)}${it.fin!==it.inicio?' → '+histFormatYear(it.fin):''}`,title=`${it.entry.titulo}${label?' — '+label:''} (${dates})`,top=34+it.lane*39;return `<div class="hist-book-bar ${cls}${inv}" title="${histEsc(title)}" onclick="showDetail('${it.entry.id}')" style="left:${left}px;top:${top}px;width:${bw}px;max-width:${Math.max(120,width-left-12)}px"><div class="hist-book-title">${histEsc(it.entry.titulo)}</div><div class="hist-book-meta">${label?histEsc(label)+' · ':''}${histEsc(dates)}</div></div>`;}).join('');rows.push(`<div class="hist-line-row" style="height:${rowHeight}px"><div class="hist-line-label" title="${histEsc(g.name)} · tocar para ampliar" onclick="selectHistoriaLine('${histEsc(lineId)}')">${histEsc(g.name)}</div><div class="hist-line-guide" style="left:${chartLeft}px;right:${chartRight}px"></div>${bars}</div>`);cursor+=rowHeight;});
   content.innerHTML=`<div class="hist-timeline" style="width:${width}px;min-height:${cursor}px;padding-top:70px">${axis}${rows.join('')}</div>${renderHistUndated(undated)}`;
 }
 function renderHistUndated(items){if(!items.length)return'';const books=[...new Map(items.map(x=>[x.entry.id,x.entry])).values()];return `<div class="hist-undated"><strong>Sin fecha suficiente (${books.length})</strong><div style="margin-top:6px;line-height:1.7;">${books.map(e=>`<span style="cursor:pointer;text-decoration:underline;text-decoration-style:dotted;" onclick="showDetail('${e.id}')">${histEsc(e.titulo)}</span>`).join(' · ')}</div></div>`;}
@@ -10565,6 +10594,38 @@ function getAutoresYLibros() {
 }
 function getTitulosLibros() { return db.entries.map(e=>e.titulo).filter(Boolean).sort(); }
 
+// ═══════════════════════════════════
+//  FICHA BIBLIOGRÁFICA JSON — v175
+// ═══════════════════════════════════
+let _bibJsonParsed=null;
+let _pendingFormBibliography=null;
+function getBibliographyTargetBook(){const id=document.getElementById('bib-json-target')?.value||'';return id&&id!=='__form__'?findBookCanonicalById(id):null;}
+function openBibliographicJsonModal(target){document.getElementById('bib-json-target').value=target||'__form__';document.getElementById('bib-json-text').value='';document.getElementById('bib-json-preview').style.display='none';document.getElementById('bib-json-apply').style.display='none';_bibJsonParsed=null;openModal('modal-bib-json');}
+function openBibliographyForInfluence(){const b=getInfluenceEvidenceBook();if(!b){showToast('Selecciona primero el libro destino');return;}openBibliographicJsonModal(b.id);}
+function normalizeBibliographicPayload(raw){
+  if(raw?.schema!=='lumen_ficha_bibliografica_v1'&&!raw?.libro)throw new Error('JSON bibliográfico no reconocido.'); const l=raw.libro||raw, o=l.obra_original||{},e=l.edicion_consultada||{};
+  const pi=o.periodo_inicio??o.anio_inicio??null,pf=o.periodo_fin??o.anio_fin??null; let original=o.anio_publicacion_original??null; if(original==null&&pi!=null)original=Number(pi); if(original==null&&pi!=null&&pf!=null)original=Math.min(Number(pi),Number(pf));
+  return {schema:'lumen_ficha_bibliografica_v1',titulo:l.titulo||'',autor:l.autor||'',obraOriginal:{tituloOriginal:o.titulo_original||'',idiomaOriginal:o.idioma_original||'',anioPublicacionOriginal:original,periodoInicio:pi,periodoFin:pf},edicionConsultada:{editorial:e.editorial||'',ciudad:e.ciudad||'',pais:e.pais||'',anio:e.anio??null,mes:e.mes||'',numeroEdicion:e.numero_edicion??null,descripcionEdicion:e.descripcion_edicion||'',isbn:e.isbn||'',coleccion:e.coleccion||'',traductores:asArr(e.traductores||e.traductor),prologo:asArr(e.prologo),introduccion:asArr(e.introduccion),notas:asArr(e.notas),impresor:e.impresor||''},historialEdiciones:asArr(l.historial_ediciones).map(x=>({numero:x.numero??null,mes:x.mes||'',anio:x.anio??null}))};
+}
+function currentBibComparable(book){const ed=book?.bibliografia?.edicionConsultada||{};return {editorial:book?.editorial||ed.editorial||'',ciudad:book?.ciudad_publicacion||ed.ciudad||'',anioEdicion:book?.anio_pub||ed.anio||'',edicion:book?.edicion||ed.descripcionEdicion||ed.numeroEdicion||'',isbn:book?.isbn||ed.isbn||'',traductores:book?.traductor||((ed.traductores||[]).join('; ')),anioOriginal:book?.anio_publicacion_original||book?.bibliografia?.obraOriginal?.anioPublicacionOriginal||'',periodo: [book?.periodo_publicacion_inicio||'',book?.periodo_publicacion_fin||''].filter(x=>x!==''&&x!=null).join('–')};}
+function previewBibliographicJson(){
+  try{const raw=JSON.parse(document.getElementById('bib-json-text').value);_bibJsonParsed=normalizeBibliographicPayload(raw);const target=getBibliographyTargetBook();const cur=currentBibComparable(target||{}),n=_bibJsonParsed,e=n.edicionConsultada,o=n.obraOriginal;
+    const rows=[['Editorial',cur.editorial,e.editorial],['Ciudad',cur.ciudad,e.ciudad],['Año de edición',cur.anioEdicion,e.anio],['Edición',cur.edicion,e.descripcionEdicion||e.numeroEdicion],['ISBN',cur.isbn,e.isbn],['Traductores',cur.traductores,e.traductores.join('; ')],['Publicación original',cur.anioOriginal,o.anioPublicacionOriginal],['Período original',cur.periodo,[o.periodoInicio,o.periodoFin].filter(x=>x!==null&&x!=='').join('–')]].filter(r=>r[2]!==''&&r[2]!==null&&r[2]!==undefined);
+    const el=document.getElementById('bib-json-preview');el.style.display='block';el.innerHTML=`<div style="padding:9px 11px;font-size:11px;color:var(--ink3);border-bottom:1px solid var(--border);">${rows.length} dato(s) detectado(s). Revisa antes de aplicar.</div>${rows.map(r=>`<div style="display:grid;grid-template-columns:110px 1fr 1fr;gap:6px;padding:8px 10px;border-bottom:1px solid var(--cream2);font-size:10px;"><strong>${escapeHtml(r[0])}</strong><span style="color:var(--ink4);">${escapeHtml(r[1]||'—')}</span><span style="color:${r[1]&&canonicalText(r[1])!==canonicalText(r[2])?'var(--red)':'var(--green)'};font-weight:700;">${escapeHtml(r[2]||'—')}</span></div>`).join('')}`;document.getElementById('bib-json-apply').style.display='inline-flex';
+  }catch(e){showToast('⚠ '+e.message,4500);}
+}
+function applyBibliographicJson(){
+  if(!_bibJsonParsed){showToast('Revisa primero el JSON');return;}const target=getBibliographyTargetBook();const n=_bibJsonParsed,e=n.edicionConsultada,o=n.obraOriginal;
+  const pub=e.editorial?resolveCanonicalEntity('edi',e.editorial,true):null; const tradEnt=e.traductores.map(t=>resolveCanonicalEntity('tra',t,true));
+  if(target){target.bibliografia={schema:'lumen_ficha_bibliografica_v1',obraOriginal:o,edicionConsultada:{...e,editorial:pub?.nombreCanonico||e.editorial,editorialId:pub?.id||'',traductores:tradEnt.map(x=>x.nombreCanonico),traductorIds:tradEnt.map(x=>x.id)},historialEdiciones:n.historialEdiciones};
+    if(pub){target.editorial=pub.nombreCanonico;target.editorialId=pub.id;} if(e.ciudad)target.ciudad_publicacion=e.ciudad;if(e.anio)target.anio_pub=Number(e.anio)||e.anio;if(e.descripcionEdicion||e.numeroEdicion)target.edicion=String(e.descripcionEdicion||e.numeroEdicion);if(e.isbn)target.isbn=e.isbn;if(tradEnt.length){target.traductor=tradEnt.map(x=>x.nombreCanonico).join('; ');target.traductorIds=tradEnt.map(x=>x.id);} if(o.idiomaOriginal)target.idioma=o.idiomaOriginal;if(o.anioPublicacionOriginal!=null)target.anio_publicacion_original=Number(o.anioPublicacionOriginal);if(o.periodoInicio!=null)target.periodo_publicacion_inicio=Number(o.periodoInicio);if(o.periodoFin!=null)target.periodo_publicacion_fin=Number(o.periodoFin);target._updatedAt=Date.now();ensureBookCanonicalRefs(target);saveDB();
+  } else {
+    const set=(id,v)=>{const x=document.getElementById(id);if(x&&v!==''&&v!=null)x.value=v;};set('f-editorial',pub?.nombreCanonico||e.editorial);set('f-ciudad-pub',e.ciudad);set('f-anio-pub',e.anio);set('f-edicion',e.descripcionEdicion||e.numeroEdicion);set('f-traductor',tradEnt.map(x=>x.nombreCanonico).join('; ')); if(o.idiomaOriginal){const sel=document.getElementById('f-idioma');if(sel)[...sel.options].some(x=>x.value===o.idiomaOriginal)&&(sel.value=o.idiomaOriginal);}
+    _pendingFormBibliography={schema:'lumen_ficha_bibliografica_v1',obraOriginal:o,edicionConsultada:{...e,editorial:pub?.nombreCanonico||e.editorial,editorialId:pub?.id||'',traductores:tradEnt.map(x=>x.nombreCanonico),traductorIds:tradEnt.map(x=>x.id)},historialEdiciones:n.historialEdiciones};
+  }
+  closeModal('modal-bib-json'); if(document.getElementById('modal-influencia')?.classList.contains('open')||document.getElementById('modal-influencia')?.style.display==='flex'){syncInfCanonicalBibliography();actualizarIsoPreview();} showToast('✓ Ficha bibliográfica actualizada'); if(currentScreen==='library')renderLibrary();
+}
+
 // ══════════════════════════
 // ══════════════════════════
 //  INFLUENCIAS — CRUD
@@ -10572,14 +10633,12 @@ function getTitulosLibros() { return db.entries.map(e=>e.titulo).filter(Boolean)
 
 // ── Helpers para autocompletado ──────────────────────────
 function getAutoresBiblioteca() {
-  const autores = [...new Set(
-    db.entries.filter(e => e.autor && e.autor.trim()).map(e => e.autor.trim())
-  )].sort((a,b) => a.localeCompare(b,'es'));
-  return autores;
+  const byId=new Map(); allKnownEntityNames('aut').forEach(x=>{if(!byId.has(x.id))byId.set(x.id,{id:x.id,name:canonicalNameById('aut',x.id,x.name)});});
+  return [...byId.values()].sort((a,b)=>a.name.localeCompare(b.name,'es'));
 }
 function getLibrosPorAutor(autor) {
   return db.entries
-    .filter(e => e.type === 'libro' && (e.autor||'').trim() === autor)
+    .filter(e => e.type === 'libro' && splitCanonicalAuthors(e.autor).some(a=>canonicalText(a)===canonicalText(autor)))
     .sort((a,b) => a.titulo.localeCompare(b.titulo,'es'));
 }
 function getTodosLibros() {
@@ -10594,7 +10653,7 @@ function rellenarInfFuenteSel() {
   if (!sel) return;
   sel.innerHTML = '<option value="">— Selecciona un autor —</option>';
   getAutoresBiblioteca().forEach(a => {
-    const o = document.createElement('option'); o.value = a; o.textContent = a; o.dataset.authorId=canonicalEntityId('aut',a); sel.appendChild(o);
+    const o = document.createElement('option'); o.value = a.name; o.textContent = a.name; o.dataset.authorId=a.id; sel.appendChild(o);
   });
   const oOtro = document.createElement('option');
   oOtro.value = '__otro__'; oOtro.textContent = '✏ No está en la lista...';
@@ -10693,6 +10752,8 @@ function syncInfCanonicalBibliography() {
   const b=canonicalBookBibliography(book);
   const set=(id,v)=>{const el=document.getElementById(id); if(el) el.value=(v??'').toString();};
   set('inf-editorial', b.editorial); set('inf-anio-pub', b.anio); set('inf-ciudad', b.ciudad); set('inf-edicion', b.edicion);
+  const warn=document.getElementById('inf-bib-warning'),txt=document.getElementById('inf-bib-warning-text'); const miss=bibliographyMissing(book);
+  if(warn){warn.style.display=(book&&miss.length)?'block':'none'; if(txt)txt.textContent=miss.length?'Faltan: '+miss.join(', ')+'.':'';}
   return book;
 }
 function onInfDestinoSelChange() {
@@ -10742,17 +10803,8 @@ function actualizarIsoPreview() {
 
   if (!autor && !obra) { preview.style.display = 'none'; return; }
 
-  const ubLabel = { pagina:'p.', capitulo:'cap.', epigrafe:'Epígrafe:', dedicatoria:'Dedicatoria', titulo:'[Título]', otro:'' };
-  let cita = '';
-  if (autor) cita += autor.toUpperCase() + '. ';
-  if (obra)  cita += `<em>${obra}</em>. `;
-  if (edicion) cita += edicion + '. ';
-  if (ciudad)  cita += ciudad + ': ';
-  if (editorial) cita += editorial + ', ';
-  if (anio)    cita += anio + '. ';
-  if (ubDetalle) cita += (ubLabel[ubTipo]||'') + ' ' + ubDetalle + '.';
-
-  preview.innerHTML = `<div style="font-size:9px;letter-spacing:1.2px;text-transform:uppercase;color:var(--ink4);font-family:var(--font-sans);margin-bottom:4px;font-weight:700;">Referencia ISO 690 · libro leído</div>${cita.trim()}`;
+  const cita=formatIsoBookReference(evidence,ubTipo,ubDetalle);
+  preview.innerHTML = `<div style="font-size:9px;letter-spacing:1.2px;text-transform:uppercase;color:var(--ink4);font-family:var(--font-sans);margin-bottom:4px;font-weight:700;">Referencia ISO 690 · libro leído</div>${escapeHtml(cita)}`;
   preview.style.display = 'block';
 }
 
@@ -10908,41 +10960,30 @@ function mapJsonInfluenceToLumen(item, forcedTipo) {
   const fuente = item.fuente?.nombre || item.fuente || item.autor_citado || item.origen || '';
   const destinoTitulo = item.destino?.titulo || item.destino || item.libro_destino || '';
   const destinoAutor = item.destino?.autor || '';
+  const evidenceBook=findBookCanonicalByTitle(destinoTitulo,destinoAutor);
+  if(evidenceBook)ensureBookCanonicalRefs(evidenceBook);
   const destinoMeta = getInfluenceDestinoAutorMeta(destinoTitulo, destinoAutor);
   const destino = destinoMeta.destinoNodo;
-  const ubicTipo = item.iso?.ubicacion_tipo || item.ubicacion_tipo || 'capitulo';
-  const ubicDetalle = item.iso?.ubicacion_detalle || item.ubicacion_detalle || item.ubicacion || '';
+  const ev=item.evidencia||{};
+  let ubicTipo=item.iso?.ubicacion_tipo||item.ubicacion_tipo||'';
+  let ubicDetalle=item.iso?.ubicacion_detalle||item.ubicacion_detalle||item.ubicacion||'';
+  if(!ubicDetalle && ev.pagina!=null){ubicTipo='pagina';ubicDetalle=String(ev.pagina);}
+  else if(!ubicDetalle && ev.loc!=null){ubicTipo='loc';ubicDetalle=String(ev.loc);}
+  else if(!ubicDetalle && ev.capitulo!=null){ubicTipo='capitulo';ubicDetalle=String(ev.capitulo);}
+  if(!ubicTipo)ubicTipo='pagina';
   const obra = item.obra_citada?.titulo || item.obra || item.fuente?.nombre_en_texto || fuente;
+  const bib=canonicalBookBibliography(evidenceBook);
   const obj = {
-    id: 'inf_' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
-    id_import: item.id_import || '',
-    tipo, fuente, destino, obra,
-    editorial: item.iso?.editorial || item.editorial || '',
-    anio_pub: item.iso?.anio || item.anio_pub || '',
-    ciudad: item.iso?.ciudad || item.ciudad || '',
-    edicion: item.iso?.edicion || item.edicion || '',
-    ubicacion_tipo: ubicTipo,
-    ubicacion_detalle: ubicDetalle,
-    texto: item.texto_citado || item.texto || '',
-    fuente_nombre_en_texto: item.fuente?.nombre_en_texto || '',
-    obra_tipo: item.obra_citada?.tipo || '',
-    peso: item.peso || 1,
-    nota: item.nota || '',
-    tags: asArr(item.tags),
-    destino_tipo: 'autor',
-    destino_autor: destinoMeta.destinoAutor || destino,
-    destino_titulo: destinoMeta.libroRef || destinoTitulo,
-    destino_original: destinoTitulo,
-    libro_ref: destinoMeta.libroRef || destinoTitulo,
-    pagina: parseInt(ubicDetalle) || null,
-    import_schema: 'lumen_influencias_import_v1',
-    importedAt: Date.now(),
-    createdAt: Date.now()
+    id: 'inf_' + Date.now() + '_' + Math.random().toString(36).slice(2,7), id_import:item.id_import||'', tipo, fuente, destino, obra,
+    editorial:bib.editorial||item.iso?.editorial||item.editorial||'', anio_pub:bib.anio||item.iso?.anio||item.anio_pub||'', ciudad:bib.ciudad||item.iso?.ciudad||item.ciudad||'', edicion:bib.edicion||item.iso?.edicion||item.edicion||'',
+    fuente_autor_id:'', destino_libro_id:evidenceBook?.id||'', evidencia_libro_id:evidenceBook?.id||'', destino_autor_id:evidenceBook?.autorId||'', editorial_id:evidenceBook?.editorialId||'',
+    ubicacion_tipo:ubicTipo, ubicacion_detalle:ubicDetalle, texto:ev.texto||item.texto_citado||item.texto||'', fuente_nombre_en_texto:item.fuente?.nombre_en_texto||'', obra_tipo:item.obra_citada?.tipo||'', peso:item.peso||1, nota:item.nota||'', tags:asArr(item.tags),
+    destino_tipo:'autor', destino_autor:destinoMeta.destinoAutor||destino, destino_titulo:destinoMeta.libroRef||destinoTitulo, destino_original:destinoTitulo, libro_ref:destinoMeta.libroRef||destinoTitulo,
+    pagina:ubicTipo==='pagina'?(parseInt(ubicDetalle)||null):null, import_schema:'lumen_influencias_import_v1', importedAt:Date.now(), createdAt:Date.now()
   };
-  obj.import_key = normalizeInfDedupeKey(obj);
-  return { obj, destinoExiste: !!destinoMeta.destinoExiste, destinoOriginal: destinoTitulo, destinoAutor: destinoMeta.destinoAutor || destinoAutor };
+  obj.import_key=normalizeInfDedupeKey(obj);
+  return {obj,destinoExiste:!!destinoMeta.destinoExiste,destinoOriginal:destinoTitulo,destinoAutor:destinoMeta.destinoAutor||destinoAutor,evidenceBook,missingBib:bibliographyMissing(evidenceBook)};
 }
-
 function prepareInfJsonPreview(raw) {
   const forcedTipo = document.getElementById('inf-json-tipo').value || '';
   let arr = [];
@@ -10960,7 +11001,8 @@ function renderInfJsonPreview() {
   const validas = _infJsonPreviewItems.filter(x=>!x.duplicada).length;
   const dup = _infJsonPreviewItems.filter(x=>x.duplicada).length;
   const libres = _infJsonPreviewItems.filter(x=>!x.destinoExiste).length;
-  document.getElementById('inf-json-status').textContent = `${_infJsonPreviewItems.length} relación(es) detectada(s). ${validas} nueva(s), ${dup} duplicada(s), ${libres} con destino libre.`;
+  const bibPend=_infJsonPreviewItems.filter(x=>x.destinoExiste&&x.missingBib&&x.missingBib.length).length;
+  document.getElementById('inf-json-status').textContent = `${_infJsonPreviewItems.length} relación(es) detectada(s). ${validas} nueva(s), ${dup} duplicada(s), ${libres} con destino libre, ${bibPend} con bibliografía pendiente.`;
   el.style.display = 'block';
   el.innerHTML = `
     <div style="padding:10px 12px;border-bottom:1px solid var(--border);font-size:11px;color:var(--ink4);line-height:1.5;">
@@ -10974,25 +11016,16 @@ function renderInfJsonPreview() {
         </div>
         <div style="font-size:12px;color:var(--ink2);line-height:1.5;"><strong>${escapeHtml(p.obj.fuente)}</strong> → <strong>${escapeHtml(p.obj.destino||'Sin destino')}</strong></div>
         <div style="font-size:11px;color:var(--ink4);margin-top:3px;">${escapeHtml(p.obj.ubicacion_detalle||'Sin ubicación')}${p.obj.id_import?' · ID: '+escapeHtml(p.obj.id_import):''}</div>
-        ${p.obj.texto?`<div style="font-family:var(--font-serif);font-size:12px;color:var(--ink3);margin-top:6px;line-height:1.5;">“${escapeHtml(p.obj.texto)}”</div>`:''}
+        ${p.missingBib?.length?`<div style="font-size:10px;color:var(--gold);margin-top:5px;">⚠ Faltan para ISO: ${escapeHtml(p.missingBib.join(', '))}</div>`:''}${p.obj.texto?`<div style="font-family:var(--font-serif);font-size:12px;color:var(--ink3);margin-top:6px;line-height:1.5;">“${escapeHtml(p.obj.texto)}”</div>`:''}
       </div>`).join('')}`;
   document.getElementById('inf-json-confirm').style.display = validas ? 'inline-flex' : 'none';
 }
 
 function confirmInfJsonImport() {
-  const nuevos = _infJsonPreviewItems.filter(x => !x.duplicada).map(x => x.obj);
-  if (!nuevos.length) { showToast('No hay relaciones nuevas para importar'); return; }
-  const ts = Date.now();
-  try {
-    safeLocalSetItem('lumen_mapas_backup_before_influencias_import_' + ts, JSON.stringify(mapas));
-    safeLocalSetItem('lumen_mapas_v1_backup_before_import', JSON.stringify({ createdAt:ts, mapas }));
-  } catch(e) { console.warn('No se pudo crear backup previo', e); }
-  mapas.influencias = mapas.influencias || [];
-  mapas.influencias.push(...nuevos);
-  saveMapas();
-  closeModal('modal-inf-json');
-  showToast(`✓ ${nuevos.length} relación(es) importada(s)`);
-  renderMapaInfluencias();
+  const nuevos=_infJsonPreviewItems.filter(x=>!x.duplicada).map(x=>x.obj); if(!nuevos.length){showToast('No hay relaciones nuevas para importar');return;}
+  nuevos.forEach(obj=>{const ent=resolveCanonicalEntity('aut',obj.fuente,true);obj.fuente_autor_id=ent.id;obj.fuente=ent.nombreCanonico||obj.fuente;ensureInfluenceCanonicalRefs(obj);});
+  const ts=Date.now(); try{safeLocalSetItem('lumen_mapas_backup_before_influencias_import_'+ts,JSON.stringify(mapas));}catch(e){}
+  mapas.influencias=mapas.influencias||[];mapas.influencias.push(...nuevos);saveMapas();closeModal('modal-inf-json');showToast(`✓ ${nuevos.length} relación(es) importada(s)`);renderMapaInfluencias();
 }
 
 // ── CRUD ─────────────────────────────────────────────────
@@ -11091,11 +11124,11 @@ function saveInfluencia() {
   const evidenceBook = getInfluenceEvidenceBook();
   if (evidenceBook) ensureBookCanonicalRefs(evidenceBook);
   const evidenceBib = canonicalBookBibliography(evidenceBook);
-  const fuenteAutorId = getSelectedOptionData('inf-fuente-sel','authorId') || canonicalEntityId('aut', fuente);
+  const selectedFuenteId=getSelectedOptionData('inf-fuente-sel','authorId'); const sourceEntity=selectedFuenteId?{id:selectedFuenteId,nombreCanonico:canonicalNameById('aut',selectedFuenteId,fuente)}:resolveCanonicalEntity('aut',fuente,true); const fuenteAutorId=sourceEntity.id; const fuenteCanon=sourceEntity.nombreCanonico||fuente;
 
   const obj = {
     id:               editId || 'inf_' + Date.now(),
-    tipo, fuente, destino, obra,
+    tipo, fuente: fuenteCanon, destino, obra,
     editorial:        evidenceBib.editorial || '',
     editorial_id:     evidenceBook?.editorialId || canonicalEntityId('edi', evidenceBib.editorial),
     anio_pub:         evidenceBib.anio || '',
@@ -11166,12 +11199,15 @@ function openInfluenciaDetalle(id) {
   const tags = Array.isArray(inf.tags) ? inf.tags.join(', ') : (inf.tags || '');
   const obraDestino = inf.libro_ref || inf.destino_titulo || inf.destino_original || '';
   const ubic = [inf.ubicacion_tipo, inf.ubicacion_detalle].filter(Boolean).join(': ');
+  const evidenceBook=inf.evidencia_libro_id?findBookCanonicalById(inf.evidencia_libro_id):findBookCanonicalByTitle(obraDestino,inf.destino_autor||inf.destino);
+  const isoRef=formatIsoBookReference(evidenceBook,inf.ubicacion_tipo,inf.ubicacion_detalle);
   body.innerHTML = `
     <div style="margin-bottom:14px;">
       <div style="font-family:var(--font-serif);font-size:24px;font-weight:700;line-height:1.25;color:var(--ink);">${escapeHtml(inf.fuente || '—')} → ${escapeHtml(inf.destino || '—')}</div>
       <div style="font-size:12px;color:var(--ink4);margin-top:5px;">${escapeHtml(tipoLabel)}${obraDestino ? ' · en ' + escapeHtml(obraDestino) : ''}</div>
     </div>
     <div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:14px;">
+      ${isoRef?`<div style="background:var(--cream2);border-radius:6px;padding:10px 12px;margin-bottom:8px;"><div style="font-size:9px;letter-spacing:1.2px;text-transform:uppercase;color:var(--ink4);font-weight:700;margin-bottom:4px;">Referencia ISO 690</div><div style="font-family:var(--font-serif);font-size:13px;line-height:1.6;color:var(--ink);">${escapeHtml(isoRef)}</div></div>`:''}
       ${fieldRow('Tipo', tipoLabel)}
       ${fieldRow('Fuente / autor citado', inf.fuente)}
       ${fieldRow('Nombre en texto', inf.fuente_nombre_en_texto)}
@@ -12071,7 +12107,7 @@ function renderListaInfluencias() {
         <div style="font-size:12px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
           <span style="color:var(--ink3);">${escapeHtml(r.fuente)}</span> → <span>${escapeHtml(r.destino)}</span>
         </div>
-        <div style="font-size:10px;color:var(--ink4);margin-top:2px;">${escapeHtml(INF_TIPO_LABELS[r.tipo]||r.tipo)}${r.libro_ref?' · '+escapeHtml(r.libro_ref):''}${r.pagina?' p.'+escapeHtml(r.pagina):''}</div>
+        <div style="font-size:10px;color:var(--ink4);margin-top:2px;">${escapeHtml(INF_TIPO_LABELS[r.tipo]||r.tipo)}${r.libro_ref?' · '+escapeHtml(r.libro_ref):''}${r.ubicacion_detalle?' · '+escapeHtml((r.ubicacion_tipo==='pagina'?'p.':(r.ubicacion_tipo==='loc'?'LOC ':' '))+r.ubicacion_detalle):''}</div>
       </div>
       <button onclick="event.stopPropagation();openModalInfluencia('${r.id}')"
         style="flex-shrink:0;padding:5px 10px;border:1.5px solid var(--border);border-radius:4px;background:#fff;font-size:10px;font-weight:700;cursor:pointer;font-family:var(--font-sans);color:var(--ink3);">
@@ -12094,27 +12130,15 @@ function renderMapaInfluencias() {
   renderListaInfluencias();
   if (data.length===0) { d3.select('#mapa-influencias-svg').selectAll('svg').remove(); return; }
 
-  const libTitles =new Set(db.entries.map(e=>e.titulo));
-  const libAutores=new Set(db.entries.map(e=>e.autor).filter(Boolean));
-  const nodeSet=new Set(); data.forEach(d=>{nodeSet.add(d.fuente);nodeSet.add(d.destino);});
-  const outDegree = {};
-  const inDegree = {};
-  data.forEach(rel => {
-    outDegree[rel.fuente] = (outDegree[rel.fuente] || 0) + 1;
-    inDegree[rel.destino] = (inDegree[rel.destino] || 0) + 1;
+  const libTitles=new Set(db.entries.map(e=>e.titulo)); const libAuthorIds=new Set(); (db.entries||[]).filter(e=>e.type==='libro').forEach(e=>{ensureBookCanonicalRefs(e);(e.autorIds||[]).forEach(id=>libAuthorIds.add(id));});
+  const nodeMap=new Map(),outDegree={},inDegree={};
+  data.forEach(rel=>{
+    const sid=rel.fuente_autor_id||canonicalEntityId('aut',rel.fuente), tid=rel.destino_autor_id||canonicalEntityId('aut',rel.destino_autor||rel.destino);
+    const sl=canonicalNameById('aut',sid,rel.fuente), tl=canonicalNameById('aut',tid,rel.destino_autor||rel.destino);
+    if(!nodeMap.has(sid))nodeMap.set(sid,sl); if(!nodeMap.has(tid))nodeMap.set(tid,tl); outDegree[sid]=(outDegree[sid]||0)+1;inDegree[tid]=(inDegree[tid]||0)+1;
   });
-  const nodes=[...nodeSet].map(name=>({
-    id:name, label:name,
-    inLibrary:libTitles.has(name)||libAutores.has(name),
-    icon:libTitles.has(name)?'📚':(libAutores.has(name)?'✍':'◉'),
-    tooltip:name,
-    // En Influencias la jerarquía visual representa autoría de relaciones:
-    // quien origina más influencias se ve mayor; recibirlas no agranda el nodo.
-    sizeMetric: outDegree[name] || 0,
-    metricTooltip: `${name}\nInfluencias originadas: ${outDegree[name] || 0}\nInfluencias recibidas: ${inDegree[name] || 0}`
-  }));
-  const links=data.map(d=>({ source:d.fuente, target:d.destino, tipo:d.tipo, id:d.id,
-    pagina:d.pagina, texto:d.texto, libro_ref:d.libro_ref }));
+  const nodes=[...nodeMap.entries()].map(([id,name])=>({id,label:name,inLibrary:libAuthorIds.has(id),icon:libAuthorIds.has(id)?'✍':'◉',tooltip:name,sizeMetric:outDegree[id]||0,metricTooltip:`${name}\nInfluencias originadas: ${outDegree[id]||0}\nInfluencias recibidas: ${inDegree[id]||0}`}));
+  const links=data.map(d=>({source:d.fuente_autor_id||canonicalEntityId('aut',d.fuente),target:d.destino_autor_id||canonicalEntityId('aut',d.destino_autor||d.destino),tipo:d.tipo,id:d.id,pagina:d.pagina,texto:d.texto,libro_ref:d.libro_ref}));
 
   buildD3Graph('mapa-influencias-svg', nodes, links,
     tipo=>INF_COLORS[tipo]||'#999',
@@ -13812,7 +13836,7 @@ function startInventoryReading(id){
   if(!book){book={id:'inv_book_'+Date.now(),type:'libro',titulo:item.titulo,autor:item.autor||'',editorial:item.editorial||'',estado:'leyendo',progreso:0,readDates:[],cover:'',notas:'',enInventario:true,startDate:new Date().toISOString(),_updatedAt:Date.now()};db.entries.push(book);}
   else{book.estado='leyendo';book.enInventario=true;book.startDate=book.startDate||new Date().toISOString();book._updatedAt=Date.now();if(!book.editorial&&item.editorial)book.editorial=item.editorial;}
   item.linkedEntryId=book.id;item._updatedAt=Date.now();
-  try{safeLocalSetItem(INVENTORY_KEY,JSON.stringify(inv));saveDB();}catch(err){console.error('[LUMEN v173] Inventario → lectura:',err);showToast('⚠ No se pudo iniciar la lectura: '+(err.message||'error local'),4500);return;}
+  try{safeLocalSetItem(INVENTORY_KEY,JSON.stringify(inv));saveDB();}catch(err){console.error('[LUMEN v175] Inventario → lectura:',err);showToast('⚠ No se pudo iniciar la lectura: '+(err.message||'error local'),4500);return;}
   renderInventory();renderHome();showToast('✓ Libro agregado a Leyendo ahora');
 }
 function openInventoryImport(){inventoryImportPending=[];document.getElementById('inventory-import-preview').innerHTML='';document.getElementById('inventory-import-confirm').style.display='none';document.getElementById('inventory-csv-input').value='';openModal('modal-inventory-import');}
@@ -13866,7 +13890,9 @@ function buildCloudDataV162() {
     rutaProgramas: loadProgramas(),
     inventory: loadInventory(),
     normBlacklist: loadNormBlacklist(),
-    idiomasAprobados: loadIdiomasAprobados()
+    idiomasAprobados: loadIdiomasAprobados(),
+    historicalLines: historicalLinesCatalog(),
+    canonicalEntities: loadCanonicalEntities()
   });
   return { entries, modules };
 }
@@ -13977,6 +14003,7 @@ function applyRemoteModulesV162(remote) {
   if (remote.rutaProgramas) safeLocalSetItem(PROGRAMA_KEY, JSON.stringify(remote.rutaProgramas));
   if (remote.desafios) safeLocalSetItem(DESAFIO_KEY, JSON.stringify(remote.desafios));
   if (Array.isArray(remote.idiomasAprobados)) safeLocalSetItem(IDIOMAS_APROBADOS_KEY, JSON.stringify(remote.idiomasAprobados));
+  if (Array.isArray(remote.historicalLines)) saveHistoricalLinesCatalog([...historicalLinesCatalog(),...remote.historicalLines]);
 }
 
 
@@ -14044,7 +14071,7 @@ async function stashLocalImages(entries) {
   const jobs = [];
   (entries || []).forEach(e => {
     Object.keys(e || {}).forEach(k => {
-      if (isBase64Image(e[k])) jobs.push(putLocalAsset(localAssetKey(e.id, k), e[k]).catch(err => console.warn('[LUMEN v173] asset IDB:', err)));
+      if (isBase64Image(e[k])) jobs.push(putLocalAsset(localAssetKey(e.id, k), e[k]).catch(err => console.warn('[LUMEN v175] asset IDB:', err)));
     });
   });
   if (jobs.length) await Promise.all(jobs);
@@ -14063,7 +14090,7 @@ async function hydrateLocalImagesFromIDB() {
   });
   if (jobs.length) await Promise.all(jobs);
   if (restored) {
-    console.info(`[LUMEN v173] ${restored} imagen(es) restauradas desde IndexedDB`);
+    console.info(`[LUMEN v175] ${restored} imagen(es) restauradas desde IndexedDB`);
     try { refreshCurrentScreen(); } catch (_) {}
   }
   return restored;
@@ -14087,7 +14114,7 @@ function pruneTransientLocalBackups() {
     if (k && patterns.some(rx => rx.test(k))) doomed.push(k);
   }
   doomed.forEach(k => { try { localStorage.removeItem(k); } catch (_) {} });
-  if (doomed.length) console.info('[LUMEN v173] backups locales transitorios limpiados:', doomed.length);
+  if (doomed.length) console.info('[LUMEN v175] backups locales transitorios limpiados:', doomed.length);
   return doomed.length;
 }
 
@@ -14097,13 +14124,13 @@ function safeLocalSetItem(key, value, opts={}) {
     return true;
   } catch (err) {
     if (!isQuotaExceeded(err)) {
-      console.error('[LUMEN v173] localStorage error:', key, err);
+      console.error('[LUMEN v175] localStorage error:', key, err);
       return false;
     }
-    console.warn('[LUMEN v173] Cuota local excedida en', key);
+    console.warn('[LUMEN v175] Cuota local excedida en', key);
     if (opts.prune !== false) pruneTransientLocalBackups();
     try { localStorage.setItem(key, value); return true; }
-    catch (err2) { console.warn('[LUMEN v173] Reintento local falló:', key, err2); return false; }
+    catch (err2) { console.warn('[LUMEN v175] Reintento local falló:', key, err2); return false; }
   }
 }
 
@@ -14112,7 +14139,7 @@ function persistDBLocal() {
   (db.entries || []).forEach(ensureBookCanonicalRefs);
 
   // Guardar imágenes de forma asíncrona fuera de localStorage.
-  stashLocalImages(db.entries || []).catch(err => console.warn('[LUMEN v173] No se pudieron migrar todas las imágenes:', err));
+  stashLocalImages(db.entries || []).catch(err => console.warn('[LUMEN v175] No se pudieron migrar todas las imágenes:', err));
 
   // Primera opción: snapshot completo, para mantener compatibilidad si cabe.
   const full = JSON.stringify(db);
@@ -14122,12 +14149,12 @@ function persistDBLocal() {
   const light = JSON.stringify(lightweightLocalDB(db));
   try { localStorage.removeItem(DB_KEY); } catch (_) {}
   if (safeLocalSetItem(DB_KEY, light, {prune:true})) {
-    console.info('[LUMEN v173] DB local compactada; portadas movidas a IndexedDB');
+    console.info('[LUMEN v175] DB local compactada; portadas movidas a IndexedDB');
     return { ok:true, compact:true };
   }
 
   // No lanzar excepción: la app mantiene el modelo en memoria y la nube V2 aún puede guardarlo.
-  console.error('[LUMEN v173] No fue posible persistir el snapshot local ni siquiera compactado.');
+  console.error('[LUMEN v175] No fue posible persistir el snapshot local ni siquiera compactado.');
   return { ok:false, compact:true };
 }
 
@@ -14145,9 +14172,9 @@ async function compactLocalDBOnStartup() {
         localStorage.setItem(DB_KEY, light);
       } else throw err;
     }
-    console.info('[LUMEN v173] Migración local inicial completada.');
+    console.info('[LUMEN v175] Migración local inicial completada.');
   } catch (err) {
-    console.warn('[LUMEN v173] Migración local inicial no completada:', err);
+    console.warn('[LUMEN v175] Migración local inicial no completada:', err);
   }
 }
 
@@ -14158,11 +14185,11 @@ async function syncToFirestore() {
     const result = await writeCloudV162(currentUser.uid);
     setSyncStatus('ok');
     setLastSync();
-    console.info('[LUMEN v173] Sync V2 OK', result);
+    console.info('[LUMEN v175] Sync V2 OK', result);
     return result;
   } catch(e) {
     setSyncStatus('offline');
-    console.error('[LUMEN v173] Sync V2 error:', e.code || '', e.message, e);
+    console.error('[LUMEN v175] Sync V2 error:', e.code || '', e.message, e);
     throw e;
   }
 }
@@ -14175,7 +14202,7 @@ function saveDB() {
   const localResult = persistDBLocal();
   if (!localResult.ok) {
     // No bloquear la UX: el cambio sigue en memoria y se intenta sincronizar por bloques.
-    console.warn('[LUMEN v173] Guardado local parcial; se intentará nube V2.');
+    console.warn('[LUMEN v175] Guardado local parcial; se intentará nube V2.');
   }
   if (!currentUser) {
     if (!localResult.ok) showToast('⚠ Cambio guardado solo en esta sesión. Libera espacio para persistirlo.', 4500);
@@ -14204,7 +14231,7 @@ async function manualSaveToCloud() {
   } catch(e) {
     setSyncStatus('offline');
     showToast(`⚠ Error al guardar: ${e.message}`, 5000);
-    console.error('[LUMEN v173] manualSave error:', e);
+    console.error('[LUMEN v175] manualSave error:', e);
   }
 }
 
@@ -14224,7 +14251,7 @@ async function pullAndMerge(uid, silent) {
     renderHome();
   } catch(e) {
     setSyncStatus('offline');
-    console.error('[LUMEN v173] pull error:', e);
+    console.error('[LUMEN v175] pull error:', e);
     if (!silent) showToast(`⚠ Error al cargar: ${e.message}`, 4500);
   }
 }
@@ -14244,6 +14271,7 @@ function subscribeToFirestore(uid) {
     if (!snap.exists || snap.metadata.hasPendingWrites || isSyncing) return;
     try {
       const remote = await readCloudV162(uid);
+    if(remote?.canonicalEntities) saveCanonicalEntities(remote.canonicalEntities);
       if (!remote) return;
       const merged = mergeEntries(db.entries, remote.entries || []);
       restoreLocalImages(merged);
@@ -14254,11 +14282,11 @@ function subscribeToFirestore(uid) {
       setSyncStatus('ok');
       renderHome();
     } catch(e) {
-      console.warn('[LUMEN v173] snapshot error:', e.message);
+      console.warn('[LUMEN v175] snapshot error:', e.message);
     }
   }, e => {
     setSyncStatus('offline');
-    console.warn('[LUMEN v173] listener error:', e.message);
+    console.warn('[LUMEN v175] listener error:', e.message);
   });
 }
 
@@ -14275,7 +14303,7 @@ window.lumenSyncDiagnostico = function() {
     usuario:currentUser ? currentUser.uid : null
   };
   console.table(report);
-  console.info('[LUMEN v173] Diagnóstico completo', report);
+  console.info('[LUMEN v175] Diagnóstico completo', report);
   return report;
 };
 
