@@ -3540,6 +3540,71 @@ function historyBounds(historia) {
   return { inicio, fin };
 }
 
+
+// ═══════════════════════════════════════════════════════════════
+// LUMEN v179 — catálogo de líneas históricas
+// v178 conservó las llamadas a estos helpers pero perdió sus definiciones.
+// Eso provocaba "Can't find variable: historicalLinesCatalog" durante sync.
+// ═══════════════════════════════════════════════════════════════
+const HISTORICAL_LINES_KEY = 'lumen_historical_lines_v1';
+function historicalLinesCatalog(){
+  const byId = new Map();
+  try {
+    const saved = JSON.parse(localStorage.getItem(HISTORICAL_LINES_KEY) || '[]');
+    if (Array.isArray(saved)) saved.forEach(x => {
+      const name = String(typeof x === 'string' ? x : (x?.nombre || x?.name || '')).trim();
+      if (!name) return;
+      const id = (typeof x === 'object' && x?.id) ? String(x.id) : canonicalEntityId('histline', name);
+      byId.set(id, {id, nombre:name});
+    });
+  } catch(_) {}
+  (db?.entries || []).forEach(e => {
+    if (!e || e.type !== 'libro' || !e.historia) return;
+    const h=e.historia, name=String(h.lineaPrincipal||'').trim();
+    if(name){ const id=h.lineaPrincipalId||canonicalEntityId('histline',name); byId.set(id,{id,nombre:name}); }
+    const names=Array.isArray(h.lineasRelacionadas)?h.lineasRelacionadas:[];
+    names.forEach((n,i)=>{ n=String(n||'').trim(); if(!n)return; const id=(h.lineasRelacionadasIds||[])[i]||canonicalEntityId('histline',n); byId.set(id,{id,nombre:n}); });
+  });
+  return [...byId.values()].sort((a,b)=>a.nombre.localeCompare(b.nombre,'es'));
+}
+function saveHistoricalLinesCatalog(lines){
+  const byId=new Map();
+  (Array.isArray(lines)?lines:[]).forEach(x=>{
+    const name=String(typeof x==='string'?x:(x?.nombre||x?.name||'')).trim(); if(!name)return;
+    const id=(typeof x==='object'&&x?.id)?String(x.id):canonicalEntityId('histline',name);
+    byId.set(id,{id,nombre:name});
+  });
+  const out=[...byId.values()].sort((a,b)=>a.nombre.localeCompare(b.nombre,'es'));
+  try { safeLocalSetItem(HISTORICAL_LINES_KEY,JSON.stringify(out),{prune:true}); } catch(_) {}
+  return out;
+}
+function registerHistoricalLine(name){
+  name=String(name||'').trim(); if(!name)return '';
+  const id=canonicalEntityId('histline',name), list=historicalLinesCatalog();
+  if(!list.some(x=>x.id===id)) saveHistoricalLinesCatalog([...list,{id,nombre:name}]);
+  return id;
+}
+function fillHistoricalLineDatalists(){
+  const lines=historicalLinesCatalog();
+  ['hist-lineas-catalogo','histq-lineas-catalogo'].forEach(id=>{
+    const el=document.getElementById(id); if(!el)return;
+    el.innerHTML=lines.map(x=>`<option value="${String(x.nombre).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;')}"></option>`).join('');
+  });
+}
+function renderHistoricalLineChoices(containerId, selectedIds=[]){
+  const el=document.getElementById(containerId); if(!el)return;
+  const selected=new Set(Array.isArray(selectedIds)?selectedIds:[]);
+  el.innerHTML=historicalLinesCatalog().map(x=>`<label style="display:inline-flex;align-items:center;gap:5px;border:1px solid var(--border);border-radius:999px;padding:5px 8px;font-size:10px;"><input type="checkbox" data-line-id="${x.id}" ${selected.has(x.id)?'checked':''}> ${String(x.nombre).replace(/&/g,'&amp;').replace(/</g,'&lt;')}</label>`).join('') || '<span style="font-size:10px;color:var(--ink4);">Aún no hay otras líneas.</span>';
+}
+function selectedHistoricalLineIds(containerId, excludeId=''){
+  const el=document.getElementById(containerId); if(!el)return [];
+  return [...el.querySelectorAll('input[data-line-id]:checked')].map(x=>x.dataset.lineId).filter(id=>id&&id!==excludeId);
+}
+function historicalLineNamesFromIds(ids){
+  const map=new Map(historicalLinesCatalog().map(x=>[x.id,x.nombre]));
+  return (Array.isArray(ids)?ids:[]).map(id=>map.get(id)).filter(Boolean);
+}
+
 function ensureBookCanonicalRefs(entry) {
   if (!entry || entry.type !== 'libro') return entry;
   const authors = splitCanonicalAuthors(entry.autor);
@@ -4261,7 +4326,7 @@ let db = loadDB();
 try {
   (db.entries||[]).forEach(ensureBookCanonicalRefs);
 } catch (err) {
-  console.warn('[LUMEN v178] Migración canónica inicial omitida para no bloquear el arranque:', err);
+  console.warn('[LUMEN v179] Migración canónica inicial omitida para no bloquear el arranque:', err);
 }
 setTimeout(() => compactLocalDBOnStartup(), 300);
 
@@ -4854,13 +4919,13 @@ function toggleBookInventoryQuick(bookId) {
     book.enInventario=false;
     const nextInv=inv.filter(x=>x.linkedEntryId!==bookId);
     try{saveInventory(nextInv,false);book._updatedAt=Date.now();saveDB();}
-    catch(err){console.error('[LUMEN v178] Quitar inventario:',err);showToast('⚠ No se pudo actualizar el inventario',4000);return;}
+    catch(err){console.error('[LUMEN v179] Quitar inventario:',err);showToast('⚠ No se pudo actualizar el inventario',4000);return;}
     showToast('✓ Quitado del inventario');
   }else{
     book.enInventario=true;
     book._updatedAt=Date.now();
     try{saveDB();}
-    catch(err){console.error('[LUMEN v178] Agregar inventario:',err);book.enInventario=false;showToast('⚠ No se pudo actualizar el inventario',4000);return;}
+    catch(err){console.error('[LUMEN v179] Agregar inventario:',err);book.enInventario=false;showToast('⚠ No se pudo actualizar el inventario',4000);return;}
     showToast('✓ Agregado al inventario');
   }
   if(currentScreen==='library') renderLibrary();
@@ -9301,7 +9366,7 @@ function saveReadingEntry() {
     // Evita dejar un alta a medias y muestra el error real en pantalla.
     if (created) db.entries = db.entries.filter(e => e.id!==entry.id);
     else if (before) Object.assign(entry,before);
-    console.error('[LUMEN v178] Error al iniciar lectura:', err);
+    console.error('[LUMEN v179] Error al iniciar lectura:', err);
     const msg = err && (err.name==='QuotaExceededError' || /quota/i.test(err.message||''))
       ? 'No se pudo guardar: almacenamiento local lleno'
       : `No se pudo guardar la lectura${err?.message?': '+err.message:''}`;
@@ -10573,7 +10638,7 @@ function loadMapas() {
 function saveMapas() {
   // v177: persistir el mapa actual sin normalizar toda la red en cada click.
   const ok = safeLocalSetItem(MAPAS_KEY, JSON.stringify(mapas), {prune:true});
-  if (!ok) console.warn('[LUMEN v178] mapa aplicado en memoria; persistencia local pendiente');
+  if (!ok) console.warn('[LUMEN v179] mapa aplicado en memoria; persistencia local pendiente');
   queueCloudSyncV178(900);
   return ok;
 }
@@ -13910,7 +13975,7 @@ function startInventoryReading(id){
   if(!book){book={id:'inv_book_'+Date.now(),type:'libro',titulo:item.titulo,autor:item.autor||'',editorial:item.editorial||'',estado:'leyendo',progreso:0,readDates:[],cover:'',notas:'',enInventario:true,startDate:new Date().toISOString(),_updatedAt:Date.now()};db.entries.push(book);}
   else{book.estado='leyendo';book.enInventario=true;book.startDate=book.startDate||new Date().toISOString();book._updatedAt=Date.now();if(!book.editorial&&item.editorial)book.editorial=item.editorial;}
   item.linkedEntryId=book.id;item._updatedAt=Date.now();
-  try{safeLocalSetItem(INVENTORY_KEY,JSON.stringify(inv));saveDB();}catch(err){console.error('[LUMEN v178] Inventario → lectura:',err);showToast('⚠ No se pudo iniciar la lectura: '+(err.message||'error local'),4500);return;}
+  try{safeLocalSetItem(INVENTORY_KEY,JSON.stringify(inv));saveDB();}catch(err){console.error('[LUMEN v179] Inventario → lectura:',err);showToast('⚠ No se pudo iniciar la lectura: '+(err.message||'error local'),4500);return;}
   renderInventory();renderHome();showToast('✓ Libro agregado a Leyendo ahora');
 }
 function openInventoryImport(){inventoryImportPending=[];document.getElementById('inventory-import-preview').innerHTML='';document.getElementById('inventory-import-confirm').style.display='none';document.getElementById('inventory-csv-input').value='';openModal('modal-inventory-import');}
@@ -14016,7 +14081,7 @@ async function writeCloudV162(uid) {
   operations.push({ type:'set', ref:cloudDocRefV162(uid,LUMEN_SYNC_MODULES_DOC), data:{ schema:LUMEN_SYNC_SCHEMA, ...modules, updatedAt:now } });
   operations.push({ type:'set', ref:cloudDocRefV162(uid,LUMEN_SYNC_MANIFEST_DOC), data:{
     schema:LUMEN_SYNC_SCHEMA,
-    appVersion:'v169',
+    appVersion:'v179',
     entryCount:entries.length,
     chunkCount:chunks.length,
     moduleBytes,
@@ -14145,7 +14210,7 @@ async function stashLocalImages(entries) {
   const jobs = [];
   (entries || []).forEach(e => {
     Object.keys(e || {}).forEach(k => {
-      if (isBase64Image(e[k])) jobs.push(putLocalAsset(localAssetKey(e.id, k), e[k]).catch(err => console.warn('[LUMEN v178] asset IDB:', err)));
+      if (isBase64Image(e[k])) jobs.push(putLocalAsset(localAssetKey(e.id, k), e[k]).catch(err => console.warn('[LUMEN v179] asset IDB:', err)));
     });
   });
   if (jobs.length) await Promise.all(jobs);
@@ -14164,7 +14229,7 @@ async function hydrateLocalImagesFromIDB() {
   });
   if (jobs.length) await Promise.all(jobs);
   if (restored) {
-    console.info(`[LUMEN v178] ${restored} imagen(es) restauradas desde IndexedDB`);
+    console.info(`[LUMEN v179] ${restored} imagen(es) restauradas desde IndexedDB`);
     try { refreshCurrentScreen(); } catch (_) {}
   }
   return restored;
@@ -14188,7 +14253,7 @@ function pruneTransientLocalBackups() {
     if (k && patterns.some(rx => rx.test(k))) doomed.push(k);
   }
   doomed.forEach(k => { try { localStorage.removeItem(k); } catch (_) {} });
-  if (doomed.length) console.info('[LUMEN v178] backups locales transitorios limpiados:', doomed.length);
+  if (doomed.length) console.info('[LUMEN v179] backups locales transitorios limpiados:', doomed.length);
   return doomed.length;
 }
 
@@ -14198,13 +14263,13 @@ function safeLocalSetItem(key, value, opts={}) {
     return true;
   } catch (err) {
     if (!isQuotaExceeded(err)) {
-      console.error('[LUMEN v178] localStorage error:', key, err);
+      console.error('[LUMEN v179] localStorage error:', key, err);
       return false;
     }
-    console.warn('[LUMEN v178] Cuota local excedida en', key);
+    console.warn('[LUMEN v179] Cuota local excedida en', key);
     if (opts.prune !== false) pruneTransientLocalBackups();
     try { localStorage.setItem(key, value); return true; }
-    catch (err2) { console.warn('[LUMEN v178] Reintento local falló:', key, err2); return false; }
+    catch (err2) { console.warn('[LUMEN v179] Reintento local falló:', key, err2); return false; }
   }
 }
 
@@ -14213,7 +14278,7 @@ function persistDBLocal() {
   // Las normalizaciones masivas NO pertenecen al click de Guardar.
   try {
     // Las imágenes base64 se guardan aparte en IndexedDB sin bloquear la acción.
-    stashLocalImages(db.entries || []).catch(err => console.warn('[LUMEN v178] asset IDB:', err));
+    stashLocalImages(db.entries || []).catch(err => console.warn('[LUMEN v179] asset IDB:', err));
 
     // Guardar siempre el snapshot liviano: evita intentar primero una copia enorme
     // que en Safari/iOS dispara QuotaExceededError y corta la UX.
@@ -14222,10 +14287,10 @@ function persistDBLocal() {
       return { ok:true, compact:true };
     }
 
-    console.error('[LUMEN v178] No fue posible persistir el snapshot local liviano.');
+    console.error('[LUMEN v179] No fue posible persistir el snapshot local liviano.');
     return { ok:false, compact:true };
   } catch (err) {
-    console.error('[LUMEN v178] persistDBLocal:', err);
+    console.error('[LUMEN v179] persistDBLocal:', err);
     return { ok:false, compact:true, error:err };
   }
 }
@@ -14244,9 +14309,9 @@ async function compactLocalDBOnStartup() {
         localStorage.setItem(DB_KEY, light);
       } else throw err;
     }
-    console.info('[LUMEN v178] Migración local inicial completada.');
+    console.info('[LUMEN v179] Migración local inicial completada.');
   } catch (err) {
-    console.warn('[LUMEN v178] Migración local inicial no completada:', err);
+    console.warn('[LUMEN v179] Migración local inicial no completada:', err);
   }
 }
 
@@ -14257,11 +14322,11 @@ async function syncToFirestore() {
     const result = await writeCloudV162(currentUser.uid);
     setSyncStatus('ok');
     setLastSync();
-    console.info('[LUMEN v178] Sync V2 OK', result);
+    console.info('[LUMEN v179] Sync V2 OK', result);
     return result;
   } catch(e) {
     setSyncStatus('offline');
-    console.error('[LUMEN v178] Sync V2 error:', e.code || '', e.message, e);
+    console.error('[LUMEN v179] Sync V2 error:', e.code || '', e.message, e);
     throw e;
   }
 }
@@ -14275,7 +14340,7 @@ function queueCloudSyncV178(delay=900) {
       await syncToFirestore();
     } catch (e) {
       // La nube nunca bloquea una acción local ya aceptada.
-      console.warn('[LUMEN v178] sync pendiente:', e?.message || e);
+      console.warn('[LUMEN v179] sync pendiente:', e?.message || e);
       showToast(`⚠ Cambio local guardado; nube pendiente${e?.message ? ': '+e.message : ''}`, 4200);
     }
   }, delay);
@@ -14289,7 +14354,7 @@ function saveDB() {
     localResult = persistDBLocal();
   } catch (err) {
     // Último cortafuego: ningún error de persistencia debe matar el onclick.
-    console.error('[LUMEN v178] saveDB:', err);
+    console.error('[LUMEN v179] saveDB:', err);
     localResult = {ok:false, error:err};
   }
 
@@ -14308,14 +14373,14 @@ function lumenSafeAction(label, action, opts={}) {
     const result = action();
     if (result && typeof result.then === 'function') {
       return result.catch(err => {
-        console.error(`[LUMEN v178] ${label}:`, err);
+        console.error(`[LUMEN v179] ${label}:`, err);
         showToast(`⚠ ${label}: ${err?.message || 'error inesperado'}`, 4800);
         return false;
       });
     }
     return result;
   } catch (err) {
-    console.error(`[LUMEN v178] ${label}:`, err);
+    console.error(`[LUMEN v179] ${label}:`, err);
     showToast(`⚠ ${label}: ${err?.message || 'error inesperado'}`, 4800);
     return false;
   }
@@ -14335,7 +14400,7 @@ async function manualSaveToCloud() {
   } catch(e) {
     setSyncStatus('offline');
     showToast(`⚠ Error al guardar: ${e.message}`, 5000);
-    console.error('[LUMEN v178] manualSave error:', e);
+    console.error('[LUMEN v179] manualSave error:', e);
   }
 }
 
@@ -14355,7 +14420,7 @@ async function pullAndMerge(uid, silent) {
     renderHome();
   } catch(e) {
     setSyncStatus('offline');
-    console.error('[LUMEN v178] pull error:', e);
+    console.error('[LUMEN v179] pull error:', e);
     if (!silent) showToast(`⚠ Error al cargar: ${e.message}`, 4500);
   }
 }
@@ -14386,11 +14451,11 @@ function subscribeToFirestore(uid) {
       setSyncStatus('ok');
       renderHome();
     } catch(e) {
-      console.warn('[LUMEN v178] snapshot error:', e.message);
+      console.warn('[LUMEN v179] snapshot error:', e.message);
     }
   }, e => {
     setSyncStatus('offline');
-    console.warn('[LUMEN v178] listener error:', e.message);
+    console.warn('[LUMEN v179] listener error:', e.message);
   });
 }
 
@@ -14407,17 +14472,17 @@ window.lumenSyncDiagnostico = function() {
     usuario:currentUser ? currentUser.uid : null
   };
   console.table(report);
-  console.info('[LUMEN v178] Diagnóstico completo', report);
+  console.info('[LUMEN v179] Diagnóstico completo', report);
   return report;
 };
 
 
 // v177 — diagnóstico global de acciones: deja trazabilidad de excepciones de clicks sin romper la app.
 window.addEventListener('error', function(ev){
-  if (ev?.error) console.error('[LUMEN v178] error global de UI:', ev.error);
+  if (ev?.error) console.error('[LUMEN v179] error global de UI:', ev.error);
 });
 window.addEventListener('unhandledrejection', function(ev){
-  console.error('[LUMEN v178] promesa no controlada:', ev.reason);
+  console.error('[LUMEN v179] promesa no controlada:', ev.reason);
 });
 </script>
 
