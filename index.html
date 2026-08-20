@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1a1510">
-<title>LUMEN v178 — Biblioteca Personal</title>
+<title>LUMEN v180 — Biblioteca Personal</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231a1510'/><text x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' font-family='Georgia,serif' font-size='14' font-weight='900' font-style='italic' fill='%23c8952a' letter-spacing='0.5'>L</text><rect x='6' y='23' width='20' height='2' rx='1' fill='%238b2020'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
@@ -1615,7 +1615,7 @@ select.input { cursor: pointer; }
 </div>
 
 <!-- ══════ MODAL: JSON BIBLIOGRÁFICO ══════ -->
-<div id="modal-bib-json" class="modal-overlay">
+<div id="modal-bib-json" class="modal-overlay" style="z-index:260;">
   <div class="modal">
     <div class="modal-handle"></div>
     <div class="modal-header">
@@ -1624,8 +1624,8 @@ select.input { cursor: pointer; }
     </div>
     <div class="modal-body">
       <input type="hidden" id="bib-json-target">
-      <p style="font-size:11px;color:var(--ink3);line-height:1.55;margin-bottom:10px;">Pega un JSON <strong>lumen_ficha_bibliografica_v1</strong>. LUMEN compara los datos con la ficha y no sobrescribe nada sin mostrarte los cambios.</p>
-      <textarea id="bib-json-text" class="input" rows="13" spellcheck="false" placeholder='{"schema":"lumen_ficha_bibliografica_v1","libro":{"titulo":"...","autor":"...","obra_original":{"anio_publicacion_original":1885,"periodo_inicio":1885,"periodo_fin":1886},"edicion_consultada":{"editorial":"...","ciudad":"...","anio":2016,"numero_edicion":3,"isbn":"...","traductores":["..."]}}}'></textarea>
+      <p style="font-size:11px;color:var(--ink3);line-height:1.55;margin-bottom:10px;">Pega un JSON <strong>lumen_bibliografia_import_v1</strong>. También se acepta el formato bibliográfico anterior. LUMEN compara los datos con la ficha y no sobrescribe nada sin mostrarte los cambios.</p>
+      <textarea id="bib-json-text" class="input" rows="13" spellcheck="false" placeholder='{"schema":"lumen_bibliografia_import_v1","libro":{"titulo":"...","autor":"...","editorial":"...","isbn":"...","edicion":{"numero":"3","descripcion":"Tercera edición","anio":2016,"mes":"octubre"},"ciudad_publicacion":"Madrid","traductores":["..."],"anio_obra_original":1885,"anio_obra_original_fin":1886}}'></textarea>
       <button class="btn btn-secondary" onclick="previewBibliographicJson()" style="width:100%;margin-top:8px;">Revisar JSON</button>
       <div id="bib-json-preview" style="display:none;margin-top:10px;border:1px solid var(--border);border-radius:6px;overflow:hidden;background:#fff;"></div>
       <div style="display:flex;gap:8px;margin-top:10px;">
@@ -2094,7 +2094,7 @@ select.input { cursor: pointer; }
     Cerrar sesión
   </button>
   <div style="padding:8px 16px 10px;border-top:1px solid var(--border);font-size:10px;color:var(--ink4);letter-spacing:1px;text-align:right;">
-    LUMEN v178
+    LUMEN v180
   </div>
 </div>
 
@@ -3389,7 +3389,7 @@ function openReadingConsistencyReport() {
   const rows = auditReadingConsistency();
   const lineas = [];
   lineas.push('═══════════════════════════════════════════════');
-  lineas.push('REVISIÓN DE CONSISTENCIA DE LECTURA — LUMEN v178');
+  lineas.push('REVISIÓN DE CONSISTENCIA DE LECTURA — LUMEN v180');
   lineas.push('Generado: ' + new Date().toLocaleString('es-CL', { timeZone: LUMEN_TZ }));
   lineas.push('═══════════════════════════════════════════════');
   lineas.push('');
@@ -4326,7 +4326,7 @@ let db = loadDB();
 try {
   (db.entries||[]).forEach(ensureBookCanonicalRefs);
 } catch (err) {
-  console.warn('[LUMEN v179] Migración canónica inicial omitida para no bloquear el arranque:', err);
+  console.warn('[LUMEN v180] Migración canónica inicial omitida para no bloquear el arranque:', err);
 }
 setTimeout(() => compactLocalDBOnStartup(), 300);
 
@@ -4386,6 +4386,7 @@ function saveGeneroQuick() {
 
 function openAddModal() {
   editingId = null;
+  _pendingFormBibliography = null;
   openModal('modal-add');
 }
 
@@ -4919,13 +4920,13 @@ function toggleBookInventoryQuick(bookId) {
     book.enInventario=false;
     const nextInv=inv.filter(x=>x.linkedEntryId!==bookId);
     try{saveInventory(nextInv,false);book._updatedAt=Date.now();saveDB();}
-    catch(err){console.error('[LUMEN v179] Quitar inventario:',err);showToast('⚠ No se pudo actualizar el inventario',4000);return;}
+    catch(err){console.error('[LUMEN v180] Quitar inventario:',err);showToast('⚠ No se pudo actualizar el inventario',4000);return;}
     showToast('✓ Quitado del inventario');
   }else{
     book.enInventario=true;
     book._updatedAt=Date.now();
     try{saveDB();}
-    catch(err){console.error('[LUMEN v179] Agregar inventario:',err);book.enInventario=false;showToast('⚠ No se pudo actualizar el inventario',4000);return;}
+    catch(err){console.error('[LUMEN v180] Agregar inventario:',err);book.enInventario=false;showToast('⚠ No se pudo actualizar el inventario',4000);return;}
     showToast('✓ Agregado al inventario');
   }
   if(currentScreen==='library') renderLibrary();
@@ -4978,7 +4979,7 @@ function saveEntry() {
       historia: getGenerosSeleccionados().includes('Historia') ? getHistoriaFromForm() : null,
       cover: document.getElementById('f-cover').value };
     if (editingId) { const prev=db.entries.find(e=>e.id===editingId); if(prev?.bibliografia) entry.bibliografia=prev.bibliografia; if(prev?.isbn)entry.isbn=prev.isbn; if(prev?.anio_publicacion_original!=null)entry.anio_publicacion_original=prev.anio_publicacion_original; if(prev?.periodo_publicacion_inicio!=null)entry.periodo_publicacion_inicio=prev.periodo_publicacion_inicio; if(prev?.periodo_publicacion_fin!=null)entry.periodo_publicacion_fin=prev.periodo_publicacion_fin; }
-    if (!editingId && _pendingFormBibliography) { entry.bibliografia=_pendingFormBibliography; const bo=_pendingFormBibliography.obraOriginal||{},be=_pendingFormBibliography.edicionConsultada||{}; if(be.isbn)entry.isbn=be.isbn;if(bo.anioPublicacionOriginal!=null)entry.anio_publicacion_original=Number(bo.anioPublicacionOriginal);if(bo.periodoInicio!=null)entry.periodo_publicacion_inicio=Number(bo.periodoInicio);if(bo.periodoFin!=null)entry.periodo_publicacion_fin=Number(bo.periodoFin); _pendingFormBibliography=null; }
+    if (_pendingFormBibliography) { entry.bibliografia=_pendingFormBibliography; const bo=_pendingFormBibliography.obraOriginal||{},be=_pendingFormBibliography.edicionConsultada||{}; if(be.isbn)entry.isbn=be.isbn;if(be.editorialId)entry.editorialId=be.editorialId;if(be.traductorIds)entry.traductorIds=be.traductorIds;if(bo.anioPublicacionOriginal!=null)entry.anio_publicacion_original=Number(bo.anioPublicacionOriginal);if(bo.periodoInicio!=null)entry.periodo_publicacion_inicio=Number(bo.periodoInicio);if(bo.periodoFin!=null)entry.periodo_publicacion_fin=Number(bo.periodoFin); _pendingFormBibliography=null; }
   } else if (currentType === 'pelicula') {
     const titulo = document.getElementById('fp-titulo').value.trim();
     if (!titulo) { showToast('Ingresa el título'); return; }
@@ -9366,7 +9367,7 @@ function saveReadingEntry() {
     // Evita dejar un alta a medias y muestra el error real en pantalla.
     if (created) db.entries = db.entries.filter(e => e.id!==entry.id);
     else if (before) Object.assign(entry,before);
-    console.error('[LUMEN v179] Error al iniciar lectura:', err);
+    console.error('[LUMEN v180] Error al iniciar lectura:', err);
     const msg = err && (err.name==='QuotaExceededError' || /quota/i.test(err.message||''))
       ? 'No se pudo guardar: almacenamiento local lleno'
       : `No se pudo guardar la lectura${err?.message?': '+err.message:''}`;
@@ -10638,7 +10639,7 @@ function loadMapas() {
 function saveMapas() {
   // v177: persistir el mapa actual sin normalizar toda la red en cada click.
   const ok = safeLocalSetItem(MAPAS_KEY, JSON.stringify(mapas), {prune:true});
-  if (!ok) console.warn('[LUMEN v179] mapa aplicado en memoria; persistencia local pendiente');
+  if (!ok) console.warn('[LUMEN v180] mapa aplicado en memoria; persistencia local pendiente');
   queueCloudSyncV178(900);
   return ok;
 }
@@ -10725,35 +10726,142 @@ function getAutoresYLibros() {
 function getTitulosLibros() { return db.entries.map(e=>e.titulo).filter(Boolean).sort(); }
 
 // ═══════════════════════════════════
-//  FICHA BIBLIOGRÁFICA JSON — v176
+//  FICHA BIBLIOGRÁFICA JSON — v180
 // ═══════════════════════════════════
 let _bibJsonParsed=null;
 let _pendingFormBibliography=null;
+let _bibJsonContext={mode:'direct',parentModal:null,parentScroll:0,targetId:null};
 function getBibliographyTargetBook(){const id=document.getElementById('bib-json-target')?.value||'';return id&&id!=='__form__'?findBookCanonicalById(id):null;}
-function openBibliographicJsonModal(target){document.getElementById('bib-json-target').value=target||'__form__';document.getElementById('bib-json-text').value='';document.getElementById('bib-json-preview').style.display='none';document.getElementById('bib-json-apply').style.display='none';_bibJsonParsed=null;openModal('modal-bib-json');}
-function openBibliographyForInfluence(){const b=getInfluenceEvidenceBook();if(!b){showToast('Selecciona primero el libro destino');return;}openBibliographicJsonModal(b.id);}
-function normalizeBibliographicPayload(raw){
-  if(raw?.schema!=='lumen_ficha_bibliografica_v1'&&!raw?.libro)throw new Error('JSON bibliográfico no reconocido.'); const l=raw.libro||raw, o=l.obra_original||{},e=l.edicion_consultada||{};
-  const pi=o.periodo_inicio??o.anio_inicio??null,pf=o.periodo_fin??o.anio_fin??null; let original=o.anio_publicacion_original??null; if(original==null&&pi!=null)original=Number(pi); if(original==null&&pi!=null&&pf!=null)original=Math.min(Number(pi),Number(pf));
-  return {schema:'lumen_ficha_bibliografica_v1',titulo:l.titulo||'',autor:l.autor||'',obraOriginal:{tituloOriginal:o.titulo_original||'',idiomaOriginal:o.idioma_original||'',anioPublicacionOriginal:original,periodoInicio:pi,periodoFin:pf},edicionConsultada:{editorial:e.editorial||'',ciudad:e.ciudad||'',pais:e.pais||'',anio:e.anio??null,mes:e.mes||'',numeroEdicion:e.numero_edicion??null,descripcionEdicion:e.descripcion_edicion||'',isbn:e.isbn||'',coleccion:e.coleccion||'',traductores:asArr(e.traductores||e.traductor),prologo:asArr(e.prologo),introduccion:asArr(e.introduccion),notas:asArr(e.notas),impresor:e.impresor||''},historialEdiciones:asArr(l.historial_ediciones).map(x=>({numero:x.numero??null,mes:x.mes||'',anio:x.anio??null}))};
+function bibliographicParentIsEditor(){return !!document.getElementById('modal-add')?.classList.contains('open');}
+function openBibliographicJsonModal(target){
+  const parentEditor=bibliographicParentIsEditor();
+  const parentModal=parentEditor?'modal-add':(document.getElementById('modal-influencia')?.classList.contains('open')?'modal-influencia':null);
+  const parentScroller=parentModal?document.querySelector('#'+parentModal+' .modal'):null;
+  _bibJsonContext={mode:parentEditor?'editor':'direct',parentModal,parentScroll:parentScroller?.scrollTop||0,targetId:target||'__form__'};
+  document.getElementById('bib-json-target').value=target||'__form__';
+  document.getElementById('bib-json-text').value='';
+  document.getElementById('bib-json-preview').style.display='none';
+  document.getElementById('bib-json-apply').style.display='none';
+  _bibJsonParsed=null;
+  openModal('modal-bib-json');
 }
-function currentBibComparable(book){const ed=book?.bibliografia?.edicionConsultada||{};return {editorial:book?.editorial||ed.editorial||'',ciudad:book?.ciudad_publicacion||ed.ciudad||'',anioEdicion:book?.anio_pub||ed.anio||'',edicion:book?.edicion||ed.descripcionEdicion||ed.numeroEdicion||'',isbn:book?.isbn||ed.isbn||'',traductores:book?.traductor||((ed.traductores||[]).join('; ')),anioOriginal:book?.anio_publicacion_original||book?.bibliografia?.obraOriginal?.anioPublicacionOriginal||'',periodo: [book?.periodo_publicacion_inicio||'',book?.periodo_publicacion_fin||''].filter(x=>x!==''&&x!=null).join('–')};}
+function openBibliographyForInfluence(){const b=getInfluenceEvidenceBook();if(!b){showToast('Selecciona primero el libro destino');return;}openBibliographicJsonModal(b.id);}
+function sanitizeBibliographicJsonText(txt){
+  let s=String(txt||'').trim();
+  s=s.replace(/^```(?:json)?\s*/i,'').replace(/\s*```$/,'');
+  s=s.replace(/[“”„‟]/g,'"').replace(/[‘’]/g,"'");
+  s=s.replace(/^\uFEFF/,'');
+  return s;
+}
+function normalizeBibliographicPayload(raw){
+  if(!raw||typeof raw!=='object')throw new Error('JSON bibliográfico vacío o inválido.');
+  const schema=raw.schema||'';
+  const accepted=['lumen_bibliografia_import_v1','lumen_ficha_bibliografica_v1'];
+  if(schema&&!accepted.includes(schema))throw new Error('Schema no reconocido: '+schema);
+  const l=raw.libro||raw;
+  if(!l||typeof l!=='object')throw new Error('Falta el objeto libro.');
+
+  const isNew=schema==='lumen_bibliografia_import_v1'||('edicion' in l)||('anio_obra_original' in l)||('editorial' in l);
+  const oldO=l.obra_original||{}, oldE=l.edicion_consultada||{};
+  const ne=l.edicion||{};
+  const editorial=isNew?(l.editorial||oldE.editorial||''):(oldE.editorial||l.editorial||'');
+  const ciudad=isNew?(l.ciudad_publicacion||oldE.ciudad||''):(oldE.ciudad||l.ciudad_publicacion||'');
+  const pais=isNew?(l.pais_publicacion||oldE.pais||''):(oldE.pais||l.pais_publicacion||'');
+  const anioEd=isNew?(ne.anio??oldE.anio??null):(oldE.anio??ne.anio??null);
+  const mesEd=isNew?(ne.mes||oldE.mes||''):(oldE.mes||ne.mes||'');
+  const numEd=isNew?(ne.numero??oldE.numero_edicion??null):(oldE.numero_edicion??ne.numero??null);
+  const descEd=isNew?(ne.descripcion||oldE.descripcion_edicion||''):(oldE.descripcion_edicion||ne.descripcion||'');
+  const isbn=isNew?(l.isbn||oldE.isbn||''):(oldE.isbn||l.isbn||'');
+  const trads=isNew?asArr(l.traductores||oldE.traductores||oldE.traductor):asArr(oldE.traductores||oldE.traductor||l.traductores);
+  const tituloOriginal=isNew?(l.titulo_original||oldO.titulo_original||''):(oldO.titulo_original||l.titulo_original||'');
+  const idiomaOriginal=isNew?(l.idioma_original||oldO.idioma_original||''):(oldO.idioma_original||l.idioma_original||'');
+  let pi=isNew?(l.anio_obra_original??oldO.periodo_inicio??oldO.anio_inicio??null):(oldO.periodo_inicio??oldO.anio_inicio??l.anio_obra_original??null);
+  let pf=isNew?(l.anio_obra_original_fin??oldO.periodo_fin??oldO.anio_fin??null):(oldO.periodo_fin??oldO.anio_fin??l.anio_obra_original_fin??null);
+  let original=isNew?(l.anio_obra_original??oldO.anio_publicacion_original??null):(oldO.anio_publicacion_original??l.anio_obra_original??null);
+  if(original==null&&pi!=null)original=Number(pi);
+  if(pi==null&&original!=null)pi=Number(original);
+  if(original!=null&&pf!=null)original=Math.min(Number(original),Number(pf));
+  if(pi!=null&&pf!=null)original=Math.min(Number(pi),Number(pf));
+  const notes=isNew?(l.notas_bibliograficas||''):(l.notas_bibliograficas||'');
+  const hist=asArr(l.historial_ediciones).map(x=>({numero:x?.numero??null,mes:x?.mes||'',anio:x?.anio??null}));
+
+  const payload={
+    schema:'lumen_ficha_bibliografica_v1',sourceSchema:schema||'compatible',titulo:l.titulo||'',autor:l.autor||'',
+    obraOriginal:{tituloOriginal,idiomaOriginal,anioPublicacionOriginal:original,periodoInicio:pi,periodoFin:pf},
+    edicionConsultada:{editorial,ciudad,pais,anio:anioEd,mes:mesEd,numeroEdicion:numEd,descripcionEdicion:descEd,isbn,
+      coleccion:oldE.coleccion||'',traductores:trads,prologo:asArr(oldE.prologo),introduccion:asArr(oldE.introduccion),notas:asArr(oldE.notas),impresor:oldE.impresor||''},
+    historialEdiciones:hist,notasBibliograficas:notes
+  };
+  const hasUseful=[payload.titulo,payload.autor,editorial,ciudad,pais,anioEd,numEd,descEd,isbn,trads.length,original,pi,pf,tituloOriginal,idiomaOriginal,notes].some(v=>v!==''&&v!==null&&v!==undefined&&v!==0);
+  if(!hasUseful)throw new Error('El JSON no contiene datos bibliográficos reconocibles.');
+  return payload;
+}
+function currentBibComparable(book){const ed=book?.bibliografia?.edicionConsultada||{},bo=book?.bibliografia?.obraOriginal||{};return {titulo:book?.titulo||'',autor:book?.autor||'',editorial:book?.editorial||ed.editorial||'',ciudad:book?.ciudad_publicacion||ed.ciudad||'',pais:ed.pais||'',anioEdicion:book?.anio_pub||ed.anio||'',edicion:book?.edicion||ed.descripcionEdicion||ed.numeroEdicion||'',isbn:book?.isbn||ed.isbn||'',traductores:book?.traductor||((ed.traductores||[]).join('; ')),anioOriginal:book?.anio_publicacion_original||bo.anioPublicacionOriginal||'',periodo:[book?.periodo_publicacion_inicio??bo.periodoInicio??'',book?.periodo_publicacion_fin??bo.periodoFin??''].filter(x=>x!==''&&x!=null).join('–'),tituloOriginal:bo.tituloOriginal||'',idiomaOriginal:book?.idioma||bo.idiomaOriginal||'',notas:book?.bibliografia?.notasBibliograficas||''};}
 function previewBibliographicJson(){
-  try{const raw=JSON.parse(document.getElementById('bib-json-text').value);_bibJsonParsed=normalizeBibliographicPayload(raw);const target=getBibliographyTargetBook();const cur=currentBibComparable(target||{}),n=_bibJsonParsed,e=n.edicionConsultada,o=n.obraOriginal;
-    const rows=[['Editorial',cur.editorial,e.editorial],['Ciudad',cur.ciudad,e.ciudad],['Año de edición',cur.anioEdicion,e.anio],['Edición',cur.edicion,e.descripcionEdicion||e.numeroEdicion],['ISBN',cur.isbn,e.isbn],['Traductores',cur.traductores,e.traductores.join('; ')],['Publicación original',cur.anioOriginal,o.anioPublicacionOriginal],['Período original',cur.periodo,[o.periodoInicio,o.periodoFin].filter(x=>x!==null&&x!=='').join('–')]].filter(r=>r[2]!==''&&r[2]!==null&&r[2]!==undefined);
-    const el=document.getElementById('bib-json-preview');el.style.display='block';el.innerHTML=`<div style="padding:9px 11px;font-size:11px;color:var(--ink3);border-bottom:1px solid var(--border);">${rows.length} dato(s) detectado(s). Revisa antes de aplicar.</div>${rows.map(r=>`<div style="display:grid;grid-template-columns:110px 1fr 1fr;gap:6px;padding:8px 10px;border-bottom:1px solid var(--cream2);font-size:10px;"><strong>${escapeHtml(r[0])}</strong><span style="color:var(--ink4);">${escapeHtml(r[1]||'—')}</span><span style="color:${r[1]&&canonicalText(r[1])!==canonicalText(r[2])?'var(--red)':'var(--green)'};font-weight:700;">${escapeHtml(r[2]||'—')}</span></div>`).join('')}`;document.getElementById('bib-json-apply').style.display='inline-flex';
-  }catch(e){showToast('⚠ '+e.message,4500);}
+  try{
+    const txt=sanitizeBibliographicJsonText(document.getElementById('bib-json-text').value);
+    document.getElementById('bib-json-text').value=txt;
+    const raw=JSON.parse(txt);
+    _bibJsonParsed=normalizeBibliographicPayload(raw);
+    const target=getBibliographyTargetBook();
+    const cur=currentBibComparable(target||{}),n=_bibJsonParsed,e=n.edicionConsultada,o=n.obraOriginal;
+    const periodNew=[o.periodoInicio,o.periodoFin].filter(x=>x!==null&&x!==''&&x!==undefined).join('–');
+    const rows=[
+      ['Título',cur.titulo,n.titulo],['Autor',cur.autor,n.autor],['Editorial',cur.editorial,e.editorial],['Ciudad',cur.ciudad,e.ciudad],['País',cur.pais,e.pais],
+      ['Año de edición',cur.anioEdicion,e.anio],['Edición',cur.edicion,e.descripcionEdicion||e.numeroEdicion],['ISBN',cur.isbn,e.isbn],
+      ['Traductores',cur.traductores,e.traductores.join('; ')],['Título original',cur.tituloOriginal,o.tituloOriginal],['Idioma original',cur.idiomaOriginal,o.idiomaOriginal],
+      ['Publicación original',cur.anioOriginal,o.anioPublicacionOriginal],['Período original',cur.periodo,periodNew],['Notas bibliográficas',cur.notas,n.notasBibliograficas]
+    ].filter(r=>r[2]!==''&&r[2]!==null&&r[2]!==undefined);
+    const el=document.getElementById('bib-json-preview');
+    el.style.display='block';
+    el.innerHTML=`<div style="padding:9px 11px;font-size:11px;color:var(--ink3);border-bottom:1px solid var(--border);"><strong>${rows.length} dato(s) detectado(s).</strong> Revisa antes de aplicar. Título y autor se usan para validar identidad; no reemplazan automáticamente el nombre canónico del libro.</div>${rows.map(r=>`<div style="display:grid;grid-template-columns:110px 1fr 1fr;gap:6px;padding:8px 10px;border-bottom:1px solid var(--cream2);font-size:10px;"><strong>${escapeHtml(r[0])}</strong><span style="color:var(--ink4);">${escapeHtml(String(r[1]||'—'))}</span><span style="color:${r[1]&&canonicalText(String(r[1]))!==canonicalText(String(r[2]))?'var(--red)':'var(--green)'};font-weight:700;">${escapeHtml(String(r[2]||'—'))}</span></div>`).join('')}`;
+    document.getElementById('bib-json-apply').style.display=rows.length?'inline-flex':'none';
+    if(!rows.length)showToast('⚠ No se detectaron campos compatibles',3500);
+  }catch(e){
+    _bibJsonParsed=null;
+    document.getElementById('bib-json-apply').style.display='none';
+    const el=document.getElementById('bib-json-preview');el.style.display='block';el.innerHTML=`<div style="padding:11px;color:var(--red);font-size:11px;line-height:1.5;">⚠ ${escapeHtml(e.message)}</div>`;
+    showToast('⚠ '+e.message,4500);
+  }
+}
+function buildCanonicalBibliography(n){
+  const e=n.edicionConsultada,o=n.obraOriginal;
+  const pub=e.editorial?resolveCanonicalEntity('edi',e.editorial,true):null;
+  const tradEnt=e.traductores.map(t=>resolveCanonicalEntity('tra',t,true)).filter(Boolean);
+  return {pub,tradEnt,bib:{schema:'lumen_ficha_bibliografica_v1',obraOriginal:o,edicionConsultada:{...e,editorial:pub?.nombreCanonico||e.editorial,editorialId:pub?.id||'',traductores:tradEnt.map(x=>x.nombreCanonico),traductorIds:tradEnt.map(x=>x.id)},historialEdiciones:n.historialEdiciones,notasBibliograficas:n.notasBibliograficas||''}};
+}
+function applyBibliographyToEditor(n,canon){
+  const e=n.edicionConsultada,o=n.obraOriginal,{pub,tradEnt,bib}=canon;
+  const set=(id,v)=>{const x=document.getElementById(id);if(x&&v!==''&&v!=null)x.value=v;};
+  set('f-editorial',pub?.nombreCanonico||e.editorial);set('f-ciudad-pub',e.ciudad);set('f-anio-pub',e.anio);set('f-edicion',e.descripcionEdicion||e.numeroEdicion);set('f-traductor',tradEnt.map(x=>x.nombreCanonico).join('; '));
+  if(o.idiomaOriginal){const sel=document.getElementById('f-idioma');if(sel){const opt=[...sel.options].find(x=>canonicalText(x.value)===canonicalText(o.idiomaOriginal)||canonicalText(x.textContent)===canonicalText(o.idiomaOriginal));if(opt)sel.value=opt.value;}}
+  _pendingFormBibliography=bib;
+  const sc=document.querySelector('#modal-add .modal');
+  setTimeout(()=>{if(sc)sc.scrollTop=_bibJsonContext.parentScroll||0;},20);
 }
 function applyBibliographicJson(){
-  if(!_bibJsonParsed){showToast('Revisa primero el JSON');return;}const target=getBibliographyTargetBook();const n=_bibJsonParsed,e=n.edicionConsultada,o=n.obraOriginal;
-  const pub=e.editorial?resolveCanonicalEntity('edi',e.editorial,true):null; const tradEnt=e.traductores.map(t=>resolveCanonicalEntity('tra',t,true));
-  if(target){target.bibliografia={schema:'lumen_ficha_bibliografica_v1',obraOriginal:o,edicionConsultada:{...e,editorial:pub?.nombreCanonico||e.editorial,editorialId:pub?.id||'',traductores:tradEnt.map(x=>x.nombreCanonico),traductorIds:tradEnt.map(x=>x.id)},historialEdiciones:n.historialEdiciones};
-    if(pub){target.editorial=pub.nombreCanonico;target.editorialId=pub.id;} if(e.ciudad)target.ciudad_publicacion=e.ciudad;if(e.anio)target.anio_pub=Number(e.anio)||e.anio;if(e.descripcionEdicion||e.numeroEdicion)target.edicion=String(e.descripcionEdicion||e.numeroEdicion);if(e.isbn)target.isbn=e.isbn;if(tradEnt.length){target.traductor=tradEnt.map(x=>x.nombreCanonico).join('; ');target.traductorIds=tradEnt.map(x=>x.id);} if(o.idiomaOriginal)target.idioma=o.idiomaOriginal;if(o.anioPublicacionOriginal!=null)target.anio_publicacion_original=Number(o.anioPublicacionOriginal);if(o.periodoInicio!=null)target.periodo_publicacion_inicio=Number(o.periodoInicio);if(o.periodoFin!=null)target.periodo_publicacion_fin=Number(o.periodoFin);target._updatedAt=Date.now();ensureBookCanonicalRefs(target);saveDB();
+  if(!_bibJsonParsed){showToast('Revisa primero el JSON');return;}
+  const n=_bibJsonParsed,e=n.edicionConsultada,o=n.obraOriginal;
+  const canon=buildCanonicalBibliography(n);
+  const editorMode=_bibJsonContext.mode==='editor'&&document.getElementById('modal-add')?.classList.contains('open');
+  const target=getBibliographyTargetBook();
+  if(editorMode){
+    applyBibliographyToEditor(n,canon);
+  } else if(target){
+    const {pub,tradEnt,bib}=canon;
+    target.bibliografia=bib;
+    if(pub){target.editorial=pub.nombreCanonico;target.editorialId=pub.id;}
+    if(e.ciudad)target.ciudad_publicacion=e.ciudad;if(e.anio)target.anio_pub=Number(e.anio)||e.anio;if(e.descripcionEdicion||e.numeroEdicion)target.edicion=String(e.descripcionEdicion||e.numeroEdicion);if(e.isbn)target.isbn=e.isbn;
+    if(tradEnt.length){target.traductor=tradEnt.map(x=>x.nombreCanonico).join('; ');target.traductorIds=tradEnt.map(x=>x.id);}
+    if(o.idiomaOriginal)target.idioma=o.idiomaOriginal;if(o.anioPublicacionOriginal!=null)target.anio_publicacion_original=Number(o.anioPublicacionOriginal);if(o.periodoInicio!=null)target.periodo_publicacion_inicio=Number(o.periodoInicio);if(o.periodoFin!=null)target.periodo_publicacion_fin=Number(o.periodoFin);
+    target._updatedAt=Date.now();ensureBookCanonicalRefs(target);saveDB();
   } else {
-    const set=(id,v)=>{const x=document.getElementById(id);if(x&&v!==''&&v!=null)x.value=v;};set('f-editorial',pub?.nombreCanonico||e.editorial);set('f-ciudad-pub',e.ciudad);set('f-anio-pub',e.anio);set('f-edicion',e.descripcionEdicion||e.numeroEdicion);set('f-traductor',tradEnt.map(x=>x.nombreCanonico).join('; ')); if(o.idiomaOriginal){const sel=document.getElementById('f-idioma');if(sel)[...sel.options].some(x=>x.value===o.idiomaOriginal)&&(sel.value=o.idiomaOriginal);}
-    _pendingFormBibliography={schema:'lumen_ficha_bibliografica_v1',obraOriginal:o,edicionConsultada:{...e,editorial:pub?.nombreCanonico||e.editorial,editorialId:pub?.id||'',traductores:tradEnt.map(x=>x.nombreCanonico),traductorIds:tradEnt.map(x=>x.id)},historialEdiciones:n.historialEdiciones};
+    applyBibliographyToEditor(n,canon);
   }
-  closeModal('modal-bib-json'); if(document.getElementById('modal-influencia')?.classList.contains('open')||document.getElementById('modal-influencia')?.style.display==='flex'){syncInfCanonicalBibliography();actualizarIsoPreview();} showToast('✓ Ficha bibliográfica actualizada'); if(currentScreen==='library')renderLibrary();
+  closeModal('modal-bib-json');
+  if(document.getElementById('modal-influencia')?.classList.contains('open')){syncInfCanonicalBibliography();actualizarIsoPreview();}
+  showToast(editorMode?'✓ Datos aplicados al editor. Guarda la ficha para confirmar.':'✓ Ficha bibliográfica actualizada');
+  if(!editorMode&&currentScreen==='library')renderLibrary();
 }
 
 // ══════════════════════════
@@ -13975,7 +14083,7 @@ function startInventoryReading(id){
   if(!book){book={id:'inv_book_'+Date.now(),type:'libro',titulo:item.titulo,autor:item.autor||'',editorial:item.editorial||'',estado:'leyendo',progreso:0,readDates:[],cover:'',notas:'',enInventario:true,startDate:new Date().toISOString(),_updatedAt:Date.now()};db.entries.push(book);}
   else{book.estado='leyendo';book.enInventario=true;book.startDate=book.startDate||new Date().toISOString();book._updatedAt=Date.now();if(!book.editorial&&item.editorial)book.editorial=item.editorial;}
   item.linkedEntryId=book.id;item._updatedAt=Date.now();
-  try{safeLocalSetItem(INVENTORY_KEY,JSON.stringify(inv));saveDB();}catch(err){console.error('[LUMEN v179] Inventario → lectura:',err);showToast('⚠ No se pudo iniciar la lectura: '+(err.message||'error local'),4500);return;}
+  try{safeLocalSetItem(INVENTORY_KEY,JSON.stringify(inv));saveDB();}catch(err){console.error('[LUMEN v180] Inventario → lectura:',err);showToast('⚠ No se pudo iniciar la lectura: '+(err.message||'error local'),4500);return;}
   renderInventory();renderHome();showToast('✓ Libro agregado a Leyendo ahora');
 }
 function openInventoryImport(){inventoryImportPending=[];document.getElementById('inventory-import-preview').innerHTML='';document.getElementById('inventory-import-confirm').style.display='none';document.getElementById('inventory-csv-input').value='';openModal('modal-inventory-import');}
@@ -14081,7 +14189,7 @@ async function writeCloudV162(uid) {
   operations.push({ type:'set', ref:cloudDocRefV162(uid,LUMEN_SYNC_MODULES_DOC), data:{ schema:LUMEN_SYNC_SCHEMA, ...modules, updatedAt:now } });
   operations.push({ type:'set', ref:cloudDocRefV162(uid,LUMEN_SYNC_MANIFEST_DOC), data:{
     schema:LUMEN_SYNC_SCHEMA,
-    appVersion:'v179',
+    appVersion:'v180',
     entryCount:entries.length,
     chunkCount:chunks.length,
     moduleBytes,
@@ -14210,7 +14318,7 @@ async function stashLocalImages(entries) {
   const jobs = [];
   (entries || []).forEach(e => {
     Object.keys(e || {}).forEach(k => {
-      if (isBase64Image(e[k])) jobs.push(putLocalAsset(localAssetKey(e.id, k), e[k]).catch(err => console.warn('[LUMEN v179] asset IDB:', err)));
+      if (isBase64Image(e[k])) jobs.push(putLocalAsset(localAssetKey(e.id, k), e[k]).catch(err => console.warn('[LUMEN v180] asset IDB:', err)));
     });
   });
   if (jobs.length) await Promise.all(jobs);
@@ -14229,7 +14337,7 @@ async function hydrateLocalImagesFromIDB() {
   });
   if (jobs.length) await Promise.all(jobs);
   if (restored) {
-    console.info(`[LUMEN v179] ${restored} imagen(es) restauradas desde IndexedDB`);
+    console.info(`[LUMEN v180] ${restored} imagen(es) restauradas desde IndexedDB`);
     try { refreshCurrentScreen(); } catch (_) {}
   }
   return restored;
@@ -14253,7 +14361,7 @@ function pruneTransientLocalBackups() {
     if (k && patterns.some(rx => rx.test(k))) doomed.push(k);
   }
   doomed.forEach(k => { try { localStorage.removeItem(k); } catch (_) {} });
-  if (doomed.length) console.info('[LUMEN v179] backups locales transitorios limpiados:', doomed.length);
+  if (doomed.length) console.info('[LUMEN v180] backups locales transitorios limpiados:', doomed.length);
   return doomed.length;
 }
 
@@ -14263,13 +14371,13 @@ function safeLocalSetItem(key, value, opts={}) {
     return true;
   } catch (err) {
     if (!isQuotaExceeded(err)) {
-      console.error('[LUMEN v179] localStorage error:', key, err);
+      console.error('[LUMEN v180] localStorage error:', key, err);
       return false;
     }
-    console.warn('[LUMEN v179] Cuota local excedida en', key);
+    console.warn('[LUMEN v180] Cuota local excedida en', key);
     if (opts.prune !== false) pruneTransientLocalBackups();
     try { localStorage.setItem(key, value); return true; }
-    catch (err2) { console.warn('[LUMEN v179] Reintento local falló:', key, err2); return false; }
+    catch (err2) { console.warn('[LUMEN v180] Reintento local falló:', key, err2); return false; }
   }
 }
 
@@ -14278,7 +14386,7 @@ function persistDBLocal() {
   // Las normalizaciones masivas NO pertenecen al click de Guardar.
   try {
     // Las imágenes base64 se guardan aparte en IndexedDB sin bloquear la acción.
-    stashLocalImages(db.entries || []).catch(err => console.warn('[LUMEN v179] asset IDB:', err));
+    stashLocalImages(db.entries || []).catch(err => console.warn('[LUMEN v180] asset IDB:', err));
 
     // Guardar siempre el snapshot liviano: evita intentar primero una copia enorme
     // que en Safari/iOS dispara QuotaExceededError y corta la UX.
@@ -14287,10 +14395,10 @@ function persistDBLocal() {
       return { ok:true, compact:true };
     }
 
-    console.error('[LUMEN v179] No fue posible persistir el snapshot local liviano.');
+    console.error('[LUMEN v180] No fue posible persistir el snapshot local liviano.');
     return { ok:false, compact:true };
   } catch (err) {
-    console.error('[LUMEN v179] persistDBLocal:', err);
+    console.error('[LUMEN v180] persistDBLocal:', err);
     return { ok:false, compact:true, error:err };
   }
 }
@@ -14309,9 +14417,9 @@ async function compactLocalDBOnStartup() {
         localStorage.setItem(DB_KEY, light);
       } else throw err;
     }
-    console.info('[LUMEN v179] Migración local inicial completada.');
+    console.info('[LUMEN v180] Migración local inicial completada.');
   } catch (err) {
-    console.warn('[LUMEN v179] Migración local inicial no completada:', err);
+    console.warn('[LUMEN v180] Migración local inicial no completada:', err);
   }
 }
 
@@ -14322,11 +14430,11 @@ async function syncToFirestore() {
     const result = await writeCloudV162(currentUser.uid);
     setSyncStatus('ok');
     setLastSync();
-    console.info('[LUMEN v179] Sync V2 OK', result);
+    console.info('[LUMEN v180] Sync V2 OK', result);
     return result;
   } catch(e) {
     setSyncStatus('offline');
-    console.error('[LUMEN v179] Sync V2 error:', e.code || '', e.message, e);
+    console.error('[LUMEN v180] Sync V2 error:', e.code || '', e.message, e);
     throw e;
   }
 }
@@ -14340,7 +14448,7 @@ function queueCloudSyncV178(delay=900) {
       await syncToFirestore();
     } catch (e) {
       // La nube nunca bloquea una acción local ya aceptada.
-      console.warn('[LUMEN v179] sync pendiente:', e?.message || e);
+      console.warn('[LUMEN v180] sync pendiente:', e?.message || e);
       showToast(`⚠ Cambio local guardado; nube pendiente${e?.message ? ': '+e.message : ''}`, 4200);
     }
   }, delay);
@@ -14354,7 +14462,7 @@ function saveDB() {
     localResult = persistDBLocal();
   } catch (err) {
     // Último cortafuego: ningún error de persistencia debe matar el onclick.
-    console.error('[LUMEN v179] saveDB:', err);
+    console.error('[LUMEN v180] saveDB:', err);
     localResult = {ok:false, error:err};
   }
 
@@ -14373,14 +14481,14 @@ function lumenSafeAction(label, action, opts={}) {
     const result = action();
     if (result && typeof result.then === 'function') {
       return result.catch(err => {
-        console.error(`[LUMEN v179] ${label}:`, err);
+        console.error(`[LUMEN v180] ${label}:`, err);
         showToast(`⚠ ${label}: ${err?.message || 'error inesperado'}`, 4800);
         return false;
       });
     }
     return result;
   } catch (err) {
-    console.error(`[LUMEN v179] ${label}:`, err);
+    console.error(`[LUMEN v180] ${label}:`, err);
     showToast(`⚠ ${label}: ${err?.message || 'error inesperado'}`, 4800);
     return false;
   }
@@ -14400,7 +14508,7 @@ async function manualSaveToCloud() {
   } catch(e) {
     setSyncStatus('offline');
     showToast(`⚠ Error al guardar: ${e.message}`, 5000);
-    console.error('[LUMEN v179] manualSave error:', e);
+    console.error('[LUMEN v180] manualSave error:', e);
   }
 }
 
@@ -14420,7 +14528,7 @@ async function pullAndMerge(uid, silent) {
     renderHome();
   } catch(e) {
     setSyncStatus('offline');
-    console.error('[LUMEN v179] pull error:', e);
+    console.error('[LUMEN v180] pull error:', e);
     if (!silent) showToast(`⚠ Error al cargar: ${e.message}`, 4500);
   }
 }
@@ -14451,11 +14559,11 @@ function subscribeToFirestore(uid) {
       setSyncStatus('ok');
       renderHome();
     } catch(e) {
-      console.warn('[LUMEN v179] snapshot error:', e.message);
+      console.warn('[LUMEN v180] snapshot error:', e.message);
     }
   }, e => {
     setSyncStatus('offline');
-    console.warn('[LUMEN v179] listener error:', e.message);
+    console.warn('[LUMEN v180] listener error:', e.message);
   });
 }
 
@@ -14472,17 +14580,17 @@ window.lumenSyncDiagnostico = function() {
     usuario:currentUser ? currentUser.uid : null
   };
   console.table(report);
-  console.info('[LUMEN v179] Diagnóstico completo', report);
+  console.info('[LUMEN v180] Diagnóstico completo', report);
   return report;
 };
 
 
 // v177 — diagnóstico global de acciones: deja trazabilidad de excepciones de clicks sin romper la app.
 window.addEventListener('error', function(ev){
-  if (ev?.error) console.error('[LUMEN v179] error global de UI:', ev.error);
+  if (ev?.error) console.error('[LUMEN v180] error global de UI:', ev.error);
 });
 window.addEventListener('unhandledrejection', function(ev){
-  console.error('[LUMEN v179] promesa no controlada:', ev.reason);
+  console.error('[LUMEN v180] promesa no controlada:', ev.reason);
 });
 </script>
 

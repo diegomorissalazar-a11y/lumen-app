@@ -1,25 +1,41 @@
-# LUMEN v177 — acciones y persistencia desacopladas
+# LUMEN v180
 
-Base: v176 entregada por el usuario.
+Fecha: 20-08-2026
 
-## Corrección crítica
-- Se eliminó del `saveDB()` común la normalización masiva de todos los libros y la reconstrucción/normalización de todos los mapas.
-- El guardado local usa directamente el snapshot liviano y mueve portadas base64 a IndexedDB en segundo plano; ya no intenta primero guardar una copia completa pesada en `localStorage`.
-- Firebase V2 queda desacoplado del cierre de modales: la sincronización se agenda en segundo plano y un fallo de nube no impide guardar/cerrar una acción local.
-- Se agregó `lumenSafeAction()` como cortafuego común para las acciones persistentes principales.
-- Se protegieron explícitamente: Guardar progreso, Terminé, Empezar a seguir, notas, ficha general, Historia rápida, progreso de series, influencias, rutas y editor de elenco.
-- `saveMapas()` ya no normaliza toda la red en cada click; las relaciones se normalizan al crearse/editarse.
-- Se agregaron trazas globales de errores y promesas no controladas para que un fallo no vuelva a parecer un botón muerto.
+## Cambios aplicados
+- Importador bibliográfico compatible con `lumen_bibliografia_import_v1`.
+- Compatibilidad conservada con `lumen_ficha_bibliografica_v1`.
+- Normalización previa de comillas tipográficas y bloques ```json antes de `JSON.parse`.
+- Detección de editorial, ISBN, edición, ciudad, país, traductores, título/idioma original, año/período original y notas bibliográficas.
+- Para rangos de obra original se conserva inicio/fin y se usa el año menor como referencia cronológica.
+- Flujo modal corregido: JSON bibliográfico se abre encima de Editar libro; Revisar ocurre dentro del mismo modal; Aplicar cierra solo el modal hijo y vuelve al editor.
+- En edición, los cambios bibliográficos quedan pendientes hasta pulsar Guardar en la ficha del libro.
+- Editoriales y traductores continúan vinculándose al catálogo canónico.
+- Separación de año de la edición consultada y año/período original dentro del modelo bibliográfico.
 
-## Qué no cambia
-- Modelo de sincronización Firebase V2 por bloques.
-- Modelo canónico de autores/editoriales/traductores y JSON bibliográfico.
-- Inventario, Historia, Gephi, métricas, hábitos, películas, series, mangas y discos.
+## Archivos modificados
+- `index.html`
 
-## Pruebas prioritarias
-1. Abrir un libro en lectura y usar **Actualizar → Guardar**; el modal debe cerrar inmediatamente y el progreso debe verse en Inicio.
-2. Repetir con **Terminé**.
-3. Crear una **Lectura en curso** y pulsar **Empezar a seguir**.
-4. Guardar una nota, Historia rápida, una influencia y una ruta.
-5. Guardar en nube y cargar desde otro dispositivo para confirmar que los cambios sobreviven.
-6. En Safari/iPhone, confirmar que no reaparece `QuotaExceededError` al guardar progreso.
+## Módulos no modificados funcionalmente
+- Login / autenticación.
+- Navegación global.
+- Inventario.
+- Mapas Historia.
+- Seguimiento de lectura.
+- Exportadores.
+
+## Validaciones realizadas
+- Extracción y revisión de todos los scripts inline.
+- `node --check` sobre JavaScript inline: OK.
+- Verificación de handlers del modal bibliográfico y campos del editor.
+- Verificación de versión de sync V2: v180.
+
+## Prueba recomendada
+1. Biblioteca → Cuentos completos → Editar.
+2. Pulsar `Cargar JSON bibliográfico`.
+3. Pegar `lumen_bibliografia_import_v1` (también con comillas tipográficas para probar tolerancia).
+4. Pulsar `Revisar JSON`: deben aparecer los campos detectados.
+5. Pulsar `Aplicar cambios`: debe volver al editor sin cerrarlo.
+6. Verificar editorial, año de edición, edición, ciudad y traductores.
+7. Pulsar Guardar en el editor.
+8. Volver a abrir la ficha y comprobar persistencia.
