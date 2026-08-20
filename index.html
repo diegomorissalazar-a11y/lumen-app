@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1a1510">
-<title>LUMEN v176 — Biblioteca Personal</title>
+<title>LUMEN v177 — Biblioteca Personal</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231a1510'/><text x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' font-family='Georgia,serif' font-size='14' font-weight='900' font-style='italic' fill='%23c8952a' letter-spacing='0.5'>L</text><rect x='6' y='23' width='20' height='2' rx='1' fill='%238b2020'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
@@ -4855,6 +4855,7 @@ function syncInventoryFromBook(book) {
 //  SAVE ENTRY
 // ═══════════════════════════════════
 function saveEntry() {
+  return lumenSafeAction("Guardar ficha", () => {
   let entry = { id: editingId || 'e_' + Date.now(), type: currentType, notas: document.getElementById('f-notas').value };
   if (currentType === 'libro') {
     const titulo = document.getElementById('f-titulo').value.trim();
@@ -4974,6 +4975,8 @@ function saveEntry() {
   if (currentScreen === 'library') renderLibrary();
   if (currentScreen === 'year') renderYear();
   if (currentScreen === 'stats') renderStats();
+
+  });
 }
 
 // ═══════════════════════════════════
@@ -6242,7 +6245,10 @@ function entryCardHTML(e) {
 }
 
 function openHistoriaQuick(entryId){const e=(db.entries||[]).find(x=>x.id===entryId);if(!e||e.type!=='libro'||!(e.generos||[]).includes('Historia'))return;const launch=()=>{const h=e.historia||{},b=historyBounds(h);document.getElementById('histq-entry-id').value=e.id;document.getElementById('histq-book').textContent=e.titulo||'';document.getElementById('histq-linea').value=h.lineaPrincipal||'';document.getElementById('histq-inicio').value=b.inicio??'';document.getElementById('histq-fin').value=b.fin??'';fillHistoricalLineDatalists();renderHistoricalLineChoices('histq-related-lines',h.lineasRelacionadasIds||[]);openModal('modal-historia-quick')};const d=document.getElementById('modal-detail');if(d?.classList.contains('open')){closeModal('modal-detail');setTimeout(launch,140)}else launch()}
-function saveHistoriaQuick(){const id=document.getElementById('histq-entry-id').value,e=(db.entries||[]).find(x=>x.id===id);if(!e)return;const lineaPrincipal=document.getElementById('histq-linea').value.trim(),lineaPrincipalId=registerHistoricalLine(lineaPrincipal),ri=document.getElementById('histq-inicio').value,rf=document.getElementById('histq-fin').value,inicio=ri===''?null:Number(ri),fin=rf===''?null:Number(rf),lineasRelacionadasIds=selectedHistoricalLineIds('histq-related-lines',lineaPrincipalId),lineasRelacionadas=historicalLineNamesFromIds(lineasRelacionadasIds);e.historia={...(e.historia||{}),schema:'lumen_historia_v3',lineaPrincipal,lineaPrincipalId,fechaInicio:inicio,fechaFin:fin,lineasRelacionadas,lineasRelacionadasIds,periodos:(inicio!==null||fin!==null)?[{nombre:'',tema:'',inicio:inicio??fin,fin:fin??inicio,precision:'aproximada',cobertura:'periodo',periodoId:canonicalEntityId('histperiod',`${lineaPrincipalId||lineaPrincipal}|${inicio??fin}_${fin??inicio}`)}]:[]};ensureHistoriaCanonicalRefs(e);e._updatedAt=Date.now();const ok=saveDB();if(ok!==false){closeModal('modal-historia-quick');showToast('✓ Historia actualizada');if(currentScreen==='library')renderLibrary();if(currentScreen==='mapas')renderMapaHistoria()}}
+function saveHistoriaQuick(){
+  return lumenSafeAction("Guardar Historia", () => {const id=document.getElementById('histq-entry-id').value,e=(db.entries||[]).find(x=>x.id===id);if(!e)return;const lineaPrincipal=document.getElementById('histq-linea').value.trim(),lineaPrincipalId=registerHistoricalLine(lineaPrincipal),ri=document.getElementById('histq-inicio').value,rf=document.getElementById('histq-fin').value,inicio=ri===''?null:Number(ri),fin=rf===''?null:Number(rf),lineasRelacionadasIds=selectedHistoricalLineIds('histq-related-lines',lineaPrincipalId),lineasRelacionadas=historicalLineNamesFromIds(lineasRelacionadasIds);e.historia={...(e.historia||{}),schema:'lumen_historia_v3',lineaPrincipal,lineaPrincipalId,fechaInicio:inicio,fechaFin:fin,lineasRelacionadas,lineasRelacionadasIds,periodos:(inicio!==null||fin!==null)?[{nombre:'',tema:'',inicio:inicio??fin,fin:fin??inicio,precision:'aproximada',cobertura:'periodo',periodoId:canonicalEntityId('histperiod',`${lineaPrincipalId||lineaPrincipal}|${inicio??fin}_${fin??inicio}`)}]:[]};ensureHistoriaCanonicalRefs(e);e._updatedAt=Date.now();const ok=saveDB();if(ok!==false){closeModal('modal-historia-quick');showToast('✓ Historia actualizada');if(currentScreen==='library')renderLibrary();if(currentScreen==='mapas')renderMapaHistoria()}
+  });
+}
 
 // ═══════════════════════════════════
 //  DETAIL MODAL
@@ -6471,6 +6477,7 @@ function openNotaModal(entryId, notaId) {
 }
 
 function saveNota() {
+  return lumenSafeAction("Guardar nota", () => {
   const entryId = document.getElementById('nota-entry-id').value;
   const notaId  = document.getElementById('nota-nota-id').value;
   const titulo  = document.getElementById('nota-titulo').value.trim();
@@ -6500,6 +6507,8 @@ function saveNota() {
     const chevron = document.getElementById(`notas-chevron-${entryId}`);
     if (body) { body.style.display = 'block'; chevron?.classList.add('open'); }
   }, 50);
+
+  });
 }
 
 function deleteNota(entryId, notaId) {
@@ -6702,6 +6711,7 @@ function updateSerieProgressBar() {
 }
 
 function saveSerieProgress() {
+  return lumenSafeAction("Guardar progreso de serie", () => {
   const id = document.getElementById('serie-progress-id').value;
   const e = db.entries.find(x => x.id === id);
   if (!e) return;
@@ -6714,9 +6724,12 @@ function saveSerieProgress() {
   closeModal('modal-serie-progress');
   showToast('✓ Progreso guardado');
   renderHome();
+
+  });
 }
 
 function finishSerie(id) {
+  return lumenSafeAction("Terminar serie", () => {
   const eid = id || document.getElementById('serie-progress-id')?.value;
   const e = db.entries.find(x => x.id === eid);
   if (!e) return;
@@ -6733,6 +6746,8 @@ function finishSerie(id) {
   showToast(`🎉 ¡Terminaste "${e.titulo}"!`, 3000);
   renderHome();
   if (currentScreen === 'library') renderLibrary();
+
+  });
 }
 
 // ═══════════════════════════════════
@@ -9193,6 +9208,7 @@ function openReadingModal() {
 }
 
 function saveReadingEntry() {
+  return lumenSafeAction("Empezar a seguir", () => {
   const get = id => document.getElementById(id);
   const val = id => (get(id)?.value ?? '').toString();
   const titulo = val('reading-titulo').trim();
@@ -9263,6 +9279,8 @@ function saveReadingEntry() {
   showToast(created ? '✓ Lectura en curso guardada' : '✓ Lectura existente actualizada');
   renderHome();
   if (libFilter==='inventario') renderInventory();
+
+  });
 }
 
 
@@ -9538,6 +9556,7 @@ function onProgressPagInput(val) {
 }
 
 function saveProgress() {
+  return lumenSafeAction("Guardar progreso", () => {
   const id = document.getElementById('progress-entry-id').value;
   const e = db.entries.find(x => x.id === id);
   if (!e) return;
@@ -9572,9 +9591,12 @@ function saveProgress() {
   closeModal('modal-progress');
   showToast('✓ Progreso actualizado');
   renderHome();
+
+  });
 }
 
 function finishBook() {
+  return lumenSafeAction("Terminar libro", () => {
   const id = document.getElementById('progress-entry-id').value;
   const e = db.entries.find(x => x.id === id);
   if (!e) return;
@@ -9600,6 +9622,8 @@ function finishBook() {
   showToast(`🎉 ¡Terminaste "${e.titulo}"!`, 3000);
   renderHome();
   if (currentScreen === 'library') renderLibrary();
+
+  });
 }
 function showToast(msg, dur = 2200) {
   const t = document.getElementById('toast');
@@ -10513,13 +10537,11 @@ function loadMapas() {
   catch { return {influencias:[],rutas:[]}; }
 }
 function saveMapas() {
-  mapas = normalizeMapasCanonical(mapas);
-  safeLocalSetItem(MAPAS_KEY, JSON.stringify(mapas));
-  // Subir a Firestore con debounce
-  if (currentUser) {
-    clearTimeout(_saveDebounceTimer);
-    _saveDebounceTimer = setTimeout(() => syncToFirestore(), 800);
-  }
+  // v177: persistir el mapa actual sin normalizar toda la red en cada click.
+  const ok = safeLocalSetItem(MAPAS_KEY, JSON.stringify(mapas), {prune:true});
+  if (!ok) console.warn('[LUMEN v177] mapa aplicado en memoria; persistencia local pendiente');
+  queueCloudSyncV177(900);
+  return ok;
 }
 mapas = loadMapas();
 let currentMapaTab = 'influencias';
@@ -11119,6 +11141,7 @@ function openModalInfluencia(editId, presetTipo) {
 }
 
 function saveInfluencia() {
+  return lumenSafeAction("Guardar influencia", () => {
   const tipo    = document.getElementById('inf-tipo').value;
   const fuente  = getInfFuente().trim();
   const destinoLibro = document.getElementById('inf-destino-sel').value.trim();
@@ -11181,6 +11204,8 @@ function saveInfluencia() {
   closeModal('modal-influencia');
   showToast('✓ Relación guardada');
   renderMapaInfluencias();
+
+  });
 }
 
 function deleteInfluencia(id) {
@@ -11642,6 +11667,7 @@ function openModalRuta(editId) {
 }
 
 function saveRuta() {
+  return lumenSafeAction("Guardar ruta", () => {
   const tipo   = document.getElementById('ruta-tipo').value;
   const editId = document.getElementById('ruta-edit-id').value;
   let fuente = '', destino = '', fuente_tipo = tipo;
@@ -11713,6 +11739,8 @@ function saveRuta() {
   closeModal('modal-ruta');
   showToast('✓ Conexión guardada');
   generarRutasMismoAutor(true);
+
+  });
 }
 
 function generarRutasMismoAutor(silencioso = false) {
@@ -13095,6 +13123,7 @@ function mostrarEditorElenco(entry) {
 }
 
 function guardarElencoEditor() {
+  return lumenSafeAction("Guardar elenco", () => {
   if (!elencIdSeleccionado) return;
   const entry    = elencPendientes.find(e => e.id === elencIdSeleccionado);
   if (!entry) return;
@@ -13124,6 +13153,8 @@ function guardarElencoEditor() {
 
   elencIdSeleccionado = null;
   renderElencoPendientes(siguienteId);
+
+  });
 }
 
 function saltarElencoEditor() {
@@ -14144,27 +14175,25 @@ function safeLocalSetItem(key, value, opts={}) {
 }
 
 function persistDBLocal() {
-  normalizeAllBookReading(db.entries || [], { repairBasic:true, source:'persistDBLocal-v173' });
-  (db.entries || []).forEach(ensureBookCanonicalRefs);
+  // v177: persistencia local deliberadamente liviana y no bloqueante.
+  // Las normalizaciones masivas NO pertenecen al click de Guardar.
+  try {
+    // Las imágenes base64 se guardan aparte en IndexedDB sin bloquear la acción.
+    stashLocalImages(db.entries || []).catch(err => console.warn('[LUMEN v177] asset IDB:', err));
 
-  // Guardar imágenes de forma asíncrona fuera de localStorage.
-  stashLocalImages(db.entries || []).catch(err => console.warn('[LUMEN v176] No se pudieron migrar todas las imágenes:', err));
+    // Guardar siempre el snapshot liviano: evita intentar primero una copia enorme
+    // que en Safari/iOS dispara QuotaExceededError y corta la UX.
+    const light = JSON.stringify(lightweightLocalDB(db));
+    if (safeLocalSetItem(DB_KEY, light, {prune:true})) {
+      return { ok:true, compact:true };
+    }
 
-  // Primera opción: snapshot completo, para mantener compatibilidad si cabe.
-  const full = JSON.stringify(db);
-  if (safeLocalSetItem(DB_KEY, full, {prune:false})) return { ok:true, compact:false };
-
-  // Si Safari está al límite, persistir el modelo liviano; las imágenes quedan en IndexedDB.
-  const light = JSON.stringify(lightweightLocalDB(db));
-  try { localStorage.removeItem(DB_KEY); } catch (_) {}
-  if (safeLocalSetItem(DB_KEY, light, {prune:true})) {
-    console.info('[LUMEN v176] DB local compactada; portadas movidas a IndexedDB');
-    return { ok:true, compact:true };
+    console.error('[LUMEN v177] No fue posible persistir el snapshot local liviano.');
+    return { ok:false, compact:true };
+  } catch (err) {
+    console.error('[LUMEN v177] persistDBLocal:', err);
+    return { ok:false, compact:true, error:err };
   }
-
-  // No lanzar excepción: la app mantiene el modelo en memoria y la nube V2 aún puede guardarlo.
-  console.error('[LUMEN v176] No fue posible persistir el snapshot local ni siquiera compactado.');
-  return { ok:false, compact:true };
 }
 
 async function compactLocalDBOnStartup() {
@@ -14194,36 +14223,68 @@ async function syncToFirestore() {
     const result = await writeCloudV162(currentUser.uid);
     setSyncStatus('ok');
     setLastSync();
-    console.info('[LUMEN v176] Sync V2 OK', result);
+    console.info('[LUMEN v177] Sync V2 OK', result);
     return result;
   } catch(e) {
     setSyncStatus('offline');
-    console.error('[LUMEN v176] Sync V2 error:', e.code || '', e.message, e);
+    console.error('[LUMEN v177] Sync V2 error:', e.code || '', e.message, e);
     throw e;
   }
 }
 
-function saveDB() {
-  normalizeAllBookReading(db.entries || [], { repairBasic:true, source:'saveDB-v173' });
-  (db.entries||[]).forEach(ensureBookCanonicalRefs);
-  mapas = normalizeMapasCanonical(mapas);
-  safeLocalSetItem(MAPAS_KEY, JSON.stringify(mapas), {prune:true});
-  const localResult = persistDBLocal();
-  if (!localResult.ok) {
-    // No bloquear la UX: el cambio sigue en memoria y se intenta sincronizar por bloques.
-    console.warn('[LUMEN v176] Guardado local parcial; se intentará nube V2.');
-  }
-  if (!currentUser) {
-    if (!localResult.ok) showToast('⚠ Cambio guardado solo en esta sesión. Libera espacio para persistirlo.', 4500);
-    return localResult.ok;
-  }
+function queueCloudSyncV177(delay=900) {
+  if (!currentUser) return;
   clearTimeout(_saveDebounceTimer);
   _saveDebounceTimer = setTimeout(async () => {
     setSyncStatus('syncing');
-    try { await syncToFirestore(); }
-    catch(e) { showToast(`⚠ No se pudo sincronizar: ${e.message}`, 4500); }
-  }, 650);
-  return true;
+    try {
+      await syncToFirestore();
+    } catch (e) {
+      // La nube nunca bloquea una acción local ya aceptada.
+      console.warn('[LUMEN v177] sync pendiente:', e?.message || e);
+      showToast(`⚠ Cambio local guardado; nube pendiente${e?.message ? ': '+e.message : ''}`, 4200);
+    }
+  }, delay);
+}
+
+function saveDB() {
+  // v177: el guardado común NO recorre toda la biblioteca ni reconstruye Gephi.
+  // Las entidades se normalizan en sus propios flujos (libro, influencia, historia, JSON).
+  let localResult;
+  try {
+    localResult = persistDBLocal();
+  } catch (err) {
+    // Último cortafuego: ningún error de persistencia debe matar el onclick.
+    console.error('[LUMEN v177] saveDB:', err);
+    localResult = {ok:false, error:err};
+  }
+
+  if (!localResult?.ok) {
+    // El cambio ya está en memoria. Informar sin lanzar excepción ni impedir cerrar el modal.
+    showToast('⚠ Cambio aplicado en esta sesión; falta persistencia local.', 4200);
+  }
+  queueCloudSyncV177(900);
+  return localResult?.ok !== false;
+}
+
+// Wrapper reutilizable para acciones de botones que persisten datos.
+// Centraliza errores para que un fallo JS no parezca un botón "muerto".
+function lumenSafeAction(label, action, opts={}) {
+  try {
+    const result = action();
+    if (result && typeof result.then === 'function') {
+      return result.catch(err => {
+        console.error(`[LUMEN v177] ${label}:`, err);
+        showToast(`⚠ ${label}: ${err?.message || 'error inesperado'}`, 4800);
+        return false;
+      });
+    }
+    return result;
+  } catch (err) {
+    console.error(`[LUMEN v177] ${label}:`, err);
+    showToast(`⚠ ${label}: ${err?.message || 'error inesperado'}`, 4800);
+    return false;
+  }
 }
 
 async function manualSaveToCloud() {
@@ -14240,7 +14301,7 @@ async function manualSaveToCloud() {
   } catch(e) {
     setSyncStatus('offline');
     showToast(`⚠ Error al guardar: ${e.message}`, 5000);
-    console.error('[LUMEN v176] manualSave error:', e);
+    console.error('[LUMEN v177] manualSave error:', e);
   }
 }
 
@@ -14260,7 +14321,7 @@ async function pullAndMerge(uid, silent) {
     renderHome();
   } catch(e) {
     setSyncStatus('offline');
-    console.error('[LUMEN v176] pull error:', e);
+    console.error('[LUMEN v177] pull error:', e);
     if (!silent) showToast(`⚠ Error al cargar: ${e.message}`, 4500);
   }
 }
@@ -14291,11 +14352,11 @@ function subscribeToFirestore(uid) {
       setSyncStatus('ok');
       renderHome();
     } catch(e) {
-      console.warn('[LUMEN v176] snapshot error:', e.message);
+      console.warn('[LUMEN v177] snapshot error:', e.message);
     }
   }, e => {
     setSyncStatus('offline');
-    console.warn('[LUMEN v176] listener error:', e.message);
+    console.warn('[LUMEN v177] listener error:', e.message);
   });
 }
 
@@ -14303,7 +14364,7 @@ window.lumenSyncDiagnostico = function() {
   const { entries, modules } = buildCloudDataV162();
   const chunks = chunkEntriesV162(entries);
   const report = {
-    version:'v169', schema:LUMEN_SYNC_SCHEMA,
+    version:'v177', schema:LUMEN_SYNC_SCHEMA,
     registros:entries.length,
     bloques:chunks.length,
     bloquesKB:chunks.map(c => Math.round(lumenUtf8Bytes({entries:c})/1024)),
@@ -14312,10 +14373,18 @@ window.lumenSyncDiagnostico = function() {
     usuario:currentUser ? currentUser.uid : null
   };
   console.table(report);
-  console.info('[LUMEN v176] Diagnóstico completo', report);
+  console.info('[LUMEN v177] Diagnóstico completo', report);
   return report;
 };
 
+
+// v177 — diagnóstico global de acciones: deja trazabilidad de excepciones de clicks sin romper la app.
+window.addEventListener('error', function(ev){
+  if (ev?.error) console.error('[LUMEN v177] error global de UI:', ev.error);
+});
+window.addEventListener('unhandledrejection', function(ev){
+  console.error('[LUMEN v177] promesa no controlada:', ev.reason);
+});
 </script>
 
 </body>

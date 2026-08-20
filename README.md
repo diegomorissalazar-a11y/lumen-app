@@ -1,41 +1,25 @@
-# LUMEN v176 — Corrección crítica de arranque y login
+# LUMEN v177 — acciones y persistencia desacopladas
 
-**Fecha:** 20 de agosto de 2026
+Base: v176 entregada por el usuario.
 
-## Cambios aplicados
+## Corrección crítica
+- Se eliminó del `saveDB()` común la normalización masiva de todos los libros y la reconstrucción/normalización de todos los mapas.
+- El guardado local usa directamente el snapshot liviano y mueve portadas base64 a IndexedDB en segundo plano; ya no intenta primero guardar una copia completa pesada en `localStorage`.
+- Firebase V2 queda desacoplado del cierre de modales: la sincronización se agenda en segundo plano y un fallo de nube no impide guardar/cerrar una acción local.
+- Se agregó `lumenSafeAction()` como cortafuego común para las acciones persistentes principales.
+- Se protegieron explícitamente: Guardar progreso, Terminé, Empezar a seguir, notas, ficha general, Historia rápida, progreso de series, influencias, rutas y editor de elenco.
+- `saveMapas()` ya no normaliza toda la red en cada click; las relaciones se normalizan al crearse/editarse.
+- Se agregaron trazas globales de errores y promesas no controladas para que un fallo no vuelva a parecer un botón muerto.
 
-- Corrige la regresión de v175 que podía detener la ejecución de JavaScript antes de conectar los botones de Login/Auth.
-- `mapas` ahora se declara antes de la migración canónica inicial y se carga realmente solo cuando `MAPAS_KEY` ya está disponible.
-- `allKnownEntityNames()` tolera correctamente el estado previo a la carga de Mapas.
-- La migración canónica inicial de libros queda protegida con `try/catch`: una incidencia de normalización ya no puede bloquear el arranque de LUMEN.
-- Se mantiene íntegro el modelo canónico de v175 para autores, editoriales, traductores, ficha bibliográfica e Influencias.
+## Qué no cambia
+- Modelo de sincronización Firebase V2 por bloques.
+- Modelo canónico de autores/editoriales/traductores y JSON bibliográfico.
+- Inventario, Historia, Gephi, métricas, hábitos, películas, series, mangas y discos.
 
-## Archivos modificados
-
-- `index.html`
-
-## Módulos no modificados
-
-- Firebase/Auth y credenciales.
-- Sincronización V2 por bloques.
-- Inventario.
-- Historial de lectura y KPIs.
-- Historia y línea de tiempo.
-- Gephi/Mapas, salvo la inicialización segura de su variable global.
-- Importadores y exportadores.
-
-## Validaciones realizadas
-
-- Revisión de sintaxis del JavaScript embebido con `node --check`.
-- Confirmación de una sola declaración `let mapas` y carga posterior por asignación.
-- Confirmación de listeners de Login, registro, recuperación de contraseña y Enter.
-- Confirmación de versión visible `v176`.
-
-## Prueba sugerida
-
-1. Abrir LUMEN v176 desde cero.
-2. Introducir correo y contraseña y pulsar **Entrar**.
-3. Confirmar que abre Inicio.
-4. Cerrar sesión y volver a entrar.
-5. Abrir Biblioteca y Mapas para comprobar que ambos módulos cargan.
-6. Verificar que las funciones bibliográficas/canónicas incorporadas en v175 siguen disponibles.
+## Pruebas prioritarias
+1. Abrir un libro en lectura y usar **Actualizar → Guardar**; el modal debe cerrar inmediatamente y el progreso debe verse en Inicio.
+2. Repetir con **Terminé**.
+3. Crear una **Lectura en curso** y pulsar **Empezar a seguir**.
+4. Guardar una nota, Historia rápida, una influencia y una ruta.
+5. Guardar en nube y cargar desde otro dispositivo para confirmar que los cambios sobreviven.
+6. En Safari/iPhone, confirmar que no reaparece `QuotaExceededError` al guardar progreso.
