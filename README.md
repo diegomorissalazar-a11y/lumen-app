@@ -1,41 +1,26 @@
-# LUMEN v180
+# LUMEN v181
+Fecha: 2026-08-20
 
-Fecha: 20-08-2026
+## Cambios
+- Influencias: al seleccionar/editar el libro destino, los campos bibliográficos se sincronizan desde la ficha canónica del libro.
+- ISO 690: usa el año/edición consultada para la referencia; mantiene separado el año histórico/original cuando exista en el modelo.
+- Aviso de ficha bibliográfica incompleta con acceso a completar la ficha.
+- Mapas > Influencias: nuevo botón “Referencias” con bibliografía deduplicada y ordenada.
+- Notas de libros: sección “Referencias” al final cuando existen notas.
 
-## Cambios aplicados
-- Importador bibliográfico compatible con `lumen_bibliografia_import_v1`.
-- Compatibilidad conservada con `lumen_ficha_bibliografica_v1`.
-- Normalización previa de comillas tipográficas y bloques ```json antes de `JSON.parse`.
-- Detección de editorial, ISBN, edición, ciudad, país, traductores, título/idioma original, año/período original y notas bibliográficas.
-- Para rangos de obra original se conserva inicio/fin y se usa el año menor como referencia cronológica.
-- Flujo modal corregido: JSON bibliográfico se abre encima de Editar libro; Revisar ocurre dentro del mismo modal; Aplicar cierra solo el modal hijo y vuelve al editor.
-- En edición, los cambios bibliográficos quedan pendientes hasta pulsar Guardar en la ficha del libro.
-- Editoriales y traductores continúan vinculándose al catálogo canónico.
-- Separación de año de la edición consultada y año/período original dentro del modelo bibliográfico.
-
-## Archivos modificados
-- `index.html`
-
-## Módulos no modificados funcionalmente
-- Login / autenticación.
-- Navegación global.
-- Inventario.
-- Mapas Historia.
-- Seguimiento de lectura.
+## No tocado
+- Login/Auth.
+- Firebase/sincronización.
+- Navegación inferior.
 - Exportadores.
+- Estilos globales.
 
-## Validaciones realizadas
-- Extracción y revisión de todos los scripts inline.
-- `node --check` sobre JavaScript inline: OK.
-- Verificación de handlers del modal bibliográfico y campos del editor.
-- Verificación de versión de sync V2: v180.
+## Validación
+- Sintaxis JavaScript revisada con `node --check` sobre los scripts inline.
+- Se verificaron los nuevos handlers de selección, referencias y sincronización bibliográfica.
 
-## Prueba recomendada
-1. Biblioteca → Cuentos completos → Editar.
-2. Pulsar `Cargar JSON bibliográfico`.
-3. Pegar `lumen_bibliografia_import_v1` (también con comillas tipográficas para probar tolerancia).
-4. Pulsar `Revisar JSON`: deben aparecer los campos detectados.
-5. Pulsar `Aplicar cambios`: debe volver al editor sin cerrarlo.
-6. Verificar editorial, año de edición, edición, ciudad y traductores.
-7. Pulsar Guardar en el editor.
-8. Volver a abrir la ficha y comprobar persistencia.
+## Prueba breve
+1. Editar una influencia y seleccionar un libro con ficha bibliográfica cargada.
+2. Confirmar que editorial, ciudad, edición y año se completen automáticamente y que la referencia ISO se actualice.
+3. Abrir Mapas > Influencias > Referencias.
+4. Abrir un libro con notas y expandir Notas; revisar “Referencias” al final.
