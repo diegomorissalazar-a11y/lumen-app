@@ -1,0 +1,16 @@
+<!-- ══════ SCREEN: AÑO ══════ -->
+<div id="screen-year" class="screen">
+  <div class="topbar">
+    <div>
+      <div class="topbar-logo">LUMEN</div>
+      <div class="topbar-sub">Mi Año</div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <button class="btn-icon" onclick="changeYear(-1)"><svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:var(--cream);fill:none;stroke-width:2;"><polyline points="15 18 9 12 15 6"/></svg></button>
+      <span id="year-display" style="font-family:var(--font-serif);font-size:18px;font-weight:700;color:var(--cream);"></span>
+      <button class="btn-icon" onclick="changeYear(1)"><svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:var(--cream);fill:none;stroke-width:2;"><polyline points="9 18 15 12 9 6"/></svg></button>
+    </div>
+  </div>
+  <div id="year-content" style="padding:16px 20px;"></div>
+</div>
+

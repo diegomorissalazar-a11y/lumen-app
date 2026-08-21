@@ -1,0 +1,23 @@
+<!-- ══════ MODAL: DESAFÍO LECTOR ══════ -->
+<div id="modal-desafio" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title" id="desafio-modal-title">Nuevo desafío lector</div>
+      <button class="btn-icon" onclick="closeModal('modal-desafio')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div id="desafio-sugerencias" style="margin-bottom:16px;"></div>
+      <div class="field">
+        <label id="desafio-year-label">Año del desafío</label>
+        <div id="desafio-year-display" style="font-family:var(--font-serif);font-size:22px;font-weight:700;color:var(--gold);margin-bottom:12px;"></div>
+      </div>
+      <div class="field">
+        <label>¿Cuántos libros quieres leer?</label>
+        <input class="input" type="number" id="desafio-meta" min="1" max="500" placeholder="Ej: 24">
+      </div>
+      <button class="btn btn-primary" onclick="saveDesafio()">Fijar desafío</button>
+    </div>
+  </div>
+</div>
+

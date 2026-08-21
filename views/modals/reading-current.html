@@ -1,0 +1,85 @@
+<!-- ══════ MODAL: AÑADIR LECTURA EN CURSO ══════ -->
+<div id="modal-add-reading" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title">Lectura en curso</div>
+      <button class="btn-icon" onclick="closeModal('modal-add-reading')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="field"><label>Título</label><input class="input" type="text" id="reading-titulo" placeholder="Título del libro"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div class="field">
+          <label>Autor</label>
+          <input class="input" type="text" id="reading-autor" list="reading-autor-list" placeholder="Autor..." oninput="fillReadingAutorList()">
+          <datalist id="reading-autor-list"></datalist>
+        </div>
+        <div class="field">
+          <label>Editorial</label>
+          <input class="input" type="text" id="reading-editorial" list="reading-editorial-list" placeholder="Editorial..." oninput="fillReadingEditorialList()">
+          <datalist id="reading-editorial-list"></datalist>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div class="field"><label>Páginas totales</label><input class="input" type="number" id="reading-paginas" min="1" placeholder="300"></div>
+        <div class="field"><label>Año publicación</label><input class="input" type="number" id="reading-anio-pub"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div class="field"><label>Edición</label><input class="input" type="text" id="reading-edicion" placeholder="Ej: edición digital"></div>
+        <div class="field"><label>Ciudad / lugar publicación</label><input class="input" type="text" id="reading-ciudad-pub" placeholder="Ej: Santiago"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div class="field"><label>Traductor</label><input class="input" type="text" id="reading-traductor"></div>
+        <div class="field">
+          <label>Idioma original</label>
+          <input class="input" type="text" id="reading-idioma" list="reading-idioma-list" placeholder="Ej: Inglés" oninput="fillReadingIdiomaList()">
+          <datalist id="reading-idioma-list"></datalist>
+        </div>
+      </div>
+      <div class="field">
+        <label>Portada</label>
+        <div id="reading-cover-preview" style="margin-bottom:10px;min-height:0;transition:all 0.2s;"></div>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <input class="input" type="text" id="reading-cover" placeholder="Pega una URL de imagen..." style="flex:1;" oninput="previewReadingCover(this.value)">
+          <button class="btn-icon" onclick="clearReadingCover()" title="Limpiar portada" style="padding:8px;border:1.5px solid var(--border);border-radius:4px;background:#fff;">
+            <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:var(--ink3);fill:none;stroke-width:2;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div style="margin-top:8px;">
+          <button class="btn btn-secondary btn-sm" onclick="document.getElementById('reading-cover-file').click()" style="width:100%;font-size:11px;">📁 Subir imagen desde dispositivo</button>
+        </div>
+        <input type="file" id="reading-cover-file" accept="image/*" style="display:none;" onchange="handleReadingCoverFile(event)">
+      </div>
+      <!-- Adquisición rápida -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div class="field"><label>Origen del libro</label><select class="input" id="reading-origen-adq"><option value="">—</option><option value="compra">Compra</option><option value="regalo">Regalo</option></select></div>
+        <div class="field"><label>Fecha de adquisición</label><input class="input" type="date" id="reading-fecha-adq"></div>
+      </div>
+      <!-- Tipo de progreso -->
+      <div class="field">
+        <label>¿Cómo lees?</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <button class="reading-mode-btn active" data-mode="pct" onclick="selectReadingMode('pct',this)"
+            style="padding:10px;border:2px solid var(--gold);border-radius:4px;background:#fff8e8;font-family:var(--font-sans);font-size:12px;font-weight:700;color:var(--gold);cursor:pointer;letter-spacing:1px;">
+            📱 Ebook / %
+          </button>
+          <button class="reading-mode-btn" data-mode="pag" onclick="selectReadingMode('pag',this)"
+            style="padding:10px;border:2px solid var(--border);border-radius:4px;background:#fff;font-family:var(--font-sans);font-size:12px;font-weight:700;color:var(--ink3);cursor:pointer;letter-spacing:1px;">
+            📖 Físico / Págs
+          </button>
+        </div>
+      </div>
+      <div id="reading-prog-pct-field" class="field">
+        <label>Progreso actual (<span id="reading-pct-display">0</span>%)</label>
+        <input type="range" id="reading-prog-pct" min="0" max="100" value="0" style="width:100%;accent-color:var(--gold);"
+          oninput="document.getElementById('reading-pct-display').textContent=this.value">
+      </div>
+      <div id="reading-prog-pag-field" class="field" style="display:none;">
+        <label>Página actual</label>
+        <input class="input" type="number" id="reading-prog-pag" min="0" placeholder="0">
+      </div>
+      <button class="btn btn-primary" onclick="saveReadingEntry()">Empezar a seguir</button>
+    </div>
+  </div>
+</div>
+

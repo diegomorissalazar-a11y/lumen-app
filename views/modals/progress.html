@@ -1,0 +1,149 @@
+<!-- ══════ MODAL: ACTUALIZAR PROGRESO ══════ -->
+<div id="modal-progress" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title" id="progress-modal-title">Actualizar progreso</div>
+      <button class="btn-icon" onclick="closeModal('modal-progress')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="progress-entry-id">
+
+      <!-- Book info compacto -->
+      <div id="progress-book-info" style="display:flex;gap:12px;margin-bottom:16px;align-items:center;"></div>
+
+      <!-- INPUT PRINCIPAL — grande para móvil -->
+      <div id="progress-pag-section">
+        <div style="text-align:center;margin-bottom:16px;">
+          <div style="font-size:11px;color:var(--ink4);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">Página actual</div>
+          <input class="input" type="number" id="progress-pag-input" min="0"
+            style="font-family:var(--font-serif);font-size:42px;font-weight:900;text-align:center;padding:16px;border-radius:12px;width:100%;"
+            oninput="onProgressPagInput(this.value)">
+          <div id="progress-pag-of" style="font-size:13px;color:var(--ink4);margin-top:6px;"></div>
+        </div>
+        <div class="progress-wrap" style="margin-bottom:6px;height:8px;border-radius:4px;">
+          <div class="progress-fill" id="progress-pag-bar" style="width:0%;border-radius:4px;"></div>
+        </div>
+        <div id="progress-pag-pct-text" style="font-size:13px;color:var(--ink3);text-align:center;margin-bottom:12px;font-weight:600;"></div>
+      </div>
+
+      <!-- Modo % Ebook — input numérico estilo Goodreads -->
+      <div id="progress-pct-section" style="display:none;">
+        <div style="text-align:center;margin-bottom:16px;">
+          <div style="font-size:11px;color:var(--ink4);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">Porcentaje completado</div>
+          <div style="display:flex;align-items:center;justify-content:center;gap:10px;">
+            <input class="input" type="number" id="progress-pct-slider" min="0" max="100" value="0"
+              style="font-family:var(--font-serif);font-size:42px;font-weight:900;text-align:center;padding:16px;border-radius:12px;width:140px;"
+              oninput="onProgressSlider(this.value)">
+            <span style="font-family:var(--font-serif);font-size:36px;font-weight:700;color:var(--ink3);">%</span>
+          </div>
+          <div id="progress-pct-label-text" style="font-size:13px;color:var(--ink3);margin-top:8px;font-weight:600;"></div>
+        </div>
+        <div class="progress-wrap" style="margin-bottom:6px;height:8px;border-radius:4px;">
+          <div class="progress-fill" id="progress-pct-bar" style="width:0%;border-radius:4px;"></div>
+        </div>
+      </div>
+
+      <!-- Toggle modo — pequeño, secundario -->
+      <div id="progress-mode-display" style="margin-bottom:12px;"></div>
+
+      <!-- Ritmo compacto -->
+      <div id="progress-ritmo-info" style="margin-bottom:14px;"></div>
+
+      <!-- Editar portada colapsable -->
+      <div style="margin-bottom:14px;">
+        <button onclick="toggleEditCover()" style="background:none;border:none;font-size:11px;color:var(--ink4);cursor:pointer;font-family:var(--font-sans);font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:0;display:flex;align-items:center;gap:4px;">
+          <svg viewBox="0 0 24 24" id="edit-cover-chevron" style="width:12px;height:12px;stroke:var(--ink4);fill:none;stroke-width:2.5;transition:transform 0.2s;"><polyline points="6 9 12 15 18 9"/></svg>
+          Editar portada
+        </button>
+        <div id="edit-cover-panel" style="display:none;margin-top:10px;padding:12px;background:#fff;border:1px solid var(--border);border-radius:var(--radius);">
+          <div id="progress-cover-preview" style="margin-bottom:10px;"></div>
+          <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;">
+            <input class="input" type="text" id="progress-cover-url" placeholder="Pega URL de la portada..." style="flex:1;" oninput="previewProgressCover(this.value)">
+            <button class="btn-icon" onclick="clearProgressCover()" style="padding:8px;border:1.5px solid var(--border);border-radius:4px;background:#fff;" title="Limpiar">
+              <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:var(--ink3);fill:none;stroke-width:2;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <div style="display:flex;gap:6px;">
+            <button class="btn btn-secondary btn-sm" onclick="document.getElementById('progress-cover-file').click()" style="flex:1;font-size:11px;">📁 Subir imagen</button>
+            <button class="btn btn-secondary btn-sm" onclick="searchProgressCoverGoogle()" style="flex:1;font-size:11px;">🔍 Buscar portada</button>
+          </div>
+          <input type="file" id="progress-cover-file" accept="image/*" style="display:none;" onchange="handleProgressCoverFile(event)">
+          <div id="progress-cover-google-results" style="display:none;margin-top:8px;" class="search-results"></div>
+          <button class="btn btn-primary btn-sm" onclick="saveProgressCover()" style="margin-top:10px;font-size:11px;">Guardar portada</button>
+        </div>
+      </div>
+
+      <!-- Botones acción -->
+      <div style="display:flex;gap:10px;margin-top:4px;">
+        <button class="btn btn-primary" onclick="saveProgress()" style="flex:2;padding:14px;">Guardar</button>
+        <button class="btn" onclick="finishBook()" style="flex:1;background:var(--green);color:var(--cream);font-size:12px;padding:14px;">✓ Terminé</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ MODAL: SERIE PROGRESS ══════ -->
+<div id="modal-serie-progress" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title" id="serie-progress-title">Actualizar serie</div>
+      <button class="btn-icon" onclick="closeModal('modal-serie-progress')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="serie-progress-id">
+      <div id="serie-progress-info" style="display:flex;gap:12px;margin-bottom:12px;padding:12px;background:var(--cream2);border-radius:var(--radius);align-items:center;"></div>
+
+      <!-- Editar portada colapsable -->
+      <div style="margin-bottom:14px;">
+        <button onclick="toggleSerieCover()" style="background:none;border:none;font-size:11px;color:var(--ink3);cursor:pointer;font-family:var(--font-sans);font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:0;display:flex;align-items:center;gap:4px;">
+          <svg viewBox="0 0 24 24" id="serie-cover-chevron" style="width:12px;height:12px;stroke:var(--ink3);fill:none;stroke-width:2.5;transition:transform 0.2s;"><polyline points="6 9 12 15 18 9"/></svg>
+          Editar portada
+        </button>
+        <div id="serie-cover-panel" style="display:none;margin-top:10px;padding:12px;background:#fff;border:1px solid var(--border);border-radius:var(--radius);">
+          <div id="serie-cover-preview" style="margin-bottom:10px;"></div>
+          <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;">
+            <input class="input" type="text" id="serie-cover-url" placeholder="Pega URL de la portada..." style="flex:1;" oninput="previewSerieCover(this.value)">
+            <button class="btn-icon" onclick="clearSerieCover()" style="padding:8px;border:1.5px solid var(--border);border-radius:4px;background:#fff;">
+              <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:var(--ink3);fill:none;stroke-width:2;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="document.getElementById('serie-cover-file').click()" style="width:100%;font-size:11px;margin-bottom:6px;">📁 Subir imagen desde dispositivo</button>
+          <input type="file" id="serie-cover-file" accept="image/*" style="display:none;" onchange="handleSerieCoverFile(event)">
+          <button class="btn btn-primary btn-sm" onclick="saveSerieCover()" style="width:100%;font-size:11px;">Guardar portada</button>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:8px;">
+        <div class="field">
+          <label>Temporada actual</label>
+          <input class="input" type="number" id="serie-temporada-actual" min="1" value="1">
+        </div>
+        <div class="field">
+          <label>Total de temporadas</label>
+          <input class="input" type="number" id="serie-temporadas-total" min="1">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+        <div class="field">
+          <label>Capítulo actual</label>
+          <input class="input" type="number" id="serie-cap-actual" min="0" oninput="updateSerieProgressBar()">
+        </div>
+        <div class="field">
+          <label>Total capítulos</label>
+          <input class="input" type="number" id="serie-cap-total" min="0" oninput="updateSerieProgressBar()">
+        </div>
+      </div>
+      <div class="progress-wrap" style="height:8px;margin-bottom:6px;">
+        <div class="progress-fill" id="serie-progress-bar" style="width:0%;background:var(--red);"></div>
+      </div>
+      <div id="serie-progress-pct" style="font-size:12px;color:var(--ink3);text-align:right;margin-bottom:16px;"></div>
+      <div style="display:flex;gap:10px;">
+        <button class="btn btn-primary" onclick="saveSerieProgress()" style="flex:2;">Guardar progreso</button>
+        <button class="btn" onclick="finishSerie(null)" style="flex:1;background:var(--red);color:var(--cream);font-size:12px;">✓ Terminé</button>
+      </div>
+    </div>
+  </div>
+</div>
+

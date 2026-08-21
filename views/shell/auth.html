@@ -1,0 +1,74 @@
+<!-- ══════ AUTH OVERLAY ══════ -->
+<div id="auth-overlay" style="
+  position:fixed;inset:0;z-index:9999;
+  background:var(--ink);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:40px 32px;overflow-y:auto;
+">
+  <div style="width:100%;max-width:320px;display:flex;flex-direction:column;gap:20px;">
+
+    <div style="text-align:center;">
+      <div style="font-family:var(--font-serif);font-size:42px;font-weight:900;font-style:italic;color:var(--cream);letter-spacing:-1px;">LUMEN</div>
+      <div style="font-size:12px;letter-spacing:4px;text-transform:uppercase;color:var(--ink4);margin-top:4px;">Biblioteca Personal</div>
+      <div style="width:40px;height:1px;background:var(--gold);margin:14px auto 0;"></div>
+    </div>
+
+    <!-- TABS login / registro -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid rgba(255,255,255,0.12);border-radius:6px;overflow:hidden;">
+      <button id="tab-login" style="padding:10px;background:var(--gold);color:var(--ink);border:none;font-family:var(--font-sans);font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;">Entrar</button>
+      <button id="tab-register" style="padding:10px;background:transparent;color:var(--ink4);border:none;font-family:var(--font-sans);font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;">Crear cuenta</button>
+    </div>
+
+    <!-- FORM LOGIN -->
+    <div id="auth-form-login" style="display:flex;flex-direction:column;gap:12px;">
+      <input id="auth-email" type="email" placeholder="Correo electrónico" autocomplete="email" style="
+        width:100%;padding:13px 16px;border-radius:6px;border:1px solid rgba(255,255,255,0.15);
+        background:rgba(255,255,255,0.07);color:var(--cream);font-size:15px;font-family:var(--font-sans);
+        outline:none;box-sizing:border-box;
+      ">
+      <input id="auth-password" type="password" placeholder="Contraseña" autocomplete="current-password" style="
+        width:100%;padding:13px 16px;border-radius:6px;border:1px solid rgba(255,255,255,0.15);
+        background:rgba(255,255,255,0.07);color:var(--cream);font-size:15px;font-family:var(--font-sans);
+        outline:none;box-sizing:border-box;
+      ">
+      <button id="btn-login-email" style="
+        width:100%;padding:14px;border-radius:6px;border:none;
+        background:var(--gold);color:var(--ink);font-family:var(--font-sans);
+        font-size:15px;font-weight:700;letter-spacing:1px;cursor:pointer;
+      ">Entrar</button>
+      <button id="btn-forgot-password" style="background:none;border:none;color:var(--ink4);font-size:12px;cursor:pointer;font-family:var(--font-sans);text-decoration:underline;">¿Olvidaste tu contraseña?</button>
+    </div>
+
+    <!-- FORM REGISTRO -->
+    <div id="auth-form-register" style="display:none;flex-direction:column;gap:12px;">
+      <input id="auth-reg-name" type="text" placeholder="Tu nombre" autocomplete="name" style="
+        width:100%;padding:13px 16px;border-radius:6px;border:1px solid rgba(255,255,255,0.15);
+        background:rgba(255,255,255,0.07);color:var(--cream);font-size:15px;font-family:var(--font-sans);
+        outline:none;box-sizing:border-box;
+      ">
+      <input id="auth-reg-email" type="email" placeholder="Correo electrónico" autocomplete="email" style="
+        width:100%;padding:13px 16px;border-radius:6px;border:1px solid rgba(255,255,255,0.15);
+        background:rgba(255,255,255,0.07);color:var(--cream);font-size:15px;font-family:var(--font-sans);
+        outline:none;box-sizing:border-box;
+      ">
+      <input id="auth-reg-password" type="password" placeholder="Contraseña (mínimo 6 caracteres)" autocomplete="new-password" style="
+        width:100%;padding:13px 16px;border-radius:6px;border:1px solid rgba(255,255,255,0.15);
+        background:rgba(255,255,255,0.07);color:var(--cream);font-size:15px;font-family:var(--font-sans);
+        outline:none;box-sizing:border-box;
+      ">
+      <button id="btn-register-email" style="
+        width:100%;padding:14px;border-radius:6px;border:none;
+        background:var(--gold);color:var(--ink);font-family:var(--font-sans);
+        font-size:15px;font-weight:700;letter-spacing:1px;cursor:pointer;
+      ">Crear cuenta</button>
+    </div>
+
+    <div id="auth-error" style="font-size:13px;color:#f08080;text-align:center;min-height:18px;"></div>
+    <div id="auth-success" style="font-size:13px;color:#7ec98f;text-align:center;min-height:18px;display:none;"></div>
+
+    <div style="font-size:11px;color:var(--ink4);text-align:center;line-height:1.6;">
+      Tus datos se sincronizan en la nube.<br>Funciona sin conexión automáticamente.
+    </div>
+  </div>
+</div>
+

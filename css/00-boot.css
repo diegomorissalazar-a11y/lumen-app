@@ -1,0 +1,1 @@
+html:not(.lumen-ready) #app,html:not(.lumen-ready) #lumen-modal-root{visibility:hidden}#boot-status{position:fixed;inset:0;z-index:10000;background:#1a1510;color:#f5f0e8;display:flex;align-items:center;justify-content:center;text-align:center;font-family:Georgia,serif;padding:32px;line-height:1.6}html.lumen-ready #boot-status{display:none}

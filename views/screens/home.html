@@ -1,0 +1,115 @@
+<!-- ══════ SCREEN: HOME ══════ -->
+<div id="screen-home" class="screen active">
+  <div class="home-hero">
+    <div class="hero-year" id="hero-year-label"></div>
+    <div class="hero-title" id="hero-title">Mi Biblioteca<br>Cultural</div>
+    <div class="hero-sub" id="hero-sub"></div>
+    <!-- User pill -->
+    <div id="user-pill" style="
+      position:absolute;top:14px;right:16px;
+      display:flex;align-items:center;gap:8px;
+    ">
+      <div id="sync-dot" style="
+        width:7px;height:7px;border-radius:50%;
+        background:#7ec98f;flex-shrink:0;
+        transition:background 0.4s;
+      " title="Sincronizado"></div>
+      <img id="user-avatar" src="" style="
+        width:30px;height:30px;border-radius:50%;
+        border:2px solid rgba(245,240,232,0.4);
+        display:none;cursor:pointer;
+      " onclick="showUserMenu()" title="Cuenta">
+      <div id="user-initials" style="
+        width:30px;height:30px;border-radius:50%;
+        background:var(--gold);color:var(--ink);
+        display:none;align-items:center;justify-content:center;
+        font-size:12px;font-weight:700;cursor:pointer;
+        border:2px solid rgba(245,240,232,0.4);
+      " onclick="showUserMenu()"></div>
+    </div>
+  </div>
+  <div class="year-summary" id="year-summary"></div>
+
+  <!-- RITMO HERO CARD -->
+  <div id="ritmo-hero-card"></div>
+
+  <!-- DESAFÍO LECTOR -->
+  <div id="desafio-card" style="margin:0 20px 12px;display:none;"></div>
+
+  <!-- LOGROS SEMANALES -->
+  <div id="logros-card" style="margin:0 20px 12px;"></div>
+
+  <!-- EXPORTAR LECTURA — acceso rápido -->
+  <div id="exportar-lectura-card" style="margin:0 20px 10px;display:none;">
+    <button onclick="exportarLectura()" style="width:100%;display:flex;align-items:center;gap:10px;padding:10px 14px;border:1.5px solid var(--border);border-radius:6px;background:#fff;cursor:pointer;font-family:var(--font-sans);text-align:left;box-shadow:var(--shadow);">
+      <span style="font-size:20px;">📊</span>
+      <div>
+        <div style="font-size:12px;font-weight:700;color:var(--ink);letter-spacing:0.5px;">Exportar historial de lectura</div>
+        <div style="font-size:10px;color:var(--ink4);margin-top:1px;">Ritmo semanal · páginas por día · CSV para análisis</div>
+      </div>
+      <span style="margin-left:auto;font-size:12px;color:var(--ink4);">→</span>
+    </button>
+  </div>
+
+  <!-- LEYENDO AHORA -->
+  <div style="padding:0 20px 4px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+      <div class="cr-title" style="margin:0;">— Leyendo ahora —</div>
+      <button class="btn btn-secondary btn-sm" onclick="openReadingModal()" style="font-size:10px;letter-spacing:1px;">+ Lectura en curso</button>
+    </div>
+    <div class="reading-carousel-wrap">
+      <div id="currently-reading-list" class="reading-carousel"></div>
+      <div class="reading-carousel-arrows" id="reading-carousel-arrows">
+        <button class="reading-carousel-arrow" onclick="scrollCarousel('currently-reading-list',-1)">&#8592;</button>
+        <button class="reading-carousel-arrow" onclick="scrollCarousel('currently-reading-list',1)">&#8594;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIENDO AHORA -->
+  <div style="padding:4px 20px 4px;" id="viendo-section">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+      <div class="cr-title" style="margin:0;">— Viendo ahora —</div>
+      <button class="btn btn-secondary btn-sm" onclick="openModal('modal-add-watching')" style="font-size:10px;letter-spacing:1px;">+ Serie en curso</button>
+    </div>
+    <div class="reading-carousel-wrap">
+      <div id="currently-watching-list" class="reading-carousel"></div>
+      <div class="reading-carousel-arrows" id="watching-carousel-arrows">
+        <button class="reading-carousel-arrow" onclick="scrollCarousel('currently-watching-list',-1)">&#8592;</button>
+        <button class="reading-carousel-arrow" onclick="scrollCarousel('currently-watching-list',1)">&#8594;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- LEYENDO MANGAS -->
+  <div style="padding:4px 20px 4px;" id="manga-reading-section">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+      <div class="cr-title" style="margin:0;">— Leyendo mangas —</div>
+      <button class="btn btn-secondary btn-sm" onclick="openMangaQuickAdd()" style="font-size:10px;letter-spacing:1px;">+ Manga en curso</button>
+    </div>
+    <div class="reading-carousel-wrap">
+      <div id="currently-reading-manga-list" class="reading-carousel"></div>
+      <div class="reading-carousel-arrows" id="manga-carousel-arrows">
+        <button class="reading-carousel-arrow" onclick="scrollCarousel('currently-reading-manga-list',-1)">&#8592;</button>
+        <button class="reading-carousel-arrow" onclick="scrollCarousel('currently-reading-manga-list',1)">&#8594;</button>
+      </div>
+    </div>
+  </div>
+
+  <div style="padding:8px 20px 4px;">
+    <div class="cr-title" style="margin-bottom:8px;">— Últimas películas —</div>
+    <div id="recent-peliculas" class="home-recent-list"></div>
+  </div>
+  <div style="padding:4px 20px 4px;">
+    <div class="cr-title" style="margin-bottom:8px;">— Últimos libros leídos —</div>
+    <div id="recent-libros" class="home-recent-list"></div>
+  </div>
+  <div style="padding:4px 20px 8px;">
+    <div class="cr-title" style="margin-bottom:8px;">— Últimas series —</div>
+    <div id="recent-series" class="home-recent-list"></div>
+  </div>
+  <div style="padding:0 20px 12px;">
+    <button class="btn btn-primary" onclick="openAddModal()">+ Registrar estímulo</button>
+  </div>
+</div>
+

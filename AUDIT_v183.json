@@ -1,0 +1,26 @@
+{
+  "base_sha256": "cba56f3833ec9f2851135aebd49eb43aea9bed8ef3cdfb33ad7100c0912228bc",
+  "file_count": 57,
+  "js_modules": 19,
+  "css_files": 9,
+  "html_partials": 23,
+  "css_exact": true,
+  "js_exact_except_version": true,
+  "base_ids": 553,
+  "preserved_base_ids": 553,
+  "missing_base_ids": [],
+  "extra_modular_ids": [
+    "boot-status",
+    "lumen-auth-root",
+    "lumen-modal-root"
+  ],
+  "base_onclick_count": 264,
+  "modular_onclick_count": 264,
+  "onclick_multiset_preserved": true,
+  "function_declarations": 582,
+  "window_function_assignments": 23,
+  "arrow_function_assignments": 27,
+  "known_callable_names": 615,
+  "handler_missing_candidates": [],
+  "syntax_errors": []
+}

@@ -1,0 +1,242 @@
+<!-- ══════ MODAL: CARGAR INFLUENCIAS JSON ══════ -->
+<div id="modal-inf-json" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title" id="inf-json-title">Cargar JSON</div>
+      <button class="btn-icon" onclick="closeModal('modal-inf-json')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="inf-json-tipo">
+      <p style="font-size:12px;color:var(--ink3);line-height:1.6;margin-bottom:10px;">
+        Pega una o varias relaciones de influencia en formato <strong>lumen_influencias_import_v1</strong>. Primero se cargará una vista previa y luego podrás confirmar.
+      </p>
+      <textarea id="inf-json-text" class="input" rows="15" spellcheck="false"
+        placeholder='{"schema":"lumen_influencias_import_v1","influencias":[{"tipo":"cita_directa","fuente":{"nombre":"Arthur Conan Doyle","nombre_en_texto":"Conan Doyle"},"destino":{"tipo":"libro","titulo":"Arsenio Lupin contra Herlock Sholmes","autor":"Maurice Leblanc"}}]}'
+        style="width:100%;min-height:310px;font-family:monospace;font-size:12px;line-height:1.55;background:#fff;resize:vertical;margin-bottom:12px;"></textarea>
+      <div id="inf-json-status" style="font-size:12px;color:var(--ink4);min-height:18px;margin-bottom:8px;"></div>
+      <div id="inf-json-preview" style="display:none;max-height:320px;overflow:auto;border:1px solid var(--border);border-radius:6px;background:#fff;margin-bottom:12px;"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button id="inf-json-load" class="btn btn-primary" onclick="loadInfJsonFromTextarea()" style="flex:1;min-width:180px;">Cargar JSON</button>
+        <button id="inf-json-confirm" class="btn btn-primary" onclick="confirmInfJsonImport()" style="flex:1;min-width:180px;display:none;">✓ Confirmar importación</button>
+        <button class="btn btn-secondary" onclick="closeModal('modal-inf-json')" style="flex:1;min-width:140px;">Cancelar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ MODAL: ACCIONES INFLUENCIAS ══════ -->
+<div id="modal-inf-actions" class="modal-overlay">
+  <div class="modal" style="max-height:88vh;">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">Nueva relación de influencia</div>
+        <div style="font-size:11px;color:var(--ink4);margin-top:3px;letter-spacing:1px;text-transform:uppercase;">Carga manual o JSON por tipo</div>
+      </div>
+      <button class="btn-icon" onclick="closeModal('modal-inf-actions')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div id="inf-type-cards-panel" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ MODAL: DETALLE INFLUENCIA ══════ -->
+<div id="modal-inf-detail" class="modal-overlay">
+  <div class="modal" style="max-height:88vh;">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title">Detalle de relación</div>
+      <button class="btn-icon" onclick="closeModal('modal-inf-detail')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body" id="inf-detail-body"></div>
+  </div>
+</div>
+
+<!-- ══════ MODAL: AÑADIR INFLUENCIA ══════ -->
+<div id="modal-influencia" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title">Nueva relación de influencia</div>
+      <button class="btn-icon" onclick="closeModal('modal-influencia')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="inf-edit-id">
+
+      <!-- 1. Tipo de relación — PRIMERO -->
+      <div class="field">
+        <label>Tipo de relación</label>
+        <select class="input" id="inf-tipo" onchange="onInfTipoChange()">
+          <option value="cita_directa">🟠 Cita directa</option>
+          <option value="cita_indirecta">🟡 Cita indirecta</option>
+          <option value="uso_personaje">🔵 Uso de personaje</option>
+          <option value="contexto_historico">🟢 Contexto histórico</option>
+          <option value="continuacion">🟣 Continuación / adaptación</option>
+        </select>
+      </div>
+
+      <!-- 2. Fuente — autor que influye -->
+      <div class="field">
+        <label id="inf-fuente-label">Autor que influye / cita</label>
+        <select class="input" id="inf-fuente-sel" onchange="onInfFuenteSelChange()" style="margin-bottom:6px;">
+          <option value="">— Selecciona un autor —</option>
+        </select>
+        <input class="input" type="text" id="inf-fuente-libre"
+          placeholder="No está en la lista, escribe aquí..."
+          style="display:none;" oninput="onInfFuenteLibreInput()">
+        <div id="inf-fuente-libre-hint" style="display:none;font-size:11px;color:var(--gold);margin-top:3px;">
+          ✓ Se guardará como nodo reutilizable
+        </div>
+      </div>
+
+      <!-- 3. Obra citada / fuente ISO -->
+      <div id="inf-panel-cita-directa">
+        <!-- Obra citada -->
+        <div class="field">
+          <label>Obra citada</label>
+          <select class="input" id="inf-obra-sel" onchange="onInfObraSelChange()" style="margin-bottom:6px;">
+            <option value="">— Selecciona o escribe abajo —</option>
+          </select>
+          <input class="input" type="text" id="inf-obra-libre"
+            placeholder="Título de la obra (si no está en biblioteca)..."
+            style="display:none;">
+        </div>
+        <!-- Referencia ISO: datos canónicos del libro leído / evidencia -->
+        <div style="font-size:10px;color:var(--ink4);line-height:1.45;margin:2px 0 8px;">La referencia ISO se genera desde la ficha canónica del libro destino. Si un dato está incorrecto, corrígelo en Biblioteca.</div>
+        <div id="inf-bib-warning" style="display:none;background:#fff8e8;border:1px solid #d8b66a;border-radius:6px;padding:9px 10px;margin:0 0 9px;font-size:11px;color:var(--ink2);line-height:1.5;">
+          <strong>⚠ Ficha bibliográfica incompleta</strong><br><span id="inf-bib-warning-text"></span>
+          <button type="button" onclick="openBibliographyForInfluence()" style="margin-top:7px;padding:6px 9px;border:1px solid var(--border);background:#fff;border-radius:4px;font-weight:700;cursor:pointer;">📥 Completar con JSON</button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div class="field" style="margin-bottom:0;">
+            <label>Editorial</label>
+            <input class="input" type="text" id="inf-editorial" placeholder="Desde ficha del libro" readonly>
+          </div>
+          <div class="field" style="margin-bottom:0;">
+            <label>Año de edición</label>
+            <input class="input" type="text" id="inf-anio-pub" placeholder="Desde ficha del libro" readonly>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
+          <div class="field" style="margin-bottom:0;">
+            <label>Ciudad</label>
+            <input class="input" type="text" id="inf-ciudad" placeholder="Desde ficha del libro" readonly>
+          </div>
+          <div class="field" style="margin-bottom:0;">
+            <label>Edición</label>
+            <input class="input" type="text" id="inf-edicion" placeholder="Desde ficha del libro" readonly>
+          </div>
+        </div>
+        <!-- Ubicación de la cita -->
+        <div class="field" style="margin-top:8px;">
+          <label>Ubicación en la obra</label>
+          <select class="input" id="inf-ubicacion-tipo" onchange="onInfUbicacionChange()" style="margin-bottom:6px;">
+            <option value="pagina">Página</option>
+            <option value="loc">LOC</option>
+            <option value="capitulo">Capítulo</option>
+            <option value="epigrafe">Epígrafe</option>
+            <option value="dedicatoria">Dedicatoria</option>
+            <option value="titulo">Título de la obra</option>
+            <option value="otro">Otro</option>
+          </select>
+          <input class="input" type="text" id="inf-ubicacion-detalle"
+            placeholder="Ej: 45, o Cap. III, o nombre del epígrafe...">
+        </div>
+        <!-- Texto citado -->
+        <div class="field">
+          <label>Texto citado (opcional)</label>
+          <textarea class="input" id="inf-texto" rows="3"
+            placeholder="Fragmento literal o descripción de la referencia..."
+            style="resize:vertical;font-family:var(--font-serif);font-size:13px;"></textarea>
+        </div>
+      </div>
+
+      <!-- Panel cita indirecta: tipo de fuente -->
+      <div id="inf-panel-cita-indirecta" style="display:none;">
+        <div class="field">
+          <label>Tipo de fuente</label>
+          <select class="input" id="inf-fuente-indirecta-tipo" onchange="onInfFuenteIndirectaChange()" style="margin-bottom:8px;">
+            <option value="libro">📚 Libro</option>
+            <option value="entrevista_tv">📺 Entrevista / Programa de TV</option>
+            <option value="prensa">📰 Artículo de prensa</option>
+          </select>
+        </div>
+        <!-- Libro indirecto -->
+        <div id="inf-ind-libro" class="field">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <div class="field" style="margin-bottom:0;"><label>Año</label>
+              <input class="input" type="text" id="inf-ind-anio" placeholder="1949"></div>
+            <div class="field" style="margin-bottom:0;"><label>Página</label>
+              <input class="input" type="text" id="inf-ind-pagina" placeholder="45"></div>
+          </div>
+        </div>
+        <!-- Entrevista/TV indirecto -->
+        <div id="inf-ind-tv" style="display:none;">
+          <div class="field">
+            <label>Programa</label>
+            <input class="input" type="text" id="inf-ind-programa" placeholder="Nombre del programa...">
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <div class="field" style="margin-bottom:0;"><label>Canal / Productora</label>
+              <input class="input" type="text" id="inf-ind-canal" placeholder="Canal..."></div>
+            <div class="field" style="margin-bottom:0;"><label>Año</label>
+              <input class="input" type="text" id="inf-ind-tv-anio" placeholder="1977"></div>
+          </div>
+          <div class="field" style="margin-top:8px;">
+            <label>Link YouTube (opcional)</label>
+            <input class="input" type="url" id="inf-ind-youtube" placeholder="https://youtube.com/...">
+          </div>
+        </div>
+        <!-- Prensa indirecto -->
+        <div id="inf-ind-prensa" style="display:none;">
+          <div class="field">
+            <label>Título del artículo</label>
+            <input class="input" type="text" id="inf-ind-titulo-art" placeholder="Título...">
+          </div>
+          <div class="field">
+            <label>Medio</label>
+            <input class="input" type="text" id="inf-ind-medio" placeholder="El País, Le Monde...">
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <div class="field" style="margin-bottom:0;"><label>Fecha</label>
+              <input class="input" type="text" id="inf-ind-fecha" placeholder="12/03/1985"></div>
+            <div class="field" style="margin-bottom:0;"><label>Página / URL</label>
+              <input class="input" type="text" id="inf-ind-pag-url" placeholder="p.4 o URL"></div>
+          </div>
+        </div>
+        <div class="field" style="margin-top:8px;">
+          <label>Texto citado (opcional)</label>
+          <textarea class="input" id="inf-texto-ind" rows="2"
+            placeholder="Descripción de la referencia..."
+            style="resize:vertical;font-family:var(--font-serif);font-size:13px;"></textarea>
+        </div>
+      </div>
+
+      <!-- 4. Destino — el libro influido (cualquier estado) -->
+      <div class="field">
+        <label>Libro influido / destino</label>
+        <select class="input" id="inf-destino-sel" onchange="onInfDestinoSelChange()">
+          <option value="">— Selecciona el libro —</option>
+        </select>
+      </div>
+
+      <!-- Cita ISO generada -->
+      <div id="inf-iso-preview" style="display:none;background:var(--cream2);border-radius:6px;padding:10px 12px;margin-bottom:12px;font-size:11px;color:var(--ink3);font-family:var(--font-serif);line-height:1.6;"></div>
+
+      <button class="btn btn-primary" onclick="saveInfluencia()">Guardar relación</button>
+    </div>
+  </div>
+</div>
+<!-- ══════ MODAL: REFERENCIAS BIBLIOGRÁFICAS ══════ -->
+<div id="modal-referencias" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title">Referencias</div>
+      <button class="btn-icon" onclick="closeModal('modal-referencias')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body" id="referencias-body"></div>
+  </div>
+</div>

@@ -1,0 +1,429 @@
+<!-- ══════ MODAL: AÑADIR ══════ -->
+<div id="modal-add" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title">Registrar estímulo</div>
+      <button class="btn-icon" onclick="closeModal('modal-add')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <!-- Type selector -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:18px;">
+        <button class="type-btn active" data-type="libro" onclick="selectType('libro',this)" style="padding:12px 8px;border:2px solid var(--green);border-radius:4px;background:#e8f0e8;cursor:pointer;font-family:var(--font-sans);font-size:12px;font-weight:700;color:var(--green);letter-spacing:1px;text-transform:uppercase;">📚 Libro</button>
+        <button class="type-btn" data-type="pelicula" onclick="selectType('pelicula',this)" style="padding:12px 8px;border:2px solid var(--border);border-radius:4px;background:#fff;cursor:pointer;font-family:var(--font-sans);font-size:12px;font-weight:700;color:var(--ink3);letter-spacing:1px;text-transform:uppercase;">🎬 Película</button>
+        <button class="type-btn" data-type="serie" onclick="selectType('serie',this)" style="padding:12px 8px;border:2px solid var(--border);border-radius:4px;background:#fff;cursor:pointer;font-family:var(--font-sans);font-size:12px;font-weight:700;color:var(--ink3);letter-spacing:1px;text-transform:uppercase;">📺 Serie</button>
+        <button class="type-btn" data-type="manga" onclick="selectType('manga',this)" style="padding:12px 8px;border:2px solid var(--border);border-radius:4px;background:#fff;cursor:pointer;font-family:var(--font-sans);font-size:12px;font-weight:700;color:var(--ink3);letter-spacing:1px;text-transform:uppercase;">📖 Manga</button>
+        <button class="type-btn" data-type="disco" onclick="selectType('disco',this)" style="padding:12px 8px;border:2px solid var(--border);border-radius:4px;background:#fff;cursor:pointer;font-family:var(--font-sans);font-size:12px;font-weight:700;color:var(--ink3);letter-spacing:1px;text-transform:uppercase;">💿 Disco</button>
+      </div>
+
+      <!-- SEARCH -->
+      <div class="field">
+        <label id="search-label">Buscar libro</label>
+        <input class="input" type="text" id="add-search" placeholder="Título, autor..." oninput="debounceSearch()">
+        <div id="add-search-results" style="display:none;" class="search-results"></div>
+      </div>
+
+      <!-- MANUAL FORM -->
+      <div id="form-libro">
+        <div class="field"><label>Título</label><input class="input" type="text" id="f-titulo" placeholder="Título del libro"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="field">
+          <label>Autor</label>
+          <input class="input" type="text" id="f-autor" list="f-autor-list" oninput="fillMainAutorList()">
+          <datalist id="f-autor-list"></datalist>
+        </div>
+          <div class="field">
+            <label>Editorial</label>
+            <input class="input" type="text" id="f-editorial" list="f-editorial-list" oninput="fillMainEditorialList()">
+            <datalist id="f-editorial-list"></datalist>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="field"><label>Páginas</label><input class="input" type="number" id="f-paginas" min="1"></div>
+          <div class="field"><label>Año publicación</label><input class="input" type="number" id="f-anio-pub"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="field"><label>Edición</label><input class="input" type="text" id="f-edicion" placeholder="Ej: 2ª ed. / edición digital"></div>
+          <div class="field"><label>Ciudad / lugar de publicación</label><input class="input" type="text" id="f-ciudad-pub" placeholder="Ej: Santiago, Madrid"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="field"><label>Traductor</label><input class="input" type="text" id="f-traductor"></div>
+          <div class="field"><label>Idioma original</label>
+            <select class="input" id="f-idioma" onchange="onIdiomaChange(this)">
+            </select>
+            <input class="input" type="text" id="f-idioma-otro" placeholder="Escribe el idioma..." style="display:none;margin-top:6px;" oninput="normalizeIdiomaOtroInput(this)">
+          </div>
+        </div>
+        <div class="field">
+          <button type="button" class="btn btn-secondary" onclick="openBibliographicJsonModal(editingId||'__form__')" style="width:100%;">📥 Cargar JSON bibliográfico</button>
+          <div style="font-size:10px;color:var(--ink4);margin-top:5px;line-height:1.45;">Completa edición, ISBN, traductores y fecha original desde la página legal del libro. Los cambios se revisan antes de aplicarse.</div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="field"><label>Mes lectura</label>
+            <select class="input" id="f-mes"><option value="">—</option>
+              <option>Enero</option><option>Febrero</option><option>Marzo</option><option>Abril</option>
+              <option>Mayo</option><option>Junio</option><option>Julio</option><option>Agosto</option>
+              <option>Septiembre</option><option>Octubre</option><option>Noviembre</option><option>Diciembre</option>
+            </select>
+          </div>
+          <div class="field"><label>Año lectura</label><input class="input" type="number" id="f-anio-lect" placeholder="2025"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="field"><label>Origen del libro</label>
+            <select class="input" id="f-origen-adq">
+              <option value="">—</option>
+              <option value="compra">Compra</option>
+              <option value="regalo">Regalo</option>
+              <option value="herencia">Herencia</option>
+            </select>
+            <div style="font-size:10px;color:var(--ink4);margin-top:4px;line-height:1.4;">Solo libros físicos o significativos. No registrar compras digitales.</div>
+          </div>
+          <div class="field"><label>Fecha de adquisición</label>
+            <input class="input" type="date" id="f-fecha-adq">
+            <div style="font-size:10px;color:var(--ink4);margin-top:4px;line-height:1.4;">Compra, regalo o herencia.</div>
+          </div>
+        </div>
+        <div class="field">
+          <label>Estado</label>
+          <select class="input" id="f-estado">
+            <option value="leido">Leído ✓</option>
+            <option value="leyendo">Leyendo</option>
+            <option value="abandonado">Abandonado ✗</option>
+            <option value="pendiente">Pendiente</option>
+          </select>
+        </div>
+        <div class="field" id="abandono-field" style="display:none;">
+          <label>¿Por qué lo abandonaste?</label>
+          <input class="input" type="text" id="f-abandono" placeholder="Motivo opcional...">
+        </div>
+        <div class="field" id="progreso-field">
+          <label>Progreso (<span id="prog-pct">0</span>%)</label>
+          <input type="range" id="f-progreso" min="0" max="100" value="0" style="width:100%;accent-color:var(--gold);" oninput="document.getElementById('prog-pct').textContent=this.value">
+        </div>
+        <div class="field">
+          <label>Géneros</label>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;" id="generos-chips">
+            <button type="button" class="genero-chip" data-g="Novela"          onclick="toggleGenero(this)">Novela</button>
+            <button type="button" class="genero-chip" data-g="Cuento"          onclick="toggleGenero(this)">Cuento</button>
+            <button type="button" class="genero-chip" data-g="Poesía"          onclick="toggleGenero(this)">Poesía</button>
+            <button type="button" class="genero-chip" data-g="Ensayo"          onclick="toggleGenero(this)">Ensayo</button>
+            <button type="button" class="genero-chip" data-g="Historia"        onclick="toggleGenero(this)">Historia</button>
+            <button type="button" class="genero-chip" data-g="Biografía"       onclick="toggleGenero(this)">Biografía</button>
+            <button type="button" class="genero-chip" data-g="Crónica"         onclick="toggleGenero(this)">Crónica</button>
+            <button type="button" class="genero-chip" data-g="Ciencia ficción" onclick="toggleGenero(this)">Ciencia ficción</button>
+            <button type="button" class="genero-chip" data-g="Filosofía"       onclick="toggleGenero(this)">Filosofía</button>
+            <button type="button" class="genero-chip" data-g="Entrevista"      onclick="toggleGenero(this)">Entrevista</button>
+            <button type="button" class="genero-chip" data-g="Religión"        onclick="toggleGenero(this)">Religión</button>
+            <button type="button" class="genero-chip" data-g="Mitología"       onclick="toggleGenero(this)">Mitología</button>
+            <button type="button" id="f-inventory-chip" class="inventory-chip" onclick="toggleInventoryChip()">📦 Inventario</button>
+            <input type="checkbox" id="f-en-inventario" style="display:none;">
+          </div>
+          <div style="font-size:10px;color:var(--ink4);margin-top:6px;line-height:1.4;">📦 Inventario indica que posees físicamente ese ejemplar; no crea un segundo libro.</div>
+        </div>
+
+        <div id="historia-fields" style="display:none;background:#fff;border:1px solid var(--border);border-radius:6px;padding:14px;margin-bottom:13px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px;"><div><div style="font-family:var(--font-serif);font-size:16px;font-weight:700;">Historia</div><div style="font-size:10px;color:var(--ink4);margin-top:2px;">Línea, fechas y conexiones históricas</div></div><span style="font-size:20px;">🏛️</span></div>
+          <div class="field"><label>Línea histórica</label><input class="input" type="text" id="hist-linea-principal" list="hist-lineas-catalogo" placeholder="Ej: Historia de Eurasia"><datalist id="hist-lineas-catalogo"></datalist></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"><div class="field"><label>Fecha inicial</label><input class="input" type="number" id="hist-fecha-inicio" placeholder="-480"></div><div class="field"><label>Fecha final</label><input class="input" type="number" id="hist-fecha-fin" placeholder="-479"></div></div>
+          <div class="field"><label>Conecta con otras líneas históricas</label><div id="hist-related-lines" style="display:flex;flex-wrap:wrap;gap:6px;"></div><div style="font-size:10px;color:var(--ink4);margin-top:5px;line-height:1.4;">Opcional. Este libro queda como evidencia de la conexión entre líneas.</div></div>
+          <div style="font-size:10px;color:var(--ink4);line-height:1.45;">Los años a. C. se guardan como negativos. Las líneas ya usadas quedan disponibles para reutilizarlas.</div>
+        </div>
+        <div class="field">
+          <label>Portada</label>
+          <div id="f-cover-preview" style="margin-bottom:8px;min-height:0;"></div>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <input class="input" type="text" id="f-cover" placeholder="https://..." style="flex:1;"
+              oninput="previewMainCover('f-cover','f-cover-preview')">
+            <button class="btn-icon" onclick="document.getElementById('f-cover').value='';document.getElementById('f-cover-preview').innerHTML='';"
+              title="Limpiar" style="padding:8px;border:1.5px solid var(--border);border-radius:4px;background:#fff;">
+              <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:var(--ink3);fill:none;stroke-width:2;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="document.getElementById('f-cover-file').click()"
+            style="width:100%;margin-top:8px;font-size:11px;">📁 Subir imagen desde dispositivo</button>
+          <input type="file" id="f-cover-file" accept="image/*" style="display:none;"
+            onchange="handleMainCoverFile(event,'f-cover','f-cover-preview')">
+        </div>
+      </div>
+
+      <div id="form-pelicula" style="display:none;">
+        <!-- Wikipedia import -->
+        <div class="field" style="background:var(--cream2);border-radius:6px;padding:12px;margin-bottom:12px;">
+          <label style="color:var(--ink2);font-size:11px;letter-spacing:1.5px;">🌐 IMPORTAR DESDE WIKIPEDIA</label>
+          <div style="display:flex;gap:8px;margin-top:6px;">
+            <input class="input" type="text" id="fp-wiki-url" placeholder="Pega la URL de Wikipedia..." style="flex:1;font-size:13px;">
+            <button class="btn btn-secondary btn-sm" onclick="importFromWikipedia()" style="white-space:nowrap;flex-shrink:0;">Cargar</button>
+          </div>
+          <div id="fp-wiki-status" style="font-size:11px;color:var(--ink4);margin-top:4px;min-height:14px;"></div>
+        </div>
+        <div class="field"><label>Título</label><input class="input" type="text" id="fp-titulo"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="field"><label>Director</label><input class="input" type="text" id="fp-director"></div>
+          <div class="field"><label>Año estreno</label><input class="input" type="number" id="fp-anio-est"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="field"><label>Duración (min)</label><input class="input" type="number" id="fp-duracion"></div>
+          <div class="field"><label>Fotografía</label><input class="input" type="text" id="fp-foto"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="field"><label>Música / B.S.O.</label><input class="input" type="text" id="fp-musica"></div>
+          <div class="field"><label>Protagonista</label><input class="input" type="text" id="fp-protagonista"></div>
+        </div>
+        <div class="field"><label>Guionista</label><input class="input" type="text" id="fp-guionista"></div>
+        <div class="field">
+          <label>Elenco <span style="font-size:10px;color:var(--ink4);font-weight:400;letter-spacing:0;">(un actor por línea)</span></label>
+          <textarea class="input" id="fp-elenco" rows="4" placeholder="Renate Reinsve&#10;Stellan Skarsgård&#10;Elle Fanning" style="resize:vertical;font-size:13px;line-height:1.6;"></textarea>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="field">
+            <label>País de producción</label>
+            <select class="input" id="fp-pais">
+              <option value="">— Seleccionar —</option>
+              <option value="AR">Argentina</option><option value="AU">Australia</option>
+              <option value="AT">Austria</option><option value="BE">Bélgica</option>
+              <option value="BR">Brasil</option><option value="CA">Canadá</option>
+              <option value="CL">Chile</option><option value="CN">China</option>
+              <option value="CO">Colombia</option><option value="HR">Croacia</option>
+              <option value="CZ">República Checa</option><option value="DK">Dinamarca</option>
+              <option value="EG">Egipto</option><option value="FI">Finlandia</option>
+              <option value="FR">Francia</option><option value="DE">Alemania</option>
+              <option value="GR">Grecia</option><option value="HK">Hong Kong</option>
+              <option value="HU">Hungría</option><option value="IN">India</option>
+              <option value="ID">Indonesia</option><option value="IR">Irán</option>
+              <option value="IE">Irlanda</option><option value="IL">Israel</option>
+              <option value="IT">Italia</option><option value="JP">Japón</option>
+              <option value="KR">Corea del Sur</option><option value="MX">México</option>
+              <option value="MA">Marruecos</option><option value="NL">Países Bajos</option>
+              <option value="NZ">Nueva Zelanda</option><option value="NO">Noruega</option>
+              <option value="PK">Pakistán</option><option value="PE">Perú</option>
+              <option value="PL">Polonia</option><option value="PT">Portugal</option>
+              <option value="RO">Rumanía</option><option value="RU">Rusia</option>
+              <option value="ZA">Sudáfrica</option><option value="ES">España</option>
+              <option value="SE">Suecia</option><option value="CH">Suiza</option>
+              <option value="TW">Taiwán</option><option value="TH">Tailandia</option>
+              <option value="TR">Turquía</option><option value="UA">Ucrania</option>
+              <option value="GB">Reino Unido</option><option value="US">Estados Unidos</option>
+              <option value="VE">Venezuela</option><option value="VN">Vietnam</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Productora</label>
+            <input class="input" type="text" id="fp-productora" placeholder="A24, Mubi...">
+          </div>
+        </div>
+        <div class="field">
+          <label>Género <span style="font-size:10px;color:var(--ink4);font-weight:400;letter-spacing:0;">(máx. 2)</span></label>
+          <div id="fp-generos-cine" style="display:flex;flex-wrap:wrap;gap:5px;margin-top:4px;">
+            <button type="button" class="fp-genero-btn" data-g="Drama" onclick="toggleGeneroCine(this)" style="padding:4px 9px;border:1.5px solid var(--border);border-radius:12px;background:#fff;font-family:var(--font-sans);font-size:11px;cursor:pointer;color:var(--ink3);">Drama</button>
+            <button type="button" class="fp-genero-btn" data-g="Comedia" onclick="toggleGeneroCine(this)" style="padding:4px 9px;border:1.5px solid var(--border);border-radius:12px;background:#fff;font-family:var(--font-sans);font-size:11px;cursor:pointer;color:var(--ink3);">Comedia</button>
+            <button type="button" class="fp-genero-btn" data-g="Thriller" onclick="toggleGeneroCine(this)" style="padding:4px 9px;border:1.5px solid var(--border);border-radius:12px;background:#fff;font-family:var(--font-sans);font-size:11px;cursor:pointer;color:var(--ink3);">Thriller</button>
+            <button type="button" class="fp-genero-btn" data-g="Terror" onclick="toggleGeneroCine(this)" style="padding:4px 9px;border:1.5px solid var(--border);border-radius:12px;background:#fff;font-family:var(--font-sans);font-size:11px;cursor:pointer;color:var(--ink3);">Terror</button>
+            <button type="button" class="fp-genero-btn" data-g="Ciencia ficción" onclick="toggleGeneroCine(this)" style="padding:4px 9px;border:1.5px solid var(--border);border-radius:12px;background:#fff;font-family:var(--font-sans);font-size:11px;cursor:pointer;color:var(--ink3);">Ciencia ficción</button>
+            <button type="button" class="fp-genero-btn" data-g="Animación" onclick="toggleGeneroCine(this)" style="padding:4px 9px;border:1.5px solid var(--border);border-radius:12px;background:#fff;font-family:var(--font-sans);font-size:11px;cursor:pointer;color:var(--ink3);">Animación</button>
+            <button type="button" class="fp-genero-btn" data-g="Documental" onclick="toggleGeneroCine(this)" style="padding:4px 9px;border:1.5px solid var(--border);border-radius:12px;background:#fff;font-family:var(--font-sans);font-size:11px;cursor:pointer;color:var(--ink3);">Documental</button>
+            <button type="button" class="fp-genero-btn" data-g="Romance" onclick="toggleGeneroCine(this)" style="padding:4px 9px;border:1.5px solid var(--border);border-radius:12px;background:#fff;font-family:var(--font-sans);font-size:11px;cursor:pointer;color:var(--ink3);">Romance</button>
+            <button type="button" class="fp-genero-btn" data-g="Acción" onclick="toggleGeneroCine(this)" style="padding:4px 9px;border:1.5px solid var(--border);border-radius:12px;background:#fff;font-family:var(--font-sans);font-size:11px;cursor:pointer;color:var(--ink3);">Acción</button>
+            <button type="button" class="fp-genero-btn" data-g="Aventura" onclick="toggleGeneroCine(this)" style="padding:4px 9px;border:1.5px solid var(--border);border-radius:12px;background:#fff;font-family:var(--font-sans);font-size:11px;cursor:pointer;color:var(--ink3);">Aventura</button>
+            <button type="button" class="fp-genero-btn" data-g="Histórico" onclick="toggleGeneroCine(this)" style="padding:4px 9px;border:1.5px solid var(--border);border-radius:12px;background:#fff;font-family:var(--font-sans);font-size:11px;cursor:pointer;color:var(--ink3);">Histórico</button>
+            <button type="button" class="fp-genero-btn" data-g="Crimen" onclick="toggleGeneroCine(this)" style="padding:4px 9px;border:1.5px solid var(--border);border-radius:12px;background:#fff;font-family:var(--font-sans);font-size:11px;cursor:pointer;color:var(--ink3);">Crimen</button>
+            <button type="button" class="fp-genero-btn" data-g="Misterio" onclick="toggleGeneroCine(this)" style="padding:4px 9px;border:1.5px solid var(--border);border-radius:12px;background:#fff;font-family:var(--font-sans);font-size:11px;cursor:pointer;color:var(--ink3);">Misterio</button>
+            <button type="button" class="fp-genero-btn" data-g="Musical" onclick="toggleGeneroCine(this)" style="padding:4px 9px;border:1.5px solid var(--border);border-radius:12px;background:#fff;font-family:var(--font-sans);font-size:11px;cursor:pointer;color:var(--ink3);">Musical</button>
+            <button type="button" class="fp-genero-btn" data-g="Fantasía" onclick="toggleGeneroCine(this)" style="padding:4px 9px;border:1.5px solid var(--border);border-radius:12px;background:#fff;font-family:var(--font-sans);font-size:11px;cursor:pointer;color:var(--ink3);">Fantasía</button>
+            <button type="button" class="fp-genero-btn" data-g="Bélico" onclick="toggleGeneroCine(this)" style="padding:4px 9px;border:1.5px solid var(--border);border-radius:12px;background:#fff;font-family:var(--font-sans);font-size:11px;cursor:pointer;color:var(--ink3);">Bélico</button>
+            <button type="button" class="fp-genero-btn" data-g="Biográfico" onclick="toggleGeneroCine(this)" style="padding:4px 9px;border:1.5px solid var(--border);border-radius:12px;background:#fff;font-family:var(--font-sans);font-size:11px;cursor:pointer;color:var(--ink3);">Biográfico</button>
+            <button type="button" class="fp-genero-btn" data-g="Western" onclick="toggleGeneroCine(this)" style="padding:4px 9px;border:1.5px solid var(--border);border-radius:12px;background:#fff;font-family:var(--font-sans);font-size:11px;cursor:pointer;color:var(--ink3);">Western</button>
+          </div>
+        </div>
+        <div class="field">
+          <label>Basada en</label>
+          <select class="input" id="fp-basada">
+            <option value="">— Original —</option>
+            <option value="libro">Libro</option>
+            <option value="novela-ligera">Novela ligera</option>
+            <option value="manga">Manga</option>
+            <option value="comic">Cómic</option>
+            <option value="pelicula">Película anterior</option>
+            <option value="serie">Serie</option>
+            <option value="hecho-real">Hecho real</option>
+          </select>
+        </div>
+        <div id="fp-autor-original-field" style="display:none;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="field"><label>Autor / creador original</label><input class="input" type="text" id="fp-autor-original" placeholder="Ej: Frank Capra"></div>
+          <div class="field"><label>Título de la obra original</label><input class="input" type="text" id="fp-obra-original" placeholder="Ej: Mr. Deeds Goes to Town"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="field"><label>Mes visto</label>
+            <select class="input" id="fp-mes"><option value="">—</option>
+              <option>Enero</option><option>Febrero</option><option>Marzo</option><option>Abril</option>
+              <option>Mayo</option><option>Junio</option><option>Julio</option><option>Agosto</option>
+              <option>Septiembre</option><option>Octubre</option><option>Noviembre</option><option>Diciembre</option>
+            </select>
+          </div>
+          <div class="field"><label>Año visto</label><input class="input" type="number" id="fp-anio-visto" placeholder="2025"></div>
+        </div>
+        <div class="field">
+          <label>Poster</label>
+          <div id="fp-cover-preview" style="margin-bottom:8px;min-height:0;"></div>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <input class="input" type="text" id="fp-cover" placeholder="https://..." style="flex:1;"
+              oninput="previewMainCover('fp-cover','fp-cover-preview')">
+            <button class="btn-icon" onclick="document.getElementById('fp-cover').value='';document.getElementById('fp-cover-preview').innerHTML='';"
+              title="Limpiar" style="padding:8px;border:1.5px solid var(--border);border-radius:4px;background:#fff;">
+              <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:var(--ink3);fill:none;stroke-width:2;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="document.getElementById('fp-cover-file').click()"
+            style="width:100%;margin-top:8px;font-size:11px;">📁 Subir imagen desde dispositivo</button>
+          <input type="file" id="fp-cover-file" accept="image/*" style="display:none;"
+            onchange="handleMainCoverFile(event,'fp-cover','fp-cover-preview')">
+        </div>
+      </div>
+
+      <div id="form-serie" style="display:none;">
+        <div class="field"><label>Título</label><input class="input" type="text" id="fs-titulo"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="field"><label>Creador/Director</label><input class="input" type="text" id="fs-director"></div>
+          <div class="field"><label>Año estreno</label><input class="input" type="number" id="fs-anio-est"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="field"><label>N° Temporada</label><input class="input" type="number" id="fs-temporadas" min="1" placeholder="Ej: 1" oninput="calcSeriesDuracion()"></div>
+          <div class="field"><label>Capítulos de la temporada</label><input class="input" type="number" id="fs-caps-por-temp" min="1" placeholder="Ej: 13" oninput="calcSeriesDuracion()"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="field"><label>Minutos por episodio</label><input class="input" type="number" id="fs-min-episodio" min="1" placeholder="Ej: 45" oninput="calcSeriesDuracion()"></div>
+          <div class="field"><label>Duración total (min)</label><input class="input" type="number" id="fs-duracion" placeholder="Se calcula solo"></div>
+        </div>
+        <div id="fs-duracion-calc" style="font-size:11px;color:var(--ink4);margin-top:-8px;margin-bottom:8px;"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="field"><label>Música / B.S.O.</label><input class="input" type="text" id="fs-musica"></div>
+          <div class="field"><label>Protagonista</label><input class="input" type="text" id="fs-protagonista"></div>
+        </div>
+        <div class="field"><label>Guionista</label><input class="input" type="text" id="fs-guionista"></div>
+        <div class="field">
+          <label>Elenco <span style="font-size:10px;color:var(--ink4);font-weight:400;letter-spacing:0;">(un actor por línea)</span></label>
+          <textarea class="input" id="fs-elenco" rows="4" placeholder="Actor principal&#10;Actor secundario&#10;..." style="resize:vertical;font-size:13px;line-height:1.6;"></textarea>
+        </div>
+        <div class="field">
+          <label>Estado</label>
+          <select class="input" id="fs-estado">
+            <option value="vista">Vista ✓</option>
+            <option value="viendo">Viendo ahora</option>
+            <option value="pendiente">Pendiente</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Basada en</label>
+          <select class="input" id="fs-basada">
+            <option value="">— Original —</option>
+            <option value="libro">Libro</option>
+            <option value="novela-ligera">Novela ligera</option>
+            <option value="manga">Manga</option>
+            <option value="comic">Cómic</option>
+            <option value="hecho-real">Hecho real</option>
+          </select>
+        </div>
+        <div id="fs-autor-original-field" style="display:none;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="field"><label>Autor / creador original</label><input class="input" type="text" id="fs-autor-original" placeholder="Autor, creador o director"></div>
+          <div class="field"><label>Título de la obra original</label><input class="input" type="text" id="fs-obra-original" placeholder="Título de la obra"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="field"><label>Mes visto</label>
+            <select class="input" id="fs-mes"><option value="">—</option>
+              <option>Enero</option><option>Febrero</option><option>Marzo</option><option>Abril</option>
+              <option>Mayo</option><option>Junio</option><option>Julio</option><option>Agosto</option>
+              <option>Septiembre</option><option>Octubre</option><option>Noviembre</option><option>Diciembre</option>
+            </select>
+          </div>
+          <div class="field"><label>Año visto</label><input class="input" type="number" id="fs-anio-visto" placeholder="2025"></div>
+        </div>
+        <div class="field">
+          <label>Poster</label>
+          <div id="fs-cover-preview" style="margin-bottom:8px;min-height:0;"></div>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <input class="input" type="text" id="fs-cover" placeholder="https://..." style="flex:1;"
+              oninput="previewMainCover('fs-cover','fs-cover-preview')">
+            <button class="btn-icon" onclick="document.getElementById('fs-cover').value='';document.getElementById('fs-cover-preview').innerHTML='';"
+              title="Limpiar" style="padding:8px;border:1.5px solid var(--border);border-radius:4px;background:#fff;">
+              <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:var(--ink3);fill:none;stroke-width:2;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="document.getElementById('fs-cover-file').click()"
+            style="width:100%;margin-top:8px;font-size:11px;">📁 Subir imagen desde dispositivo</button>
+          <input type="file" id="fs-cover-file" accept="image/*" style="display:none;"
+            onchange="handleMainCoverFile(event,'fs-cover','fs-cover-preview')">
+        </div>
+      </div>
+
+
+
+      <div id="form-manga" style="display:none;">
+        <div class="field"><label>Título</label><input class="input" type="text" id="fm-titulo" placeholder="Título del manga"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="field"><label>Autor / mangaka</label><input class="input" type="text" id="fm-autor" placeholder="Mangaka"></div>
+          <div class="field"><label>Editorial</label><input class="input" type="text" id="fm-editorial"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="field"><label>Año de publicación</label><input class="input" type="number" id="fm-anio-pub"></div>
+          <div class="field"><label>Estado de publicación</label><select class="input" id="fm-estado-publicacion"><option value="en_emision">En emisión</option><option value="en_pausa">En pausa</option><option value="finalizado">Finalizado</option></select></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="field"><label>Capítulo actual</label><input class="input" type="number" id="fm-cap-actual" min="0" value="0"></div>
+          <div class="field"><label>Capítulos totales</label><input class="input" type="number" id="fm-cap-total" min="0" value="0"></div>
+        </div>
+        <div class="field"><label>Estado personal</label><select class="input" id="fm-estado"><option value="leyendo">Leyendo</option><option value="leido">Leído ✓</option></select></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="field"><label>Mes de término</label><select class="input" id="fm-mes"><option value="">—</option><option>Enero</option><option>Febrero</option><option>Marzo</option><option>Abril</option><option>Mayo</option><option>Junio</option><option>Julio</option><option>Agosto</option><option>Septiembre</option><option>Octubre</option><option>Noviembre</option><option>Diciembre</option></select></div>
+          <div class="field"><label>Año de término</label><input class="input" type="number" id="fm-anio"></div>
+        </div>
+        <div class="field"><label>Portada</label><div id="fm-cover-preview" style="margin-bottom:8px;min-height:0;"></div><div style="display:flex;gap:6px;"><input class="input" type="text" id="fm-cover" placeholder="https://..." oninput="previewMainCover('fm-cover','fm-cover-preview')"><button class="btn-icon" onclick="document.getElementById('fm-cover').value='';document.getElementById('fm-cover-preview').innerHTML='';">✕</button></div><button class="btn btn-secondary btn-sm" onclick="document.getElementById('fm-cover-file').click()" style="width:100%;margin-top:8px;font-size:11px;">📁 Subir imagen</button><input type="file" id="fm-cover-file" accept="image/*" style="display:none;" onchange="handleMainCoverFile(event,'fm-cover','fm-cover-preview')"></div>
+      </div>
+
+      <div id="form-disco" style="display:none;">
+        <div class="field"><label>Nombre del disco</label><input class="input" type="text" id="fd-titulo" placeholder="Título del disco"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="field"><label>Cantante / grupo</label><input class="input" type="text" id="fd-artista" placeholder="Artista, banda o grupo"></div>
+          <div class="field"><label>Año publicación</label><input class="input" type="number" id="fd-anio-pub" placeholder="1971"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="field"><label>Productor</label><input class="input" type="text" id="fd-productor" placeholder="Productor musical"></div>
+          <div class="field"><label>Discográfica</label><input class="input" type="text" id="fd-discografica" placeholder="Sello / label"></div>
+        </div>
+        <div class="field">
+          <label>Músicos <span style="font-size:10px;color:var(--ink4);font-weight:400;letter-spacing:0;">(uno por línea)</span></label>
+          <textarea class="input" id="fd-musicos" rows="4" placeholder="Nombre — instrumento\nNombre — instrumento" style="resize:vertical;font-size:13px;line-height:1.6;"></textarea>
+        </div>
+        <div class="field">
+          <label>Artistas invitados / colaboraciones <span style="font-size:10px;color:var(--ink4);font-weight:400;letter-spacing:0;">(uno por línea)</span></label>
+          <textarea class="input" id="fd-colaboraciones" rows="4" placeholder="Artista — participación\nArtista — voz invitada" style="resize:vertical;font-size:13px;line-height:1.6;"></textarea>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="field"><label>Mes escuchado</label>
+            <select class="input" id="fd-mes"><option value="">—</option>
+              <option>Enero</option><option>Febrero</option><option>Marzo</option><option>Abril</option>
+              <option>Mayo</option><option>Junio</option><option>Julio</option><option>Agosto</option>
+              <option>Septiembre</option><option>Octubre</option><option>Noviembre</option><option>Diciembre</option>
+            </select>
+          </div>
+          <div class="field"><label>Año escuchado</label><input class="input" type="number" id="fd-anio-escuchado" placeholder="2026"></div>
+        </div>
+        <div class="field">
+          <label>Portada</label>
+          <div id="fd-cover-preview" style="margin-bottom:8px;min-height:0;"></div>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <input class="input" type="text" id="fd-cover" placeholder="https://..." style="flex:1;" oninput="previewMainCover('fd-cover','fd-cover-preview')">
+            <button class="btn-icon" onclick="document.getElementById('fd-cover').value='';document.getElementById('fd-cover-preview').innerHTML='';" title="Limpiar" style="padding:8px;border:1.5px solid var(--border);border-radius:4px;background:#fff;">
+              <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:var(--ink3);fill:none;stroke-width:2;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="document.getElementById('fd-cover-file').click()" style="width:100%;margin-top:8px;font-size:11px;">📁 Subir imagen desde dispositivo</button>
+          <input type="file" id="fd-cover-file" accept="image/*" style="display:none;" onchange="handleMainCoverFile(event,'fd-cover','fd-cover-preview')">
+        </div>
+      </div>
+
+      <div class="field"><label>Notas personales</label><textarea class="input" id="f-notas" rows="2" placeholder="Impresiones, citas..."></textarea></div>
+      <button class="btn btn-primary" onclick="saveEntry()" style="margin-top:6px;">Guardar en biblioteca</button>
+    </div>
+  </div>
+</div>
+
+

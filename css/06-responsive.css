@@ -1,0 +1,32 @@
+/* ── CONTROL DE PLAN RESPONSIVE (v138) ── */
+@media (max-width: 640px) {
+  #logros-card {
+    display: block !important;
+    position: static !important;
+    clear: both !important;
+    margin: 0 20px 12px !important;
+    width: auto !important;
+    max-width: none !important;
+    z-index: auto !important;
+  }
+  #logros-card .lumen-logros-card {
+    position: static !important;
+    overflow: visible !important;
+  }
+  #logros-card .lumen-logros-head,
+  #logros-card .lumen-logros-main,
+  #logros-card .lumen-logros-footer {
+    flex-wrap: wrap !important;
+    align-items: flex-start !important;
+  }
+  #logros-card .lumen-logros-actions {
+    margin-left: 0 !important;
+  }
+  #logros-card .lumen-kpi-grid {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+}
+
+

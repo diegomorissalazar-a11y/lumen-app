@@ -1,0 +1,46 @@
+<!-- ══════ MODAL: CONFIRMAR CIERRE SESIÓN ══════ -->
+<div id="modal-logout-confirm" class="modal-overlay">
+  <div class="modal" style="max-width:340px;">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title">Cerrar sesión</div>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:14px;color:var(--ink2);line-height:1.6;margin-bottom:6px;">
+        ¿Deseas guardar tus datos en la nube antes de salir?
+      </p>
+      <div id="logout-sync-status" style="font-size:12px;color:var(--ink4);margin-bottom:16px;min-height:16px;"></div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <button class="btn btn-primary" id="btn-save-and-logout" onclick="saveAndLogOut()">
+          📤 Guardar y cerrar sesión
+        </button>
+        <button class="btn btn-secondary" onclick="logOut()">
+          Cerrar sesión sin guardar
+        </button>
+        <button class="btn btn-secondary" onclick="closeModal('modal-logout-confirm')" style="color:var(--ink4);">
+          Cancelar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ MODAL: SINCRONIZACIÓN ══════ -->
+<div id="modal-sync-warning" class="modal-overlay" style="z-index:10000;">
+  <div class="modal" style="max-width:340px;">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title" id="sync-warning-title">Sincronizar datos</div>
+    </div>
+    <div class="modal-body">
+      <div id="sync-warning-body" style="font-size:14px;color:var(--ink2);line-height:1.6;margin-bottom:16px;"></div>
+      <div style="display:flex;gap:10px;">
+        <button class="btn btn-primary" id="sync-warning-ok" style="flex:2;">Sincronizar ahora</button>
+        <button class="btn btn-secondary" id="sync-warning-cancel" style="flex:1;">Ignorar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+

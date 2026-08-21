@@ -1,0 +1,59 @@
+<!-- ══════ MODAL: SERIE EN CURSO ══════ -->
+<div id="modal-add-watching" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title">Serie en curso</div>
+      <button class="btn-icon" onclick="closeModal('modal-add-watching')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label>Título</label>
+        <input class="input" type="text" id="watching-titulo" placeholder="Nombre de la serie" oninput="renderWatchingTitleSuggestions()" onfocus="renderWatchingTitleSuggestions()" autocomplete="off">
+        <div id="watching-title-suggestions" style="display:none;margin-top:6px;border:1.5px solid var(--border);border-radius:6px;background:#fff;overflow:hidden;box-shadow:var(--shadow);"></div>
+        <div style="font-size:10px;color:var(--ink4);margin-top:4px;line-height:1.4;">Si ya existe en tu biblioteca, selecciona la sugerencia para usar el nombre canónico. Si no existe, puedes dejar el título escrito a mano.</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div class="field"><label>Creador / Director</label><input class="input" type="text" id="watching-director"></div>
+        <div class="field"><label>Año estreno</label><input class="input" type="number" id="watching-anio-est"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div class="field"><label>Temporada viendo</label>
+          <input class="input" type="number" id="watching-temporada-actual" min="1" value="1" placeholder="1">
+        </div>
+        <div class="field"><label>Total de temporadas</label>
+          <input class="input" type="number" id="watching-temporadas" min="1" value="1">
+        </div>
+      </div>
+      <div class="field"><label>Protagonista</label><input class="input" type="text" id="watching-protagonista"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div class="field">
+          <label>Capítulo actual</label>
+          <input class="input" type="number" id="watching-cap-actual" min="0" value="0" oninput="updateWatchingBar()">
+        </div>
+        <div class="field">
+          <label>Total capítulos</label>
+          <input class="input" type="number" id="watching-cap-total" min="0" placeholder="Ej: 24" oninput="updateWatchingBar()">
+        </div>
+      </div>
+      <div class="progress-wrap" style="height:6px;margin-bottom:4px;">
+        <div class="progress-fill" id="watching-progress-bar" style="width:0%;background:var(--red);"></div>
+      </div>
+      <div id="watching-progress-pct" style="font-size:11px;color:var(--ink4);text-align:right;margin-bottom:14px;"></div>
+      <div class="field">
+        <label>Portada</label>
+        <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px;">
+          <input class="input" type="text" id="watching-cover" placeholder="Pega URL de imagen..." style="flex:1;">
+          <button class="btn-icon" onclick="document.getElementById('watching-cover').value=''" style="padding:8px;border:1.5px solid var(--border);border-radius:4px;background:#fff;">
+            <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:var(--ink3);fill:none;stroke-width:2;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="document.getElementById('watching-cover-file').click()" style="width:100%;font-size:11px;">📁 Subir imagen desde dispositivo</button>
+        <input type="file" id="watching-cover-file" accept="image/*" style="display:none;" onchange="handleWatchingCoverFile(event)">
+        <div id="watching-cover-preview" style="margin-top:8px;"></div>
+      </div>
+      <button class="btn btn-primary" onclick="saveWatchingEntry()">Añadir serie en curso</button>
+    </div>
+  </div>
+</div>
+

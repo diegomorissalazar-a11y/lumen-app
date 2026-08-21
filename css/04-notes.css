@@ -1,0 +1,79 @@
+/* ── NOTAS ── */
+.notas-section { margin-top:16px; border-top:1px solid var(--cream3); padding-top:12px; }
+.notas-toggle { display:flex;align-items:center;gap:6px;cursor:pointer;background:none;border:none;padding:0;font-family:var(--font-sans);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink3);width:100%; }
+.notas-toggle:hover { color:var(--ink); }
+.notas-toggle-chevron { transition:transform 0.2s; }
+.notas-toggle-chevron.open { transform:rotate(180deg); }
+.notas-list { margin-top:12px; display:flex; flex-direction:column; gap:10px; }
+.nota-card { background:#fff; border:1px solid var(--border); border-radius:6px; padding:12px 14px; position:relative; }
+.nota-num { position:absolute;top:10px;right:12px;font-family:var(--font-serif);font-size:11px;color:var(--ink4);font-style:italic; }
+.nota-titulo { font-family:var(--font-serif);font-weight:700;font-size:14px;color:var(--ink);margin-bottom:4px;padding-right:30px; }
+.nota-fecha { font-size:10px;color:var(--ink4);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px; }
+.nota-texto { font-size:13px;color:var(--ink2);line-height:1.7;white-space:pre-wrap; }
+.nota-actions { display:flex;gap:6px;margin-top:10px; }
+.nota-btn { font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:4px 10px;border-radius:4px;cursor:pointer;font-family:var(--font-sans);border:1.5px solid var(--border);background:#fff;color:var(--ink3); }
+.nota-btn:hover { background:var(--ink);color:var(--cream);border-color:var(--ink); }
+.nota-btn.danger:hover { background:var(--red);color:var(--cream);border-color:var(--red); }
+.nota-add-btn { width:100%;padding:10px;border:1.5px dashed var(--border);border-radius:6px;background:transparent;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--ink4);cursor:pointer;font-family:var(--font-sans);margin-top:8px; }
+.nota-add-btn:hover { border-color:var(--gold);color:var(--gold); }
+
+/* ── BIBLIOTECA: NOTAS DOCUMENTO / LECTOR ── */
+.notas-doc-wrap { padding: 8px 0 28px; }
+.notas-doc-cover { text-align:center; padding:34px 10px 30px; border-bottom:1px solid var(--border); margin-bottom:18px; background:#fff; }
+.notas-doc-title { font-family:var(--font-serif); font-size:46px; font-weight:900; font-style:italic; color:var(--ink); line-height:1; }
+.notas-doc-sub { font-size:11px; color:var(--ink4); letter-spacing:2px; text-transform:uppercase; margin-top:10px; }
+.notas-reader-layout { display:grid; grid-template-columns:minmax(230px, 290px) minmax(0, 1fr); gap:18px; align-items:start; }
+.notas-reader-toc { position:sticky; top:74px; height:calc(100dvh - 154px); overflow:auto; background:#f7f7f7; border:1px solid var(--border); border-radius:6px; padding:10px 8px; box-shadow:var(--shadow); }
+.notas-reader-toc-title { font-size:11px; letter-spacing:2px; text-transform:uppercase; color:var(--ink4); font-weight:700; padding:4px 6px 8px; border-bottom:1px solid var(--border); margin-bottom:8px; }
+.notas-tree { font-family:var(--font-sans); font-size:12px; color:var(--ink2); }
+.notas-tree ul { list-style:none; margin:0; padding-left:14px; border-left:1px dotted var(--border); }
+.notas-tree > ul { padding-left:0; border-left:none; }
+.notas-tree li { margin:2px 0; }
+.notas-tree details { margin:2px 0; }
+.notas-tree summary { cursor:pointer; list-style:none; display:flex; align-items:center; gap:4px; padding:3px 4px; border-radius:3px; color:var(--ink); font-weight:700; }
+.notas-tree summary::-webkit-details-marker { display:none; }
+.notas-tree summary::before { content:'▸'; color:var(--ink4); font-size:11px; width:10px; display:inline-block; }
+.notas-tree details[open] > summary::before { content:'▾'; }
+.notas-tree a { display:block; color:var(--ink2); text-decoration:none; line-height:1.35; padding:3px 4px; border-radius:3px; overflow:hidden; text-overflow:ellipsis; }
+.notas-tree a:hover, .notas-tree a:active { background:var(--cream2); color:var(--red); }
+.notas-tree .toc-entry-link { font-weight:700; }
+.notas-tree .toc-note-link { font-size:11px; color:var(--ink3); padding-left:12px; }
+.notas-reader-mobile-toggle { display:none; width:100%; margin:0 0 10px; border:1.5px solid var(--border); border-radius:6px; background:#fff; padding:10px 12px; font-family:var(--font-sans); font-size:12px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--ink2); text-align:left; cursor:pointer; }
+.notas-reader-doc { background:#fff; border:1px solid var(--border); border-radius:6px; box-shadow:var(--shadow); min-height:calc(100dvh - 170px); padding:34px 44px 48px; }
+.notas-doc-category { font-family:var(--font-serif); font-size:29px; font-weight:900; font-style:italic; color:var(--ink); text-align:center; margin:6px 0 52px; padding:0 0 22px; border-bottom:none; scroll-margin-top:88px; min-height:280px; display:flex; align-items:center; justify-content:center; flex-direction:column; position:relative; }
+.notas-doc-category::after { content:''; display:block; width:min(520px, 82%); border-bottom:2px solid var(--ink); margin-top:18px; }
+.notas-doc-entry { scroll-margin-top:88px; padding:22px 0 34px; border-bottom:1px solid var(--cream3); }
+.notas-doc-entry:last-child { border-bottom:none; }
+.notas-doc-entry-title { font-family:var(--font-serif); font-size:24px; font-weight:900; color:var(--ink); text-align:center; text-transform:none; margin-bottom:6px; }
+.notas-doc-entry-meta { font-size:11px; color:var(--ink4); letter-spacing:1px; text-transform:uppercase; text-align:center; margin-bottom:22px; }
+.notas-doc-note { margin:22px 0 28px; scroll-margin-top:88px; }
+.notas-doc-note + .notas-doc-note { padding-top:18px; border-top:1px solid var(--cream2); }
+.notas-doc-note-title { font-family:var(--font-serif); font-size:17px; font-weight:900; color:var(--ink); margin-bottom:8px; }
+.notas-doc-note-date { font-size:10px; color:var(--ink4); letter-spacing:1px; text-transform:uppercase; margin-bottom:8px; }
+.notas-doc-note-text { font-family:var(--font-serif); font-size:15.5px; color:var(--ink2); line-height:1.9; white-space:pre-wrap; }
+.notas-doc-actions { margin-top:16px; display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
+.nota-toolbar { display:flex; gap:6px; margin-bottom:6px; flex-wrap:wrap; }
+.nota-toolbar button { min-width:32px; height:30px; border:1.5px solid var(--border); border-radius:4px; background:#fff; color:var(--ink2); cursor:pointer; font-family:var(--font-serif); font-size:14px; font-weight:700; padding:0 8px; }
+.nota-toolbar button.nota-tool-wide { width:auto; min-width:42px; font-family:var(--font-sans); font-size:12px; letter-spacing:0.5px; }
+.nota-toolbar button:active { background:var(--ink); color:var(--cream); }
+.nota-rich { white-space:normal; }
+.nota-rich p { margin:0 0 0.55em; white-space:pre-wrap; }
+.nota-rich p:last-child { margin-bottom:0; }
+.nota-rich .nota-list { margin:0.35em 0 0.85em 1.35em; padding-left:1.1em; }
+.nota-rich .nota-list li { margin:0.18em 0; padding-left:0.25em; }
+.nota-rich .nota-list-roman { list-style-type:upper-roman; }
+.nota-rich .nota-spacer { height:0.6em; }
+@media (max-width: 760px) {
+  .notas-reader-layout { display:block; }
+  .notas-reader-mobile-toggle { display:block; }
+  .notas-reader-toc { display:none; position:relative; top:auto; height:auto; max-height:280px; margin-bottom:14px; }
+  .notas-reader-toc.open { display:block; }
+  .notas-reader-doc { padding:24px 16px 34px; min-height:auto; }
+  .notas-doc-title { font-size:38px; }
+  .notas-doc-category { font-size:25px; min-height:180px; margin-bottom:34px; padding-bottom:18px; }
+  .notas-doc-category::after { width:82%; margin-top:14px; }
+  .notas-doc-entry-title { font-size:21px; }
+}
+
+.home-recent-list .entry-card { margin-bottom: 0; }
+

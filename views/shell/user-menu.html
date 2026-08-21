@@ -1,0 +1,59 @@
+<!-- ══════ USER MENU ══════ -->
+<div id="user-menu">
+  <div class="user-menu-header">
+    <div class="user-menu-name" id="menu-name">—</div>
+    <div class="user-menu-email" id="menu-email">—</div>
+  </div>
+  <div class="sync-status">
+    <div id="menu-sync-dot" style="width:7px;height:7px;border-radius:50%;background:#7ec98f;flex-shrink:0;"></div>
+    <span id="menu-sync-text">Sincronizado</span>
+  </div>
+  <div style="font-size:10px;color:var(--ink4);padding:4px 16px 10px;border-bottom:1px solid var(--border);line-height:1.6;" id="menu-last-sync">—</div>
+
+  <!-- Guardar / Cargar -->
+  <button class="user-menu-item" onclick="manualSaveToCloud()">
+    <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0018 9h-1.26A8 8 0 103 16.3"/></svg>
+    📤 Guardar en nube
+  </button>
+  <button class="user-menu-item" onclick="manualLoadFromCloud()">
+    <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0018 9h-1.26A8 8 0 103 16.11"/></svg>
+    📥 Cargar desde nube
+  </button>
+  <button class="user-menu-item" onclick="sincronizarPortadas()">
+    <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14"/><path d="M4.93 4.93a10 10 0 000 14.14"/></svg>
+    🖼 Reparar portadas
+  </button>
+
+  <button class="user-menu-item" onclick="openMenuAction('modal-import')">
+    <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0018 9h-1.26A8 8 0 103 16.3"/></svg>
+    Importar / Exportar CSV
+  </button>
+  <button class="user-menu-item" onclick="closeUserMenu();wikiMasivo();">
+    <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20"/></svg>
+    🌐 Completar desde Wikipedia
+  </button>
+  <button class="user-menu-item" onclick="closeUserMenu();exportarLectura();">
+    <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0018 9h-1.26A8 8 0 103 16.3"/></svg>
+    📊 Exportar historial de lectura
+  </button>
+  <button class="user-menu-item" onclick="closeUserMenu();exportarCSVHistoricoCompleto();">
+    <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    📦 Exportar CSV histórico completo
+  </button>
+  <button class="user-menu-item" onclick="closeUserMenu();exportarRespaldoIntegral();">
+    <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;"><path d="M12 3v12"/><polyline points="7 10 12 15 17 10"/><path d="M5 21h14a2 2 0 002-2v-3"/><path d="M3 16v3a2 2 0 002 2"/></svg>
+    🛡 Exportar respaldo integral
+  </button>
+  <button class="user-menu-item" onclick="closeUserMenu();openIntegralRestorePicker();">
+    <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;"><path d="M12 21V9"/><polyline points="7 14 12 9 17 14"/><path d="M5 3h14a2 2 0 012 2v3"/><path d="M3 8V5a2 2 0 012-2"/></svg>
+    ♻️ Restaurar respaldo integral
+  </button>
+  <button class="user-menu-item danger" onclick="confirmLogOut()">
+    <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+    Cerrar sesión
+  </button>
+  <div style="padding:8px 16px 10px;border-top:1px solid var(--border);font-size:10px;color:var(--ink4);letter-spacing:1px;text-align:right;">
+    LUMEN v183
+  </div>
+</div>
+

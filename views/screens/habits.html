@@ -1,0 +1,45 @@
+<!-- ══════ SCREEN: HÁBITOS ══════ -->
+<div id="screen-habitos" class="screen">
+  <div class="topbar">
+    <div><div class="topbar-logo">LUMEN</div><div class="topbar-sub">Hábitos</div></div>
+  </div>
+  <div style="padding:16px 20px;display:flex;flex-direction:column;gap:16px;">
+    <!-- Rachas -->
+    <div id="habitos-rachas"></div>
+    <!-- Heatmap -->
+    <div id="habitos-heatmap-wrap">
+      <div class="chart-section-title" style="margin-bottom:4px;">Actividad lectora</div>
+      <p style="font-size:11px;color:var(--ink4);margin-bottom:10px;">Cada celda es un día. Color = páginas o registros.</p>
+      <div style="display:flex;gap:8px;margin-bottom:10px;">
+        <select id="heatmap-year-sel" class="input" style="width:auto;font-size:12px;padding:6px 10px;" onchange="renderHabitos()"></select>
+      </div>
+      <div id="habitos-heatmap" style="overflow-x:auto;"></div>
+      <div style="display:flex;gap:4px;align-items:center;margin-top:8px;">
+        <span style="font-size:10px;color:var(--ink4);">Menos</span>
+        <div style="width:12px;height:12px;border-radius:2px;background:#ede7d9;border:1px solid var(--border);"></div>
+        <div style="width:12px;height:12px;border-radius:2px;background:#c8b87a;"></div>
+        <div style="width:12px;height:12px;border-radius:2px;background:#c8952a;"></div>
+        <div style="width:12px;height:12px;border-radius:2px;background:#8b6010;"></div>
+        <div style="width:12px;height:12px;border-radius:2px;background:#1a1510;"></div>
+        <span style="font-size:10px;color:var(--ink4);">Más</span>
+      </div>
+    </div>
+    <!-- Heatmap semanal de cumplimiento -->
+    <div id="habitos-weekly-meta-wrap" class="weekly-meta-wrap">
+      <div class="chart-section-title" style="margin-bottom:4px;">Cumplimiento semanal de lectura</div>
+      <p style="font-size:11px;color:var(--ink4);margin-bottom:8px;line-height:1.5;">Cada celda es una semana lunes→domingo. Color = avance contra la meta semanal vigente.</p>
+      <div id="habitos-weekly-meta"></div>
+    </div>
+    <!-- Comparador de años -->
+    <div id="habitos-comparador-wrap">
+      <div class="chart-section-title" style="margin-bottom:8px;">Comparador de años</div>
+      <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+        <select id="comp-year-a" class="input" style="width:auto;font-size:12px;padding:6px 10px;" onchange="renderComparador()"></select>
+        <span style="font-size:14px;font-weight:700;color:var(--ink3);align-self:center;">vs</span>
+        <select id="comp-year-b" class="input" style="width:auto;font-size:12px;padding:6px 10px;" onchange="renderComparador()"></select>
+      </div>
+      <div id="habitos-comparador"></div>
+    </div>
+  </div>
+</div>
+

@@ -1,0 +1,64 @@
+{
+  "version": "183",
+  "html": {
+    "auth": [
+      "views/shell/auth.html"
+    ],
+    "app": [
+      "views/screens/home.html",
+      "views/screens/library.html",
+      "views/screens/year.html",
+      "views/screens/stats.html",
+      "views/screens/habits.html",
+      "views/screens/maps.html",
+      "views/modals/wiki-export.html",
+      "views/modals/bibliography.html",
+      "views/modals/influences.html",
+      "views/modals/routes.html",
+      "views/shell/user-menu.html",
+      "views/shell/bottom-nav.html"
+    ],
+    "modal": [
+      "views/modals/add-entry.html",
+      "views/modals/manga-detail-history.html",
+      "views/modals/import-restore-inventory.html",
+      "views/modals/reading-current.html",
+      "views/modals/series-current.html",
+      "views/modals/progress.html",
+      "views/modals/notes.html",
+      "views/modals/challenge.html",
+      "views/modals/genres.html",
+      "views/modals/auth-sync.html"
+    ]
+  },
+  "css": [
+    "css/01-core.css",
+    "css/02-stats.css",
+    "css/03-habits.css",
+    "css/04-notes.css",
+    "css/05-reading-home.css",
+    "css/06-responsive.css",
+    "css/07-inventory.css",
+    "css/08-history-maps.css"
+  ],
+  "js": [
+    "js/core/01-firebase-data.js",
+    "js/core/02-canonical-history-sync.js",
+    "js/core/03-navigation-entry-search.js",
+    "js/features/04-home-plan.js",
+    "js/features/05-library-notes.js",
+    "js/features/06-year-stats.js",
+    "js/features/07-import-recovery.js",
+    "js/features/08-reading-progress.js",
+    "js/core/09-auth-runtime.js",
+    "js/features/10-habits.js",
+    "js/features/11-maps-influences.js",
+    "js/features/12-routes-graphs.js",
+    "js/features/13-movies-normalization.js",
+    "js/features/14-reading-export.js",
+    "js/features/15-manga.js",
+    "js/features/16-inventory.js",
+    "js/core/17-sync-v2.js",
+    "js/core/18-local-persistence-actions.js"
+  ]
+}

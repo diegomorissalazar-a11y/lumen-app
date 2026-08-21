@@ -1,0 +1,20 @@
+/* ── MAPA HISTÓRICO v171 ── */
+.hist-map-toolbar{padding:9px 12px;display:flex;gap:7px;align-items:center;flex-wrap:wrap;border-bottom:1px solid var(--border);background:#faf8f4;flex-shrink:0}
+.hist-map-summary{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:7px 12px;background:var(--cream2);border-bottom:1px solid var(--border);font-size:10px;color:var(--ink3);letter-spacing:.5px;flex-shrink:0}
+.hist-map-summary strong{color:var(--ink);font-size:11px}.hist-summary-dot{color:var(--gold)}
+.hist-timeline-scroll{flex:1;overflow:auto;background:var(--cream);padding:16px 12px 30px;-webkit-overflow-scrolling:touch}
+.hist-timeline{position:relative;min-height:280px;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:var(--shadow);overflow:visible}
+.hist-axis{position:absolute;top:48px;height:2px;background:var(--ink3)}
+.hist-axis-tick{position:absolute;top:39px;width:1px;height:18px;background:var(--border)}
+.hist-axis-label{position:absolute;top:15px;transform:translateX(-50%);font-size:10px;color:var(--ink4);white-space:nowrap;font-weight:700}
+.hist-line-row{position:relative;border-top:1px solid var(--cream2);min-height:66px}.hist-line-row:first-of-type{border-top:none}
+.hist-line-label{position:absolute;left:8px;top:9px;width:124px;z-index:4;font-size:10px;font-weight:700;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
+.hist-line-label:hover{color:var(--gold);text-decoration:underline;text-decoration-style:dotted}
+.hist-line-guide{position:absolute;top:28px;border-top:1px dashed var(--cream3);z-index:0}
+.hist-book-bar{position:absolute;height:34px;min-width:16px;border:2px solid var(--gold);background:#fff8e8;border-radius:6px;padding:4px 7px;cursor:pointer;box-shadow:0 1px 4px rgba(26,21,16,.10);overflow:hidden;white-space:nowrap;text-overflow:ellipsis;z-index:2;font-size:10px;color:var(--ink2)}
+.hist-book-bar.read{background:#e8f0e8;border-color:var(--green)}.hist-book-bar.reading{background:#fff8e8;border-color:var(--gold)}.hist-book-bar.pending{background:#fff;border-color:var(--border);border-style:dashed}.hist-book-bar.inventory{box-shadow:inset 0 -3px 0 rgba(107,58,138,.35),0 1px 4px rgba(26,21,16,.10)}
+.hist-book-title{font-weight:700;overflow:hidden;text-overflow:ellipsis}.hist-book-meta{font-size:8.5px;color:var(--ink3);margin-top:1px;overflow:hidden;text-overflow:ellipsis}
+.hist-undated{margin:10px 12px 0;padding:10px 12px;border:1px dashed var(--border);border-radius:6px;background:#fff;font-size:11px;color:var(--ink3)}
+.hist-empty{padding:50px 20px;text-align:center;color:var(--ink4);font-family:var(--font-serif);font-style:italic}
+.hist-zoom-hint{font-size:9px;color:var(--ink4);margin-left:auto;white-space:nowrap}
+@media(max-width:640px){.hist-map-summary{padding:6px 8px}.hist-line-label{width:92px}.hist-timeline-scroll{padding-left:8px;padding-right:8px}.hist-zoom-hint{width:100%;margin-left:0}.hist-map-toolbar select{max-width:calc(50vw - 18px)!important}}

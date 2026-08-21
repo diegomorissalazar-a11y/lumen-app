@@ -1,0 +1,52 @@
+/* ── GÉNEROS ── */
+.genero-chip {
+  padding:5px 11px; border-radius:20px; border:1.5px solid var(--border);
+  background:#fff; font-size:11px; font-weight:700; letter-spacing:0.5px;
+  cursor:pointer; font-family:var(--font-sans); color:var(--ink3);
+  transition:all 0.15s;
+}
+.genero-chip.active {
+  background:var(--ink); color:var(--cream); border-color:var(--ink);
+}
+/* ── RACHAS ── */
+.racha-widget {
+  margin:0 20px 12px; background:#fff; border:1px solid var(--border);
+  border-radius:8px; padding:14px 16px;
+  display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;
+}
+.racha-box { display:flex; flex-direction:column; align-items:center; gap:2px; }
+.racha-num { font-family:var(--font-serif); font-size:28px; font-weight:700; font-style:italic; color:var(--ink); line-height:1; }
+.racha-label { font-size:9px; letter-spacing:1.5px; text-transform:uppercase; color:var(--ink4); text-align:center; }
+.racha-icon { font-size:18px; margin-bottom:2px; }
+/* ── HEATMAP ── */
+.heatmap-wrap { padding:0 20px 16px; }
+.heatmap-grid { display:grid; grid-template-columns:repeat(53,1fr); gap:2px; margin-top:8px; }
+.heatmap-cell { aspect-ratio:1; border-radius:2px; background:var(--cream3); }
+.heatmap-cell.lvl1 { background:#d4e8d4; }
+.heatmap-cell.lvl2 { background:#8ec98e; }
+.heatmap-cell.lvl3 { background:#4a9e6b; }
+.heatmap-cell.lvl4 { background:#1a6e3c; }
+/* ── HEATMAP SEMANAL META ── */
+.weekly-meta-wrap { background:#fff; border:1px solid var(--border); border-radius:8px; padding:14px 16px; box-shadow:var(--shadow); }
+.weekly-meta-grid { display:grid; grid-template-columns:repeat(13,1fr); gap:5px; margin-top:12px; }
+.weekly-meta-cell { aspect-ratio:1.35; min-height:26px; border-radius:5px; border:1px solid rgba(26,21,16,0.08); cursor:pointer; position:relative; transition:transform .12s ease, box-shadow .12s ease; }
+.weekly-meta-cell:hover { transform:translateY(-1px); box-shadow:0 2px 8px rgba(26,21,16,0.12); }
+.weekly-meta-cell.current { outline:2px solid var(--ink); outline-offset:1px; }
+.weekly-meta-summary { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:10px; }
+.weekly-meta-legend { display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-top:10px; }
+.weekly-meta-legend span { font-size:10px; color:var(--ink4); }
+.weekly-meta-swatch { width:13px; height:13px; border-radius:3px; border:1px solid var(--border); }
+@media (max-width: 640px) {
+  .weekly-meta-grid { grid-template-columns:repeat(8,1fr); gap:4px; }
+  .weekly-meta-cell { min-height:24px; }
+  .weekly-meta-summary { grid-template-columns:repeat(2,1fr); }
+}
+
+/* ── COMPARADOR ── */
+.comparador-cols { display:grid; grid-template-columns:1fr 1fr; gap:12px; padding:0 20px 16px; }
+.comparador-col { background:#fff; border:1px solid var(--border); border-radius:8px; padding:12px; }
+.comparador-year-label { font-family:var(--font-serif); font-size:18px; font-weight:700; margin-bottom:8px; color:var(--ink); }
+.comparador-kpi { display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px solid var(--cream2); font-size:12px; }
+.comparador-kpi-label { color:var(--ink4); }
+.comparador-kpi-val { font-weight:700; color:var(--ink); }
+

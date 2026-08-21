@@ -1,0 +1,97 @@
+<!-- ══════ MODAL: IMPORTAR ══════ -->
+<div id="modal-import" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title">Importar datos</div>
+      <button class="btn-icon" onclick="closeModal('modal-import')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--ink3);margin-bottom:16px;line-height:1.6;">
+        Importa tu historial desde una planilla de Google Sheets exportada como CSV, o desde un archivo JSON de respaldo.
+      </p>
+      <div class="import-zone" onclick="document.getElementById('import-csv').click()">
+        <div class="import-zone-icon">📊</div>
+        <div class="import-zone-text"><strong>CSV desde Google Sheets</strong><br>Exporta tu planilla como .csv y súbela aquí</div>
+      </div>
+      <input type="file" id="import-csv" accept=".csv,.json" style="display:none" onchange="handleImport(event)">
+      <div class="divider"></div>
+      <div style="font-family:var(--font-serif);font-style:italic;font-size:14px;color:var(--ink2);margin-bottom:6px;">Columnas reconocidas de tu planilla</div>
+      <p style="font-size:12px;color:var(--ink3);margin-bottom:10px;line-height:1.6;">
+        La app reconoce automáticamente la estructura de tu Google Sheets. Exporta cada pestaña (Libros, Películas, Series) como CSV separado, o todo en uno. Las columnas detectadas son:
+      </p>
+      <div style="background:#fff;border:1px solid var(--border);border-radius:4px;padding:12px;font-size:10.5px;color:var(--ink3);font-family:monospace;line-height:2;overflow-x:auto;">
+        <span style="color:var(--ink);font-weight:700;">Serie ID</span> · <span style="color:var(--red);font-weight:700;">Categoría</span> · <span style="color:var(--ink);font-weight:700;">Nombre</span> · Temporada/Saga<br>
+        <span style="color:var(--red);font-weight:700;">Autor/Director</span> · LEN · <span style="color:var(--red);font-weight:700;">Publicación</span> · <span style="color:var(--red);font-weight:700;">Año de Lec</span> · <span style="color:var(--red);font-weight:700;">Mes de Lec</span> · N° Mes<br>
+        Traductor · <span style="color:var(--red);font-weight:700;">Editorial</span> · <span style="color:var(--red);font-weight:700;">Páginas / Minutos totales</span><br>
+        Guion · <span style="color:var(--red);font-weight:700;">Música</span> · Fotografía · <span style="color:var(--red);font-weight:700;">Protagonista</span><br>
+        Basado en · Título · Idea Original · Colección · Dirigida por
+      </div>
+      <p style="font-size:11px;color:var(--ink4);margin-top:8px;">Las columnas en <span style="color:var(--red);font-weight:700;">rojo</span> son las que se importan. "No aplica" se omite automáticamente.</p>
+      <div class="divider"></div>
+      <button class="btn btn-primary" onclick="recuperarLecturasDesdeChat()" style="margin-bottom:8px;">🧩 Recuperar lecturas históricas desde chat</button>
+      <p style="font-size:11px;color:var(--ink4);margin:-2px 0 10px;line-height:1.5;">Fusiona los registros de lectura reconstruidos desde el export del 22-06 y conserva la lectura nueva de Chéjov del 27-06. Antes de fusionar guarda un respaldo local automático.</p>
+      <button class="btn btn-secondary" onclick="openReadingConsistencyReport()" style="margin-bottom:8px;">🩺 Revisar consistencia de lectura</button>
+      <button class="btn btn-secondary" onclick="repairReadingConsistencyBasic()" style="margin-bottom:8px;">🛠 Reparar campos básicos de lectura</button>
+      <p style="font-size:11px;color:var(--ink4);margin:-2px 0 10px;line-height:1.5;">Detecta libros con progreso sin historial, retrocesos de página, registros de 0 páginas y diferencias entre progreso, página actual y última marca diaria. La reparación básica normaliza campos sin inventar historial.</p>
+      <button class="btn btn-primary" onclick="exportarRespaldoIntegral()" style="margin-bottom:8px;">🛡 Exportar respaldo integral</button>
+      <p style="font-size:11px;color:var(--ink4);margin:-2px 0 10px;line-height:1.5;">Incluye biblioteca, inventario, mapas, rutas, desafíos, configuraciones y demás bloques locales de LUMEN. Las portadas base64 se reemplazan por un placeholder.</p>
+      <button class="btn btn-secondary" onclick="openIntegralRestorePicker()" style="margin-bottom:8px;">♻️ Restaurar respaldo integral</button>
+      <input type="file" id="integral-restore-input" accept=".json,application/json" style="display:none" onchange="handleIntegralRestoreFile(event)">
+      <p style="font-size:11px;color:var(--ink4);margin:-2px 0 10px;line-height:1.5;">Valida el archivo, muestra un resumen y permite elegir qué bloques restaurar. Antes de aplicar, LUMEN descarga un respaldo de seguridad automático.</p>
+      <button class="btn btn-secondary" onclick="exportJSON()" style="margin-bottom:8px;">⬇ Exportar todo (JSON)</button>
+      <button class="btn btn-secondary" onclick="exportarCSVHistoricoCompleto()" style="margin-bottom:8px;">📦 Exportar CSV histórico completo</button>
+      <button class="btn btn-secondary" onclick="clearAll()">🗑 Limpiar todos los datos</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════ MODAL: RESTAURAR RESPALDO INTEGRAL ══════ -->
+<div id="modal-integral-restore" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title">Restaurar respaldo integral</div>
+      <button class="btn-icon" onclick="closeModal('modal-integral-restore')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div id="integral-restore-summary"></div>
+      <div id="integral-restore-blocks" style="margin-top:12px;"></div>
+      <div style="background:#fff7e6;border:1px solid #e3c98f;border-radius:5px;padding:10px 12px;font-size:11px;line-height:1.5;color:var(--ink2);margin:14px 0;">Antes de restaurar se descargará automáticamente un respaldo de seguridad del estado actual. Las portadas marcadas como <code>__local_image__</code> conservarán la imagen local existente cuando sea posible.</div>
+      <button id="integral-restore-confirm" class="btn btn-primary" onclick="confirmIntegralRestore()">Restaurar bloques seleccionados</button>
+      <button class="btn btn-secondary" onclick="closeModal('modal-integral-restore')" style="margin-top:8px;">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ MODAL: IMPORTAR INVENTARIO ══════ -->
+<!-- ══════ MODAL: DATOS DE INVENTARIO v167 ══════ -->
+<div id="modal-inventory-data" class="modal-overlay">
+  <div class="modal" style="max-height:90dvh;">
+    <div class="modal-handle"></div>
+    <div class="modal-header"><div><div class="modal-title">📊 Datos del inventario</div><div style="font-size:10px;color:var(--ink4);margin-top:3px;letter-spacing:1px;text-transform:uppercase;">Biblioteca física</div></div><button class="btn-icon" onclick="closeModal('modal-inventory-data')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+    <div class="modal-body" id="inventory-data-body"></div>
+  </div>
+</div>
+
+<div id="modal-inventory-import" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title">Importar inventario físico</div>
+      <button class="btn-icon" onclick="closeModal('modal-inventory-import')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--ink3);line-height:1.6;margin-bottom:14px;">Carga un CSV con cuatro columnas: <strong>ID, Título, Autor y Editorial</strong>. Antes de guardar, LUMEN revisará coincidencias y posibles ediciones distintas.</p>
+      <div class="import-zone" onclick="document.getElementById('inventory-csv-input').click()">
+        <div class="import-zone-icon">📚</div>
+        <div class="import-zone-text"><strong>Seleccionar CSV de inventario</strong><br>No modifica el historial de lectura.</div>
+      </div>
+      <input type="file" id="inventory-csv-input" accept=".csv,text/csv" style="display:none" onchange="handleInventoryCSV(event)">
+      <div id="inventory-import-preview" style="margin-top:14px;"></div>
+      <button id="inventory-import-confirm" class="btn btn-primary" style="display:none;margin-top:12px;" onclick="confirmInventoryImport()">Confirmar importación</button>
+    </div>
+  </div>
+</div>
+

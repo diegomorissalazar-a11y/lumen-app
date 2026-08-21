@@ -1,0 +1,172 @@
+<!-- ══════ MODAL: AÑADIR RUTA ══════ -->
+<div id="modal-ruta" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title">Nueva conexión de lectura</div>
+      <button class="btn-icon" onclick="closeModal('modal-ruta')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="ruta-edit-id">
+
+      <!-- Tipo de conexión -->
+      <div class="field">
+        <label>¿Qué te llevó al libro?</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:4px;">
+          <button class="ruta-tipo-conexion active" data-tipo="mismo_autor"
+            onclick="selectRutaTipoConexion('mismo_autor',this)"
+            style="padding:10px 6px;border:2px solid var(--gold);border-radius:4px;background:#fff8e8;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font-sans);color:var(--gold);text-align:center;">
+            ✍<br>Mismo autor
+          </button>
+          <button class="ruta-tipo-conexion" data-tipo="libro"
+            onclick="selectRutaTipoConexion('libro',this)"
+            style="padding:10px 6px;border:2px solid var(--border);border-radius:4px;background:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font-sans);color:var(--ink3);text-align:center;">
+            📚<br>Libro
+          </button>
+          <button class="ruta-tipo-conexion" data-tipo="charla"
+            onclick="selectRutaTipoConexion('charla',this)"
+            style="padding:10px 6px;border:2px solid var(--border);border-radius:4px;background:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font-sans);color:var(--ink3);text-align:center;">
+            🎙<br>Conferencia
+          </button>
+          <button class="ruta-tipo-conexion" data-tipo="entrevista"
+            onclick="selectRutaTipoConexion('entrevista',this)"
+            style="padding:10px 6px;border:2px solid var(--border);border-radius:4px;background:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font-sans);color:var(--ink3);text-align:center;">
+            🎤<br>Entrevista
+          </button>
+          <button class="ruta-tipo-conexion" data-tipo="serie"
+            onclick="selectRutaTipoConexion('serie',this)"
+            style="padding:10px 6px;border:2px solid var(--border);border-radius:4px;background:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font-sans);color:var(--ink3);text-align:center;">
+            📺<br>Serie
+          </button>
+          <button class="ruta-tipo-conexion" data-tipo="pelicula"
+            onclick="selectRutaTipoConexion('pelicula',this)"
+            style="padding:10px 6px;border:2px solid var(--border);border-radius:4px;background:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font-sans);color:var(--ink3);text-align:center;">
+            🎬<br>Película
+          </button>
+          <button class="ruta-tipo-conexion" data-tipo="persona"
+            onclick="selectRutaTipoConexion('persona',this)"
+            style="padding:10px 6px;border:2px solid var(--border);border-radius:4px;background:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font-sans);color:var(--ink3);text-align:center;">
+            👤<br>Persona
+          </button>
+          <button class="ruta-tipo-conexion" data-tipo="cancion"
+            onclick="selectRutaTipoConexion('cancion',this)"
+            style="padding:10px 6px;border:2px solid var(--border);border-radius:4px;background:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font-sans);color:var(--ink3);text-align:center;">
+            🎵<br>Canción
+          </button>
+          <button class="ruta-tipo-conexion" data-tipo="podcast"
+            onclick="selectRutaTipoConexion('podcast',this)"
+            style="padding:10px 6px;border:2px solid var(--border);border-radius:4px;background:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font-sans);color:var(--ink3);text-align:center;">
+            🎧<br>Podcast
+          </button>
+        </div>
+        <input type="hidden" id="ruta-tipo" value="mismo_autor">
+      </div>
+
+      <!-- PANEL: mismo autor -->
+      <div id="ruta-panel-mismo-autor">
+        <div class="field">
+          <label>Autor</label>
+          <select class="input" id="ruta-autor-sel" onchange="onRutaAutorChange()">
+            <option value="">— Selecciona un autor —</option>
+          </select>
+        </div>
+        <div id="ruta-autor-libros" style="display:none;">
+          <div style="font-size:11px;color:var(--ink4);letter-spacing:1.5px;text-transform:uppercase;font-weight:700;margin-bottom:6px;">Libros de este autor en tu biblioteca</div>
+          <div id="ruta-autor-libros-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px;"></div>
+          <div style="font-size:11px;color:var(--ink4);margin-bottom:4px;">Selecciona los dos libros a conectar:</div>
+          <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;margin-bottom:4px;">
+            <select class="input" id="ruta-mismo-fuente" style="font-size:13px;"></select>
+            <span style="font-size:18px;color:var(--ink4);">→</span>
+            <select class="input" id="ruta-mismo-destino" style="font-size:13px;"></select>
+          </div>
+          <div style="font-size:11px;color:var(--ink4);margin-bottom:8px;">Origen → Destino (el orden que seguiste)</div>
+        </div>
+      </div>
+
+      <!-- PANEL: fuente dinámica -->
+      <div id="ruta-panel-fuente" style="display:none;">
+        <div class="field">
+          <label id="ruta-fuente-label">Fuente</label>
+          <select class="input" id="ruta-fuente-sel" onchange="onRutaFuenteSelChange()" style="margin-bottom:8px;">
+            <option value="">— Selecciona o escribe abajo —</option>
+          </select>
+          <input class="input" type="text" id="ruta-fuente-libre"
+            placeholder="No está en la lista, escribe aquí..."
+            style="display:none;"
+            oninput="onRutaFuenteLibreInput()">
+          <div id="ruta-fuente-libre-hint" style="display:none;font-size:11px;color:var(--gold);margin-top:4px;">
+            ✓ Se guardará como nodo reutilizable
+          </div>
+        </div>
+        <!-- Campo extra para canción -->
+        <div id="ruta-cancion-field" style="display:none;" class="field">
+          <label>Canción (opcional)</label>
+          <input class="input" type="text" id="ruta-cancion-titulo"
+            placeholder="Nombre de la canción...">
+        </div>
+        <!-- Campo extra para charla/conferencia -->
+        <div id="ruta-charla-field" style="display:none;" class="field">
+          <label>Nombre de la charla o entrevista (opcional)</label>
+          <input class="input" type="text" id="ruta-charla-titulo"
+            placeholder="Título de la charla, podcast, entrevista...">
+        </div>
+        <!-- Campos entrevista: programa + nombre -->
+        <div id="ruta-programa-field" style="display:none;" class="field">
+          <label>Programa</label>
+          <select class="input" id="ruta-programa-sel" onchange="onProgramaSelChange()" style="margin-bottom:6px;">
+            <option value="">— Sin programa —</option>
+          </select>
+          <input class="input" type="text" id="ruta-programa-libre"
+            placeholder="Ej: A Fondo, La Belleza de Pensar..."
+            style="display:none;">
+          <div id="ruta-programa-hint" style="display:none;font-size:11px;color:var(--gold);margin-top:4px;">
+            ✓ Se guardará como programa reutilizable
+          </div>
+        </div>
+        <div id="ruta-entrevista-field" style="display:none;" class="field">
+          <label>Nombre de la entrevista (opcional)</label>
+          <input class="input" type="text" id="ruta-entrevista-titulo"
+            placeholder="Título o tema de la entrevista...">
+        </div>
+        <!-- Campo extra para podcast -->
+        <div id="ruta-podcast-field" style="display:none;" class="field">
+          <label>Host / Creador del podcast (opcional)</label>
+          <input class="input" type="text" id="ruta-podcast-host"
+            placeholder="Nombre de quien lo conduce o creó...">
+        </div>
+        <!-- Sub-opción para persona: regalo o recomendación -->
+        <div id="ruta-persona-field" style="display:none;" class="field">
+          <label>Tipo</label>
+          <div style="display:flex;gap:8px;">
+            <button type="button" class="ruta-persona-sub active" data-sub="recomendacion"
+              onclick="selectPersonaSub('recomendacion',this)"
+              style="flex:1;padding:8px;border:2px solid var(--gold);border-radius:4px;background:#fff8e8;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font-sans);color:var(--gold);">
+              💬 Recomendación
+            </button>
+            <button type="button" class="ruta-persona-sub" data-sub="regalo"
+              onclick="selectPersonaSub('regalo',this)"
+              style="flex:1;padding:8px;border:2px solid var(--border);border-radius:4px;background:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font-sans);color:var(--ink3);">
+              🎁 Regalo
+            </button>
+          </div>
+          <input type="hidden" id="ruta-persona-sub-val" value="recomendacion">
+        </div>
+      </div>
+
+      <!-- Libro destino -->
+      <div class="field" id="ruta-destino-field" style="display:none;">
+        <label>Libro al que llegué</label>
+        <select class="input" id="ruta-destino-sel">
+          <option value="">— Selecciona el libro —</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Nota (opcional)</label>
+        <textarea class="input" id="ruta-nota" rows="2" placeholder="¿Qué te conectó a estos libros?" style="resize:vertical;font-family:var(--font-serif);font-size:13px;"></textarea>
+      </div>
+      <button class="btn btn-primary" onclick="saveRuta()">Guardar conexión</button>
+    </div>
+  </div>
+</div>
+

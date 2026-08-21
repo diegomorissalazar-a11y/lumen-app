@@ -1,0 +1,36 @@
+<!-- ══════ MODAL: NOTA ══════ -->
+<div id="modal-nota" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title" id="nota-modal-title">Nueva nota</div>
+      <button class="btn-icon" onclick="closeModal('modal-nota')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="nota-entry-id">
+      <input type="hidden" id="nota-nota-id">
+      <div class="field">
+        <label>Título</label>
+        <input class="input" type="text" id="nota-titulo" placeholder="Ej: Reflexión sobre el capítulo 3">
+      </div>
+      <div class="field">
+        <label>Fecha</label>
+        <input class="input" type="date" id="nota-fecha">
+      </div>
+      <div class="field">
+        <label>Nota</label>
+        <div class="nota-toolbar" aria-label="Formato de nota">
+          <button type="button" onclick="formatNotaSelection('bold')" title="Negrita"><strong>B</strong></button>
+          <button type="button" onclick="formatNotaSelection('italic')" title="Cursiva"><em>I</em></button>
+          <button type="button" onclick="formatNotaSelection('underline')" title="Subrayado"><u>U</u></button>
+          <button type="button" class="nota-tool-wide" onclick="formatNotaSelection('numbered')" title="Lista numerada">1.</button>
+          <button type="button" class="nota-tool-wide" onclick="formatNotaSelection('roman')" title="Lista romana">I.</button>
+        </div>
+        <textarea class="input" id="nota-texto" rows="7" placeholder="Escribe o pega tu apunte aquí..." style="resize:vertical;line-height:1.6;font-family:var(--font-serif);font-size:14px;"></textarea>
+        <div style="font-size:11px;color:var(--ink4);margin-top:5px;line-height:1.5;">Puedes seleccionar texto y aplicar negrita, cursiva, subrayado, listas 1. y listas romanas I. Las numeraciones escritas a mano también se conservan.</div>
+      </div>
+      <button class="btn btn-primary" onclick="saveNota()">Guardar nota</button>
+    </div>
+  </div>
+</div>
+

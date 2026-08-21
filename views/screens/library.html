@@ -1,0 +1,27 @@
+<!-- ══════ SCREEN: BIBLIOTECA ══════ -->
+<div id="screen-library" class="screen">
+  <div class="topbar">
+    <div>
+      <div class="topbar-logo">LUMEN</div>
+      <div class="topbar-sub">Biblioteca</div>
+    </div>
+    <button class="btn btn-sm" style="background:var(--red);color:var(--cream);width:auto;font-size:11px;letter-spacing:1px;" onclick="openAddModal()">+ Añadir</button>
+  </div>
+  <div style="padding:12px 20px 8px;">
+    <div class="stats-seg" id="lib-seg" style="grid-template-columns:repeat(5,1fr);">
+      <button class="stats-seg-btn active" data-tab="todos"    onclick="filterLib('todos',this)">Todos</button>
+      <button class="stats-seg-btn"        data-tab="libro"    onclick="filterLib('libro',this)">📚 Libros</button>
+      <button class="stats-seg-btn"        data-tab="pelicula" onclick="filterLib('pelicula',this)">🎬 Pelícs.</button>
+      <button class="stats-seg-btn"        data-tab="serie"    onclick="filterLib('serie',this)">📺 Series</button>
+      <button class="stats-seg-btn"        data-tab="inventario" onclick="filterLib('inventario',this)">📦 Inventario</button>
+      <button class="stats-seg-btn"        data-tab="disco"    onclick="filterLib('disco',this)">💿 Discos</button>
+      <button class="stats-seg-btn"        data-tab="manga"    onclick="filterLib('manga',this)">📖 Mangas</button>
+      <button class="stats-seg-btn"        data-tab="notas"    onclick="filterLib('notas',this)">📝 Notas</button>
+    </div>
+  </div>
+  <div style="padding:0 20px 4px;">
+    <input class="input" type="text" id="lib-search" placeholder="Buscar en mi biblioteca..." oninput="renderLibrary()">
+  </div>
+  <div id="library-list" style="padding:4px 20px;"></div>
+</div>
+

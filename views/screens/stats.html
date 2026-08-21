@@ -1,0 +1,284 @@
+<!-- ══════ SCREEN: STATS ══════ -->
+<div id="screen-stats" class="screen">
+  <div class="topbar">
+    <div class="topbar-logo">LUMEN</div>
+    <div class="topbar-sub">Estadísticas</div>
+  </div>
+
+  <!-- SEGMENTADOR PRINCIPAL -->
+  <div style="padding:14px 20px 0;">
+    <div class="stats-seg" id="stats-seg">
+      <button class="stats-seg-btn active" data-seg="libros" onclick="switchStatsSeg('libros',this)">📚 Libros</button>
+      <button class="stats-seg-btn" data-seg="peliculas" onclick="switchStatsSeg('peliculas',this)">🎬 Películas</button>
+      <button class="stats-seg-btn" data-seg="series" onclick="switchStatsSeg('series',this)">📺 Series</button>
+      <button class="stats-seg-btn" data-seg="discos" onclick="switchStatsSeg('discos',this)">💿 Discos</button>
+      <button class="stats-seg-btn" data-seg="mangas" onclick="switchStatsSeg('mangas',this)">📖 Mangas</button>
+      <button class="stats-seg-btn" data-seg="global" onclick="switchStatsSeg('global',this)">🌐 Global</button>
+    </div>
+  </div>
+
+  <!-- ── PANEL LIBROS ── -->
+  <div class="stats-panel active" id="spanel-libros">
+
+    <!-- Navegador de año -->
+    <div class="stats-year-nav">
+      <button class="stats-year-btn" onclick="changeStatsYear('libros',-1)">
+        <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.5;"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <div style="text-align:center;">
+        <div class="stats-year-label" id="lb-year-label">Todos los años</div>
+        <div id="lb-vs-best" style="font-size:11px;color:var(--ink4);margin-top:2px;"></div>
+      </div>
+      <button class="stats-year-btn" onclick="changeStatsYear('libros',1)">
+        <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.5;"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+    </div>
+
+    <div style="padding:0 20px 20px;">
+      <!-- KPIs -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;" id="lb-kpis"></div>
+
+      <!-- Gráficos con toggle de vista -->
+      <div class="chart-section-header">
+        <div class="chart-section-title">Por mes</div>
+        <div class="chart-mode-pills" id="lb-chart-mode-pills">
+          <button class="chart-mode-pill active" onclick="setLbChartMode('pags',this)">Páginas</button>
+          <button class="chart-mode-pill" onclick="setLbChartMode('cantidad',this)">Libros</button>
+          <button class="chart-mode-pill" onclick="setLbChartMode('ritmo',this)">Ritmo</button>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="lb-chart-mes"></canvas></div>
+
+      <div class="divider"></div>
+
+      <!-- Rankings interactivos -->
+      <div class="chart-section-title" style="margin-bottom:4px;">Rankings interactivos</div>
+      <p style="font-size:11px;color:var(--ink4);margin-bottom:10px;">Toca un elemento para filtrar todos los rankings y la tabla.</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+        <div><div class="stat-sublabel">Autores</div><div id="lb-top-autor" class="top-interactive"></div></div>
+        <div><div class="stat-sublabel">Editoriales</div><div id="lb-top-editorial" class="top-interactive"></div></div>
+        <div><div class="stat-sublabel">Traductores</div><div id="lb-top-traductor" class="top-interactive"></div></div>
+        <div><div class="stat-sublabel">Idioma original</div><div id="lb-top-idioma" class="top-interactive"></div></div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Tabla paginada -->
+      <div class="chart-section-title" style="margin-bottom:8px;">Todos los libros</div>
+      <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;">
+        <button class="sort-pill active" onclick="sortLibros('anio_pub',this)">Año pub.</button>
+        <button class="sort-pill" onclick="sortLibros('autor',this)">Autor</button>
+        <button class="sort-pill" onclick="sortLibros('titulo',this)">Título</button>
+        <button class="sort-pill" onclick="sortLibros('paginas',this)">Páginas</button>
+      </div>
+      <div id="lb-active-filter" style="margin-bottom:8px;"></div>
+      <div id="lb-tabla" style="overflow-x:auto;"></div>
+      <div id="lb-pagination" class="table-pagination"></div>
+
+      <div class="divider"></div>
+
+      <!-- Scatter -->
+      <div class="chart-section-title" style="margin-bottom:4px;">Libros en el tiempo (publicación)</div>
+      <p style="font-size:11px;color:var(--ink4);margin-bottom:8px;">Cada punto es un libro. Pasa el cursor para ver título y autor.</p>
+      <div style="position:relative;height:260px;margin-bottom:8px;"><canvas id="lb-chart-scatter"></canvas></div>
+
+      <div class="divider"></div>
+      <div id="lb-curiosidades"></div>
+    </div>
+  </div>
+
+  <!-- ── PANEL PELÍCULAS ── -->
+  <div class="stats-panel" id="spanel-peliculas">
+
+    <div class="stats-year-nav">
+      <button class="stats-year-btn" onclick="changeStatsYear('peliculas',-1)">
+        <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.5;"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <div style="text-align:center;">
+        <div class="stats-year-label" id="pl-year-label">Todos los años</div>
+        <div id="pl-vs-best" style="font-size:11px;color:var(--ink4);margin-top:2px;"></div>
+      </div>
+      <button class="stats-year-btn" onclick="changeStatsYear('peliculas',1)">
+        <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.5;"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+    </div>
+
+    <div style="padding:0 20px 20px;">
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;" id="pl-kpis"></div>
+
+      <div class="chart-section-header">
+        <div class="chart-section-title">Por mes</div>
+        <div class="chart-mode-pills" id="pl-chart-mode-pills">
+          <button class="chart-mode-pill active" onclick="setPlChartMode('cantidad',this)">Cantidad</button>
+          <button class="chart-mode-pill" onclick="setPlChartMode('minutos',this)">Minutos</button>
+          <button class="chart-mode-pill" onclick="setPlChartMode('promedio',this)">Promedio</button>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="pl-chart-mes"></canvas></div>
+
+      <div class="divider"></div>
+
+      <div class="chart-section-title" style="margin-bottom:4px;">Rankings interactivos</div>
+      <p style="font-size:11px;color:var(--ink4);margin-bottom:10px;">Toca un nombre para filtrar todos los rankings y la tabla.</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+        <div><div class="stat-sublabel">Directores</div><div id="pl-top-director" class="top-interactive"></div></div>
+        <div><div class="stat-sublabel">Guionistas</div><div id="pl-top-guion" class="top-interactive"></div></div>
+        <div><div class="stat-sublabel">Música / BSO</div><div id="pl-top-musica" class="top-interactive"></div></div>
+        <div><div class="stat-sublabel">Fotografía</div><div id="pl-top-foto" class="top-interactive"></div></div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="chart-section-title" style="margin-bottom:8px;">Todas las películas</div>
+      <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;">
+        <button class="sort-pill active" onclick="sortPeliculas('anio_est',this)">Año estreno</button>
+        <button class="sort-pill" onclick="sortPeliculas('director',this)">Director</button>
+        <button class="sort-pill" onclick="sortPeliculas('duracion',this)">Duración</button>
+        <button class="sort-pill" onclick="sortPeliculas('titulo',this)">Título</button>
+      </div>
+      <div id="pl-active-filter" style="margin-bottom:8px;"></div>
+      <div id="pl-tabla" style="overflow-x:auto;"></div>
+      <div id="pl-pagination" class="table-pagination"></div>
+
+      <div class="divider"></div>
+      <div class="chart-section-title" style="margin-bottom:4px;">Películas en el tiempo (estreno)</div>
+      <p style="font-size:11px;color:var(--ink4);margin-bottom:8px;">Cada punto es una película. Pasa el cursor para ver título y director.</p>
+      <div style="position:relative;height:240px;margin-bottom:8px;"><canvas id="pl-chart-scatter"></canvas></div>
+      <div class="divider"></div>
+      <div id="pl-curiosidades"></div>
+    </div>
+  </div>
+
+  <!-- ── PANEL SERIES ── -->
+  <div class="stats-panel" id="spanel-series">
+
+    <div class="stats-year-nav">
+      <button class="stats-year-btn" onclick="changeStatsYear('series',-1)">
+        <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.5;"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <div style="text-align:center;">
+        <div class="stats-year-label" id="sr-year-label">Todos los años</div>
+        <div id="sr-vs-best" style="font-size:11px;color:var(--ink4);margin-top:2px;"></div>
+      </div>
+      <button class="stats-year-btn" onclick="changeStatsYear('series',1)">
+        <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.5;"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+    </div>
+
+    <div style="padding:0 20px 20px;">
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:16px;" id="sr-kpis"></div>
+
+      <div class="chart-section-header">
+        <div class="chart-section-title">Por mes</div>
+        <div class="chart-mode-pills" id="sr-chart-mode-pills">
+          <button class="chart-mode-pill active" onclick="setSrChartMode('cantidad',this)">Cantidad</button>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="sr-chart-mes"></canvas></div>
+
+      <div class="divider"></div>
+
+      <div class="chart-section-title" style="margin-bottom:4px;">Rankings interactivos</div>
+      <p style="font-size:11px;color:var(--ink4);margin-bottom:10px;">Toca un nombre para filtrar todos los rankings y la tabla.</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+        <div><div class="stat-sublabel">Directores</div><div id="sr-top-director" class="top-interactive"></div></div>
+        <div><div class="stat-sublabel">Guionistas</div><div id="sr-top-guion" class="top-interactive"></div></div>
+        <div><div class="stat-sublabel">Música / BSO</div><div id="sr-top-musica" class="top-interactive"></div></div>
+        <div><div class="stat-sublabel">Protagonistas</div><div id="sr-top-protagonista" class="top-interactive"></div></div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="chart-section-title" style="margin-bottom:8px;">Todas las series</div>
+      <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;">
+        <button class="sort-pill active" onclick="sortSeries('anio_est',this)">Año estreno</button>
+        <button class="sort-pill" onclick="sortSeries('director',this)">Creador</button>
+        <button class="sort-pill" onclick="sortSeries('duracion',this)">Duración</button>
+        <button class="sort-pill" onclick="sortSeries('titulo',this)">Título</button>
+      </div>
+      <div id="sr-active-filter" style="margin-bottom:8px;"></div>
+      <div id="sr-tabla" style="overflow-x:auto;"></div>
+      <div id="sr-pagination" class="table-pagination"></div>
+
+      <div class="divider"></div>
+      <div class="chart-section-title" style="margin-bottom:4px;">Series por año de estreno</div>
+      <p style="font-size:11px;color:var(--ink4);margin-bottom:8px;">Cada punto es una serie. Eje Y = temporadas. Hover para ver título.</p>
+      <div style="position:relative;height:240px;margin-bottom:8px;"><canvas id="sr-chart-scatter"></canvas></div>
+      <div class="divider"></div>
+      <div id="sr-curiosidades"></div>
+    </div>
+  </div>
+
+
+  <!-- ── PANEL DISCOS ── -->
+  <div class="stats-panel" id="spanel-discos">
+    <div class="stats-year-nav">
+      <button class="stats-year-btn" onclick="changeStatsYear('discos',-1)">
+        <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.5;"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <div style="text-align:center;">
+        <div class="stats-year-label" id="ds-year-label">Todos los años</div>
+        <div id="ds-vs-best" style="font-size:11px;color:var(--ink4);margin-top:2px;"></div>
+      </div>
+      <button class="stats-year-btn" onclick="changeStatsYear('discos',1)">
+        <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.5;"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+    </div>
+    <div style="padding:0 20px 20px;">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:16px;" id="ds-kpis"></div>
+      <div class="chart-section-header">
+        <div class="chart-section-title">Por mes</div>
+      </div>
+      <div class="chart-wrap"><canvas id="ds-chart-mes"></canvas></div>
+      <div class="divider"></div>
+      <div class="chart-section-title" style="margin-bottom:4px;">Rankings interactivos</div>
+      <p style="font-size:11px;color:var(--ink4);margin-bottom:10px;">Toca un nombre para filtrar los rankings y la tabla.</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+        <div><div class="stat-sublabel">Cantantes / grupos</div><div id="ds-top-artista" class="top-interactive"></div></div>
+        <div><div class="stat-sublabel">Productores</div><div id="ds-top-productor" class="top-interactive"></div></div>
+        <div><div class="stat-sublabel">Discográficas</div><div id="ds-top-discografica" class="top-interactive"></div></div>
+        <div><div class="stat-sublabel">Colaboraciones</div><div id="ds-top-colaboraciones" class="top-interactive"></div></div>
+      </div>
+      <div class="divider"></div>
+      <div class="chart-section-title" style="margin-bottom:8px;">Todos los discos</div>
+      <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;">
+        <button class="sort-pill active" onclick="sortDiscos('anio_pub',this)">Año pub.</button>
+        <button class="sort-pill" onclick="sortDiscos('artista',this)">Cantante/grupo</button>
+        <button class="sort-pill" onclick="sortDiscos('titulo',this)">Disco</button>
+        <button class="sort-pill" onclick="sortDiscos('productor',this)">Productor</button>
+      </div>
+      <div id="ds-active-filter" style="margin-bottom:8px;"></div>
+      <div id="ds-tabla" style="overflow-x:auto;"></div>
+      <div id="ds-pagination" class="table-pagination"></div>
+    </div>
+  </div>
+
+
+  <!-- ── PANEL MANGAS ── -->
+  <div class="stats-panel" id="spanel-mangas">
+    <div style="padding:16px 20px 20px;">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:16px;" id="mg-kpis"></div>
+      <div class="chart-section-title" style="margin-bottom:8px;">Mangas terminados por mes</div>
+      <div class="chart-wrap"><canvas id="mg-chart-mes"></canvas></div>
+      <div class="divider"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+        <div><div class="stat-sublabel">Mangakas</div><div id="mg-top-autor" class="top-interactive"></div></div>
+        <div><div class="stat-sublabel">Editoriales</div><div id="mg-top-editorial" class="top-interactive"></div></div>
+      </div>
+      <div class="divider"></div>
+      <div id="mg-curiosidades"></div>
+    </div>
+  </div>
+
+  <!-- ── PANEL GLOBAL ── -->
+  <div class="stats-panel" id="spanel-global">
+    <div style="padding:16px 20px 20px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;" id="gl-kpis"></div>
+      <div class="chart-section-title" style="margin-bottom:8px;">Estímulos por año</div>
+      <div class="chart-wrap"><canvas id="gl-chart-anual"></canvas></div>
+      <div class="divider"></div>
+      <div id="gl-curiosidades"></div>
+    </div>
+  </div>
+</div>
+
