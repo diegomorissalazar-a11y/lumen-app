@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════
-// LUMEN v186 — Inventario: alta/enriquecimiento por JSON bibliográfico
+// LUMEN v187 — Inventario: alta/enriquecimiento por JSON bibliográfico
 // Reutiliza el parser y las entidades canónicas de Bibliografía.
 // ═══════════════════════════════════════════════════════════════
 'use strict';
@@ -56,6 +56,38 @@ function inventoryBookCandidateForPayload(n, authorCandidate = null) {
   return null;
 }
 
+
+function inventoryTitleParts(title) {
+  return String(title || '')
+    .split(/\s*\/\s*/)
+    .map(x => x.trim())
+    .filter(Boolean);
+}
+
+function inventoryContainedWorkCandidates(n, authorEntity = null, excludeBookId = '') {
+  const parts = inventoryTitleParts(n?.titulo || '');
+  if (parts.length < 2) return { parts, matches: [], unresolved: parts };
+  const authorName = authorEntity?.nombreCanonico || authorEntity?.name || n?.autor || '';
+  const books = (db.entries || []).filter(e => e?.type === 'libro' && e.id !== excludeBookId);
+  const used = new Set(), matches = [], unresolved = [];
+  parts.forEach(part => {
+    const pn = canonicalText(part);
+    let best = null;
+    books.forEach(book => {
+      if (used.has(book.id)) return;
+      const bookAuthor = canonicalNameById('aut', book.autorId || '', book.autor || '');
+      if (authorName && bookAuthor && entitySimilarity(authorName, bookAuthor) < 0.90) return;
+      const sim = entitySimilarity(pn, canonicalText(book.titulo || ''));
+      if (!best || sim > best.sim) best = { book, sim };
+    });
+    if (best && best.sim >= 0.90) {
+      used.add(best.book.id);
+      matches.push({ part, book: best.book, sim: best.sim });
+    } else unresolved.push(part);
+  });
+  return { parts, matches, unresolved };
+}
+
 function inventoryEntityPreview(kind, name, label) {
   if (!name) return { label, state: 'empty', text: 'Sin dato' };
   const c = inventoryBestCanonicalCandidate(kind, name);
@@ -92,8 +124,9 @@ function previewInventoryJson() {
     const authorCandidate = inventoryBestCanonicalCandidate('aut', n.autor);
     const publisherCandidate = inventoryBestCanonicalCandidate('edi', n.edicionConsultada?.editorial || '');
     const bookCandidate = inventoryBookCandidateForPayload(n, authorCandidate);
+    const containedCandidates = inventoryContainedWorkCandidates(n, authorCandidate, bookCandidate?.book?.id || '');
     _inventoryBibParsed = n;
-    _inventoryBibPreview = { authorCandidate, publisherCandidate, bookCandidate };
+    _inventoryBibPreview = { authorCandidate, publisherCandidate, bookCandidate, containedCandidates };
 
     const authorP = inventoryEntityPreview('aut', n.autor, 'Autor');
     const pubP = inventoryEntityPreview('edi', n.edicionConsultada?.editorial || '', 'Editorial');
@@ -105,6 +138,11 @@ function previewInventoryJson() {
     rows.push(inventoryPreviewRow(pubP.label, pubP.text, pubP.state));
     if (bookCandidate) rows.push(inventoryPreviewRow('Coincidencia libro', `${bookCandidate.book.titulo} · ${bookCandidate.reason}${bookCandidate.exact?'':' · '+Math.round(bookCandidate.score*100)+'%'}`, 'match'));
     else rows.push(inventoryPreviewRow('Coincidencia libro', 'No se encontró una ficha existente; se creará un libro nuevo.', 'new'));
+    if (containedCandidates.parts.length >= 2) {
+      const found = containedCandidates.matches.map(x => `${x.part} → ${x.book.titulo}`).join(' · ');
+      const missing = containedCandidates.unresolved.length ? ` · Sin vincular: ${containedCandidates.unresolved.join(', ')}` : '';
+      rows.push(inventoryPreviewRow('Obras contenidas', found ? `${found}${missing}` : `No se encontraron obras existentes para ${containedCandidates.parts.join(' / ')}`, containedCandidates.matches.length ? 'match' : 'similar'));
+    }
     if (e.isbn) rows.push(inventoryPreviewRow('ISBN', e.isbn));
     if (e.anio) rows.push(inventoryPreviewRow('Año edición', e.anio));
     if (e.descripcionEdicion || e.numeroEdicion) rows.push(inventoryPreviewRow('Edición', e.descripcionEdicion || e.numeroEdicion));
@@ -185,6 +223,14 @@ function confirmInventoryJsonImport() {
     }
 
     inventoryApplyBibliographyToBook(book, n, canon, authorEntity);
+    const contained = inventoryContainedWorkCandidates(n, authorEntity, book.id);
+    if (contained.parts.length >= 2 && contained.matches.length) {
+      book.inventoryContainer = true;
+      book.containedWorkIds = [...new Set(contained.matches.map(x => x.book.id))];
+      book.inventoryContainerParts = contained.parts;
+      if (isNewBook && book.estado === 'leido') book.estado = 'pendiente';
+      book._updatedAt = Date.now();
+    }
     syncInventoryFromBook(book);
     const ok = saveDB();
     if (ok === false) throw new Error('No se pudo persistir la ficha localmente.');
@@ -194,7 +240,8 @@ function confirmInventoryJsonImport() {
     renderInventory();
     if (currentScreen === 'home') renderHome();
     const authorMsg = n.autor && !authorWasExact && authorEntity ? ` · Autor: ${authorEntity.nombreCanonico}` : '';
-    showToast(`${isNewBook ? '✓ Libro creado' : '✓ Ficha existente enriquecida'} y agregado al inventario${authorMsg}`, 4200);
+    const containedMsg = book.inventoryContainer && book.containedWorkIds?.length ? ` · ${book.containedWorkIds.length} obra(s) vinculada(s)` : '';
+    showToast(`${isNewBook ? '✓ Libro creado' : '✓ Ficha existente enriquecida'} y agregado al inventario${authorMsg}${containedMsg}`, 4600);
   });
 }
 

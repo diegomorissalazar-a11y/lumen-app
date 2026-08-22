@@ -47,3 +47,9 @@ JSON bibliográfico → validar → resolver entidades canónicas → buscar Boo
 ```
 
 El nuevo módulo `js/inventory-json-import.js` reutiliza el parser de `lumen_bibliografia_import_v1` y el catálogo canónico. No replica normalizadores ni crea un schema específico para Inventario.
+
+## v187 — Ejemplar físico multiobra y centralidad estructural
+
+- `Book` mantiene la ficha canónica del registro, mientras un ejemplar físico multiobra puede declarar `inventoryContainer=true` y `containedWorkIds[]`.
+- El estado de lectura del contenedor en Inventario se deriva de las obras vinculadas; no se reutiliza `estado='leido'` para evitar duplicar libros terminados en estadísticas.
+- Influencias separa **evidencia documental** de **conexión estructural**: N citas entre la misma pareja de autores conservan N evidencias, pero generan una sola arista para centralidad y tamaño.

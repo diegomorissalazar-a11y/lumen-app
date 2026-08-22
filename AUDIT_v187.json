@@ -1,0 +1,108 @@
+{
+  "base": "LUMEN v186 modular",
+  "new": "LUMEN v187 modular",
+  "base_index_sha256": "b2769022440f1fe209d8e2989eb8c4e1de7070b9573756490cb0a5c996e10aba",
+  "new_index_sha256": "3f6017ff2d69dfda3eab656f3250a119b5fc1a02d753f565db8f8db062abb003",
+  "counts": {
+    "base": {
+      "files": 67,
+      "function_declarations": 609,
+      "callables_unique": 668,
+      "variables_unique": 1239,
+      "dom_ids": 564,
+      "onclick_total": 381,
+      "onclick_handlers_unique": 149
+    },
+    "new": {
+      "files": 68,
+      "function_declarations": 621,
+      "callables_unique": 681,
+      "variables_unique": 1265,
+      "dom_ids": 568,
+      "onclick_total": 385,
+      "onclick_handlers_unique": 151
+    }
+  },
+  "removed": {
+    "functions": [],
+    "callables": [],
+    "variables": [],
+    "dom_ids": [],
+    "onclick_handlers": []
+  },
+  "added": {
+    "functions": [
+      "inventoryAuthorLabel",
+      "inventoryContainedWorkCandidates",
+      "inventoryContainedWorks",
+      "inventoryContainerMetaHTML",
+      "inventoryContainerState",
+      "inventoryIsRead",
+      "inventorySortComparator",
+      "inventoryTitleParts",
+      "openInventoryContents",
+      "renderInventoryContentsPicker",
+      "saveInventoryContents",
+      "setInventorySortMode"
+    ],
+    "callables": [
+      "inventoryAuthorLabel",
+      "inventoryContainedWorkCandidates",
+      "inventoryContainedWorks",
+      "inventoryContainerMetaHTML",
+      "inventoryContainerState",
+      "inventoryIsRead",
+      "inventorySortComparator",
+      "inventorySortMode",
+      "inventoryTitleParts",
+      "openInventoryContents",
+      "renderInventoryContentsPicker",
+      "saveInventoryContents",
+      "setInventorySortMode"
+    ],
+    "variables": [
+      "abandoned",
+      "authorA",
+      "authorB",
+      "byAuthor",
+      "contained",
+      "containedCandidates",
+      "containedMsg",
+      "currentIds",
+      "edge",
+      "edgeMap",
+      "evidenceOut",
+      "inventoryContentsEditingId",
+      "inventorySortMode",
+      "missing",
+      "partial",
+      "pending",
+      "pn",
+      "read",
+      "shouldOffer",
+      "suggested",
+      "tid",
+      "titleA",
+      "tl",
+      "used",
+      "visible",
+      "works"
+    ],
+    "dom_ids": [
+      "inventory-contents-list",
+      "inventory-contents-search",
+      "inventory-contents-title",
+      "modal-inventory-contents"
+    ],
+    "onclick_handlers": [
+      "openInventoryContents",
+      "saveInventoryContents"
+    ]
+  },
+  "validation": {
+    "js_syntax_errors": [],
+    "missing_manifest_paths": [],
+    "missing_bootstrap_paths": [],
+    "missing_onclick_handlers": []
+  }
+}

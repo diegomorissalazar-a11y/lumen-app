@@ -97,7 +97,31 @@
 
 
 
-<!-- ══════ MODAL: AGREGAR LIBRO AL INVENTARIO CON JSON v186 ══════ -->
+
+<!-- ══════ MODAL: OBRAS CONTENIDAS EN EJEMPLAR v187 ══════ -->
+<div id="modal-inventory-contents" class="modal-overlay">
+  <div class="modal" style="max-height:92dvh;">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">📚 Obras contenidas</div>
+        <div id="inventory-contents-title" style="font-size:10px;color:var(--ink4);margin-top:3px;letter-spacing:.5px;"></div>
+      </div>
+      <button class="btn-icon" onclick="closeModal('modal-inventory-contents')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:12px;color:var(--ink3);line-height:1.55;margin-bottom:10px;">Vincula las obras reales que contiene este ejemplar físico. El ejemplar puede quedar completo en Inventario sin crear un libro leído adicional en las estadísticas generales.</p>
+      <input id="inventory-contents-search" class="input" type="text" placeholder="Buscar obra..." oninput="renderInventoryContentsPicker()">
+      <div id="inventory-contents-list" class="inventory-work-list" style="margin-top:10px;"></div>
+      <div style="display:flex;gap:8px;margin-top:12px;">
+        <button class="btn btn-primary" onclick="saveInventoryContents()" style="flex:1;">✓ Guardar obras</button>
+        <button class="btn btn-secondary" onclick="closeModal('modal-inventory-contents')" style="flex:1;">Cancelar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ MODAL: AGREGAR LIBRO AL INVENTARIO CON JSON v187 ══════ -->
 <div id="modal-inventory-json" class="modal-overlay">
   <div class="modal" style="max-height:92dvh;">
     <div class="modal-handle"></div>

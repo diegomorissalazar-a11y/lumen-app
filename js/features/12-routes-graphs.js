@@ -884,24 +884,72 @@ function renderMapaInfluencias() {
   const data=mapas.influencias;
   const elCount = document.getElementById('inf-count');
   const elEmpty = document.getElementById('inf-empty');
-  if (elCount) elCount.textContent=`${data.length} relación${data.length!==1?'es':''}`;
   if (elEmpty) elEmpty.style.display=data.length===0?'flex':'none';
   renderListaInfluencias();
-  if (data.length===0) { d3.select('#mapa-influencias-svg').selectAll('svg').remove(); return; }
+  if (data.length===0) {
+    if (elCount) elCount.textContent='0 relaciones';
+    d3.select('#mapa-influencias-svg').selectAll('svg').remove();
+    return;
+  }
 
-  const libTitles=new Set(db.entries.map(e=>e.titulo)); const libAuthorIds=new Set(); (db.entries||[]).filter(e=>e.type==='libro').forEach(e=>{ensureBookCanonicalRefs(e);(e.autorIds||[]).forEach(id=>libAuthorIds.add(id));});
-  const nodeMap=new Map(),outDegree={},inDegree={};
-  data.forEach(rel=>{
-    const sid=rel.fuente_autor_id||canonicalEntityId('aut',rel.fuente), tid=rel.destino_autor_id||canonicalEntityId('aut',rel.destino_autor||rel.destino);
-    const sl=canonicalNameById('aut',sid,rel.fuente), tl=canonicalNameById('aut',tid,rel.destino_autor||rel.destino);
-    if(!nodeMap.has(sid))nodeMap.set(sid,sl); if(!nodeMap.has(tid))nodeMap.set(tid,tl); outDegree[sid]=(outDegree[sid]||0)+1;inDegree[tid]=(inDegree[tid]||0)+1;
+  const libAuthorIds=new Set();
+  (db.entries||[]).filter(e=>e.type==='libro').forEach(e=>{
+    ensureBookCanonicalRefs(e);
+    (e.autorIds||[]).forEach(id=>libAuthorIds.add(id));
   });
-  const nodes=[...nodeMap.entries()].map(([id,name])=>({id,label:name,inLibrary:libAuthorIds.has(id),icon:libAuthorIds.has(id)?'✍':'◉',tooltip:name,sizeMetric:outDegree[id]||0,metricTooltip:`${name}\nInfluencias originadas: ${outDegree[id]||0}\nInfluencias recibidas: ${inDegree[id]||0}`}));
-  const links=data.map(d=>({source:d.fuente_autor_id||canonicalEntityId('aut',d.fuente),target:d.destino_autor_id||canonicalEntityId('aut',d.destino_autor||d.destino),tipo:d.tipo,id:d.id,pagina:d.pagina,texto:d.texto,libro_ref:d.libro_ref}));
+
+  // v187: la centralidad estructural cuenta autores únicos conectados.
+  // Varias citas Tolstói → Chéjov siguen visibles como evidencias en la lista,
+  // pero equivalen a una sola arista para tamaño, fuerzas y grado.
+  const nodeMap=new Map();
+  const edgeMap=new Map();
+  const evidenceOut={}, evidenceIn={};
+
+  data.forEach(rel=>{
+    const sid=rel.fuente_autor_id||canonicalEntityId('aut',rel.fuente);
+    const tid=rel.destino_autor_id||canonicalEntityId('aut',rel.destino_autor||rel.destino);
+    if(!sid||!tid) return;
+    const sl=canonicalNameById('aut',sid,rel.fuente);
+    const tl=canonicalNameById('aut',tid,rel.destino_autor||rel.destino);
+    if(!nodeMap.has(sid))nodeMap.set(sid,sl);
+    if(!nodeMap.has(tid))nodeMap.set(tid,tl);
+    evidenceOut[sid]=(evidenceOut[sid]||0)+1;
+    evidenceIn[tid]=(evidenceIn[tid]||0)+1;
+
+    const key=`${sid}→${tid}`;
+    if(!edgeMap.has(key)){
+      edgeMap.set(key,{
+        source:sid,target:tid,tipo:rel.tipo,id:rel.id,
+        pagina:rel.pagina,texto:rel.texto,libro_ref:rel.libro_ref,
+        evidenceIds:[rel.id],evidenceCount:1
+      });
+    } else {
+      const edge=edgeMap.get(key);
+      edge.evidenceIds.push(rel.id);
+      edge.evidenceCount++;
+    }
+  });
+
+  const links=[...edgeMap.values()];
+  const outDegree={},inDegree={};
+  links.forEach(edge=>{
+    outDegree[edge.source]=(outDegree[edge.source]||0)+1;
+    inDegree[edge.target]=(inDegree[edge.target]||0)+1;
+  });
+
+  if (elCount) {
+    elCount.textContent=`${data.length} evidencia${data.length!==1?'s':''} · ${links.length} conexión${links.length!==1?'es':''} única${links.length!==1?'s':''}`;
+  }
+
+  const nodes=[...nodeMap.entries()].map(([id,name])=>({
+    id,label:name,inLibrary:libAuthorIds.has(id),icon:libAuthorIds.has(id)?'✍':'◉',
+    tooltip:name,sizeMetric:outDegree[id]||0,
+    metricTooltip:`${name}\nAutores influidos únicos: ${outDegree[id]||0}\nAutores que lo influyen: ${inDegree[id]||0}\nEvidencias originadas: ${evidenceOut[id]||0}\nEvidencias recibidas: ${evidenceIn[id]||0}`
+  }));
 
   buildD3Graph('mapa-influencias-svg', nodes, links,
     tipo=>INF_COLORS[tipo]||'#999',
-    d=>`${INF_LABELS[d.tipo]||d.tipo}${d.libro_ref?' · '+d.libro_ref:''}${d.pagina?' p.'+d.pagina:''}${d.texto?'\n"'+d.texto+'"':''}`,
+    d=>`${INF_LABELS[d.tipo]||d.tipo}${d.libro_ref?' · '+d.libro_ref:''}${d.evidenceCount>1?` · ${d.evidenceCount} evidencias`:''}${d.pagina?' p.'+d.pagina:''}${d.texto?'\n"'+d.texto+'"':''}`,
     {},
     d=>openInfluenciaDetalle(d.id)
   );
