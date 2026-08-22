@@ -26,12 +26,14 @@
   </div>
 
   <!-- TAB: INFLUENCIAS -->
-  <div id="mapa-influencias-panel" style="display:flex;flex-direction:column;flex:1;overflow:hidden;">
-    <div style="padding:10px 16px;display:flex;gap:8px;align-items:center;border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap;">
+  <div id="mapa-influencias-panel" class="map-workspace" style="display:flex;flex-direction:column;flex:1;overflow:hidden;">
+    <div class="map-workspace-toolbar" style="padding:10px 16px;display:flex;gap:8px;align-items:center;border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap;">
       <button class="btn btn-secondary btn-sm" style="width:auto;" onclick="openInfluenciasCargaPanel()">+ Añadir relación</button>
       <button class="btn btn-secondary btn-sm" style="width:auto;" onclick="renderMapaInfluencias()">↻ Actualizar</button>
       <button class="btn btn-secondary btn-sm" style="width:auto;" onclick="openReferenciasInfluencias()">📚 Referencias</button>
+      <span class="map-centrality-legend">Tamaño = influencias originadas</span>
       <span id="inf-count" style="font-size:11px;color:var(--ink4);margin-left:auto;"></span>
+      <button class="btn btn-secondary btn-sm map-expand-trigger" style="width:auto;" onclick="toggleMapWorkspace('influencias')">⛶ Ampliar</button>
     </div>
     <div id="mapa-influencias-svg" style="flex:1;overflow:hidden;position:relative;cursor:grab;">
       <div id="inf-empty" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;color:var(--ink4);">
@@ -40,15 +42,17 @@
       </div>
     </div>
     <!-- Legend -->
-    <div id="inf-lista" style="overflow-y:auto;max-height:200px;border-top:1px solid var(--border);flex-shrink:0;display:none;"></div>
+    <div id="inf-lista" class="map-workspace-secondary" style="overflow-y:auto;max-height:200px;border-top:1px solid var(--border);flex-shrink:0;display:none;"></div>
   </div>
 
   <!-- TAB: RUTAS -->
-  <div id="mapa-rutas-panel" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
-    <div style="padding:10px 16px;display:flex;gap:8px;align-items:center;border-bottom:1px solid var(--border);flex-shrink:0;">
+  <div id="mapa-rutas-panel" class="map-workspace" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+    <div class="map-workspace-toolbar" style="padding:10px 16px;display:flex;gap:8px;align-items:center;border-bottom:1px solid var(--border);flex-shrink:0;">
       <button class="btn btn-secondary btn-sm" style="width:auto;" onclick="openModalRuta()">+ Añadir conexión</button>
       <button class="btn btn-secondary btn-sm" style="width:auto;" onclick="generarRutasMismoAutor()">↻ Actualizar</button>
+      <span class="map-centrality-legend">Tamaño = rutas originadas · libros fijos</span>
       <span id="ruta-count" style="font-size:11px;color:var(--ink4);margin-left:auto;"></span>
+      <button class="btn btn-secondary btn-sm map-expand-trigger" style="width:auto;" onclick="toggleMapWorkspace('rutas')">⛶ Ampliar</button>
       <!-- Badge libros sin conectar -->
       <div style="position:relative;">
         <button id="ruta-sin-conectar-btn" onclick="toggleSinConectar()"
@@ -73,13 +77,13 @@
         <div style="font-size:13px;font-style:italic;">Sin conexiones aún.<br>¿Qué te llevó a tu último libro?</div>
       </div>
     </div>
-    <div id="ruta-lista" style="overflow-y:auto;max-height:220px;border-top:1px solid var(--border);flex-shrink:0;display:none;"></div>
+    <div id="ruta-lista" class="map-workspace-secondary" style="overflow-y:auto;max-height:220px;border-top:1px solid var(--border);flex-shrink:0;display:none;"></div>
   </div>
 
   <!-- TAB: PELÍCULAS -->
-  <div id="mapa-peliculas-panel" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+  <div id="mapa-peliculas-panel" class="map-workspace" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
     <!-- Toolbar fila 1: Actualizar + Período + contador -->
-    <div style="padding:8px 12px 6px;display:flex;gap:6px;align-items:center;border-bottom:1px solid var(--cream3);flex-shrink:0;flex-wrap:wrap;background:#faf8f4;">
+    <div class="map-workspace-toolbar" style="padding:8px 12px 6px;display:flex;gap:6px;align-items:center;border-bottom:1px solid var(--cream3);flex-shrink:0;flex-wrap:wrap;background:#faf8f4;">
       <button class="btn btn-secondary btn-sm" style="width:auto;" onclick="renderMapaPeliculas()">↻ Actualizar</button>
       <span style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--ink4);">Período:</span>
       <select id="pel-periodo-sel" onchange="renderMapaPeliculas()"
@@ -91,10 +95,12 @@
         <option value="5">Cada 5 años</option>
         <option value="10">Cada 10 años</option>
       </select>
+      <span class="map-centrality-legend">Tamaño = películas únicas por rol</span>
       <span id="pel-count" style="font-size:11px;color:var(--ink4);margin-left:auto;"></span>
+      <button class="btn btn-secondary btn-sm map-expand-trigger" style="width:auto;" onclick="toggleMapWorkspace('peliculas')">⛶ Ampliar</button>
     </div>
     <!-- Toolbar fila 2: Roles -->
-    <div style="padding:6px 12px;display:flex;gap:5px;align-items:center;border-bottom:1px solid var(--cream3);flex-shrink:0;flex-wrap:wrap;background:#faf8f4;">
+    <div class="map-workspace-toolbar" style="padding:6px 12px;display:flex;gap:5px;align-items:center;border-bottom:1px solid var(--cream3);flex-shrink:0;flex-wrap:wrap;background:#faf8f4;">
       <span style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--ink4);">Roles:</span>
       <button class="pel-rol-btn active" data-rol="director" onclick="toggleRolPel(this,'director')"
         style="padding:4px 8px;border:1.5px solid var(--red);border-radius:3px;background:var(--red);color:#fff;font-size:10px;font-weight:700;font-family:var(--font-sans);cursor:pointer;">🎭 Director</button>
@@ -110,7 +116,7 @@
         style="padding:4px 8px;border:1.5px solid #5a5a5a;border-radius:3px;background:#5a5a5a;color:#fff;font-size:10px;font-weight:700;font-family:var(--font-sans);cursor:pointer;">👤 Elenco</button>
     </div>
     <!-- Toolbar fila 3: Nodos contextuales -->
-    <div style="padding:6px 12px;display:flex;gap:5px;align-items:center;border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap;background:#f5f0e8;">
+    <div class="map-workspace-toolbar" style="padding:6px 12px;display:flex;gap:5px;align-items:center;border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap;background:#f5f0e8;">
       <span style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--ink4);">Nodos:</span>
       <button class="pel-nodo-btn" data-nodo="pais" onclick="toggleNodoPel(this,'pais')"
         style="padding:4px 8px;border:1.5px solid var(--border);border-radius:3px;background:#fff;color:var(--ink3);font-size:10px;font-weight:700;font-family:var(--font-sans);cursor:pointer;">🌍 País</button>
@@ -131,8 +137,8 @@
   </div>
 
   <!-- TAB: HISTORIA -->
-  <div id="mapa-historia-panel" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
-    <div class="hist-map-toolbar">
+  <div id="mapa-historia-panel" class="map-workspace" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+    <div class="hist-map-toolbar map-workspace-toolbar">
       <button class="btn btn-secondary btn-sm" style="width:auto;" onclick="renderMapaHistoria()">↻ Actualizar</button>
       <select id="hist-linea-filter" class="input" style="width:auto;max-width:210px;padding:6px 8px;font-size:11px;" onchange="renderMapaHistoria()">
         <option value="">Todas las líneas históricas</option>
@@ -142,8 +148,9 @@
       </select>
       <span id="hist-map-count" style="font-size:11px;color:var(--ink4);margin-left:auto;"></span>
       <span class="hist-zoom-hint">Selecciona una línea para hacer zoom automático</span>
+      <button class="btn btn-secondary btn-sm map-expand-trigger" style="width:auto;" onclick="toggleMapWorkspace('historia')">⛶ Ampliar</button>
     </div>
-    <div class="hist-map-summary" id="hist-map-summary"></div>
+    <div class="hist-map-summary map-workspace-secondary" id="hist-map-summary"></div>
     <div class="hist-timeline-scroll" id="hist-timeline-scroll">
       <div id="hist-map-content"></div>
     </div>

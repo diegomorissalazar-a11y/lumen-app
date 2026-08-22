@@ -1,0 +1,104 @@
+{
+  "base": "LUMEN v185 modular",
+  "new": "LUMEN v186 modular",
+  "base_index_sha256": "f52509ffdef9a71466035694598e71275c3d3aadce34d4d8d1bef94c254d3f24",
+  "new_index_sha256": "b2769022440f1fe209d8e2989eb8c4e1de7070b9573756490cb0a5c996e10aba",
+  "counts": {
+    "base": {
+      "files": 64,
+      "function_declarations": 598,
+      "callables_unique": 661,
+      "variables_unique": 1214,
+      "dom_ids": 560,
+      "onclick_total": 268,
+      "onclick_handlers_unique": 102
+    },
+    "new": {
+      "files": 67,
+      "function_declarations": 609,
+      "callables_unique": 672,
+      "variables_unique": 1239,
+      "dom_ids": 564,
+      "onclick_total": 272,
+      "onclick_handlers_unique": 104
+    }
+  },
+  "removed": {
+    "functions": [],
+    "callables": [],
+    "variables": [],
+    "dom_ids": [],
+    "onclick_handlers": []
+  },
+  "added": {
+    "functions": [
+      "confirmInventoryJsonImport",
+      "ensureInventoryBookFromBasicItem",
+      "inventoryApplyBibliographyToBook",
+      "inventoryBestCanonicalCandidate",
+      "inventoryBookCandidateForPayload",
+      "inventoryBookIsbn",
+      "inventoryBookOriginalYear",
+      "inventoryEntityPreview",
+      "inventoryPreviewRow",
+      "openInventoryJsonImport",
+      "previewInventoryJson"
+    ],
+    "callables": [
+      "confirmInventoryJsonImport",
+      "ensureInventoryBookFromBasicItem",
+      "inventoryApplyBibliographyToBook",
+      "inventoryBestCanonicalCandidate",
+      "inventoryBookCandidateForPayload",
+      "inventoryBookIsbn",
+      "inventoryBookOriginalYear",
+      "inventoryEntityPreview",
+      "inventoryPreviewRow",
+      "openInventoryJsonImport",
+      "previewInventoryJson"
+    ],
+    "variables": [
+      "_inventoryBibParsed",
+      "_inventoryBibPreview",
+      "apply",
+      "author",
+      "authorCandidate",
+      "authorEntity",
+      "authorMsg",
+      "authorName",
+      "authorNorm",
+      "authorP",
+      "authorSim",
+      "authorWasExact",
+      "bookAuthor",
+      "bookCandidate",
+      "bt",
+      "candidate",
+      "exactIsbn",
+      "hadLink",
+      "isNewBook",
+      "period",
+      "pubP",
+      "publisher",
+      "publisherCandidate",
+      "sameAuthor",
+      "titleSim"
+    ],
+    "dom_ids": [
+      "inventory-json-confirm",
+      "inventory-json-preview",
+      "inventory-json-text",
+      "modal-inventory-json"
+    ],
+    "onclick_handlers": [
+      "confirmInventoryJsonImport",
+      "previewInventoryJson"
+    ]
+  },
+  "validation": {
+    "js_syntax_errors": [],
+    "missing_manifest_paths": [],
+    "missing_bootstrap_paths": [],
+    "missing_onclick_handlers": []
+  }
+}

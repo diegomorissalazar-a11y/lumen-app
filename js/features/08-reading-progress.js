@@ -430,7 +430,7 @@ function saveReadingEntry() {
     // Evita dejar un alta a medias y muestra el error real en pantalla.
     if (created) db.entries = db.entries.filter(e => e.id!==entry.id);
     else if (before) Object.assign(entry,before);
-    console.error('[LUMEN v183] Error al iniciar lectura:', err);
+    console.error('[LUMEN v184] Error al iniciar lectura:', err);
     const msg = err && (err.name==='QuotaExceededError' || /quota/i.test(err.message||''))
       ? 'No se pudo guardar: almacenamiento local lleno'
       : `No se pudo guardar la lectura${err?.message?': '+err.message:''}`;

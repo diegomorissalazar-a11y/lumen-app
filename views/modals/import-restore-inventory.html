@@ -95,3 +95,26 @@
   </div>
 </div>
 
+
+
+<!-- ══════ MODAL: AGREGAR LIBRO AL INVENTARIO CON JSON v186 ══════ -->
+<div id="modal-inventory-json" class="modal-overlay">
+  <div class="modal" style="max-height:92dvh;">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div><div class="modal-title">📚 Agregar libro con JSON</div><div style="font-size:10px;color:var(--ink4);margin-top:3px;letter-spacing:1px;text-transform:uppercase;">Inventario físico · ficha canónica</div></div>
+      <button class="btn-icon" onclick="closeModal('modal-inventory-json')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:12px;color:var(--ink3);line-height:1.6;margin-bottom:10px;">Pega el mismo <strong>lumen_bibliografia_import_v1</strong> usado en Biblioteca. LUMEN revisará libro, autor, editorial y datos de edición antes de crear o enriquecer la ficha.</p>
+      <textarea id="inventory-json-text" class="input" rows="13" spellcheck="false" placeholder='{"schema":"lumen_bibliografia_import_v1","libro":{"titulo":"...","autor":"...","editorial":"...","isbn":"...","edicion":{"numero":"","descripcion":"","anio":null,"mes":""},"ciudad_publicacion":"","traductores":[],"anio_obra_original":null}}' style="font-family:monospace;font-size:11px;line-height:1.5;"></textarea>
+      <button class="btn btn-secondary" onclick="previewInventoryJson()" style="margin-top:8px;">Revisar JSON</button>
+      <div id="inventory-json-preview" style="display:none;margin-top:10px;border:1px solid var(--border);border-radius:6px;background:#fff;overflow:hidden;"></div>
+      <div style="display:flex;gap:8px;margin-top:10px;">
+        <button id="inventory-json-confirm" class="btn btn-primary" onclick="confirmInventoryJsonImport()" style="display:none;flex:1;">✓ Crear / enriquecer ficha</button>
+        <button class="btn btn-secondary" onclick="closeModal('modal-inventory-json')" style="flex:1;">Cancelar</button>
+      </div>
+      <div style="font-size:10px;color:var(--ink4);line-height:1.5;margin-top:9px;">Coincidencias canónicas de autor y editorial ≥90% se consultan antes de crear una entidad nueva. ISBN y título+autor se usan para evitar libros duplicados.</div>
+    </div>
+  </div>
+</div>

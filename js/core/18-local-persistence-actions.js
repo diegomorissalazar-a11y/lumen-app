@@ -62,7 +62,7 @@ async function stashLocalImages(entries) {
   const jobs = [];
   (entries || []).forEach(e => {
     Object.keys(e || {}).forEach(k => {
-      if (isBase64Image(e[k])) jobs.push(putLocalAsset(localAssetKey(e.id, k), e[k]).catch(err => console.warn('[LUMEN v183] asset IDB:', err)));
+      if (isBase64Image(e[k])) jobs.push(putLocalAsset(localAssetKey(e.id, k), e[k]).catch(err => console.warn('[LUMEN v184] asset IDB:', err)));
     });
   });
   if (jobs.length) await Promise.all(jobs);
@@ -81,7 +81,7 @@ async function hydrateLocalImagesFromIDB() {
   });
   if (jobs.length) await Promise.all(jobs);
   if (restored) {
-    console.info(`[LUMEN v183] ${restored} imagen(es) restauradas desde IndexedDB`);
+    console.info(`[LUMEN v184] ${restored} imagen(es) restauradas desde IndexedDB`);
     try { refreshCurrentScreen(); } catch (_) {}
   }
   return restored;
@@ -105,7 +105,7 @@ function pruneTransientLocalBackups() {
     if (k && patterns.some(rx => rx.test(k))) doomed.push(k);
   }
   doomed.forEach(k => { try { localStorage.removeItem(k); } catch (_) {} });
-  if (doomed.length) console.info('[LUMEN v183] backups locales transitorios limpiados:', doomed.length);
+  if (doomed.length) console.info('[LUMEN v184] backups locales transitorios limpiados:', doomed.length);
   return doomed.length;
 }
 
@@ -115,13 +115,13 @@ function safeLocalSetItem(key, value, opts={}) {
     return true;
   } catch (err) {
     if (!isQuotaExceeded(err)) {
-      console.error('[LUMEN v183] localStorage error:', key, err);
+      console.error('[LUMEN v184] localStorage error:', key, err);
       return false;
     }
-    console.warn('[LUMEN v183] Cuota local excedida en', key);
+    console.warn('[LUMEN v184] Cuota local excedida en', key);
     if (opts.prune !== false) pruneTransientLocalBackups();
     try { localStorage.setItem(key, value); return true; }
-    catch (err2) { console.warn('[LUMEN v183] Reintento local falló:', key, err2); return false; }
+    catch (err2) { console.warn('[LUMEN v184] Reintento local falló:', key, err2); return false; }
   }
 }
 
@@ -130,7 +130,7 @@ function persistDBLocal() {
   // Las normalizaciones masivas NO pertenecen al click de Guardar.
   try {
     // Las imágenes base64 se guardan aparte en IndexedDB sin bloquear la acción.
-    stashLocalImages(db.entries || []).catch(err => console.warn('[LUMEN v183] asset IDB:', err));
+    stashLocalImages(db.entries || []).catch(err => console.warn('[LUMEN v184] asset IDB:', err));
 
     // Guardar siempre el snapshot liviano: evita intentar primero una copia enorme
     // que en Safari/iOS dispara QuotaExceededError y corta la UX.
@@ -139,10 +139,10 @@ function persistDBLocal() {
       return { ok:true, compact:true };
     }
 
-    console.error('[LUMEN v183] No fue posible persistir el snapshot local liviano.');
+    console.error('[LUMEN v184] No fue posible persistir el snapshot local liviano.');
     return { ok:false, compact:true };
   } catch (err) {
-    console.error('[LUMEN v183] persistDBLocal:', err);
+    console.error('[LUMEN v184] persistDBLocal:', err);
     return { ok:false, compact:true, error:err };
   }
 }
@@ -161,9 +161,9 @@ async function compactLocalDBOnStartup() {
         localStorage.setItem(DB_KEY, light);
       } else throw err;
     }
-    console.info('[LUMEN v183] Migración local inicial completada.');
+    console.info('[LUMEN v184] Migración local inicial completada.');
   } catch (err) {
-    console.warn('[LUMEN v183] Migración local inicial no completada:', err);
+    console.warn('[LUMEN v184] Migración local inicial no completada:', err);
   }
 }
 
@@ -174,11 +174,11 @@ async function syncToFirestore() {
     const result = await writeCloudV162(currentUser.uid);
     setSyncStatus('ok');
     setLastSync();
-    console.info('[LUMEN v183] Sync V2 OK', result);
+    console.info('[LUMEN v184] Sync V2 OK', result);
     return result;
   } catch(e) {
     setSyncStatus('offline');
-    console.error('[LUMEN v183] Sync V2 error:', e.code || '', e.message, e);
+    console.error('[LUMEN v184] Sync V2 error:', e.code || '', e.message, e);
     throw e;
   }
 }
@@ -192,7 +192,7 @@ function queueCloudSyncV178(delay=900) {
       await syncToFirestore();
     } catch (e) {
       // La nube nunca bloquea una acción local ya aceptada.
-      console.warn('[LUMEN v183] sync pendiente:', e?.message || e);
+      console.warn('[LUMEN v184] sync pendiente:', e?.message || e);
       showToast(`⚠ Cambio local guardado; nube pendiente${e?.message ? ': '+e.message : ''}`, 4200);
     }
   }, delay);
@@ -206,7 +206,7 @@ function saveDB() {
     localResult = persistDBLocal();
   } catch (err) {
     // Último cortafuego: ningún error de persistencia debe matar el onclick.
-    console.error('[LUMEN v183] saveDB:', err);
+    console.error('[LUMEN v184] saveDB:', err);
     localResult = {ok:false, error:err};
   }
 
@@ -225,14 +225,14 @@ function lumenSafeAction(label, action, opts={}) {
     const result = action();
     if (result && typeof result.then === 'function') {
       return result.catch(err => {
-        console.error(`[LUMEN v183] ${label}:`, err);
+        console.error(`[LUMEN v184] ${label}:`, err);
         showToast(`⚠ ${label}: ${err?.message || 'error inesperado'}`, 4800);
         return false;
       });
     }
     return result;
   } catch (err) {
-    console.error(`[LUMEN v183] ${label}:`, err);
+    console.error(`[LUMEN v184] ${label}:`, err);
     showToast(`⚠ ${label}: ${err?.message || 'error inesperado'}`, 4800);
     return false;
   }
@@ -252,7 +252,7 @@ async function manualSaveToCloud() {
   } catch(e) {
     setSyncStatus('offline');
     showToast(`⚠ Error al guardar: ${e.message}`, 5000);
-    console.error('[LUMEN v183] manualSave error:', e);
+    console.error('[LUMEN v184] manualSave error:', e);
   }
 }
 
@@ -272,7 +272,7 @@ async function pullAndMerge(uid, silent) {
     renderHome();
   } catch(e) {
     setSyncStatus('offline');
-    console.error('[LUMEN v183] pull error:', e);
+    console.error('[LUMEN v184] pull error:', e);
     if (!silent) showToast(`⚠ Error al cargar: ${e.message}`, 4500);
   }
 }
@@ -303,11 +303,11 @@ function subscribeToFirestore(uid) {
       setSyncStatus('ok');
       renderHome();
     } catch(e) {
-      console.warn('[LUMEN v183] snapshot error:', e.message);
+      console.warn('[LUMEN v184] snapshot error:', e.message);
     }
   }, e => {
     setSyncStatus('offline');
-    console.warn('[LUMEN v183] listener error:', e.message);
+    console.warn('[LUMEN v184] listener error:', e.message);
   });
 }
 
@@ -324,15 +324,15 @@ window.lumenSyncDiagnostico = function() {
     usuario:currentUser ? currentUser.uid : null
   };
   console.table(report);
-  console.info('[LUMEN v183] Diagnóstico completo', report);
+  console.info('[LUMEN v184] Diagnóstico completo', report);
   return report;
 };
 
 
 // v177 — diagnóstico global de acciones: deja trazabilidad de excepciones de clicks sin romper la app.
 window.addEventListener('error', function(ev){
-  if (ev?.error) console.error('[LUMEN v183] error global de UI:', ev.error);
+  if (ev?.error) console.error('[LUMEN v184] error global de UI:', ev.error);
 });
 window.addEventListener('unhandledrejection', function(ev){
-  console.error('[LUMEN v183] promesa no controlada:', ev.reason);
+  console.error('[LUMEN v184] promesa no controlada:', ev.reason);
 });

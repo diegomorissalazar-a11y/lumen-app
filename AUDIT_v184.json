@@ -1,0 +1,26 @@
+{
+  "base": "LUMEN v183 modular",
+  "version": "184",
+  "function_declarations_v183": 585,
+  "function_declarations_v184": 587,
+  "functions_removed": [],
+  "functions_added": [
+    "getBookOriginalPublicationYear",
+    "getBookStatsSortValue"
+  ],
+  "callable_unique_v183": 646,
+  "callable_unique_v184": 648,
+  "static_ids_v183": 552,
+  "static_ids_v184": 556,
+  "ids_removed": [],
+  "ids_added": [
+    "f-anio-original",
+    "f-isbn",
+    "f-periodo-original",
+    "f-titulo-original"
+  ],
+  "onclick_unique_v183": 104,
+  "onclick_unique_v184": 104,
+  "onclick_removed": [],
+  "onclick_added": []
+}

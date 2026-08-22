@@ -243,7 +243,7 @@ function libroEsperaInfo(e) {
 }
 
 let statsState = {
-  libros:    { year: 'todos', filter: null, filterField: null, sortField: 'anio_pub', sortDir: 1, page: 0, chartMode: 'pags' },
+  libros:    { year: 'todos', filter: null, filterField: null, sortField: 'anio_original', sortDir: 1, page: 0, chartMode: 'pags' },
   peliculas: { year: 'todos', filter: null, filterField: null, sortField: 'anio_est', sortDir: 1, page: 0, chartMode: 'cantidad' },
   series: { year: 'todos', filter: null, filterField: null, sortField: 'anio_est', sortDir: 1, page: 0 },
   discos: { year: 'todos', filter: null, filterField: null, sortField: 'anio_pub', sortDir: -1, page: 0 },
@@ -539,20 +539,31 @@ function sortLibros(field, btn) {
   renderLibrosTabla();
 }
 
+function getBookOriginalPublicationYear(e) {
+  const bo=e?.bibliografia?.obraOriginal||{};
+  const candidates=[e?.anio_publicacion_original,bo.anioPublicacionOriginal,e?.periodo_publicacion_inicio,bo.periodoInicio,e?.anio_pub];
+  for(const value of candidates){const n=Number(value);if(Number.isFinite(n)&&n!==0)return n;}
+  return null;
+}
+function getBookStatsSortValue(e, field) {
+  return field==='anio_original' ? (getBookOriginalPublicationYear(e) ?? '') : (e?.[field] ?? '');
+}
+
 function renderLibrosTabla() {
   const s = statsState.libros;
   let items = getFilteredWithActive('libro','libros').filter(e=>e.estado==='leido');
-  items = items.sort((a,b)=>String(a[s.sortField]||'').localeCompare(String(b[s.sortField]||''),undefined,{numeric:true})*s.sortDir);
+  items = items.sort((a,b)=>String(getBookStatsSortValue(a,s.sortField)).localeCompare(String(getBookStatsSortValue(b,s.sortField)),undefined,{numeric:true})*s.sortDir);
   const total = items.length;
   const page = items.slice(s.page*PAGE_SIZE, (s.page+1)*PAGE_SIZE);
   const el = document.getElementById('lb-tabla');
   if (!total) { el.innerHTML='<div style="color:var(--ink4);font-size:13px;padding:8px 0;">Sin libros para mostrar.</div>'; document.getElementById('lb-pagination').innerHTML=''; return; }
   el.innerHTML = `<table class="data-table">
-    <thead><tr><th>Título</th><th>Autor</th><th>Pub.</th><th>Págs</th><th>Leído</th></tr></thead>
+    <thead><tr><th>Título</th><th>Autor</th><th>Original</th><th>Edición</th><th>Págs</th><th>Leído</th></tr></thead>
     <tbody>${page.map(e=>`<tr>
       <td style="font-family:var(--font-serif);font-weight:700;max-width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${e.titulo.replace(/'/g,'&#39;').replace(/"/g,'&quot;')}">${e.titulo}</td>
       <td class="clickable" data-key="libros" data-field="autor" data-name="${(e.autor||'').replace(/"/g,'&quot;')}" onclick="toggleFilterFromEl(this)">${e.autor||'—'}</td>
-      <td>${e.anio_pub||'—'}</td>
+      <td>${getBookOriginalPublicationYear(e)||'—'}</td>
+      <td>${e.anio_pub||e.bibliografia?.edicionConsultada?.anio||'—'}</td>
       <td>${(e.paginas||0).toLocaleString()}</td>
       <td style="white-space:nowrap;font-size:11px;">${e.mes||'—'} ${e.anio||''}</td>
     </tr>`).join('')}</tbody></table>`;
@@ -565,8 +576,8 @@ function renderScatterLibros(allLibros) {
   const filtered = statsState.libros.filter
     ? allLibros.filter(e => e[statsState.libros.filterField] === statsState.libros.filter)
     : allLibros;
-  const data = filtered.filter(e=>e.anio_pub&&e.paginas&&e.estado!=='leyendo'&&e.estado!=='pendiente').map(e=>({
-    x:parseInt(e.anio_pub), y:e.paginas||0, label:e.titulo, autor:e.autor||'—'
+  const data = filtered.filter(e=>getBookOriginalPublicationYear(e)&&e.paginas&&e.estado!=='leyendo'&&e.estado!=='pendiente').map(e=>({
+    x:getBookOriginalPublicationYear(e), y:e.paginas||0, label:e.titulo, autor:e.autor||'—'
   }));
   setTimeout(()=>{
     new Chart(ctx.getContext('2d'), {
@@ -575,7 +586,7 @@ function renderScatterLibros(allLibros) {
       options:{responsive:true,maintainAspectRatio:false,
         plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.raw.label} · ${c.raw.autor} (${c.raw.x}, ${c.raw.y} págs)`}}},
         scales:{
-          x:{title:{display:true,text:'Año publicación',color:'#8a7a68',font:{size:10}},ticks:{color:'#8a7a68',font:{size:10}},grid:{color:'#ede7d9'}},
+          x:{title:{display:true,text:'Publicación original',color:'#8a7a68',font:{size:10}},ticks:{color:'#8a7a68',font:{size:10}},grid:{color:'#ede7d9'}},
           y:{title:{display:true,text:'Páginas',color:'#8a7a68',font:{size:10}},ticks:{color:'#8a7a68',font:{size:10}},grid:{color:'#ede7d9'}}
         }
       }
@@ -848,7 +859,7 @@ function renderCuriosidadesLibros(libros) {
   const topEdit  = topField(libros, 'editorial');
   const topIdioma= topField(libros, 'idioma');
   const traducidos = libros.filter(e => e.traductor && e.traductor.trim() && e.traductor.trim() !== '-');
-  const anios = [...new Set(libros.filter(e=>e.anio_pub).map(e=>parseInt(e.anio_pub)))].sort((a,b)=>a-b);
+  const anios = [...new Set(libros.map(getBookOriginalPublicationYear).filter(Boolean))].sort((a,b)=>a-b);
   const spanAnios = anios.length>=2 ? `${anios[0]}–${anios[anios.length-1]}` : null;
 
   // Géneros

@@ -40,11 +40,19 @@
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
           <div class="field"><label>Páginas</label><input class="input" type="number" id="f-paginas" min="1"></div>
-          <div class="field"><label>Año publicación</label><input class="input" type="number" id="f-anio-pub"></div>
+          <div class="field"><label>Año de esta edición</label><input class="input" type="number" id="f-anio-pub"></div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
           <div class="field"><label>Edición</label><input class="input" type="text" id="f-edicion" placeholder="Ej: 2ª ed. / edición digital"></div>
           <div class="field"><label>Ciudad / lugar de publicación</label><input class="input" type="text" id="f-ciudad-pub" placeholder="Ej: Santiago, Madrid"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="field"><label>ISBN</label><input class="input" type="text" id="f-isbn" readonly placeholder="Se completa desde JSON bibliográfico"></div>
+          <div class="field"><label>Publicación original</label><input class="input" type="number" id="f-anio-original" readonly placeholder="Año original de la obra"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="field"><label>Título original</label><input class="input" type="text" id="f-titulo-original" readonly placeholder="Se completa desde JSON bibliográfico"></div>
+          <div class="field"><label>Período original</label><input class="input" type="text" id="f-periodo-original" readonly placeholder="Ej: 1885–1886"></div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
           <div class="field"><label>Traductor</label><input class="input" type="text" id="f-traductor"></div>

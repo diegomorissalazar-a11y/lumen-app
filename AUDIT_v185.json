@@ -1,0 +1,60 @@
+{
+  "base": "LUMEN v184 modular",
+  "base_index_sha256": "ce31bf3da867a23fa02edc445a658740850a1881438dd1d844500e9722e5b5cc",
+  "target": "LUMEN v185 modular",
+  "target_index_sha256": "f52509ffdef9a71466035694598e71275c3d3aadce34d4d8d1bef94c254d3f24",
+  "metrics_v184": {
+    "js_files": 19,
+    "html_files": 24,
+    "css_files": 9,
+    "total_files": 60,
+    "function_declarations": 587,
+    "callable_unique": 648,
+    "variable_declarations": 2372,
+    "variable_unique": 1191,
+    "static_ids_total": 560,
+    "static_ids_unique": 560,
+    "onclick_total": 264,
+    "onclick_handler_unique": 103
+  },
+  "metrics_v185": {
+    "js_files": 21,
+    "html_files": 24,
+    "css_files": 9,
+    "total_files": 62,
+    "function_declarations": 598,
+    "callable_unique": 661,
+    "variable_declarations": 2406,
+    "variable_unique": 1214,
+    "static_ids_total": 560,
+    "static_ids_unique": 560,
+    "onclick_total": 268,
+    "onclick_handler_unique": 104
+  },
+  "removed_callable_functions": [],
+  "added_callable_functions": [
+    "GraphMetrics",
+    "degrees",
+    "endpointId",
+    "enterMapWorkspace",
+    "exitMapWorkspace",
+    "mapWorkspacePanel",
+    "mapWorkspaceSvgContainer",
+    "movieNodeRadius",
+    "rerenderExpandedMap",
+    "sqrtRadius",
+    "toggleMapWorkspace",
+    "uniqueMoviesByNode",
+    "uniqueNeighborCounts"
+  ],
+  "removed_variables_by_name": [],
+  "removed_static_ids": [],
+  "removed_onclick_handlers": [],
+  "duplicate_ids_v185": [],
+  "missing_handlers_v184": [
+    "getElementById"
+  ],
+  "missing_handlers_v185": [
+    "getElementById"
+  ]
+}

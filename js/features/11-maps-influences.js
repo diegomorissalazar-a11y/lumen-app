@@ -9,7 +9,7 @@ function loadMapas() {
 function saveMapas() {
   // v177: persistir el mapa actual sin normalizar toda la red en cada click.
   const ok = safeLocalSetItem(MAPAS_KEY, JSON.stringify(mapas), {prune:true});
-  if (!ok) console.warn('[LUMEN v183] mapa aplicado en memoria; persistencia local pendiente');
+  if (!ok) console.warn('[LUMEN v184] mapa aplicado en memoria; persistencia local pendiente');
   queueCloudSyncV178(900);
   return ok;
 }
@@ -204,6 +204,9 @@ function applyBibliographyToEditor(n,canon){
   const e=n.edicionConsultada,o=n.obraOriginal,{pub,tradEnt,bib}=canon;
   const set=(id,v)=>{const x=document.getElementById(id);if(x&&v!==''&&v!=null)x.value=v;};
   set('f-editorial',pub?.nombreCanonico||e.editorial);set('f-ciudad-pub',e.ciudad);set('f-anio-pub',e.anio);set('f-edicion',e.descripcionEdicion||e.numeroEdicion);set('f-traductor',tradEnt.map(x=>x.nombreCanonico).join('; '));
+  set('f-isbn',e.isbn);set('f-anio-original',o.anioPublicacionOriginal);set('f-titulo-original',o.tituloOriginal);
+  const originalPeriod=[o.periodoInicio,o.periodoFin].filter((v,i,a)=>v!==null&&v!==undefined&&v!==''&&(i===0||String(v)!==String(a[0]))).join('–');
+  set('f-periodo-original',originalPeriod);
   if(o.idiomaOriginal){const sel=document.getElementById('f-idioma');if(sel){const opt=[...sel.options].find(x=>canonicalText(x.value)===canonicalText(o.idiomaOriginal)||canonicalText(x.textContent)===canonicalText(o.idiomaOriginal));if(opt)sel.value=opt.value;}}
   _pendingFormBibliography=bib;
   const sc=document.querySelector('#modal-add .modal');

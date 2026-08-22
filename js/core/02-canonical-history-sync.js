@@ -942,7 +942,7 @@ let db = loadDB();
 try {
   (db.entries||[]).forEach(ensureBookCanonicalRefs);
 } catch (err) {
-  console.warn('[LUMEN v183] Migración canónica inicial omitida para no bloquear el arranque:', err);
+  console.warn('[LUMEN v184] Migración canónica inicial omitida para no bloquear el arranque:', err);
 }
 setTimeout(() => compactLocalDBOnStartup(), 300);
 

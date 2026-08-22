@@ -301,7 +301,7 @@ function openReadingConsistencyReport() {
   const rows = auditReadingConsistency();
   const lineas = [];
   lineas.push('═══════════════════════════════════════════════');
-  lineas.push('REVISIÓN DE CONSISTENCIA DE LECTURA — LUMEN v183');
+  lineas.push('REVISIÓN DE CONSISTENCIA DE LECTURA — LUMEN v184');
   lineas.push('Generado: ' + new Date().toLocaleString('es-CL', { timeZone: LUMEN_TZ }));
   lineas.push('═══════════════════════════════════════════════');
   lineas.push('');

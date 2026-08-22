@@ -1,5 +1,5 @@
 {
-  "version": "183",
+  "version": "186",
   "html": {
     "auth": [
       "views/shell/auth.html"
@@ -53,11 +53,14 @@
     "js/core/09-auth-runtime.js",
     "js/features/10-habits.js",
     "js/features/11-maps-influences.js",
+    "js/maps/graph-metrics.js",
     "js/features/12-routes-graphs.js",
     "js/features/13-movies-normalization.js",
+    "js/maps/map-viewport.js",
     "js/features/14-reading-export.js",
     "js/features/15-manga.js",
     "js/features/16-inventory.js",
+    "js/inventory-json-import.js",
     "js/core/17-sync-v2.js",
     "js/core/18-local-persistence-actions.js"
   ]

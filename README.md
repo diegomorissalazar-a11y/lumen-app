@@ -1,37 +1,28 @@
-# LUMEN v183 — Arquitectura modular
+# LUMEN v186 — Inventario con JSON bibliográfico
 
-## Base funcional
+Base obligatoria usada: **LUMEN v185 modular**.
 
-Esta versión fue migrada directamente desde **LUMEN v182 auditada**.
-
-- SHA-256 de `index.html` v182 usado como fuente: `cba56f3833ec9f2851135aebd49eb43aea9bed8ef3cdfb33ad7100c0912228bc`
-- Objetivo: cambio estructural de archivos, **sin cambios funcionales intencionales**.
-- La interfaz sigue usando los mismos IDs, handlers, modelo local y sincronización V2 de v182.
+## Cambios funcionales
+- Inventario muestra tres acciones principales: **Importar inventario**, **Datos del inventario** y **Libro con JSON**.
+- **Libro con JSON** acepta `lumen_bibliografia_import_v1`, reutilizando el mismo parser bibliográfico de Biblioteca.
+- Antes de aplicar se revisan título, autor, editorial, ISBN, edición, traductores y período original.
+- Autor/editorial/traductores se resuelven contra las entidades canónicas existentes; coincidencias relevantes se consultan antes de crear una entidad nueva.
+- El libro se busca primero por ISBN y luego por título + autor. Las coincidencias de título cercanas se confirman antes de enriquecer una ficha existente.
+- Si el libro ya existe, se enriquece la misma ficha y se marca `enInventario=true`.
+- Si no existe, se crea una ficha de Biblioteca editable, en estado `pendiente`, ya integrada al Inventario.
+- La importación CSV básica ahora crea o vincula fichas canónicas de Biblioteca, de modo que cada libro importado queda disponible para edición posterior.
 
 ## Arquitectura
+Se mantiene íntegramente la arquitectura modular de v185 y se agrega un único módulo especializado:
 
-- `index.html`: shell mínimo y dependencias externas.
-- `css/`: 9 hojas de estilo ordenadas según la cascada original.
-- `views/screens/`: pantallas principales.
-- `views/modals/`: modales separados por dominio.
-- `views/shell/`: autenticación, menú de usuario y navegación.
-- `js/core/`: datos, sincronización, persistencia, autenticación y navegación base.
-- `js/features/`: módulos funcionales cargados en el mismo orden de ejecución de v182.
-- `assets/icons/`: recursos visuales propios.
+- `js/inventory-json-import.js`
 
-## Compatibilidad
+Este módulo consume la infraestructura existente de:
+- `normalizeBibliographicPayload()` para JSON bibliográfico;
+- catálogo canónico de autores/editoriales/traductores;
+- ficha `Book` existente;
+- persistencia y sincronización ya definidas.
 
-Los archivos JavaScript se cargan como scripts clásicos en orden estricto. Esto conserva el ámbito global requerido por los `onclick` existentes mientras permite auditar y modificar cada dominio por separado.
+No se modifica la lógica de Mapas, sincronización V2, hábitos, notas, películas, Historia ni estadísticas.
 
-La carga de parciales HTML usa `fetch`, por lo que LUMEN debe servirse por HTTP/HTTPS (por ejemplo GitHub Pages); no abrir `index.html` directamente con `file://`.
-
-## Validaciones de build
-
-El build comprueba:
-
-- reconstrucción exacta del CSS al concatenar módulos;
-- reconstrucción exacta del JavaScript al concatenar módulos, salvo el cambio de etiqueta v182→v183;
-- conservación de IDs DOM de la base;
-- conservación de handlers `onclick`;
-- sintaxis JavaScript mediante `node --check`;
-- prueba de arranque mediante Chromium sobre servidor HTTP local.
+Consulta `AUDIT_v186.md` y `AUDIT_v186.json` para la comparación automática v185 → v186.

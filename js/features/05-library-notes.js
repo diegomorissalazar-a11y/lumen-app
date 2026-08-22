@@ -377,7 +377,12 @@ function showDetail(id) {
   const row = (label, val) => val ? `<div style="display:flex;gap:8px;padding:7px 0;border-bottom:1px solid var(--cream2);"><span style="font-size:10px;color:var(--ink4);letter-spacing:1.5px;text-transform:uppercase;font-weight:700;width:110px;flex-shrink:0;padding-top:2px;">${label}</span><span style="font-size:14px;color:var(--ink2);">${esc(val)}</span></div>` : '';
   if (coverUrl(e)) html += `<img src="${esc(coverUrl(e))}" style="width:80px;height:110px;object-fit:cover;border-radius:3px;float:right;margin:0 0 12px 12px;" onerror="this.style.display='none'">`;
   if (e.type === 'libro') {
-    html += row('Autor', e.autor) + row('Editorial', e.editorial) + row('Edición', e.edicion) + row('Ciudad / lugar pub.', e.ciudad_publicacion||e.ciudad) + row('Páginas', e.paginas) + row('Publicado', e.anio_pub) + row('Traductor', e.traductor) + row('Idioma orig.', e.idioma) + row('Leído', `${e.mes||''} ${e.anio||''}`);
+    const bibEd=e.bibliografia?.edicionConsultada||{}, bibObra=e.bibliografia?.obraOriginal||{};
+    const originalYear=e.anio_publicacion_original??bibObra.anioPublicacionOriginal??e.periodo_publicacion_inicio??bibObra.periodoInicio??null;
+    const originalStart=e.periodo_publicacion_inicio??bibObra.periodoInicio??originalYear;
+    const originalEnd=e.periodo_publicacion_fin??bibObra.periodoFin??null;
+    const originalPeriod=[originalStart,originalEnd].filter((v,i,a)=>v!==null&&v!==undefined&&v!==''&&(i===0||String(v)!==String(a[0]))).join('–');
+    html += row('Autor', e.autor) + row('Editorial', e.editorial||bibEd.editorial) + row('Edición', e.edicion||bibEd.descripcionEdicion||bibEd.numeroEdicion) + row('Ciudad / lugar pub.', e.ciudad_publicacion||e.ciudad||bibEd.ciudad) + row('Año de esta edición', e.anio_pub||bibEd.anio) + row('Publicación original', originalYear) + row('Período original', originalPeriod) + row('Título original', bibObra.tituloOriginal) + row('ISBN', e.isbn||bibEd.isbn) + row('Páginas', e.paginas) + row('Traductor', e.traductor||((bibEd.traductores||[]).join('; '))) + row('Idioma orig.', e.idioma||bibObra.idiomaOriginal) + row('Leído', `${e.mes||''} ${e.anio||''}`);
     html += row('Origen', origenAdquisicionLabel(e.origen_adquisicion));
     html += row('Adquirido', e.fecha_adquisicion ? fechaCL(e.fecha_adquisicion) : '');
     const espera = libroEsperaInfo(e);
@@ -661,6 +666,15 @@ function editEntry(id) {
       if (anioPublEl) anioPublEl.value = (e.anio_pub && parseInt(e.anio_pub) > 0) ? parseInt(e.anio_pub) : '';
       const edicionEl=document.getElementById('f-edicion'); if(edicionEl) edicionEl.value=e.edicion||'';
       const ciudadPubEl=document.getElementById('f-ciudad-pub'); if(ciudadPubEl) ciudadPubEl.value=e.ciudad_publicacion||e.ciudad||'';
+      const bibEd=e.bibliografia?.edicionConsultada||{}, bibObra=e.bibliografia?.obraOriginal||{};
+      const isbnEl=document.getElementById('f-isbn'); if(isbnEl) isbnEl.value=e.isbn||bibEd.isbn||'';
+      const originalYear=e.anio_publicacion_original??bibObra.anioPublicacionOriginal??e.periodo_publicacion_inicio??bibObra.periodoInicio??'';
+      const originalEl=document.getElementById('f-anio-original'); if(originalEl) originalEl.value=originalYear||'';
+      const tituloOriginalEl=document.getElementById('f-titulo-original'); if(tituloOriginalEl) tituloOriginalEl.value=bibObra.tituloOriginal||'';
+      const originalStart=e.periodo_publicacion_inicio??bibObra.periodoInicio??originalYear;
+      const originalEnd=e.periodo_publicacion_fin??bibObra.periodoFin??null;
+      const originalPeriod=[originalStart,originalEnd].filter((v,i,a)=>v!==null&&v!==undefined&&v!==''&&(i===0||String(v)!==String(a[0]))).join('–');
+      const periodEl=document.getElementById('f-periodo-original'); if(periodEl) periodEl.value=originalPeriod;
       // Mostrar preview de portada si existe
       if (coverUrl(e)) { document.getElementById('f-cover').value = coverUrl(e); previewMainCover('f-cover','f-cover-preview'); }
       // Idioma: populate dynamic select

@@ -221,6 +221,24 @@ function renderMapaPeliculas() {
   links.forEach(l => { conectados.add(l.source); conectados.add(l.target); });
   const nodes = [...nodeMap.values()].filter(n => conectados.has(n.id));
 
+  // v185 — centralidad cinematográfica coherente con el significado del mapa.
+  // Películas y nodos categóricos (país, productora, género) conservan tamaño fijo.
+  // Los roles creativos/personales crecen por la cantidad de películas únicas conectadas.
+  const CREATIVE_TYPES = new Set(['director','fotografia','musica','guionista','protagonista','elenco']);
+  const CONTEXT_TYPES = new Set(['pais','productora','genero']);
+  const movieCountByNode = GraphMetrics.uniqueMoviesByNode(nodes, links, 'pel_');
+  nodes.forEach(n => { n.movieWeight = movieCountByNode[n.id] || 0; });
+  const maxCreativeWeight = Math.max(1, ...nodes.filter(n => CREATIVE_TYPES.has(n.tipo)).map(n => n.movieWeight || 0));
+  const movieNodeRadius = d => {
+    if (d.tipo === 'pelicula') return 13;
+    if (CONTEXT_TYPES.has(d.tipo)) return 11;
+    if (CREATIVE_TYPES.has(d.tipo)) {
+      // floorMax 9 evita que un mapa pequeño convierta automáticamente una sola aparición en nodo gigante.
+      return GraphMetrics.sqrtRadius(d.movieWeight || 0, maxCreativeWeight, 8, 26, 9);
+    }
+    return 10;
+  };
+
   if (!nodes.length) {
     emptyDiv.style.display = 'flex';
     emptyDiv.querySelector('div:last-child').textContent = 'Activa algún rol para ver la red.';
@@ -249,11 +267,7 @@ function renderMapaPeliculas() {
       return -120;
     }))
     .force('center', d3.forceCenter(W/2, H/2))
-    .force('collide', d3.forceCollide().radius(d => {
-      if (d.tipo==='pelicula') return 28;
-      if (['pais','productora','genero'].includes(d.tipo)) return 26;
-      return 18;
-    }));
+    .force('collide', d3.forceCollide().radius(d => movieNodeRadius(d) + 8));
 
   const linkColor = d => {
     if (['pais','productora','genero'].includes(d.rol)) return PEL_NODO_COLORS[d.rol] || '#aaa';
@@ -275,14 +289,10 @@ function renderMapaPeliculas() {
       .on('drag',  (ev,d) => { d.fx=ev.x; d.fy=ev.y; })
       .on('end',   (ev,d) => { if(!ev.active) sim.alphaTarget(0); d.fx=null; d.fy=null; }));
 
-  const esContextual = d => ['pais','productora','genero'].includes(d.tipo);
+  const esContextual = d => CONTEXT_TYPES.has(d.tipo);
 
   node.append('circle')
-    .attr('r', d => {
-      if (d.tipo==='pelicula') return 18;
-      if (esContextual(d))    return 14 + Math.min(d.grado * 1.5, 12);
-      return Math.min(8 + d.grado*1.5, 16);
-    })
+    .attr('r', d => movieNodeRadius(d))
     .attr('fill', d => {
       if (d.tipo==='pelicula') return 'var(--ink)';
       if (esContextual(d))    return PEL_NODO_COLORS[d.tipo] || '#888';
@@ -294,7 +304,7 @@ function renderMapaPeliculas() {
 
   node.append('text')
     .attr('text-anchor','middle').attr('dominant-baseline','central')
-    .attr('font-size', d => d.tipo==='pelicula' ? '12px' : esContextual(d) ? '11px' : '9px')
+    .attr('font-size', d => d.tipo==='pelicula' ? '10px' : esContextual(d) ? '10px' : Math.max(9,Math.min(13,8+Math.sqrt(d.movieWeight||0)*2))+'px')
     .style('pointer-events','none').style('user-select','none')
     .text(d => {
       if (d.tipo==='pelicula') return '🎬';
@@ -303,7 +313,7 @@ function renderMapaPeliculas() {
     });
 
   node.append('text')
-    .attr('dy', d => d.tipo==='pelicula' ? 28 : esContextual(d) ? 26 : 22)
+    .attr('dy', d => movieNodeRadius(d) + 12)
     .attr('text-anchor','middle')
     .attr('font-size', d => d.tipo==='pelicula' ? '10px' : esContextual(d) ? '10px' : '9px')
     .attr('font-weight', d => (d.tipo==='pelicula' || esContextual(d)) ? '700' : '400')
@@ -328,6 +338,13 @@ function renderMapaPeliculas() {
     }[d.tipo] || d.tipo;
 
     let html = '<strong>' + d.label + '</strong><br><span style="opacity:0.7;font-size:10px;">' + tipoLabel + '</span>';
+    if (CREATIVE_TYPES.has(d.tipo)) {
+      const w = d.movieWeight || 0;
+      html += '<br><span style="font-size:10px;color:#e6bd58;font-weight:700;">Centralidad: ' + w + ' película' + (w===1?'':'s') + ' conectada' + (w===1?'':'s') + '</span>';
+    } else if (esContextual(d)) {
+      const w = d.movieWeight || 0;
+      html += '<br><span style="font-size:10px;opacity:.7;">' + w + ' película' + (w===1?'':'s') + ' · tamaño fijo</span>';
+    }
 
     if (esContextual(d)) {
       const relacionadas = peliculas.filter(p => {

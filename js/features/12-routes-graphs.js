@@ -652,16 +652,10 @@ function buildD3Graph(containerId, nodes, links, colorFn, tooltipEdgeFn, fuenteT
   svg.node().__zoomG = g;
 
   // ── Métricas del grafo ──
-  // Por defecto el tamaño usa grado total. Un mapa puede entregar sizeMetric
-  // por nodo para representar otra semántica (p. ej. influencias originadas).
-  const degree = {};
-  nodes.forEach(n => { degree[n.id] = 0; });
-  links.forEach(l => {
-    const s = typeof l.source === 'object' ? l.source.id : l.source;
-    const t = typeof l.target === 'object' ? l.target.id : l.target;
-    degree[s] = (degree[s]||0) + 1;
-    degree[t] = (degree[t]||0) + 1;
-  });
+  // v185: una sola gramática visual. Cada mapa entrega su semántica en sizeMetric;
+  // fixedRadius permite mantener obras con tamaño estable. La escala común es raíz cuadrada.
+  const graphDegrees = GraphMetrics.degrees(nodes, links);
+  const degree = graphDegrees.totalDegree;
   const visualMetric = {};
   nodes.forEach(n => {
     visualMetric[n.id] = Number.isFinite(Number(n.sizeMetric))
@@ -669,11 +663,10 @@ function buildD3Graph(containerId, nodes, links, colorFn, tooltipEdgeFn, fuenteT
       : (degree[n.id] || 0);
   });
   const maxVisualMetric = Math.max(1, ...Object.values(visualMetric));
-  // Radio: tamaño mínimo para 0 y crecimiento lineal hasta 32 px.
   const nodeR = d => {
-    const base = d.isEvent ? 11 : 14;
-    const extra = Math.round(((visualMetric[d.id]||0) / maxVisualMetric) * 18);
-    return base + extra;
+    if (Number.isFinite(Number(d.fixedRadius))) return Number(d.fixedRadius);
+    const minR = d.isEvent ? 10 : 12;
+    return GraphMetrics.sqrtRadius(visualMetric[d.id]||0, maxVisualMetric, minR, 34, 1);
   };
 
   // Arrow markers per tipo
@@ -1026,13 +1019,27 @@ function renderMapaRutas() {
     }
   });
 
-  const nodes = [...nodeSet].map(name => ({
-    id: name, label: name,
-    inLibrary: libTitles.has(name),
-    isEvent:   !libTitles.has(name) && name !== '⭐ Origen',
-    icon:      iconForNode(name),
-    tooltip:   name
-  }));
+  // v185: Rutas comunica capacidad de originar nuevas lecturas. Los libros son obras
+  // estructurales de tamaño fijo; personas, entrevistas, películas, series y otros estímulos
+  // crecen por cantidad de rutas que originan.
+  const rutaDegrees = GraphMetrics.degrees([...nodeSet].map(id => ({id})), links);
+  const nodes = [...nodeSet].map(name => {
+    const isBook = libTitles.has(name);
+    const out = rutaDegrees.outDegree[name] || 0;
+    const incoming = rutaDegrees.inDegree[name] || 0;
+    return {
+      id: name, label: name,
+      inLibrary: isBook,
+      isEvent: !isBook && name !== '⭐ Origen',
+      icon: iconForNode(name),
+      tooltip: name,
+      fixedRadius: isBook ? 13 : undefined,
+      sizeMetric: isBook ? 0 : out,
+      metricTooltip: isBook
+        ? `${name}\nLibro · tamaño fijo\nRutas originadas: ${out}\nRutas recibidas: ${incoming}`
+        : `${name}\nRutas originadas: ${out}\nRutas recibidas: ${incoming}`
+    };
+  });
 
   buildD3Graph('mapa-rutas-svg', nodes, links,
     tipo=>RUTA_COLORS[tipo]||'#999',

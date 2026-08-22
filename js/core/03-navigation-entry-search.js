@@ -588,13 +588,13 @@ function toggleBookInventoryQuick(bookId) {
     book.enInventario=false;
     const nextInv=inv.filter(x=>x.linkedEntryId!==bookId);
     try{saveInventory(nextInv,false);book._updatedAt=Date.now();saveDB();}
-    catch(err){console.error('[LUMEN v183] Quitar inventario:',err);showToast('⚠ No se pudo actualizar el inventario',4000);return;}
+    catch(err){console.error('[LUMEN v184] Quitar inventario:',err);showToast('⚠ No se pudo actualizar el inventario',4000);return;}
     showToast('✓ Quitado del inventario');
   }else{
     book.enInventario=true;
     book._updatedAt=Date.now();
     try{saveDB();}
-    catch(err){console.error('[LUMEN v183] Agregar inventario:',err);book.enInventario=false;showToast('⚠ No se pudo actualizar el inventario',4000);return;}
+    catch(err){console.error('[LUMEN v184] Agregar inventario:',err);book.enInventario=false;showToast('⚠ No se pudo actualizar el inventario',4000);return;}
     showToast('✓ Agregado al inventario');
   }
   if(currentScreen==='library') renderLibrary();
