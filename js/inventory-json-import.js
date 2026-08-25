@@ -232,6 +232,7 @@ function confirmInventoryJsonImport() {
       book._updatedAt = Date.now();
     }
     syncInventoryFromBook(book);
+    if(typeof invalidateRecommendations==='function') invalidateRecommendations('inventario enriquecido con JSON');
     const ok = saveDB();
     if (ok === false) throw new Error('No se pudo persistir la ficha localmente.');
 

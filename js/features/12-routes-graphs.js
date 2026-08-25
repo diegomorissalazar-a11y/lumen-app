@@ -465,6 +465,7 @@ function saveRuta() {
   if (editId) { const i = mapas.rutas.findIndex(x=>x.id===editId); if(i>=0) mapas.rutas[i]=obj; }
   else mapas.rutas.push(obj);
   saveMapas();
+  if(typeof invalidateRecommendations==='function') invalidateRecommendations('ruta de lectura modificada');
   closeModal('modal-ruta');
   showToast('✓ Conexión guardada');
   generarRutasMismoAutor(true);
@@ -633,6 +634,7 @@ function buscarNodoEnGrafo(titulo) {
 function deleteRuta(id) {
   if (!confirm('¿Eliminar esta conexión?')) return;
   mapas.rutas=mapas.rutas.filter(x=>x.id!==id);
+  if(typeof invalidateRecommendations==='function') invalidateRecommendations('ruta de lectura eliminada');
   saveMapas(); generarRutasMismoAutor(true); showToast('Conexión eliminada');
 }
 

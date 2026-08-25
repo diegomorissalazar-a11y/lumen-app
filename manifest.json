@@ -1,5 +1,5 @@
 {
-  "version": "187",
+  "version": "188",
   "html": {
     "auth": [
       "views/shell/auth.html"
@@ -28,7 +28,8 @@
       "views/modals/notes.html",
       "views/modals/challenge.html",
       "views/modals/genres.html",
-      "views/modals/auth-sync.html"
+      "views/modals/auth-sync.html",
+      "views/modals/discover.html"
     ]
   },
   "css": [
@@ -39,7 +40,8 @@
     "css/05-reading-home.css",
     "css/06-responsive.css",
     "css/07-inventory.css",
-    "css/08-history-maps.css"
+    "css/08-history-maps.css",
+    "css/09-recommendations.css"
   ],
   "js": [
     "js/core/01-firebase-data.js",
@@ -56,11 +58,13 @@
     "js/maps/graph-metrics.js",
     "js/features/12-routes-graphs.js",
     "js/features/13-movies-normalization.js",
+    "js/bibliography-completeness.js",
     "js/maps/map-viewport.js",
     "js/features/14-reading-export.js",
     "js/features/15-manga.js",
     "js/features/16-inventory.js",
     "js/inventory-json-import.js",
+    "js/recommendations.js",
     "js/core/17-sync-v2.js",
     "js/core/18-local-persistence-actions.js"
   ]

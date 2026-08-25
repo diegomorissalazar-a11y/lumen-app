@@ -53,3 +53,12 @@ El nuevo módulo `js/inventory-json-import.js` reutiliza el parser de `lumen_bib
 - `Book` mantiene la ficha canónica del registro, mientras un ejemplar físico multiobra puede declarar `inventoryContainer=true` y `containedWorkIds[]`.
 - El estado de lectura del contenedor en Inventario se deriva de las obras vinculadas; no se reutiliza `estado='leido'` para evitar duplicar libros terminados en estadísticas.
 - Influencias separa **evidencia documental** de **conexión estructural**: N citas entre la misma pareja de autores conservan N evidencias, pero generan una sola arista para centralidad y tamaño.
+
+## v188 — módulos agregados
+
+- `js/bibliography-completeness.js`: contrato de completitud bibliográfica y listado de fichas incompletas en Normalizar. Reutiliza el importador bibliográfico existente; no duplica parsing ni normalización.
+- `js/recommendations.js`: motor de **Descubrir**, limitado a libros disponibles en Inventario y organizado por Historia, Poesía, Cuentos y Novela. Mantiene caché derivada e invalidación por eventos de dominio.
+- `views/modals/discover.html`: presentación de recomendaciones desde Biblioteca.
+- `css/09-recommendations.css`: estilos de Descubrir y listado de bibliografía incompleta.
+
+La recomendación es dato derivado: no altera fichas, inventario, mapas ni estadísticas. La fuente de verdad sigue siendo `db.entries`, Inventario, `mapas` e Historia.

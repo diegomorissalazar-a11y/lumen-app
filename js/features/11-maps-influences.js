@@ -235,6 +235,7 @@ function applyBibliographicJson(){
   if(document.getElementById('modal-influencia')?.classList.contains('open')){syncInfCanonicalBibliography();actualizarIsoPreview();}
   showToast(editorMode?'✓ Datos aplicados al editor. Guarda la ficha para confirmar.':'✓ Ficha bibliográfica actualizada');
   if(!editorMode&&currentScreen==='library')renderLibrary();
+  if(typeof afterBibliographicApplyV188==='function') afterBibliographicApplyV188();
 }
 
 // ══════════════════════════
@@ -782,6 +783,7 @@ function saveInfluencia() {
   if (editId) { const i=mapas.influencias.findIndex(x=>x.id===editId); if(i>=0) mapas.influencias[i]=obj; }
   else mapas.influencias.push(obj);
   saveMapas();
+  if(typeof invalidateRecommendations==='function') invalidateRecommendations('influencia modificada');
   closeModal('modal-influencia');
   showToast('✓ Relación guardada');
   renderMapaInfluencias();
@@ -792,6 +794,7 @@ function saveInfluencia() {
 function deleteInfluencia(id) {
   if (!confirm('¿Eliminar esta relación?')) return;
   mapas.influencias = mapas.influencias.filter(x => x.id !== id);
+  if(typeof invalidateRecommendations==='function') invalidateRecommendations('influencia eliminada');
   saveMapas(); renderMapaInfluencias(); showToast('Relación eliminada');
 }
 

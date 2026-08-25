@@ -1,4 +1,4 @@
-// LUMEN v187 — bootstrap modular
+// LUMEN v188 — bootstrap modular
 'use strict';
 
 const LUMEN_HTML_MANIFEST = {
@@ -29,7 +29,8 @@ const LUMEN_HTML_MANIFEST = {
     "views/modals/notes.html",
     "views/modals/challenge.html",
     "views/modals/genres.html",
-    "views/modals/auth-sync.html"
+    "views/modals/auth-sync.html",
+    "views/modals/discover.html"
   ]
 };
 const LUMEN_JS_MANIFEST = [
@@ -47,11 +48,13 @@ const LUMEN_JS_MANIFEST = [
   "js/maps/graph-metrics.js",
   "js/features/12-routes-graphs.js",
   "js/features/13-movies-normalization.js",
+  "js/bibliography-completeness.js",
   "js/maps/map-viewport.js",
   "js/features/14-reading-export.js",
   "js/features/15-manga.js",
   "js/features/16-inventory.js",
   "js/inventory-json-import.js",
+  "js/recommendations.js",
   "js/core/17-sync-v2.js",
   "js/core/18-local-persistence-actions.js"
 ];
@@ -85,7 +88,7 @@ async function bootLumen() {
     if (status) status.remove();
     window.__LUMEN_MODULAR_BOOT_OK__ = true;
   } catch (err) {
-    console.error('[LUMEN v187] Error de arranque modular:', err);
+    console.error('[LUMEN v188] Error de arranque modular:', err);
     if (status) status.innerHTML = `<strong>No se pudo iniciar LUMEN.</strong><br>${String(err.message||err)}`;
     window.__LUMEN_MODULAR_BOOT_ERROR__ = String(err.message||err);
   }

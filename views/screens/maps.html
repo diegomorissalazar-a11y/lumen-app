@@ -173,6 +173,10 @@
         style="flex:1;padding:9px;border:none;background:none;font-family:var(--font-sans);font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;color:var(--ink4);border-bottom:2px solid transparent;margin-bottom:-2px;">
         🌐 Idiomas
       </button>
+      <button id="norm-tab-libros" onclick="switchNormTab('libros')"
+        style="flex:1;padding:9px;border:none;background:none;font-family:var(--font-sans);font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;color:var(--ink4);border-bottom:2px solid transparent;margin-bottom:-2px;">
+        📚 Libros
+      </button>
     </div>
 
     <!-- SUBTAB: DUPLICADOS -->
@@ -205,6 +209,15 @@
           <div id="norm-blacklist-lista" style="font-size:12px;color:var(--ink3);"></div>
         </div>
       </div>
+    </div>
+
+    <!-- SUBTAB: LIBROS CON BIBLIOGRAFÍA INCOMPLETA -->
+    <div id="norm-sub-libros" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+      <div class="norm-books-toolbar">
+        <span id="norm-books-count" style="font-size:11px;color:var(--gold);font-weight:700;"></span>
+        <button class="btn btn-secondary btn-sm" style="width:auto;margin-left:auto;" onclick="renderIncompleteBibliographyBooks()">↻ Actualizar lista</button>
+      </div>
+      <div id="norm-books-list" style="flex:1;overflow-y:auto;"></div>
     </div>
 
     <!-- SUBTAB: ELENCOS PENDIENTES -->

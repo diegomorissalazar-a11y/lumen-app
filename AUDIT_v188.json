@@ -1,0 +1,135 @@
+{
+  "base": "LUMEN v187 modular",
+  "target": "LUMEN v188 modular",
+  "base_sha256_index": "3f6017ff2d69dfda3eab656f3250a119b5fc1a02d753f565db8f8db062abb003",
+  "counts": {
+    "functions": {
+      "v187": 621,
+      "v188": 641
+    },
+    "callables": {
+      "v187": 657,
+      "v188": 680
+    },
+    "variables": {
+      "v187": 1265,
+      "v188": 1289
+    },
+    "ids": {
+      "v187": 568,
+      "v188": 574
+    },
+    "onclick_handlers": {
+      "v187": 105,
+      "v188": 107
+    },
+    "onclick_instances": {
+      "v187": 275,
+      "v188": 279
+    },
+    "js_files": {
+      "v187": 22,
+      "v188": 24
+    }
+  },
+  "removed": {
+    "functions": [],
+    "callables": [],
+    "variables": [],
+    "ids": [],
+    "handlers": []
+  },
+  "added": {
+    "functions": [
+      "afterBibliographicApplyV188",
+      "authorInfluenceScore",
+      "authorReadCounts",
+      "bibliographyCompletionMissing",
+      "calculate",
+      "categoryBooks",
+      "historyContinuity",
+      "incompleteBibliographyBooks",
+      "invalidate",
+      "invalidateRecommendations",
+      "load",
+      "openBibliographyFromNormalizerBooks",
+      "openDiscover",
+      "originalLanguage",
+      "recommendationCardHTML",
+      "renderDiscoverRecommendations",
+      "renderIncompleteBibliographyBooks",
+      "routeScore",
+      "scoreBook",
+      "status"
+    ],
+    "callables": [
+      "RecommendationEngine",
+      "afterBibliographicApplyV188",
+      "authorInfluenceScore",
+      "authorReadCounts",
+      "bibliographyCompletionMissing",
+      "calculate",
+      "categoryBooks",
+      "hasGenre",
+      "historyContinuity",
+      "incompleteBibliographyBooks",
+      "invalidate",
+      "invalidateRecommendations",
+      "load",
+      "openBibliographyFromNormalizerBooks",
+      "openDiscover",
+      "originalLanguage",
+      "readBooks",
+      "recommendationCardHTML",
+      "renderDiscoverRecommendations",
+      "renderIncompleteBibliographyBooks",
+      "routeScore",
+      "scoreBook",
+      "status"
+    ],
+    "variables": [
+      "CACHE_KEY",
+      "RecommendationEngine",
+      "aid",
+      "authorAffinity",
+      "bounds",
+      "categories",
+      "centers",
+      "dirty",
+      "dirtyReason",
+      "gap",
+      "genre",
+      "hasGenre",
+      "historicalRead",
+      "history",
+      "influence",
+      "isAvailable",
+      "isRead",
+      "line",
+      "pairs",
+      "pool",
+      "readAuthorIds",
+      "readBooks",
+      "reasons",
+      "route"
+    ],
+    "ids": [
+      "discover-body",
+      "modal-discover",
+      "norm-books-count",
+      "norm-books-list",
+      "norm-sub-libros",
+      "norm-tab-libros"
+    ],
+    "handlers": [
+      "openDiscover",
+      "renderIncompleteBibliographyBooks"
+    ],
+    "js_files": [
+      "js/bibliography-completeness.js",
+      "js/recommendations.js"
+    ]
+  },
+  "duplicate_ids": [],
+  "static_handlers_not_found": []
+}

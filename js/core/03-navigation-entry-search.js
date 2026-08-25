@@ -735,6 +735,7 @@ function saveEntry() {
   if (currentType === 'libro') {
     const finalBook = db.entries.find(e => e.id === entry.id);
     syncInventoryFromBook(finalBook);
+    if(typeof invalidateRecommendations==='function') invalidateRecommendations('ficha de libro modificada');
   }
   saveDB();
   closeModal('modal-add');

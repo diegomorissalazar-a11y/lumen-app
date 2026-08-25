@@ -679,7 +679,8 @@ function switchNormTab(tab) {
   document.getElementById('norm-sub-duplicados').style.display = tab==='duplicados' ? 'flex' : 'none';
   document.getElementById('norm-sub-elencos').style.display    = tab==='elencos'    ? 'flex' : 'none';
   document.getElementById('norm-sub-idiomas').style.display    = tab==='idiomas'    ? 'flex' : 'none';
-  ['duplicados','elencos','idiomas'].forEach(t => {
+  document.getElementById('norm-sub-libros').style.display     = tab==='libros'     ? 'flex' : 'none';
+  ['duplicados','elencos','idiomas','libros'].forEach(t => {
     const btn = document.getElementById('norm-tab-' + t);
     if (!btn) return;
     btn.style.color        = t === tab ? 'var(--gold)' : 'var(--ink4)';
@@ -697,6 +698,7 @@ function switchNormTab(tab) {
     renderElencoPendientes();
   }
   if (tab === 'idiomas') initIdiomasTab();
+  if (tab === 'libros') renderIncompleteBibliographyBooks();
 }
 
 function setElencTipo(tipo, btn) {

@@ -780,6 +780,7 @@ function finishBook() {
     else e.readDates.push({ date: today, pag: pagFinal });
   }
   e._updatedAt = Date.now();
+  if(typeof invalidateRecommendations==='function') invalidateRecommendations('libro terminado');
   saveDB();
   closeModal('modal-progress');
   showToast(`🎉 ¡Terminaste "${e.titulo}"!`, 3000);
