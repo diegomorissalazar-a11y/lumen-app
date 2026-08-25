@@ -1,0 +1,88 @@
+{
+  "version": "189",
+  "base": "188 modular",
+  "base_tree_sha256": "967060150675dfb68015a5e1311022f27235b879a92c2308939efe99a562178d",
+  "v189_tree_sha256": "ac35d03e05f963bf1d1747013f33cbd34d472abb37a34c087091a3883e70869e",
+  "files": {
+    "v188": 75,
+    "v189": 75,
+    "js": 24,
+    "html": 25,
+    "css": 10
+  },
+  "metrics": {
+    "funcs": {
+      "v188": 641,
+      "v189": 651,
+      "removed": [],
+      "added": [
+        "authorAffinityScore",
+        "belongsToCategory",
+        "canonicalAuthorIds",
+        "exactBookClassifications",
+        "inventoryPool",
+        "normalizeCompletionState",
+        "normalizeCompletionStates",
+        "openRecommendationBook",
+        "recalculate",
+        "startRecommendationReading"
+      ]
+    },
+    "callables": {
+      "v188": 707,
+      "v189": 718,
+      "removed": [],
+      "added": [
+        "authorAffinityScore",
+        "belongsToCategory",
+        "canonicalAuthorIds",
+        "exactBookClassifications",
+        "inventoryPool",
+        "monthNames",
+        "normalizeCompletionState",
+        "normalizeCompletionStates",
+        "openRecommendationBook",
+        "recalculate",
+        "startRecommendationReading"
+      ]
+    },
+    "vars": {
+      "v188": 1289,
+      "v189": 1299,
+      "removed": [],
+      "added": [
+        "authorIds",
+        "connected",
+        "expected",
+        "lastReason",
+        "monthNames",
+        "poolNote",
+        "shown",
+        "unified",
+        "values",
+        "yy"
+      ]
+    },
+    "ids": {
+      "v188": 574,
+      "v189": 574,
+      "removed": [],
+      "added": []
+    },
+    "handlers": {
+      "v188": 109,
+      "v189": 109,
+      "removed": [],
+      "added": []
+    }
+  },
+  "missing_manifest_paths": [],
+  "duplicate_static_ids": [],
+  "checks": {
+    "no_removed_functions": true,
+    "no_removed_callables": true,
+    "no_removed_variables": true,
+    "no_removed_ids": true,
+    "no_removed_handlers": true
+  }
+}

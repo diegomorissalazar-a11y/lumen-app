@@ -61,7 +61,7 @@ function registerCanonicalEntity(kind,name,preferredId=''){
 }
 function addCanonicalAlias(kind,id,alias){
   alias=String(alias||'').trim(); if(!id||!alias)return; const c=loadCanonicalEntities(),b=catalogBucket(kind,c),e=b[id]; if(!e)return;
-  if(canonicalText(alias)!==canonicalText(e.nombreCanonico) && !(e.aliases||[]).some(a=>canonicalText(a)===canonicalText(alias))){e.aliases=e.aliases||[];e.aliases.push(alias);saveCanonicalEntities(c);}
+  if(canonicalText(alias)!==canonicalText(e.nombreCanonico) && !(e.aliases||[]).some(a=>canonicalText(a)===canonicalText(alias))){e.aliases=e.aliases||[];e.aliases.push(alias);saveCanonicalEntities(c);if(kind==='aut'&&typeof invalidateRecommendations==='function')invalidateRecommendations('autor normalizado');}
 }
 function resolveCanonicalEntity(kind,name,interactive=false){
   name=String(name||'').trim(); if(!name)return {id:'',nombreCanonico:'',aliases:[]}; const exact=findCanonicalEntity(kind,name); if(exact)return exact;
@@ -588,9 +588,12 @@ function hasPendingCover(e) {
 // Prepara un entry para Firestore: excluye imágenes base64
 // que solo viven en localStorage (demasiado grandes para Firestore)
 function entryForFirestore(entry) {
+  const source = (typeof prepareLocalCoverForCloud === 'function') ? prepareLocalCoverForCloud(entry) : entry;
   const e = {};
-  Object.entries(entry).forEach(([k, v]) => {
-    // Imágenes base64 grandes (> ~500KB) → placeholder; pequeñas → pasan directo
+  Object.entries(source).forEach(([k, v]) => {
+    if (k === 'coverAssetId') return; // referencia exclusiva del dispositivo
+    // Imágenes base64 grandes heredadas → placeholder; portadas locales v190
+    // de elementos en curso ya llegan aquí como cover vacío.
     if (isBase64Image(v) && v.length > 666666) {
       e[k] = '__local_image__';
     } else {

@@ -54,7 +54,7 @@ El nuevo módulo `js/inventory-json-import.js` reutiliza el parser de `lumen_bib
 - El estado de lectura del contenedor en Inventario se deriva de las obras vinculadas; no se reutiliza `estado='leido'` para evitar duplicar libros terminados en estadísticas.
 - Influencias separa **evidencia documental** de **conexión estructural**: N citas entre la misma pareja de autores conservan N evidencias, pero generan una sola arista para centralidad y tamaño.
 
-## v188 — módulos agregados
+## v189 — módulos agregados
 
 - `js/bibliography-completeness.js`: contrato de completitud bibliográfica y listado de fichas incompletas en Normalizar. Reutiliza el importador bibliográfico existente; no duplica parsing ni normalización.
 - `js/recommendations.js`: motor de **Descubrir**, limitado a libros disponibles en Inventario y organizado por Historia, Poesía, Cuentos y Novela. Mantiene caché derivada e invalidación por eventos de dominio.
@@ -62,3 +62,14 @@ El nuevo módulo `js/inventory-json-import.js` reutiliza el parser de `lumen_bib
 - `css/09-recommendations.css`: estilos de Descubrir y listado de bibliografía incompleta.
 
 La recomendación es dato derivado: no altera fichas, inventario, mapas ni estadísticas. La fuente de verdad sigue siendo `db.entries`, Inventario, `mapas` e Historia.
+
+
+## v190 — Assets locales
+Se incorpora `js/data/assets.js` como capa de política de recursos locales. La persistencia física continúa en IndexedDB (`lumen_assets_v1/images`) y el modelo de dominio solo mantiene `coverAssetId` cuando una portada local corresponde a un contenido en curso. `coverAssetId` no se exporta a Firestore.
+
+Política:
+- libro + `estado=leyendo` → portada local permitida;
+- manga + `estado=leyendo` → portada local permitida;
+- serie + `estado=viendo` → portada local permitida;
+- URL remota → se conserva normalmente;
+- contenido terminado → la portada exclusivamente local se desacopla de la ficha.

@@ -242,6 +242,7 @@ function saveProgressCover() {
   const url = document.getElementById('progress-cover-url').value.trim();
   if (!e) return;
   e.cover = url;
+  if (typeof applyLocalCoverPolicy === 'function') applyLocalCoverPolicy(e);
   saveDB();
   // Rebuild header
   const imgHtml = url
@@ -415,6 +416,7 @@ function saveReadingEntry() {
     _updatedAt: now
   });
 
+  if (typeof applyLocalCoverPolicy === 'function') applyLocalCoverPolicy(entry);
   ensureBookCanonicalRefs(entry);
 
   // Si estaba marcado en inventario, conservar y reforzar el vínculo físico.
@@ -586,6 +588,7 @@ function saveWatchingEntry() {
   document.getElementById('watching-temporada-actual').value = 1;
   document.getElementById('watching-progress-bar').style.width = '0%';
   document.getElementById('watching-progress-pct').textContent = '';
+  if (typeof applyLocalCoverPolicy === 'function') applyLocalCoverPolicy(entry);
   db.entries.push(entry);
   saveDB();
   closeModal('modal-add-watching');
@@ -780,6 +783,7 @@ function finishBook() {
     else e.readDates.push({ date: today, pag: pagFinal });
   }
   e._updatedAt = Date.now();
+  if (typeof applyLocalCoverPolicy === 'function') applyLocalCoverPolicy(e);
   if(typeof invalidateRecommendations==='function') invalidateRecommendations('libro terminado');
   saveDB();
   closeModal('modal-progress');

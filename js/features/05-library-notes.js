@@ -869,6 +869,7 @@ function finishSerie(id) {
   const tempActual = parseInt(document.getElementById('serie-temporada-actual')?.value) || e.temporadaActual;
   if (tempActual) e.coleccion = `Temporada ${tempActual}`;
   e._updatedAt = Date.now();
+  if (typeof applyLocalCoverPolicy === 'function') applyLocalCoverPolicy(e);
   saveDB();
   closeModal('modal-serie-progress');
   showToast(`🎉 ¡Terminaste "${e.titulo}"!`, 3000);

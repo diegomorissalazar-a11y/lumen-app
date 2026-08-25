@@ -48,11 +48,29 @@ async function getLocalAsset(key) {
   } catch (_) { return null; }
 }
 
+async function deleteLocalAsset(key) {
+  if (!key) return false;
+  try {
+    const idb = await openLumenAssetDB();
+    return await new Promise((resolve, reject) => {
+      const tx = idb.transaction(LUMEN_ASSET_STORE, 'readwrite');
+      tx.objectStore(LUMEN_ASSET_STORE).delete(key);
+      tx.oncomplete = () => resolve(true);
+      tx.onerror = () => reject(tx.error || new Error('No se pudo eliminar el recurso local'));
+    });
+  } catch (_) { return false; }
+}
+
 function lightweightLocalDB(sourceDb) {
   const clone = JSON.parse(JSON.stringify(sourceDb || {entries:[]}));
   (clone.entries || []).forEach(e => {
     Object.keys(e || {}).forEach(k => {
-      if (isBase64Image(e[k])) e[k] = '__local_image__';
+      if (isBase64Image(e[k])) {
+        if (k === 'cover' && typeof isLocalCoverEligible === 'function' && isLocalCoverEligible(e)) {
+          e.coverAssetId = e.coverAssetId || localAssetKey(e.id, 'cover');
+        }
+        e[k] = '__local_image__';
+      }
     });
   });
   return clone;
@@ -62,7 +80,10 @@ async function stashLocalImages(entries) {
   const jobs = [];
   (entries || []).forEach(e => {
     Object.keys(e || {}).forEach(k => {
-      if (isBase64Image(e[k])) jobs.push(putLocalAsset(localAssetKey(e.id, k), e[k]).catch(err => console.warn('[LUMEN v184] asset IDB:', err)));
+      if (isBase64Image(e[k])) {
+        const key = (k === 'cover' && e.coverAssetId) ? e.coverAssetId : localAssetKey(e.id, k);
+        jobs.push(putLocalAsset(key, e[k]).catch(err => console.warn('[LUMEN v190] asset IDB:', err)));
+      }
     });
   });
   if (jobs.length) await Promise.all(jobs);
@@ -75,7 +96,8 @@ async function hydrateLocalImagesFromIDB() {
   (db.entries || []).forEach(e => {
     Object.keys(e || {}).forEach(k => {
       if (e[k] === '__local_image__') {
-        jobs.push(getLocalAsset(localAssetKey(e.id, k)).then(v => { if (v) { e[k] = v; restored++; } }));
+        const key = (k === 'cover' && e.coverAssetId) ? e.coverAssetId : localAssetKey(e.id, k);
+        jobs.push(getLocalAsset(key).then(v => { if (v) { e[k] = v; restored++; } }));
       }
     });
   });
@@ -127,6 +149,7 @@ function safeLocalSetItem(key, value, opts={}) {
 
 function persistDBLocal() {
   // v177: persistencia local deliberadamente liviana y no bloqueante.
+  if (typeof normalizeLocalCoverRefs === 'function') normalizeLocalCoverRefs(db.entries || []);
   // Las normalizaciones masivas NO pertenecen al click de Guardar.
   try {
     // Las imágenes base64 se guardan aparte en IndexedDB sin bloquear la acción.

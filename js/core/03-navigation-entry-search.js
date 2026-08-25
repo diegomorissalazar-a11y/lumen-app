@@ -46,6 +46,7 @@ function saveGeneroQuick() {
   const e = db.entries.find(x => x.id === entryId); if(!e) return;
   e.generos = [...document.querySelectorAll('#genero-quick-chips .genero-chip.active')].map(b=>b.dataset.g);
   e._updatedAt = Date.now();
+  if(typeof invalidateRecommendations==='function') invalidateRecommendations('género/categoría modificada');
   saveDB();
   closeModal('modal-genero-quick');
   showToast('✓ Etiquetas guardadas');
@@ -597,6 +598,7 @@ function toggleBookInventoryQuick(bookId) {
     catch(err){console.error('[LUMEN v184] Agregar inventario:',err);book.enInventario=false;showToast('⚠ No se pudo actualizar el inventario',4000);return;}
     showToast('✓ Agregado al inventario');
   }
+  if(typeof invalidateRecommendations==='function') invalidateRecommendations('inventario modificado');
   if(currentScreen==='library') renderLibrary();
 }
 

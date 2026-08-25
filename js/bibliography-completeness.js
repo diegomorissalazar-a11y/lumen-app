@@ -1,4 +1,4 @@
-// LUMEN v188 — completitud bibliográfica y acceso desde Normalizar
+// LUMEN v189 — completitud bibliográfica y acceso desde Normalizar
 'use strict';
 
 function bibliographyCompletionMissing(book) {

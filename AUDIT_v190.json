@@ -1,0 +1,65 @@
+{
+  "version": "190",
+  "base": "189",
+  "base_zip_sha256": "2154aa11d151240fa49e8277e323e684f3f0d6698392de7b7aadd5678b460ed6",
+  "summary": {
+    "functions": {
+      "v189": 651,
+      "v190": 658,
+      "removed": [],
+      "added": [
+        "applyLocalCoverPolicy",
+        "deleteLocalAsset",
+        "ensureLocalCoverReference",
+        "isLocalCoverEligible",
+        "localCoverAssetId",
+        "normalizeLocalCoverRefs",
+        "prepareLocalCoverForCloud"
+      ]
+    },
+    "callables": {
+      "v189": 691,
+      "v190": 698,
+      "removed": [],
+      "added": [
+        "applyLocalCoverPolicy",
+        "deleteLocalAsset",
+        "ensureLocalCoverReference",
+        "isLocalCoverEligible",
+        "localCoverAssetId",
+        "normalizeLocalCoverRefs",
+        "prepareLocalCoverForCloud"
+      ]
+    },
+    "variables": {
+      "v189": 1299,
+      "v190": 1302,
+      "removed": [],
+      "added": [
+        "assetId",
+        "previousAssetId",
+        "source"
+      ]
+    },
+    "ids": {
+      "v189": 574,
+      "v190": 574,
+      "removed": [],
+      "added": []
+    },
+    "handlers": {
+      "v189": 109,
+      "v190": 109,
+      "removed": [],
+      "added": []
+    },
+    "files": {
+      "v189": 77,
+      "v190": 80
+    }
+  },
+  "missing_manifest_paths": [],
+  "duplicate_static_ids": {},
+  "js_syntax": "OK",
+  "new_module": "js/data/assets.js"
+}
