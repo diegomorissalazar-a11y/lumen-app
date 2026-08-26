@@ -1,5 +1,5 @@
 {
-  "version": "190",
+  "version": "191",
   "html": {
     "auth": [
       "views/shell/auth.html"
@@ -41,11 +41,13 @@
     "css/06-responsive.css",
     "css/07-inventory.css",
     "css/08-history-maps.css",
-    "css/09-recommendations.css"
+    "css/09-recommendations.css",
+    "css/10-literary-metadata.css"
   ],
   "js": [
     "js/core/01-firebase-data.js",
     "js/core/02-canonical-history-sync.js",
+    "js/literary-metadata.js",
     "js/core/03-navigation-entry-search.js",
     "js/features/04-home-plan.js",
     "js/features/05-library-notes.js",

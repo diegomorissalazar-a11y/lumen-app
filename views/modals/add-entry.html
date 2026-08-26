@@ -129,9 +129,48 @@
           <div style="font-size:10px;color:var(--ink4);margin-top:6px;line-height:1.4;">📦 Inventario indica que posees físicamente ese ejemplar; no crea un segundo libro.</div>
         </div>
 
+        <div id="poesia-fields" class="literary-meta-panel">
+          <div class="literary-meta-title">Poesía</div>
+          <div class="literary-meta-sub">Clasificación canónica para afinar Descubrir sin mezclar idioma, tradición y período.</div>
+          <div class="literary-grid">
+            <div class="field"><label>Tradición / ámbito poético</label><input class="input" id="poesia-tradicion" list="poesia-tradicion-list" placeholder="Ej: Chile, Hispanoamérica, España"><datalist id="poesia-tradicion-list"></datalist></div>
+            <div class="field"><label>Período / corriente</label><input class="input" id="poesia-corriente" list="poesia-corriente-list" placeholder="Ej: Siglo de Oro, Vanguardias"><datalist id="poesia-corriente-list"></datalist></div>
+          </div>
+        </div>
+
+        <div id="cuento-fields" class="literary-meta-panel">
+          <div class="literary-meta-title">Cuentos</div>
+          <div class="literary-meta-sub">Para cuentos completos, recopilaciones y antologías, separa la fecha de la edición del período real de las obras.</div>
+          <label class="literary-checkbox"><input type="checkbox" id="cuento-es-recopilacion" onchange="updateCollectionFieldsVisibility()"> Es recopilación / antología</label>
+          <div id="cuento-recopilacion-body" style="display:none;">
+            <div class="field"><label>Tipo</label><select class="input" id="cuento-tipo-recopilacion" onchange="updateCollectionFieldsVisibility()"><option value="autor">Recopilación de autor</option><option value="antologia">Antología</option></select></div>
+            <label class="literary-checkbox"><input type="checkbox" id="cuento-fechas-desconocidas" onchange="updateCollectionFieldsVisibility()"> No contamos con fechas de las obras</label>
+            <div id="cuento-fechas-reales" class="literary-grid">
+              <div class="field"><label>Fecha primer cuento / obra</label><input class="input" type="number" id="cuento-periodo-inicio" placeholder="1885"></div>
+              <div class="field"><label>Fecha último cuento / obra</label><input class="input" type="number" id="cuento-periodo-fin" placeholder="1886"></div>
+            </div>
+            <div id="cuento-fallback-autor" style="display:none;">
+              <label class="literary-checkbox"><input type="checkbox" id="cuento-usar-periodo-autor"> Usar nacimiento y muerte del autor como aproximación</label>
+              <div id="cuento-fallback-note" class="literary-help"></div>
+            </div>
+          </div>
+        </div>
+
+        <div id="autor-temporal-fields" class="literary-meta-panel">
+          <div class="literary-meta-title">Datos temporales del autor</div>
+          <div class="literary-meta-sub">Datos canónicos reutilizables para Poesía y como fallback opcional en recopilaciones sin fechas de las obras.</div>
+          <div class="literary-grid">
+            <div class="field"><label>Año nacimiento autor</label><input class="input" type="number" id="autor-anio-nacimiento" placeholder="Ej: 1914"></div>
+            <div class="field"><label>Año muerte autor</label><input class="input" type="number" id="autor-anio-muerte" placeholder="Ej: 1998"></div>
+          </div>
+          <label class="literary-checkbox"><input type="checkbox" id="autor-aun-vivo" onchange="updateAuthorLifeVisibility()"> Autor aún vivo</label>
+          <div class="literary-help">Si el autor sigue vivo, Descubrir usa desde su nacimiento hasta el año actual cuando este fallback está habilitado.</div>
+        </div>
+
         <div id="historia-fields" style="display:none;background:#fff;border:1px solid var(--border);border-radius:6px;padding:14px;margin-bottom:13px;">
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px;"><div><div style="font-family:var(--font-serif);font-size:16px;font-weight:700;">Historia</div><div style="font-size:10px;color:var(--ink4);margin-top:2px;">Línea, fechas y conexiones históricas</div></div><span style="font-size:20px;">🏛️</span></div>
-          <div class="field"><label>Línea histórica</label><input class="input" type="text" id="hist-linea-principal" list="hist-lineas-catalogo" placeholder="Ej: Historia de Eurasia"><datalist id="hist-lineas-catalogo"></datalist></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px;"><div><div style="font-family:var(--font-serif);font-size:16px;font-weight:700;">Historia</div><div style="font-size:10px;color:var(--ink4);margin-top:2px;">Ámbito, línea, fechas y conexiones históricas</div></div><span style="font-size:20px;">🏛️</span></div>
+          <div class="field"><label>Ámbito histórico</label><input class="input" type="text" id="hist-ambito" list="hist-ambito-list" placeholder="Ej: Eurasia, Europa, Chile, América"><datalist id="hist-ambito-list"></datalist></div>
+          <div class="field"><label>Línea histórica</label><input class="input" type="text" id="hist-linea-principal" list="hist-lineas-catalogo" placeholder="Ej: Imperio mongol"><datalist id="hist-lineas-catalogo"></datalist></div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"><div class="field"><label>Fecha inicial</label><input class="input" type="number" id="hist-fecha-inicio" placeholder="-480"></div><div class="field"><label>Fecha final</label><input class="input" type="number" id="hist-fecha-fin" placeholder="-479"></div></div>
           <div class="field"><label>Conecta con otras líneas históricas</label><div id="hist-related-lines" style="display:flex;flex-wrap:wrap;gap:6px;"></div><div style="font-size:10px;color:var(--ink4);margin-top:5px;line-height:1.4;">Opcional. Este libro queda como evidencia de la conexión entre líneas.</div></div>
           <div style="font-size:10px;color:var(--ink4);line-height:1.45;">Los años a. C. se guardan como negativos. Las líneas ya usadas quedan disponibles para reutilizarlas.</div>

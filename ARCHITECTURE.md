@@ -73,3 +73,13 @@ Política:
 - serie + `estado=viendo` → portada local permitida;
 - URL remota → se conserva normalmente;
 - contenido terminado → la portada exclusivamente local se desacopla de la ficha.
+
+## v191 — Capa literaria canónica
+
+Se incorpora `js/literary-metadata.js` como capa compartida para metadatos que no deben duplicarse entre Inventario, Biblioteca y Descubrir.
+
+- **Taxonomías canónicas**: tradición poética, corriente/período poético y ámbito histórico se persisten por ID y nombre normalizado en `lumen_literary_taxonomy_v1` y se sincronizan en el bloque auxiliar de nube.
+- **Autor canónico**: nacimiento, muerte y `aunVivo` viven en `canonicalEntities.authors`; no se copian por libro.
+- **Cuentos/antologías**: el período de las obras vive en `entry.cuentos`, separado de `anio_pub` y de la fecha bibliográfica de la edición. El fallback por ciclo vital solo se usa cuando el usuario lo marca y nunca para antologías multi-autor.
+- **Historia**: `ambitoId/ambito` queda separado de `lineaPrincipalId/lineaPrincipal` y de `fechaInicio/fechaFin`.
+- **Descubrir**: consume estas entidades y rangos sin convertir aproximaciones en datos bibliográficos reales.

@@ -1,6 +1,6 @@
 <!-- ══════ MODAL: GÉNEROS RÁPIDO ══════ -->
 <div id="modal-genero-quick" class="modal-overlay">
-  <div class="modal" style="max-width:360px;">
+  <div class="modal" style="max-width:520px;">
     <div class="modal-handle"></div>
     <div class="modal-header">
       <div class="modal-title" id="genero-quick-title">Etiquetar libro</div>
@@ -9,8 +9,43 @@
     <div class="modal-body">
       <input type="hidden" id="genero-quick-id">
       <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px;" id="genero-quick-chips"></div>
+
+      <div id="quick-poesia-fields" class="literary-meta-panel">
+        <div class="literary-meta-title">Poesía</div>
+        <div class="literary-meta-sub">Clasificación canónica para mejorar Descubrir.</div>
+        <div class="literary-grid">
+          <div class="field"><label>Tradición / ámbito poético</label><input class="input" id="quick-poesia-tradicion" list="poesia-tradicion-list" placeholder="Ej: Chile, Hispanoamérica, España"></div>
+          <div class="field"><label>Período / corriente</label><input class="input" id="quick-poesia-corriente" list="poesia-corriente-list" placeholder="Ej: Siglo de Oro, Vanguardias"></div>
+        </div>
+      </div>
+
+      <div id="quick-cuento-fields" class="literary-meta-panel">
+        <div class="literary-meta-title">Cuentos</div>
+        <label class="literary-checkbox"><input type="checkbox" id="quick-cuento-es-recopilacion" onchange="updateQuickLiteraryMetadataVisibility()"> Es recopilación / antología</label>
+        <div id="quick-cuento-recopilacion-body" style="display:none;">
+          <div class="field"><label>Tipo</label><select class="input" id="quick-cuento-tipo" onchange="updateQuickLiteraryMetadataVisibility()"><option value="autor">Recopilación de autor</option><option value="antologia">Antología</option></select></div>
+          <label class="literary-checkbox"><input type="checkbox" id="quick-cuento-fechas-desconocidas" onchange="updateQuickLiteraryMetadataVisibility()"> No contamos con fechas de las obras</label>
+          <div id="quick-cuento-fechas" class="literary-grid">
+            <div class="field"><label>Fecha primer cuento / obra</label><input class="input" type="number" id="quick-cuento-inicio" placeholder="1885"></div>
+            <div class="field"><label>Fecha último cuento / obra</label><input class="input" type="number" id="quick-cuento-fin" placeholder="1886"></div>
+          </div>
+          <div id="quick-cuento-fallback" style="display:none;">
+            <label class="literary-checkbox"><input type="checkbox" id="quick-cuento-usar-autor"> Usar nacimiento y muerte del autor como aproximación</label>
+            <div id="quick-cuento-fallback-note" class="literary-help"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="quick-autor-temporal-fields" class="literary-meta-panel">
+        <div class="literary-meta-title">Datos temporales del autor</div>
+        <div class="literary-grid">
+          <div class="field"><label>Año nacimiento</label><input class="input" type="number" id="quick-autor-nacimiento"></div>
+          <div class="field"><label>Año muerte</label><input class="input" type="number" id="quick-autor-muerte"></div>
+        </div>
+        <label class="literary-checkbox"><input type="checkbox" id="quick-autor-vivo" onchange="updateQuickAuthorLifeVisibility()"> Autor aún vivo</label>
+      </div>
+
       <button class="btn btn-primary" onclick="saveGeneroQuick()">Guardar etiquetas</button>
     </div>
   </div>
 </div>
-

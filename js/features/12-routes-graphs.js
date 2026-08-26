@@ -943,11 +943,16 @@ function renderMapaInfluencias() {
     elCount.textContent=`${data.length} evidencia${data.length!==1?'s':''} · ${links.length} conexión${links.length!==1?'es':''} única${links.length!==1?'s':''}`;
   }
 
-  const nodes=[...nodeMap.entries()].map(([id,name])=>({
-    id,label:name,inLibrary:libAuthorIds.has(id),icon:libAuthorIds.has(id)?'✍':'◉',
-    tooltip:name,sizeMetric:outDegree[id]||0,
-    metricTooltip:`${name}\nAutores influidos únicos: ${outDegree[id]||0}\nAutores que lo influyen: ${inDegree[id]||0}\nEvidencias originadas: ${evidenceOut[id]||0}\nEvidencias recibidas: ${evidenceIn[id]||0}`
-  }));
+  const nodes=[...nodeMap.entries()].map(([id,name])=>{
+    const outUnique=outDegree[id]||0, inUnique=inDegree[id]||0;
+    // v191: tamaño por grado estructural único. Recibir una influencia nunca queda bajo el mínimo visual.
+    const structuralLevel=Math.max(1,outUnique,inUnique);
+    return {
+      id,label:name,inLibrary:libAuthorIds.has(id),icon:libAuthorIds.has(id)?'✍':'◉',
+      tooltip:name,sizeMetric:structuralLevel,
+      metricTooltip:`${name}\nNivel visual: ${structuralLevel}\nAutores influidos únicos: ${outUnique}\nAutores que lo influyen: ${inUnique}\nEvidencias originadas: ${evidenceOut[id]||0}\nEvidencias recibidas: ${evidenceIn[id]||0}`
+    };
+  });
 
   buildD3Graph('mapa-influencias-svg', nodes, links,
     tipo=>INF_COLORS[tipo]||'#999',

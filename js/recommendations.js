@@ -1,8 +1,8 @@
-// LUMEN v189 — Descubrir / próximas lecturas desde el inventario
+// LUMEN v191 — Descubrir / próximas lecturas desde el inventario
 'use strict';
 
 const RecommendationEngine = (() => {
-  const CACHE_KEY = 'lumen_recommendations_v2';
+  const CACHE_KEY = 'lumen_recommendations_v3';
   let lastReason = 'inicio';
   // Variables legacy conservadas por continuidad de API/auditoría; v189 recalcula inmediatamente.
   let dirty = false;
@@ -45,7 +45,7 @@ const RecommendationEngine = (() => {
 
   const isRead = e => !!(e && (e.estado === 'leido' || e.finishDate || (e.anio && e.mes)));
   // Pool Descubrir: ejemplar disponible en inventario, todavía no leído, no en curso y no abandonado.
-  const isAvailable = e => !!(e && e.type === 'libro' && !isRead(e) && e.estado !== 'leyendo' && e.estado !== 'abandonado');
+  const isAvailable = e => !!(e && e.type === 'libro' && !isRead(e) && !(typeof inventoryIsRead==='function' && inventoryIsRead(e)) && e.estado !== 'leyendo' && e.estado !== 'abandonado');
   const readBooks = () => (db.entries || []).filter(e => e.type === 'libro' && isRead(e));
   const hasGenre = (e, genre) => exactBookClassifications(e).has(norm(genre));
 
@@ -120,25 +120,83 @@ const RecommendationEngine = (() => {
   function historyContinuity(book) {
     if (!belongsToCategory(book, 'historia')) return {score:0, reason:''};
     const line = book.historia?.lineaPrincipalId || book.historia?.lineaPrincipal || '';
-    if (!line) return {score:0, reason:''};
-    const historicalRead = readBooks().filter(e => belongsToCategory(e,'historia') && (e.historia?.lineaPrincipalId || e.historia?.lineaPrincipal) === line);
-    if (!historicalRead.length) return {score:2, reason:'abre una línea histórica todavía poco cubierta'};
+    const scope = book.historia?.ambitoId || book.historia?.ambito || '';
+    const readHistory = readBooks().filter(e => belongsToCategory(e,'historia'));
+    const sameLine = line ? readHistory.filter(e => (e.historia?.lineaPrincipalId || e.historia?.lineaPrincipal) === line) : [];
+    const historicalRead = sameLine; // alias legado conservado para continuidad de auditoría v190→v191
+    const sameScope = scope ? readHistory.filter(e => (e.historia?.ambitoId || e.historia?.ambito) === scope) : [];
+    if (!line && !scope) return {score:0, reason:'historia aún sin ámbito o línea temporal configurada'};
+    if (line && !sameLine.length) return {score:3, reason:'abre una línea histórica todavía poco cubierta'};
+    const reference = sameLine.length ? sameLine : sameScope;
+    const base = sameLine.length ? 1 : (sameScope.length ? 1 : 0);
     const bounds = historyBounds(book.historia || {});
-    const centers = historicalRead.map(e => historyBounds(e.historia || {})).filter(b => b.inicio != null || b.fin != null).map(b => ((b.inicio ?? b.fin) + (b.fin ?? b.inicio))/2);
+    const centers = reference.map(e => historyBounds(e.historia || {})).filter(b => b.inicio != null || b.fin != null).map(b => ((b.inicio ?? b.fin) + (b.fin ?? b.inicio))/2);
     if ((bounds.inicio != null || bounds.fin != null) && centers.length) {
       const c = ((bounds.inicio ?? bounds.fin) + (bounds.fin ?? bounds.inicio))/2;
       const gap = Math.min(...centers.map(x => Math.abs(x-c)));
-      if (gap <= 100) return {score:3, reason:'continúa un período histórico ya en desarrollo'};
-      if (gap <= 300) return {score:2, reason:'expande una línea histórica cercana a tus lecturas'};
+      if (gap <= 100) return {score:4, reason:'continúa un período histórico ya en desarrollo'};
+      if (gap <= 300) return {score:3, reason:'expande un período histórico cercano a tus lecturas'};
     }
-    return {score:1, reason:'amplía una línea histórica presente en tu mapa'};
+    if (sameLine.length) return {score:2, reason:'amplía una línea histórica presente en tu mapa'};
+    if (sameScope.length) return {score:base, reason:'amplía un ámbito histórico que ya lees'};
+    return {score:1, reason:'abre un nuevo ámbito histórico'};
   }
 
-  function scoreBook(book, counts) {
+  function originalPublicationYear(book) {
+    const raw=book?.anio_publicacion_original ?? book?.bibliografia?.obraOriginal?.anioPublicacionOriginal;
+    if(raw===null||raw===undefined||raw==='')return null;
+    const y=Number(raw); return Number.isFinite(y)?y:null;
+  }
+
+  function temporalRangeForBook(book, category) {
+    if (category === 'cuentos' && typeof storyTemporalRange === 'function') return storyTemporalRange(book);
+    const y = originalPublicationYear(book);
+    const rawA=book?.periodo_publicacion_inicio,rawB=book?.periodo_publicacion_fin;
+    const a=(rawA===null||rawA===undefined||rawA==='')?null:Number(rawA), b=(rawB===null||rawB===undefined||rawB==='')?null:Number(rawB);
+    if ((a!==null&&Number.isFinite(a)) || (b!==null&&Number.isFinite(b))) return {inicio:(a!==null&&Number.isFinite(a))?a:b,fin:(b!==null&&Number.isFinite(b))?b:a,source:'publicacion'};
+    return {inicio:y,fin:y,source:y!=null?'publicacion':''};
+  }
+
+  function rangeDistance(a,b) {
+    if (a?.inicio==null || b?.inicio==null) return null;
+    const a0=Math.min(a.inicio,a.fin??a.inicio),a1=Math.max(a.inicio,a.fin??a.inicio),b0=Math.min(b.inicio,b.fin??b.inicio),b1=Math.max(b.inicio,b.fin??b.inicio);
+    if (a1>=b0 && b1>=a0) return 0;
+    return a1 < b0 ? b0-a1 : a0-b1;
+  }
+
+  function temporalAffinity(book, category) {
+    const target=temporalRangeForBook(book,category);
+    if(target.inicio==null)return {score:0,reason:''};
+    const refs=readBooks().filter(e=>belongsToCategory(e,category)).map(e=>temporalRangeForBook(e,category)).filter(r=>r.inicio!=null);
+    if(!refs.length)return {score:0,reason:''};
+    const distances=refs.map(r=>rangeDistance(target,r)).filter(x=>x!=null);
+    if(!distances.length)return {score:0,reason:''};
+    const gap=Math.min(...distances);
+    if(gap<=15)return {score:3,reason:'muy cercano al período de obras que ya has leído'};
+    if(gap<=35)return {score:2,reason:'cercano temporalmente a obras que ya has leído'};
+    if(gap<=60)return {score:1,reason:'mantiene continuidad temporal con tus lecturas'};
+    return {score:0,reason:''};
+  }
+
+  function poetryAffinity(book) {
+    if(!belongsToCategory(book,'poesía'))return {score:0,reasons:[]};
+    const read=readBooks().filter(e=>belongsToCategory(e,'poesía'));
+    const reasons=[];let score=0;
+    const tradition=book?.poesia?.tradicionId||norm(book?.poesia?.tradicion||'');
+    const movement=book?.poesia?.corrienteId||norm(book?.poesia?.corriente||'');
+    if(tradition && read.some(e=>(e?.poesia?.tradicionId||norm(e?.poesia?.tradicion||''))===tradition)){score+=2;reasons.push('continúa una tradición poética presente en tus lecturas');}
+    if(movement && read.some(e=>(e?.poesia?.corrienteId||norm(e?.poesia?.corriente||''))===movement)){score+=2;reasons.push('coincide con un período o corriente poética que ya lees');}
+    const temporal=temporalAffinity(book,'poesía');score+=temporal.score;if(temporal.reason)reasons.push(temporal.reason);
+    return {score,reasons};
+  }
+
+  function scoreBook(book, counts, category='') {
     const authorAffinity = authorAffinityScore(book, counts);
     const influence = Math.min(5, authorInfluenceScore(book));
     const route = routeScore(book);
     const history = historyContinuity(book);
+    const temporal = (category==='novela'||category==='cuentos') ? temporalAffinity(book,category) : {score:0,reason:''};
+    const poetry = category==='poesía' ? poetryAffinity(book) : {score:0,reasons:[]};
     // Disponibilidad no suma puntos: es condición de entrada al pool.
     let score = 0;
     score += authorAffinity * 2;
@@ -146,13 +204,17 @@ const RecommendationEngine = (() => {
     score += Math.min(4, route.incoming) * 2;
     score += Math.min(2, route.outgoing);
     score += history.score * 2;
+    score += temporal.score;
+    score += poetry.score;
     const reasons = ['disponible en tu inventario'];
     if (authorAffinity) reasons.push(`ya has leído ${authorAffinity} obra${authorAffinity===1?'':'s'} de este autor`);
     if (influence) reasons.push(`su autor conecta con ${influence} autor${influence===1?'':'es'} de tu canon`);
     if (route.incoming) reasons.push(`aparece como destino en ${route.incoming} ruta${route.incoming===1?'':'s'} de lectura`);
     if (route.outgoing) reasons.push(`ha originado ${route.outgoing} ruta${route.outgoing===1?'':'s'} de lectura`);
     if (history.reason) reasons.push(history.reason);
-    return {bookId:book.id, score, reasons};
+    if (temporal.reason) reasons.push(temporal.reason);
+    poetry.reasons.forEach(r=>reasons.push(r));
+    return {bookId:book.id, score, reasons, breakdown:{author:authorAffinity*2,influence:influence*2,routesIn:Math.min(4,route.incoming)*2,routesOut:Math.min(2,route.outgoing),history:history.score*2,temporal:temporal.score,poetry:poetry.score}};
   }
 
   function originalLanguage(book) {
@@ -186,7 +248,7 @@ const RecommendationEngine = (() => {
     const counts = authorReadCounts();
     const result = {generatedAt:Date.now(), reason, poolCount:pool.length, categories:{}};
     categories.forEach(cat => {
-      result.categories[cat] = categoryBooks(cat, pool).map(b => scoreBook(b, counts)).sort((a,b)=>b.score-a.score || String(findBookCanonicalById(a.bookId)?.titulo||'').localeCompare(String(findBookCanonicalById(b.bookId)?.titulo||''),'es')).slice(0,5);
+      result.categories[cat] = categoryBooks(cat, pool).map(b => scoreBook(b, counts, cat)).sort((a,b)=>b.score-a.score || String(findBookCanonicalById(a.bookId)?.titulo||'').localeCompare(String(findBookCanonicalById(b.bookId)?.titulo||''),'es')).slice(0,5);
     });
     try { safeLocalSetItem(CACHE_KEY, JSON.stringify(result)); } catch (_) {}
     lastReason = reason;
@@ -242,7 +304,7 @@ function recommendationCardHTML(rec, idx) {
       <div class="discover-book-reasons">${rec.reasons.slice(0,4).map(x=>`• ${escapeHtml(x)}`).join('<br>')}</div>
       <div class="discover-book-actions"><button class="btn btn-sm discover-start-btn" onclick="startRecommendationReading('${id}')">▶ Empezar a leer</button><button class="btn btn-secondary btn-sm discover-detail-btn" onclick="openRecommendationBook('${id}')">Ver ficha</button></div>
     </div>
-    <div class="discover-score" title="Puntaje de recomendación">${Math.round(rec.score)}</div>
+    <div class="discover-score" title="Puntaje de recomendación · Autor ${rec.breakdown?.author||0} · Influencias ${rec.breakdown?.influence||0} · Rutas ${(rec.breakdown?.routesIn||0)+(rec.breakdown?.routesOut||0)} · Historia ${rec.breakdown?.history||0} · Temporal ${rec.breakdown?.temporal||0} · Poesía ${rec.breakdown?.poetry||0}">${Math.round(rec.score)}</div>
   </div>`;
 }
 

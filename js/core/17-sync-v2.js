@@ -44,7 +44,8 @@ function buildCloudDataV162() {
     normBlacklist: loadNormBlacklist(),
     idiomasAprobados: loadIdiomasAprobados(),
     historicalLines: historicalLinesCatalog(),
-    canonicalEntities: loadCanonicalEntities()
+    canonicalEntities: loadCanonicalEntities(),
+    literaryTaxonomy: typeof loadLiteraryTaxonomy==='function' ? loadLiteraryTaxonomy() : null
   });
   return { entries, modules };
 }
@@ -156,6 +157,11 @@ function applyRemoteModulesV162(remote) {
   if (remote.desafios) safeLocalSetItem(DESAFIO_KEY, JSON.stringify(remote.desafios));
   if (Array.isArray(remote.idiomasAprobados)) safeLocalSetItem(IDIOMAS_APROBADOS_KEY, JSON.stringify(remote.idiomasAprobados));
   if (Array.isArray(remote.historicalLines)) saveHistoricalLinesCatalog([...historicalLinesCatalog(),...remote.historicalLines]);
+  if (remote.canonicalEntities) saveCanonicalEntities(remote.canonicalEntities);
+  if (remote.literaryTaxonomy && typeof saveLiteraryTaxonomy==='function') {
+    const mergedTax=typeof mergeLiteraryTaxonomy==='function'?mergeLiteraryTaxonomy(loadLiteraryTaxonomy(),remote.literaryTaxonomy):remote.literaryTaxonomy;
+    saveLiteraryTaxonomy(mergedTax);
+  }
 }
 
 

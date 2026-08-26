@@ -35,22 +35,26 @@ function openGeneroQuick(entryId) {
   ];
   document.getElementById('genero-quick-chips').innerHTML = generos.map(g => `
     <button type="button" class="genero-chip${current.includes(g)?' active':''}"
-      data-g="${g}" onclick="toggleGenero(this)"
+      data-g="${g}" onclick="toggleGeneroQuickMeta(this)"
       style="padding:7px 14px;font-size:12px;">${g}</button>
   `).join('');
+  if(typeof populateQuickLiteraryMetadata==='function') populateQuickLiteraryMetadata(e);
   openModal('modal-genero-quick');
 }
 
 function saveGeneroQuick() {
   const entryId = document.getElementById('genero-quick-id').value;
   const e = db.entries.find(x => x.id === entryId); if(!e) return;
+  const hadHistoria=!!e.historia;
   e.generos = [...document.querySelectorAll('#genero-quick-chips .genero-chip.active')].map(b=>b.dataset.g);
+  if(typeof saveQuickLiteraryMetadata==='function') saveQuickLiteraryMetadata(e);
   e._updatedAt = Date.now();
   if(typeof invalidateRecommendations==='function') invalidateRecommendations('género/categoría modificada');
   saveDB();
   closeModal('modal-genero-quick');
   showToast('✓ Etiquetas guardadas');
   renderLibrary();
+  if(e.generos.includes('Historia')&&!hadHistoria&&typeof openHistoriaQuick==='function') setTimeout(()=>openHistoriaQuick(e.id),140);
 }
 
 function openAddModal() {
@@ -131,8 +135,10 @@ function resetForm() {
   const fechaAdqEl = document.getElementById('f-fecha-adq'); if (fechaAdqEl) fechaAdqEl.value = '';
   const invFlagEl = document.getElementById('f-en-inventario'); if (invFlagEl) invFlagEl.checked = false; syncInventoryChipState();
   resetHistoriaFields();
+  if (typeof resetLiteraryMetadataFields === 'function') resetLiteraryMetadataFields();
   resetGeneros();
   updateHistoriaFieldsVisibility();
+  if (typeof updateLiteraryMetadataVisibility === 'function') updateLiteraryMetadataVisibility();
   setGenerosCineSeleccionados([]);
   document.getElementById('fp-pais').value = '';
   document.getElementById('fp-basada').value = '';
@@ -170,13 +176,16 @@ document.getElementById('f-estado').addEventListener('change', function() {
 
 function toggleGenero(btn) {
   btn.classList.toggle('active');
-  if (btn.closest && btn.closest('#generos-chips')) updateHistoriaFieldsVisibility();
+  if (btn.closest && btn.closest('#generos-chips')) {
+    updateHistoriaFieldsVisibility();
+    if (typeof updateLiteraryMetadataVisibility === 'function') updateLiteraryMetadataVisibility();
+  }
 }
 
 function updateHistoriaFieldsVisibility(){const panel=document.getElementById('historia-fields');if(!panel)return;const active=!!document.querySelector('#generos-chips .genero-chip[data-g="Historia"].active');panel.style.display=active?'block':'none';if(active){fillHistoricalLineDatalists();const rel=document.getElementById('hist-related-lines');if(rel&&!rel.querySelector('[data-line-id]'))renderHistoricalLineChoices('hist-related-lines',[])}}
-function getHistoriaFromForm(){const lineaPrincipal=document.getElementById('hist-linea-principal')?.value?.trim()||'',lineaPrincipalId=registerHistoricalLine(lineaPrincipal),ri=document.getElementById('hist-fecha-inicio')?.value,rf=document.getElementById('hist-fecha-fin')?.value,inicio=ri===''||ri==null?null:Number(ri),fin=rf===''||rf==null?null:Number(rf),lineasRelacionadasIds=selectedHistoricalLineIds('hist-related-lines',lineaPrincipalId),lineasRelacionadas=historicalLineNamesFromIds(lineasRelacionadasIds);return{schema:'lumen_historia_v3',lineaPrincipal,lineaPrincipalId,fechaInicio:inicio,fechaFin:fin,lineasRelacionadas,lineasRelacionadasIds,periodos:(inicio!==null||fin!==null)?[{nombre:'',tema:'',inicio:inicio??fin,fin:fin??inicio,precision:'aproximada',cobertura:'periodo',periodoId:canonicalEntityId('histperiod',`${lineaPrincipalId||lineaPrincipal}|${inicio??fin}_${fin??inicio}`)}]:[]}}
-function resetHistoriaFields(){['hist-linea-principal','hist-fecha-inicio','hist-fecha-fin'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});renderHistoricalLineChoices('hist-related-lines',[])}
-function setHistoriaFields(historia){const h=historia||{},b=historyBounds(h),set=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v??''};set('hist-linea-principal',h.lineaPrincipal||'');set('hist-fecha-inicio',b.inicio);set('hist-fecha-fin',b.fin);updateHistoriaFieldsVisibility();fillHistoricalLineDatalists();renderHistoricalLineChoices('hist-related-lines',h.lineasRelacionadasIds||[])}
+function getHistoriaFromForm(){const ambitoRaw=document.getElementById('hist-ambito')?.value?.trim()||'',ambito=(typeof resolveLiteraryTaxonomy==='function'?resolveLiteraryTaxonomy('history',ambitoRaw):{id:canonicalEntityId('history_scope',ambitoRaw),name:ambitoRaw});const lineaPrincipal=document.getElementById('hist-linea-principal')?.value?.trim()||'',lineaPrincipalId=registerHistoricalLine(lineaPrincipal),ri=document.getElementById('hist-fecha-inicio')?.value,rf=document.getElementById('hist-fecha-fin')?.value,inicio=ri===''||ri==null?null:Number(ri),fin=rf===''||rf==null?null:Number(rf),lineasRelacionadasIds=selectedHistoricalLineIds('hist-related-lines',lineaPrincipalId),lineasRelacionadas=historicalLineNamesFromIds(lineasRelacionadasIds);return{schema:'lumen_historia_v4',ambito:ambito.name||ambitoRaw,ambitoId:ambito.id||'',lineaPrincipal,lineaPrincipalId,fechaInicio:inicio,fechaFin:fin,lineasRelacionadas,lineasRelacionadasIds,periodos:(inicio!==null||fin!==null)?[{nombre:'',tema:'',inicio:inicio??fin,fin:fin??inicio,precision:'aproximada',cobertura:'periodo',periodoId:canonicalEntityId('histperiod',`${lineaPrincipalId||lineaPrincipal}|${inicio??fin}_${fin??inicio}`)}]:[]}}
+function resetHistoriaFields(){['hist-ambito','hist-linea-principal','hist-fecha-inicio','hist-fecha-fin'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});renderHistoricalLineChoices('hist-related-lines',[])}
+function setHistoriaFields(historia){const h=historia||{},b=historyBounds(h),set=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v??''};set('hist-ambito',h.ambito||(typeof taxonomyName==='function'?taxonomyName('history',h.ambitoId,''):''));set('hist-linea-principal',h.lineaPrincipal||'');set('hist-fecha-inicio',b.inicio);set('hist-fecha-fin',b.fin);updateHistoriaFieldsVisibility();if(typeof fillLiteraryTaxonomyLists==='function')fillLiteraryTaxonomyLists();fillHistoricalLineDatalists();renderHistoricalLineChoices('hist-related-lines',h.lineasRelacionadasIds||[])}
 function formatHistoriaYear(y) { const n=Number(y); if(!Number.isFinite(n)) return ''; return n<0?`${Math.abs(n)} a. C.`:`${n} d. C.`; }
 
 function getGenerosSeleccionados() {
@@ -187,6 +196,8 @@ function setGenerosSeleccionados(generos) {
   document.querySelectorAll('#generos-chips .genero-chip').forEach(b => {
     b.classList.toggle('active', (generos||[]).includes(b.dataset.g));
   });
+  updateHistoriaFieldsVisibility();
+  if (typeof updateLiteraryMetadataVisibility === 'function') updateLiteraryMetadataVisibility();
 }
 
 function resetGeneros() {
@@ -647,6 +658,8 @@ function saveEntry() {
       generos: getGenerosSeleccionados(),
       enInventario: !!document.getElementById('f-en-inventario')?.checked,
       historia: getGenerosSeleccionados().includes('Historia') ? getHistoriaFromForm() : null,
+      poesia: getGenerosSeleccionados().includes('Poesía') && typeof getPoetryMetadataFromForm==='function' ? getPoetryMetadataFromForm() : null,
+      cuentos: getGenerosSeleccionados().includes('Cuento') && typeof getStoryCollectionMetadataFromForm==='function' ? getStoryCollectionMetadataFromForm() : null,
       cover: document.getElementById('f-cover').value };
     if (editingId) { const prev=db.entries.find(e=>e.id===editingId); if(prev?.bibliografia) entry.bibliografia=prev.bibliografia; if(prev?.isbn)entry.isbn=prev.isbn; if(prev?.anio_publicacion_original!=null)entry.anio_publicacion_original=prev.anio_publicacion_original; if(prev?.periodo_publicacion_inicio!=null)entry.periodo_publicacion_inicio=prev.periodo_publicacion_inicio; if(prev?.periodo_publicacion_fin!=null)entry.periodo_publicacion_fin=prev.periodo_publicacion_fin; }
     if (_pendingFormBibliography) { entry.bibliografia=_pendingFormBibliography; const bo=_pendingFormBibliography.obraOriginal||{},be=_pendingFormBibliography.edicionConsultada||{}; if(be.isbn)entry.isbn=be.isbn;if(be.editorialId)entry.editorialId=be.editorialId;if(be.traductorIds)entry.traductorIds=be.traductorIds;if(bo.anioPublicacionOriginal!=null)entry.anio_publicacion_original=Number(bo.anioPublicacionOriginal);if(bo.periodoInicio!=null)entry.periodo_publicacion_inicio=Number(bo.periodoInicio);if(bo.periodoFin!=null)entry.periodo_publicacion_fin=Number(bo.periodoFin); _pendingFormBibliography=null; }
@@ -703,7 +716,10 @@ function saveEntry() {
       anio: parseInt(document.getElementById('fs-anio-visto').value) || new Date().getFullYear(),
       cover: document.getElementById('fs-cover').value };
   }
-  if (entry.type === 'libro') ensureBookCanonicalRefs(entry);
+  if (entry.type === 'libro') {
+    ensureBookCanonicalRefs(entry);
+    if (typeof saveAuthorTemporalDataFromForm === 'function') saveAuthorTemporalDataFromForm(entry.autor);
+  }
   if (editingId) {
     entry._updatedAt = Date.now();
     const idx = db.entries.findIndex(e => e.id === editingId);
