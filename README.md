@@ -1,53 +1,54 @@
-# LUMEN v191 — metadatos literarios y Descubrir temporal
+# LUMEN v192 — taxonomías literarias por flags y propagación asistida
 
 ## Base
-Construida directamente sobre **LUMEN v190 modular**.
+Construida directamente sobre **LUMEN v191 modular**.
 
 ## Cambios aplicados
-- **Poesía**: al marcar la etiqueta aparecen campos canónicos de tradición/ámbito poético y período/corriente. Se añaden nacimiento, muerte y flag `aún vivo` al autor canónico.
-- **Historia**: se agrega **Ámbito histórico** canónico (Eurasia, Europa, Chile, América u otro reutilizable), separado de la línea histórica y de las fechas tratadas.
-- **Cuentos**: nuevo flag **Es recopilación / antología**. Permite indicar tipo, fecha del primer cuento/obra y fecha del último. Si no hay fechas, puede marcarse `No contamos con fechas` y, para recopilaciones de un solo autor, usar opcionalmente nacimiento/muerte como aproximación. En antologías multi-autor este fallback se deshabilita.
-- Los mismos campos están disponibles en **Etiquetar libro** desde Biblioteca/Inventario; si se añade Historia por primera vez se abre el modal simplificado de Historia.
-- **Descubrir**: mantiene el pool como libros vinculados al Inventario, no leídos, no leyendo y no abandonados. Usa afinidad temporal por publicación original para Novela y Cuentos; para recopilaciones usa el período real de las obras o el fallback explícito del autor. Poesía suma afinidad por tradición, corriente y proximidad temporal. Historia incorpora ámbito + línea + cercanía temporal.
-- Se renueva la caché de recomendaciones (`lumen_recommendations_v3`) para forzar el algoritmo v191.
-- **Influencias**: el tamaño visual usa conexiones únicas y `max(outUnique, inUnique, 1)`, evitando que un autor receptor quede por debajo del mínimo visual y sin inflarse por citas repetidas.
-- La taxonomía literaria canónica se sincroniza junto con los módulos auxiliares de nube.
+- **Poesía**: tradición/ámbito poético y período/corriente dejan de ser campos de texto libre y pasan a chips canónicos reutilizables. Se mantienen IDs persistentes y opción **+ Otra** para crear una categoría nueva sin duplicar variantes de escritura.
+- La taxonomía inicial de tradición poética se presenta como: **Chilena, Hispanoamericana, Española, Francesa y Anglófona**. Los IDs existentes de v191 se conservan, por lo que no se duplican taxonomías previas.
+- **Historia**: el ámbito histórico pasa al mismo selector por chips canónicos (Eurasia, Europa, Chile, América, + Otra), tanto en Editar como en el modal rápido de Historia. Línea histórica y fechas siguen siendo datos separados.
+- **Biblioteca/Inventario**: las tarjetas muestran etiquetas secundarias reutilizables junto al género principal: por ejemplo `Poesía` + `Chilena` + `Vanguardias`, `Historia` + `Eurasia`, o `Cuento` + `Recopilación`.
+- **Propagación asistida por Autor canónico + Poesía**:
+  - al guardar una tradición poética, LUMEN detecta otros libros de poesía del mismo autor;
+  - si el autor solo aparece como poeta, ofrece aplicar la tradición a todos los libros de poesía compatibles;
+  - si el autor tiene libros en más de un género, pide confirmar libro por libro;
+  - período/corriente siempre se revisa libro por libro antes de propagarse;
+  - nunca se propagan ámbitos de Historia ni períodos de recopilaciones por autor.
+- Los cambios propagados invalidan/recalculan Descubrir mediante el mecanismo ya existente.
 
-## Archivos principales modificados
+## Archivos modificados
 - `index.html`
+- `manifest.json`
 - `js/bootstrap.js`
+- `js/literary-metadata.js`
+- `js/core/03-navigation-entry-search.js`
+- `js/features/05-library-notes.js`
 - `views/modals/add-entry.html`
 - `views/modals/genres.html`
 - `views/modals/manga-detail-history.html`
-- `js/core/03-navigation-entry-search.js`
-- `js/features/05-library-notes.js`
-- `js/features/12-routes-graphs.js`
-- `js/core/17-sync-v2.js`
-- `js/recommendations.js`
-- `manifest.json`
-
-## Archivos nuevos
-- `js/literary-metadata.js`
 - `css/10-literary-metadata.css`
 
 ## No se modificó funcionalmente
 - Login/Auth
-- Lectura diaria y exportador
-- Películas/Series/Manga salvo consumo de módulos comunes ya existentes
-- Bibliografía/Notas/Referencias
-- Persistencia de portadas locales v190
+- Firebase y modelo de sincronización
+- Registro diario de lectura
+- Exportador
+- Películas/Series/Manga
+- Referencias/Notas/Bibliografía
+- Centralidad de mapas v191
+- Motor de scoring de Descubrir v191
 
 ## Validación
-- Base verificada: ZIP v190.
-- Sintaxis de todos los JS: OK (`node --check`).
-- Rutas del bootstrap: 60/60 accesibles por HTTP local.
+- Base verificada: **v191**.
+- Todos los archivos JS pasan `node --check`.
+- Rutas declaradas en `manifest.json` verificadas en disco.
 - IDs DOM duplicados: 0.
-- Funciones, callables, variables, IDs y handlers de v190 conservados; ver `AUDIT_v191.md` y `AUDIT_v191.json`.
+- Continuidad estática v191 → v192: **690 → 700 declaraciones function**, **731 → 741 callables**, **1352 → 1361 variables**, **615 → 621 IDs DOM**, **109 → 109 handlers**, con **0 eliminados** en esas categorías.
 
 ## Pruebas sugeridas
-1. En Inventario, abrir Etiquetar sobre un libro de Poesía y comprobar que aparecen tradición/corriente y datos temporales del autor.
-2. Marcar Historia en un libro sin Historia previa; guardar etiquetas y confirmar apertura del modal histórico con Ámbito + Línea + Fechas.
-3. En Cuento, marcar recopilación, ingresar 1885–1886 y guardar; reabrir y comprobar persistencia.
-4. Marcar fechas desconocidas en una recopilación de autor y activar fallback por nacimiento/muerte; probar también `Aún vivo`.
-5. Abrir Descubrir y comprobar que recalcula con la nueva caché y muestra razones temporales cuando existen datos.
-6. Revisar Influencias con autores que reciben una y dos conexiones únicas y confirmar la escala visual.
+1. Editar un libro de Poesía y seleccionar `Chilena`; comprobar que queda visible como segundo flag en Biblioteca/Inventario.
+2. Crear una nueva tradición con `+ Otra`; reabrir otro libro y confirmar que queda disponible como opción canónica.
+3. Guardar `Poesía + Chilena` en un autor con varios libros de poesía y comprobar la propuesta de propagación.
+4. Probar un autor con libros de Poesía y Novela: LUMEN debe pedir revisión uno a uno para los otros libros de poesía.
+5. Asignar un período/corriente y comprobar que la propagación siempre solicita confirmación por libro.
+6. Editar Historia y comprobar que el ámbito se selecciona como chip canónico y se conserva separado de línea/fechas.

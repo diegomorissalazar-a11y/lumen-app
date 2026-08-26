@@ -129,13 +129,13 @@
           <div style="font-size:10px;color:var(--ink4);margin-top:6px;line-height:1.4;">📦 Inventario indica que posees físicamente ese ejemplar; no crea un segundo libro.</div>
         </div>
 
+        <datalist id="poesia-tradicion-list"></datalist><datalist id="poesia-corriente-list"></datalist><datalist id="hist-ambito-list"></datalist>
+
         <div id="poesia-fields" class="literary-meta-panel">
           <div class="literary-meta-title">Poesía</div>
           <div class="literary-meta-sub">Clasificación canónica para afinar Descubrir sin mezclar idioma, tradición y período.</div>
-          <div class="literary-grid">
-            <div class="field"><label>Tradición / ámbito poético</label><input class="input" id="poesia-tradicion" list="poesia-tradicion-list" placeholder="Ej: Chile, Hispanoamérica, España"><datalist id="poesia-tradicion-list"></datalist></div>
-            <div class="field"><label>Período / corriente</label><input class="input" id="poesia-corriente" list="poesia-corriente-list" placeholder="Ej: Siglo de Oro, Vanguardias"><datalist id="poesia-corriente-list"></datalist></div>
-          </div>
+          <div class="field"><label>Tradición / ámbito poético</label><input type="hidden" id="poesia-tradicion"><div id="poesia-tradicion-chips" class="literary-taxonomy-chips"></div></div>
+          <div class="field"><label>Período / corriente</label><input type="hidden" id="poesia-corriente"><div id="poesia-corriente-chips" class="literary-taxonomy-chips"></div></div>
         </div>
 
         <div id="cuento-fields" class="literary-meta-panel">
@@ -169,7 +169,7 @@
 
         <div id="historia-fields" style="display:none;background:#fff;border:1px solid var(--border);border-radius:6px;padding:14px;margin-bottom:13px;">
           <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px;"><div><div style="font-family:var(--font-serif);font-size:16px;font-weight:700;">Historia</div><div style="font-size:10px;color:var(--ink4);margin-top:2px;">Ámbito, línea, fechas y conexiones históricas</div></div><span style="font-size:20px;">🏛️</span></div>
-          <div class="field"><label>Ámbito histórico</label><input class="input" type="text" id="hist-ambito" list="hist-ambito-list" placeholder="Ej: Eurasia, Europa, Chile, América"><datalist id="hist-ambito-list"></datalist></div>
+          <div class="field"><label>Ámbito histórico</label><input type="hidden" id="hist-ambito"><div id="hist-ambito-chips" class="literary-taxonomy-chips"></div></div>
           <div class="field"><label>Línea histórica</label><input class="input" type="text" id="hist-linea-principal" list="hist-lineas-catalogo" placeholder="Ej: Imperio mongol"><datalist id="hist-lineas-catalogo"></datalist></div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"><div class="field"><label>Fecha inicial</label><input class="input" type="number" id="hist-fecha-inicio" placeholder="-480"></div><div class="field"><label>Fecha final</label><input class="input" type="number" id="hist-fecha-fin" placeholder="-479"></div></div>
           <div class="field"><label>Conecta con otras líneas históricas</label><div id="hist-related-lines" style="display:flex;flex-wrap:wrap;gap:6px;"></div><div style="font-size:10px;color:var(--ink4);margin-top:5px;line-height:1.4;">Opcional. Este libro queda como evidencia de la conexión entre líneas.</div></div>

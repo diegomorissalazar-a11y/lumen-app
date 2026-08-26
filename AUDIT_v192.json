@@ -1,0 +1,72 @@
+{
+  "function_decl": {
+    "base": 690,
+    "new": 700,
+    "removed": [],
+    "added": [
+      "addLiteraryTaxonomyOption",
+      "applyPoetryMetadataToBook",
+      "authorHasMixedGenres",
+      "canonicalAuthorIdentity",
+      "literaryTaxonomyRows",
+      "offerPoetryMetadataPropagation",
+      "poetryBooksBySameAuthor",
+      "renderAllLiteraryTaxonomyChips",
+      "renderLiteraryTaxonomyChips",
+      "setLiteraryTaxonomySelection"
+    ]
+  },
+  "callables": {
+    "base": 731,
+    "new": 741,
+    "removed": [],
+    "added": [
+      "addLiteraryTaxonomyOption",
+      "applyPoetryMetadataToBook",
+      "authorHasMixedGenres",
+      "canonicalAuthorIdentity",
+      "literaryTaxonomyRows",
+      "offerPoetryMetadataPropagation",
+      "poetryBooksBySameAuthor",
+      "renderAllLiteraryTaxonomyChips",
+      "renderLiteraryTaxonomyChips",
+      "setLiteraryTaxonomySelection"
+    ]
+  },
+  "variables": {
+    "base": 1352,
+    "new": 1361,
+    "removed": [],
+    "added": [
+      "genres",
+      "mixed",
+      "movTargets",
+      "others",
+      "poetryLabels",
+      "secondary",
+      "secondaryHtml",
+      "shouldOfferPoetryPropagation",
+      "tradTargets"
+    ]
+  },
+  "ids": {
+    "base": 615,
+    "new": 621,
+    "removed": [],
+    "added": [
+      "hist-ambito-chips",
+      "histq-ambito-chips",
+      "poesia-corriente-chips",
+      "poesia-tradicion-chips",
+      "quick-poesia-corriente-chips",
+      "quick-poesia-tradicion-chips"
+    ]
+  },
+  "handlers": {
+    "base": 109,
+    "new": 109,
+    "removed": [],
+    "added": []
+  },
+  "duplicate_ids": []
+}

@@ -326,8 +326,14 @@ function entryCardHTML(e) {
       const extra = g === 'Historia' ? 'background:#fff4dc;border-color:#d9b96f;color:#8b6010;font-weight:700;' : '';
       return `<span onclick="event.stopPropagation();${action}" style="font-size:9px;background:var(--cream2);border:1px solid var(--border);border-radius:10px;padding:2px 7px;color:var(--ink3);cursor:pointer;${extra}">${esc(g)}</span>`;
     }).join('');
+    const secondary=[];
+    if(gs.includes('Poesía')&&e.poesia?.tradicion)secondary.push(e.poesia.tradicion);
+    if(gs.includes('Poesía')&&e.poesia?.corriente)secondary.push(e.poesia.corriente);
+    if(gs.includes('Historia')&&e.historia?.ambito)secondary.push(e.historia.ambito);
+    if(gs.includes('Cuento')&&e.cuentos?.esRecopilacion)secondary.push(e.cuentos.tipoRecopilacion==='antologia'?'Antología':'Recopilación');
+    const secondaryHtml=secondary.map(x=>`<span class="literary-secondary-chip" onclick="event.stopPropagation();openGeneroQuick('${String(e.id).replace(/\'/g,"\\'")}')">${esc(x)}</span>`).join('');
     const addBtn = `<button onclick="event.stopPropagation();openGeneroQuick('${e.id}')" style="font-size:9px;background:none;border:1px dashed var(--border);border-radius:10px;padding:2px 7px;color:var(--ink4);cursor:pointer;font-family:var(--font-sans);">🏷${gs.length>0?' +':' Etiquetar'}</button>`;
-    return genChips + addBtn;
+    return genChips + secondaryHtml + addBtn;
   })() : '';
   const typeName = e.type==='libro'?'Libro':e.type==='pelicula'?'Película':e.type==='disco'?'Disco':'Serie';
   const badge = `<span class="badge badge-${e.estado==='leyendo'?'leyendo':e.type}">${e.estado==='leyendo'?'Leyendo':typeName}</span>`;
@@ -350,7 +356,7 @@ function entryCardHTML(e) {
         <div class="entry-card-meta">
           ${badge}
           ${metaLine ? `<span style="font-size:10px;color:var(--ink4);">${metaLine}</span>` : ''}
-          ${generosHtml.replace(/openGeneroQuick\('${e.id}'\)/g, `openGeneroQuick('${safeId}')`)}
+          ${generosHtml.replace(/openGeneroQuick\('${e.id}'\)/g, `openGeneroQuick('${String(e.id).replace(/\'/g,"\\'")}')`)}
           ${inventoryBadge}
           ${notasBadge}
         </div>
@@ -358,7 +364,7 @@ function entryCardHTML(e) {
     </div>`;
 }
 
-function openHistoriaQuick(entryId){const e=(db.entries||[]).find(x=>x.id===entryId);if(!e||e.type!=='libro'||!(e.generos||[]).includes('Historia'))return;const launch=()=>{const h=e.historia||{},b=historyBounds(h);document.getElementById('histq-entry-id').value=e.id;document.getElementById('histq-book').textContent=e.titulo||'';const amb=document.getElementById('histq-ambito');if(amb)amb.value=h.ambito||(typeof taxonomyName==='function'?taxonomyName('history',h.ambitoId,''):'');document.getElementById('histq-linea').value=h.lineaPrincipal||'';document.getElementById('histq-inicio').value=b.inicio??'';document.getElementById('histq-fin').value=b.fin??'';if(typeof fillLiteraryTaxonomyLists==='function')fillLiteraryTaxonomyLists();fillHistoricalLineDatalists();renderHistoricalLineChoices('histq-related-lines',h.lineasRelacionadasIds||[]);openModal('modal-historia-quick')};const d=document.getElementById('modal-detail');if(d?.classList.contains('open')){closeModal('modal-detail');setTimeout(launch,140)}else launch()}
+function openHistoriaQuick(entryId){const e=(db.entries||[]).find(x=>x.id===entryId);if(!e||e.type!=='libro'||!(e.generos||[]).includes('Historia'))return;const launch=()=>{const h=e.historia||{},b=historyBounds(h);document.getElementById('histq-entry-id').value=e.id;document.getElementById('histq-book').textContent=e.titulo||'';const amb=document.getElementById('histq-ambito');if(amb)amb.value=h.ambito||(typeof taxonomyName==='function'?taxonomyName('history',h.ambitoId,''):'');document.getElementById('histq-linea').value=h.lineaPrincipal||'';document.getElementById('histq-inicio').value=b.inicio??'';document.getElementById('histq-fin').value=b.fin??'';if(typeof fillLiteraryTaxonomyLists==='function')fillLiteraryTaxonomyLists();if(typeof renderAllLiteraryTaxonomyChips==='function')renderAllLiteraryTaxonomyChips();fillHistoricalLineDatalists();renderHistoricalLineChoices('histq-related-lines',h.lineasRelacionadasIds||[]);openModal('modal-historia-quick')};const d=document.getElementById('modal-detail');if(d?.classList.contains('open')){closeModal('modal-detail');setTimeout(launch,140)}else launch()}
 function saveHistoriaQuick(){
   return lumenSafeAction("Guardar Historia", () => {const id=document.getElementById('histq-entry-id').value,e=(db.entries||[]).find(x=>x.id===id);if(!e)return;const ambRaw=document.getElementById('histq-ambito')?.value?.trim()||'',amb=(typeof resolveLiteraryTaxonomy==='function'?resolveLiteraryTaxonomy('history',ambRaw):{id:canonicalEntityId('history_scope',ambRaw),name:ambRaw}),lineaPrincipal=document.getElementById('histq-linea').value.trim(),lineaPrincipalId=registerHistoricalLine(lineaPrincipal),ri=document.getElementById('histq-inicio').value,rf=document.getElementById('histq-fin').value,inicio=ri===''?null:Number(ri),fin=rf===''?null:Number(rf),lineasRelacionadasIds=selectedHistoricalLineIds('histq-related-lines',lineaPrincipalId),lineasRelacionadas=historicalLineNamesFromIds(lineasRelacionadasIds);e.historia={...(e.historia||{}),schema:'lumen_historia_v4',ambito:amb.name||ambRaw,ambitoId:amb.id||'',lineaPrincipal,lineaPrincipalId,fechaInicio:inicio,fechaFin:fin,lineasRelacionadas,lineasRelacionadasIds,periodos:(inicio!==null||fin!==null)?[{nombre:'',tema:'',inicio:inicio??fin,fin:fin??inicio,precision:'aproximada',cobertura:'periodo',periodoId:canonicalEntityId('histperiod',`${lineaPrincipalId||lineaPrincipal}|${inicio??fin}_${fin??inicio}`)}]:[]};ensureHistoriaCanonicalRefs(e);e._updatedAt=Date.now();if(typeof invalidateRecommendations==='function')invalidateRecommendations('historia modificada');const ok=saveDB();if(ok!==false){closeModal('modal-historia-quick');showToast('✓ Historia actualizada');if(currentScreen==='library')renderLibrary();if(currentScreen==='mapas')renderMapaHistoria()}
   });

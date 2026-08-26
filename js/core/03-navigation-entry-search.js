@@ -48,12 +48,14 @@ function saveGeneroQuick() {
   const hadHistoria=!!e.historia;
   e.generos = [...document.querySelectorAll('#genero-quick-chips .genero-chip.active')].map(b=>b.dataset.g);
   if(typeof saveQuickLiteraryMetadata==='function') saveQuickLiteraryMetadata(e);
+  const shouldOfferPoetryPropagation=(e.generos||[]).includes('Poesía')&&typeof offerPoetryMetadataPropagation==='function';
   e._updatedAt = Date.now();
   if(typeof invalidateRecommendations==='function') invalidateRecommendations('género/categoría modificada');
   saveDB();
   closeModal('modal-genero-quick');
   showToast('✓ Etiquetas guardadas');
   renderLibrary();
+  if(shouldOfferPoetryPropagation)setTimeout(()=>offerPoetryMetadataPropagation(e),180);
   if(e.generos.includes('Historia')&&!hadHistoria&&typeof openHistoriaQuick==='function') setTimeout(()=>openHistoriaQuick(e.id),140);
 }
 
@@ -753,6 +755,7 @@ function saveEntry() {
   if (currentType === 'libro') {
     const finalBook = db.entries.find(e => e.id === entry.id);
     syncInventoryFromBook(finalBook);
+    if(finalBook&&(finalBook.generos||[]).includes('Poesía')&&typeof offerPoetryMetadataPropagation==='function')setTimeout(()=>offerPoetryMetadataPropagation(finalBook),180);
     if(typeof invalidateRecommendations==='function') invalidateRecommendations('ficha de libro modificada');
   }
   saveDB();

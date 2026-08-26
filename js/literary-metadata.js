@@ -7,11 +7,11 @@ function emptyLiteraryTaxonomy(){
   return {
     schema:'lumen_literary_taxonomy_v1',
     poetryTraditions:[
-      {id:'poetry_scope_chile',name:'Chile'},
-      {id:'poetry_scope_hispanoamerica',name:'Hispanoamérica'},
-      {id:'poetry_scope_espana',name:'España'},
-      {id:'poetry_scope_francia',name:'Francia'},
-      {id:'poetry_scope_anglofono',name:'Ámbito anglófono'}
+      {id:'poetry_scope_chile',name:'Chilena'},
+      {id:'poetry_scope_hispanoamerica',name:'Hispanoamericana'},
+      {id:'poetry_scope_espana',name:'Española'},
+      {id:'poetry_scope_francia',name:'Francesa'},
+      {id:'poetry_scope_anglofono',name:'Anglófona'}
     ],
     poetryMovements:[
       {id:'poetry_period_siglo_de_oro',name:'Siglo de Oro'},
@@ -36,6 +36,8 @@ function loadLiteraryTaxonomy(){
     ['poetryTraditions','poetryMovements','historyScopes'].forEach(k=>{
       if(Array.isArray(raw[k])) base[k]=raw[k].filter(x=>x&&x.id&&x.name);
     });
+    const poetryLabels={poetry_scope_chile:'Chilena',poetry_scope_hispanoamerica:'Hispanoamericana',poetry_scope_espana:'Española',poetry_scope_francia:'Francesa',poetry_scope_anglofono:'Anglófona'};
+    base.poetryTraditions=base.poetryTraditions.map(x=>poetryLabels[x.id]?{...x,name:poetryLabels[x.id]}:x);
     return base;
   }catch(_){return emptyLiteraryTaxonomy();}
 }
@@ -79,9 +81,85 @@ function fillLiteraryTaxonomyLists(){
   fill('poesia-tradicion-list',tax.poetryTraditions);
   fill('poesia-corriente-list',tax.poetryMovements);
   fill('hist-ambito-list',tax.historyScopes);
+  renderAllLiteraryTaxonomyChips();
 }
 
 function literaryGenreActive(name){return !!document.querySelector(`#generos-chips .genero-chip[data-g="${name}"].active`);}
+
+function literaryTaxonomyRows(kind){
+  const key={poetry:'poetryTraditions',movement:'poetryMovements',history:'historyScopes'}[kind];
+  return (loadLiteraryTaxonomy()[key]||[]).slice().sort((a,b)=>a.name.localeCompare(b.name,'es',{sensitivity:'base'}));
+}
+function setLiteraryTaxonomySelection(inputId,kind,idOrName){
+  const input=document.getElementById(inputId); if(!input)return;
+  const rows=literaryTaxonomyRows(kind); const raw=String(idOrName||'').trim();
+  const found=rows.find(x=>x.id===raw||canonicalText(x.name)===canonicalText(raw));
+  input.value=found?found.name:raw;
+  renderLiteraryTaxonomyChips(inputId,kind);
+}
+function addLiteraryTaxonomyOption(inputId,kind){
+  const labels={poetry:'tradición / ámbito poético',movement:'período / corriente',history:'ámbito histórico'};
+  const raw=prompt(`Nueva ${labels[kind]||'clasificación'}:`,'');
+  if(!raw||!raw.trim())return;
+  const row=resolveLiteraryTaxonomy(kind,raw.trim());
+  setLiteraryTaxonomySelection(inputId,kind,row.id||row.name);
+  if(typeof invalidateRecommendations==='function')invalidateRecommendations('taxonomía literaria modificada');
+}
+function renderLiteraryTaxonomyChips(inputId,kind){
+  const input=document.getElementById(inputId); if(!input)return;
+  const box=document.getElementById(`${inputId}-chips`); if(!box)return;
+  const selected=canonicalText(input.value||'');
+  box.innerHTML=literaryTaxonomyRows(kind).map(x=>`<button type="button" class="literary-taxonomy-chip${canonicalText(x.name)===selected?' active':''}" onclick="setLiteraryTaxonomySelection('${inputId}','${kind}','${String(x.id).replace(/'/g,"\\'")}')">${escapeHtml(x.name)}</button>`).join('')+`<button type="button" class="literary-taxonomy-chip add" onclick="addLiteraryTaxonomyOption('${inputId}','${kind}')">+ Otra</button>`;
+}
+function renderAllLiteraryTaxonomyChips(){
+  [['poesia-tradicion','poetry'],['poesia-corriente','movement'],['hist-ambito','history'],['quick-poesia-tradicion','poetry'],['quick-poesia-corriente','movement'],['histq-ambito','history']].forEach(([id,kind])=>renderLiteraryTaxonomyChips(id,kind));
+}
+function canonicalAuthorIdentity(name){
+  const ent=getPrimaryCanonicalAuthorByName(name||'',false); return ent?.id||canonicalText(splitCanonicalAuthors(name||'')[0]||name||'');
+}
+function poetryBooksBySameAuthor(book){
+  const key=canonicalAuthorIdentity(book?.autor||''); if(!key)return [];
+  return (db.entries||[]).filter(e=>e&&e.type==='libro'&&e.id!==book.id&&(e.generos||[]).includes('Poesía')&&canonicalAuthorIdentity(e.autor||'')===key);
+}
+function authorHasMixedGenres(book){
+  const key=canonicalAuthorIdentity(book?.autor||''); if(!key)return false;
+  const genres=new Set();
+  (db.entries||[]).filter(e=>e&&e.type==='libro'&&canonicalAuthorIdentity(e.autor||'')===key).forEach(e=>(e.generos||[]).forEach(g=>genres.add(g)));
+  return [...genres].some(g=>g!=='Poesía');
+}
+function applyPoetryMetadataToBook(target,source,{tradition=true,movement=false}={}){
+  if(!target||!source?.poesia)return false; let changed=false;
+  target.poesia=target.poesia||{schema:'lumen_poesia_v1'};
+  if(tradition&&source.poesia.tradicionId&&(target.poesia.tradicionId!==source.poesia.tradicionId||target.poesia.tradicion!==source.poesia.tradicion)){
+    target.poesia.tradicionId=source.poesia.tradicionId;target.poesia.tradicion=source.poesia.tradicion;changed=true;
+  }
+  if(movement&&source.poesia.corrienteId&&(target.poesia.corrienteId!==source.poesia.corrienteId||target.poesia.corriente!==source.poesia.corriente)){
+    target.poesia.corrienteId=source.poesia.corrienteId;target.poesia.corriente=source.poesia.corriente;changed=true;
+  }
+  if(changed){target.poesia.schema='lumen_poesia_v1';target._updatedAt=Date.now();}
+  return changed;
+}
+function offerPoetryMetadataPropagation(book){
+  if(!book||(book.generos||[]).indexOf('Poesía')<0||!book.poesia)return false;
+  const others=poetryBooksBySameAuthor(book); if(!others.length)return false;
+  let changed=false; const mixed=authorHasMixedGenres(book);
+  const tradition=book.poesia.tradicionId?book.poesia.tradicion:'';
+  const tradTargets=tradition?others.filter(e=>e?.poesia?.tradicionId!==book.poesia.tradicionId):[];
+  if(tradTargets.length){
+    if(!mixed){
+      if(confirm(`${book.autor}: aplicaste Poesía · ${tradition}. Hay ${tradTargets.length} libro(s) de poesía del mismo autor con otra clasificación o sin clasificar. ¿Aplicar ${tradition} a todos?`)){
+        tradTargets.forEach(e=>{if(applyPoetryMetadataToBook(e,book,{tradition:true,movement:false}))changed=true;});
+      }
+    }else{
+      tradTargets.forEach(e=>{if(confirm(`${book.autor} tiene libros en más de un género. ¿Aplicar la tradición poética “${tradition}” a “${e.titulo}”?`)){if(applyPoetryMetadataToBook(e,book,{tradition:true,movement:false}))changed=true;}});
+    }
+  }
+  const movement=book.poesia.corrienteId?book.poesia.corriente:'';
+  const movTargets=movement?others.filter(e=>e?.poesia?.corrienteId!==book.poesia.corrienteId):[];
+  movTargets.forEach(e=>{if(confirm(`Revisar período/corriente: ¿aplicar “${movement}” a “${e.titulo}” (${book.autor})?`)){if(applyPoetryMetadataToBook(e,book,{tradition:false,movement:true}))changed=true;}});
+  if(changed){if(typeof invalidateRecommendations==='function')invalidateRecommendations('clasificación poética propagada');saveDB();if(currentScreen==='library')renderLibrary();}
+  return changed;
+}
 
 function updateLiteraryMetadataVisibility(){
   const p=document.getElementById('poesia-fields'), c=document.getElementById('cuento-fields');
@@ -91,7 +169,7 @@ function updateLiteraryMetadataVisibility(){
   updateCollectionFieldsVisibility();
   const storyFallback=story && !!document.getElementById('cuento-es-recopilacion')?.checked && !!document.getElementById('cuento-fechas-desconocidas')?.checked && (document.getElementById('cuento-tipo-recopilacion')?.value||'autor')!=='antologia';
   const authorPanel=document.getElementById('autor-temporal-fields'); if(authorPanel)authorPanel.style.display=(poetry||storyFallback)?'block':'none';
-  fillLiteraryTaxonomyLists();
+  fillLiteraryTaxonomyLists(); renderAllLiteraryTaxonomyChips();
 }
 
 function updateCollectionFieldsVisibility(){
@@ -173,7 +251,7 @@ function setLiteraryMetadataFields(book){
   const life=authorTemporalDataByName(book?.autor||'');
   set('autor-anio-nacimiento',life.nacimiento);set('autor-anio-muerte',life.muerte);
   const alive=document.getElementById('autor-aun-vivo');if(alive)alive.checked=life.aunVivo;
-  updateLiteraryMetadataVisibility(); updateAuthorLifeVisibility();
+  updateLiteraryMetadataVisibility(); renderAllLiteraryTaxonomyChips(); updateAuthorLifeVisibility();
 }
 
 function updateAuthorLifeVisibility(){
@@ -219,7 +297,7 @@ function updateQuickLiteraryMetadataVisibility(){
   const note=document.getElementById('quick-cuento-fallback-note');if(note)note.textContent=type==='antologia'?'En antologías de varios autores no se usa el ciclo vital de un solo autor como aproximación temporal.':'Si faltan las fechas de las obras, puedes usar el ciclo vital del autor como aproximación.';
   if(type==='antologia'){const u=document.getElementById('quick-cuento-usar-autor');if(u)u.checked=false;}
   const authorPanel=document.getElementById('quick-autor-temporal-fields');if(authorPanel)authorPanel.style.display=(poetry||(unknown&&type!=='antologia'))?'block':'none';
-  fillLiteraryTaxonomyLists();updateQuickAuthorLifeVisibility();
+  fillLiteraryTaxonomyLists();renderAllLiteraryTaxonomyChips();updateQuickAuthorLifeVisibility();
 }
 function populateQuickLiteraryMetadata(book){
   const set=(id,v)=>{const e=document.getElementById(id);if(e)e.value=v??'';};
@@ -231,7 +309,7 @@ function populateQuickLiteraryMetadata(book){
   set('quick-cuento-inicio',c.periodoObrasInicio);set('quick-cuento-fin',c.periodoObrasFin);
   const use=document.getElementById('quick-cuento-usar-autor');if(use)use.checked=!!c.usarPeriodoAutor;
   const life=authorTemporalDataByName(book?.autor||'');set('quick-autor-nacimiento',life.nacimiento);set('quick-autor-muerte',life.muerte);const vivo=document.getElementById('quick-autor-vivo');if(vivo)vivo.checked=life.aunVivo;
-  updateQuickLiteraryMetadataVisibility();
+  updateQuickLiteraryMetadataVisibility();renderAllLiteraryTaxonomyChips();
 }
 function saveQuickLiteraryMetadata(book){
   if(!book)return;

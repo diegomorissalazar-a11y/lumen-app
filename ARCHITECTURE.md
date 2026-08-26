@@ -83,3 +83,10 @@ Se incorpora `js/literary-metadata.js` como capa compartida para metadatos que n
 - **Cuentos/antologías**: el período de las obras vive en `entry.cuentos`, separado de `anio_pub` y de la fecha bibliográfica de la edición. El fallback por ciclo vital solo se usa cuando el usuario lo marca y nunca para antologías multi-autor.
 - **Historia**: `ambitoId/ambito` queda separado de `lineaPrincipalId/lineaPrincipal` y de `fechaInicio/fechaFin`.
 - **Descubrir**: consume estas entidades y rangos sin convertir aproximaciones en datos bibliográficos reales.
+
+
+## v192 — Taxonomías secundarias y propagación asistida
+
+Las etiquetas secundarias literarias son entidades canónicas por ID, no cadenas libres. Poesía usa `tradicionId` y `corrienteId`; Historia usa `ambitoId`. La presentación mediante chips es solo una vista sobre la misma taxonomía persistente y sincronizable introducida en v191.
+
+La propagación se realiza sobre **Autor canónico + Género principal**, nunca sobre el autor de forma global. Para Poesía, la tradición puede propagarse de forma masiva únicamente cuando el autor no presenta mezcla de géneros; ante mezcla de géneros se revisan individualmente los libros de poesía. Corriente/período siempre requiere revisión individual. Historia y períodos de recopilaciones no se infieren por autor.
