@@ -119,27 +119,22 @@ const RecommendationEngine = (() => {
 
   function historyContinuity(book) {
     if (!belongsToCategory(book, 'historia')) return {score:0, reason:''};
-    const line = book.historia?.lineaPrincipalId || book.historia?.lineaPrincipal || '';
-    const scope = book.historia?.ambitoId || book.historia?.ambito || '';
+    ensureHistoriaCanonicalRefs(book);
+    const targetIds = historyLineIdsForEntry(book);
     const readHistory = readBooks().filter(e => belongsToCategory(e,'historia'));
-    const sameLine = line ? readHistory.filter(e => (e.historia?.lineaPrincipalId || e.historia?.lineaPrincipal) === line) : [];
-    const historicalRead = sameLine; // alias legado conservado para continuidad de auditoría v190→v191
-    const sameScope = scope ? readHistory.filter(e => (e.historia?.ambitoId || e.historia?.ambito) === scope) : [];
-    if (!line && !scope) return {score:0, reason:'historia aún sin ámbito o línea temporal configurada'};
-    if (line && !sameLine.length) return {score:3, reason:'abre una línea histórica todavía poco cubierta'};
-    const reference = sameLine.length ? sameLine : sameScope;
-    const base = sameLine.length ? 1 : (sameScope.length ? 1 : 0);
-    const bounds = historyBounds(book.historia || {});
-    const centers = reference.map(e => historyBounds(e.historia || {})).filter(b => b.inicio != null || b.fin != null).map(b => ((b.inicio ?? b.fin) + (b.fin ?? b.inicio))/2);
-    if ((bounds.inicio != null || bounds.fin != null) && centers.length) {
-      const c = ((bounds.inicio ?? bounds.fin) + (bounds.fin ?? bounds.inicio))/2;
-      const gap = Math.min(...centers.map(x => Math.abs(x-c)));
-      if (gap <= 100) return {score:4, reason:'continúa un período histórico ya en desarrollo'};
-      if (gap <= 300) return {score:3, reason:'expande un período histórico cercano a tus lecturas'};
-    }
-    if (sameLine.length) return {score:2, reason:'amplía una línea histórica presente en tu mapa'};
-    if (sameScope.length) return {score:base, reason:'amplía un ámbito histórico que ya lees'};
-    return {score:1, reason:'abre un nuevo ámbito histórico'};
+    const readByLine = new Map();
+    readHistory.forEach(e=>{ensureHistoriaCanonicalRefs(e);historyLineIdsForEntry(e).forEach(id=>{if(!readByLine.has(id))readByLine.set(id,[]);readByLine.get(id).push(e);});});
+    if (!targetIds.length) return {score:0, reason:'historia aún sin líneas históricas configuradas'};
+    const knownIds=targetIds.filter(id=>readByLine.has(id)), newIds=targetIds.filter(id=>!readByLine.has(id));
+    const reference=[...new Map(knownIds.flatMap(id=>readByLine.get(id)||[]).map(e=>[e.id,e])).values()];
+    const bounds=historyBounds(book.historia||{});
+    const centers=reference.map(e=>historyBounds(e.historia||{})).filter(b=>b.inicio!=null||b.fin!=null).map(b=>((b.inicio??b.fin)+(b.fin??b.inicio))/2);
+    let temporal=0;
+    if((bounds.inicio!=null||bounds.fin!=null)&&centers.length){const c=((bounds.inicio??bounds.fin)+(bounds.fin??bounds.inicio))/2,gap=Math.min(...centers.map(x=>Math.abs(x-c)));if(gap<=100)temporal=2;else if(gap<=300)temporal=1;}
+    if(knownIds.length&&newIds.length)return {score:5+temporal,reason:'conecta líneas históricas conocidas con una nueva'};
+    if(targetIds.length>=2&&knownIds.length>=2)return {score:4+temporal,reason:'actúa como puente entre líneas históricas de tu mapa'};
+    if(knownIds.length){if(temporal===2)return {score:4,reason:'continúa un período histórico ya en desarrollo'};if(temporal===1)return {score:3,reason:'expande un período histórico cercano a tus lecturas'};return {score:2,reason:'amplía una línea histórica presente en tu mapa'};}
+    return {score:3,reason:targetIds.length>1?'abre nuevas líneas históricas conectadas':'abre una nueva línea histórica'};
   }
 
   function originalPublicationYear(book) {
@@ -149,7 +144,7 @@ const RecommendationEngine = (() => {
   }
 
   function temporalRangeForBook(book, category) {
-    if (category === 'cuentos' && typeof storyTemporalRange === 'function') return storyTemporalRange(book);
+    if ((category === 'cuentos'||category === 'poesía') && typeof storyTemporalRange === 'function' && (book?.collectionMetadata?.esRecopilacion||book?.cuentos?.esRecopilacion)) return storyTemporalRange(book);
     const y = originalPublicationYear(book);
     const rawA=book?.periodo_publicacion_inicio,rawB=book?.periodo_publicacion_fin;
     const a=(rawA===null||rawA===undefined||rawA==='')?null:Number(rawA), b=(rawB===null||rawB===undefined||rawB==='')?null:Number(rawB);

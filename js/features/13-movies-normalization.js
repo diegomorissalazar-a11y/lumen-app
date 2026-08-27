@@ -698,7 +698,7 @@ function switchNormTab(tab) {
     renderElencoPendientes();
   }
   if (tab === 'idiomas') initIdiomasTab();
-  if (tab === 'libros') renderIncompleteBibliographyBooks();
+  if (tab === 'libros') { if (typeof renderMetadataNormalizerBooks === 'function') renderMetadataNormalizerBooks(); else renderIncompleteBibliographyBooks(); }
 }
 
 function setElencTipo(tipo, btn) {

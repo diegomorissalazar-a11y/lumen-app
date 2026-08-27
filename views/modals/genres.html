@@ -15,17 +15,19 @@
         <div class="literary-meta-sub">Clasificación canónica para mejorar Descubrir.</div>
         <div class="field"><label>Tradición / ámbito poético</label><input type="hidden" id="quick-poesia-tradicion"><div id="quick-poesia-tradicion-chips" class="literary-taxonomy-chips"></div></div>
         <div class="field"><label>Período / corriente</label><input type="hidden" id="quick-poesia-corriente"><div id="quick-poesia-corriente-chips" class="literary-taxonomy-chips"></div></div>
+        <div class="field"><label>Generación / grupo (opcional)</label><input type="hidden" id="quick-poesia-generacion"><div id="quick-poesia-generacion-chips" class="literary-taxonomy-chips"></div></div>
       </div>
 
       <div id="quick-cuento-fields" class="literary-meta-panel">
-        <div class="literary-meta-title">Cuentos</div>
+        <div class="literary-meta-title">Recopilación / antología</div>
+        <div class="literary-meta-sub">Disponible para Cuento y Poesía.</div>
         <label class="literary-checkbox"><input type="checkbox" id="quick-cuento-es-recopilacion" onchange="updateQuickLiteraryMetadataVisibility()"> Es recopilación / antología</label>
         <div id="quick-cuento-recopilacion-body" style="display:none;">
           <div class="field"><label>Tipo</label><select class="input" id="quick-cuento-tipo" onchange="updateQuickLiteraryMetadataVisibility()"><option value="autor">Recopilación de autor</option><option value="antologia">Antología</option></select></div>
           <label class="literary-checkbox"><input type="checkbox" id="quick-cuento-fechas-desconocidas" onchange="updateQuickLiteraryMetadataVisibility()"> No contamos con fechas de las obras</label>
           <div id="quick-cuento-fechas" class="literary-grid">
-            <div class="field"><label>Fecha primer cuento / obra</label><input class="input" type="number" id="quick-cuento-inicio" placeholder="1885"></div>
-            <div class="field"><label>Fecha último cuento / obra</label><input class="input" type="number" id="quick-cuento-fin" placeholder="1886"></div>
+            <div class="field"><label>Fecha primera obra</label><input class="input" type="number" id="quick-cuento-inicio" placeholder="1885"></div>
+            <div class="field"><label>Fecha última obra</label><input class="input" type="number" id="quick-cuento-fin" placeholder="1886"></div>
           </div>
           <div id="quick-cuento-fallback" style="display:none;">
             <label class="literary-checkbox"><input type="checkbox" id="quick-cuento-usar-autor"> Usar nacimiento y muerte del autor como aproximación</label>

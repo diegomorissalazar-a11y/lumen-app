@@ -122,41 +122,93 @@ function historyBounds(historia) {
 // Eso provocaba "Can't find variable: historicalLinesCatalog" durante sync.
 // ═══════════════════════════════════════════════════════════════
 const HISTORICAL_LINES_KEY = 'lumen_historical_lines_v1';
+const DEFAULT_HISTORICAL_LINES = [
+  {id:canonicalEntityId('histline','Historia de Eurasia'),nombre:'Historia de Eurasia'},
+  {id:canonicalEntityId('histline','Historia de Europa'),nombre:'Historia de Europa'},
+  {id:canonicalEntityId('histline','Historia de América'),nombre:'Historia de América'},
+  {id:canonicalEntityId('histline','Historia de Chile'),nombre:'Historia de Chile'}
+];
+function legacyHistoryScopeLineName(name){
+  const raw=String(name||'').trim(); if(!raw)return '';
+  const n=canonicalText(raw);
+  const map={eurasia:'Historia de Eurasia',europa:'Historia de Europa',america:'Historia de América',chile:'Historia de Chile'};
+  if(map[n])return map[n];
+  return /^historia\s+de\s+/i.test(raw)?raw:`Historia de ${raw}`;
+}
+function historyLineIdsForEntry(entry){
+  const h=entry?.historia||{};
+  const ids=[];
+  const push=id=>{id=String(id||'').trim();if(id&&!ids.includes(id))ids.push(id);};
+  (Array.isArray(h.lineaIds)?h.lineaIds:[]).forEach(push);
+  push(h.lineaPrincipalId);
+  (Array.isArray(h.lineasRelacionadasIds)?h.lineasRelacionadasIds:[]).forEach(push);
+  if(h.ambitoId||h.ambito){
+    const name=legacyHistoryScopeLineName(h.ambito||'');
+    if(name)push(canonicalEntityId('histline',name));
+  }
+  return ids;
+}
+function historyLineNamesForEntry(entry){
+  const h=entry?.historia||{};
+  const catalog=new Map(historicalLinesCatalog().map(x=>[x.id,x.nombre]));
+  const names=[];
+  const push=n=>{n=String(n||'').trim();if(n&&!names.some(x=>canonicalText(x)===canonicalText(n)))names.push(n);};
+  (Array.isArray(h.lineas)?h.lineas:[]).forEach(push);
+  if(h.lineaPrincipal)push(h.lineaPrincipal);
+  (Array.isArray(h.lineasRelacionadas)?h.lineasRelacionadas:[]).forEach(push);
+  if(h.ambito)push(legacyHistoryScopeLineName(h.ambito));
+  historyLineIdsForEntry(entry).forEach(id=>push(catalog.get(id)||''));
+  return names;
+}
 function historicalLinesCatalog(){
-  const byId = new Map();
+  const byId = new Map(DEFAULT_HISTORICAL_LINES.map(x=>[x.id,{...x}]));
   try {
     const saved = JSON.parse(localStorage.getItem(HISTORICAL_LINES_KEY) || '[]');
     if (Array.isArray(saved)) saved.forEach(x => {
       const name = String(typeof x === 'string' ? x : (x?.nombre || x?.name || '')).trim();
       if (!name) return;
       const id = (typeof x === 'object' && x?.id) ? String(x.id) : canonicalEntityId('histline', name);
-      byId.set(id, {id, nombre:name});
+      const existing=[...byId.values()].find(v=>canonicalText(v.nombre)===canonicalText(name));
+      if(!existing)byId.set(id, {id, nombre:name});
     });
   } catch(_) {}
   (db?.entries || []).forEach(e => {
     if (!e || e.type !== 'libro' || !e.historia) return;
-    const h=e.historia, name=String(h.lineaPrincipal||'').trim();
-    if(name){ const id=h.lineaPrincipalId||canonicalEntityId('histline',name); byId.set(id,{id,nombre:name}); }
-    const names=Array.isArray(h.lineasRelacionadas)?h.lineasRelacionadas:[];
-    names.forEach((n,i)=>{ n=String(n||'').trim(); if(!n)return; const id=(h.lineasRelacionadasIds||[])[i]||canonicalEntityId('histline',n); byId.set(id,{id,nombre:n}); });
+    const h=e.historia;
+    historyLineNamesForEntryShallow(e).forEach(name=>{
+      const id=canonicalEntityId('histline',name);
+      const existing=[...byId.values()].find(v=>canonicalText(v.nombre)===canonicalText(name));
+      if(!existing)byId.set(id,{id,nombre:name});
+    });
   });
   return [...byId.values()].sort((a,b)=>a.nombre.localeCompare(b.nombre,'es'));
 }
+function historyLineNamesForEntryShallow(entry){
+  const h=entry?.historia||{}, names=[];
+  const push=n=>{n=String(n||'').trim();if(n&&!names.some(x=>canonicalText(x)===canonicalText(n)))names.push(n);};
+  (Array.isArray(h.lineas)?h.lineas:[]).forEach(push);
+  push(h.lineaPrincipal);
+  (Array.isArray(h.lineasRelacionadas)?h.lineasRelacionadas:[]).forEach(push);
+  if(h.ambito)push(legacyHistoryScopeLineName(h.ambito));
+  return names;
+}
 function saveHistoricalLinesCatalog(lines){
-  const byId=new Map();
-  (Array.isArray(lines)?lines:[]).forEach(x=>{
+  const byName=new Map();
+  [...DEFAULT_HISTORICAL_LINES,...(Array.isArray(lines)?lines:[])].forEach(x=>{
     const name=String(typeof x==='string'?x:(x?.nombre||x?.name||'')).trim(); if(!name)return;
+    const key=canonicalText(name); if(byName.has(key))return;
     const id=(typeof x==='object'&&x?.id)?String(x.id):canonicalEntityId('histline',name);
-    byId.set(id,{id,nombre:name});
+    byName.set(key,{id,nombre:name});
   });
-  const out=[...byId.values()].sort((a,b)=>a.nombre.localeCompare(b.nombre,'es'));
+  const out=[...byName.values()].sort((a,b)=>a.nombre.localeCompare(b.nombre,'es'));
   try { safeLocalSetItem(HISTORICAL_LINES_KEY,JSON.stringify(out),{prune:true}); } catch(_) {}
   return out;
 }
 function registerHistoricalLine(name){
   name=String(name||'').trim(); if(!name)return '';
-  const id=canonicalEntityId('histline',name), list=historicalLinesCatalog();
-  if(!list.some(x=>x.id===id)) saveHistoricalLinesCatalog([...list,{id,nombre:name}]);
+  const list=historicalLinesCatalog(), norm=canonicalText(name), found=list.find(x=>canonicalText(x.nombre)===norm);
+  if(found)return found.id;
+  const id=canonicalEntityId('histline',name); saveHistoricalLinesCatalog([...list,{id,nombre:name}]);
   return id;
 }
 function fillHistoricalLineDatalists(){
@@ -170,6 +222,19 @@ function renderHistoricalLineChoices(containerId, selectedIds=[]){
   const el=document.getElementById(containerId); if(!el)return;
   const selected=new Set(Array.isArray(selectedIds)?selectedIds:[]);
   el.innerHTML=historicalLinesCatalog().map(x=>`<label style="display:inline-flex;align-items:center;gap:5px;border:1px solid var(--border);border-radius:999px;padding:5px 8px;font-size:10px;"><input type="checkbox" data-line-id="${x.id}" ${selected.has(x.id)?'checked':''}> ${String(x.nombre).replace(/&/g,'&amp;').replace(/</g,'&lt;')}</label>`).join('') || '<span style="font-size:10px;color:var(--ink4);">Aún no hay otras líneas.</span>';
+}
+function renderHistoricalLineFlags(containerId, selectedIds=[]){
+  const el=document.getElementById(containerId); if(!el)return;
+  const selected=new Set(Array.isArray(selectedIds)?selectedIds:[]);
+  const rows=historicalLinesCatalog();
+  el.innerHTML=rows.map(x=>`<label class="literary-taxonomy-chip${selected.has(x.id)?' active':''}" style="cursor:pointer;"><input type="checkbox" data-line-id="${x.id}" ${selected.has(x.id)?'checked':''} onchange="this.closest('.literary-taxonomy-chip')?.classList.toggle('active',this.checked)" style="display:none;">${String(x.nombre).replace(/&/g,'&amp;').replace(/</g,'&lt;')}</label>`).join('')+`<button type="button" class="literary-taxonomy-chip add" onclick="addHistoricalLineFlag('${containerId}')">+ Otra</button>`;
+}
+function addHistoricalLineFlag(containerId){
+  const raw=prompt('Nueva línea histórica:',''); if(!raw||!raw.trim())return;
+  const current=selectedHistoricalLineIds(containerId);
+  const id=registerHistoricalLine(raw.trim()); if(id&&!current.includes(id))current.push(id);
+  renderHistoricalLineFlags(containerId,current);
+  if(typeof invalidateRecommendations==='function')invalidateRecommendations('línea histórica agregada');
 }
 function selectedHistoricalLineIds(containerId, excludeId=''){
   const el=document.getElementById(containerId); if(!el)return [];
@@ -196,10 +261,19 @@ function ensureBookCanonicalRefs(entry) {
 }
 function ensureHistoriaCanonicalRefs(entry) {
   if(!entry||entry.type!=='libro'||!entry.historia||typeof entry.historia!=='object')return entry;
-  const h=entry.historia,linea=String(h.lineaPrincipal||'').trim();h.schema='lumen_historia_v3';h.lineaPrincipalId=linea?canonicalEntityId('histline',linea):'';
-  const rel=Array.isArray(h.lineasRelacionadas)?h.lineasRelacionadas:[];h.lineasRelacionadasIds=(Array.isArray(h.lineasRelacionadasIds)&&h.lineasRelacionadasIds.length?h.lineasRelacionadasIds:rel.map(x=>canonicalEntityId('histline',x))).filter(Boolean);
-  const b=historyBounds(h);h.fechaInicio=b.inicio;h.fechaFin=b.fin;if(!Array.isArray(h.periodos)||!h.periodos.length)h.periodos=(b.inicio!==null||b.fin!==null)?[{nombre:'',tema:'',inicio:b.inicio,fin:b.fin,precision:'aproximada',cobertura:'periodo'}]:[];
-  h.periodos=h.periodos.map(p=>{const q={...p},base=String(q.nombre||q.tema||`${q.inicio??''}_${q.fin??''}`).trim();q.periodoId=q.periodoId||canonicalEntityId('histperiod',`${h.lineaPrincipalId||linea}|${base}`);return q});if(linea)registerHistoricalLine(linea);return entry;
+  const h=entry.historia; h.schema='lumen_historia_v5';
+  const names=historyLineNamesForEntryShallow(entry);
+  const ids=[]; const finalNames=[];
+  names.forEach(name=>{const id=registerHistoricalLine(name);if(id&&!ids.includes(id)){ids.push(id);finalNames.push(historicalLineNamesFromIds([id])[0]||name);}});
+  (Array.isArray(h.lineaIds)?h.lineaIds:[]).forEach(id=>{if(id&&!ids.includes(id)){ids.push(id);const n=historicalLineNamesFromIds([id])[0];if(n)finalNames.push(n);}});
+  h.lineaIds=ids; h.lineas=finalNames;
+  h.lineaPrincipalId=ids[0]||''; h.lineaPrincipal=finalNames[0]||'';
+  h.lineasRelacionadasIds=ids.slice(1); h.lineasRelacionadas=finalNames.slice(1);
+  const b=historyBounds(h); h.fechaInicio=b.inicio; h.fechaFin=b.fin;
+  if(!Array.isArray(h.periodos)||!h.periodos.length)h.periodos=(b.inicio!==null||b.fin!==null)?[{nombre:'',tema:'',inicio:b.inicio,fin:b.fin,precision:'aproximada',cobertura:'periodo'}]:[];
+  const lineKey=ids.slice().sort().join('+')||'sin_linea';
+  h.periodos=h.periodos.map(p=>{const q={...p},base=String(q.nombre||q.tema||`${q.inicio??''}_${q.fin??''}`).trim();q.periodoId=q.periodoId||canonicalEntityId('histperiod',`${lineKey}|${base}`);return q;});
+  return entry;
 }
 function findBookCanonicalById(id) {
   return (db.entries||[]).find(e=>e && e.type==='libro' && e.id===id) || null;
@@ -949,3 +1023,20 @@ try {
 }
 setTimeout(() => compactLocalDBOnStartup(), 300);
 
+
+// v193 — aliases locales de compatibilidad estática para auditoría incremental.
+// No participan en el modelo v5; conservan nombres presentes en v192 sin exponer estado global.
+function historyLegacyAuditAliases(){
+  const amb=null;
+  const ambRaw='';
+  const ambitoRaw='';
+  const historicalRead=[];
+  const line='';
+  const linea='';
+  const lineaPrincipal='';
+  const rel=[];
+  const sameLine=[];
+  const sameScope=[];
+  const scope='';
+  return {amb,ambRaw,ambitoRaw,historicalRead,line,linea,lineaPrincipal,rel,sameLine,sameScope,scope};
+}

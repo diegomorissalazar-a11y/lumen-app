@@ -90,3 +90,18 @@ Se incorpora `js/literary-metadata.js` como capa compartida para metadatos que n
 Las etiquetas secundarias literarias son entidades canónicas por ID, no cadenas libres. Poesía usa `tradicionId` y `corrienteId`; Historia usa `ambitoId`. La presentación mediante chips es solo una vista sobre la misma taxonomía persistente y sincronizable introducida en v191.
 
 La propagación se realiza sobre **Autor canónico + Género principal**, nunca sobre el autor de forma global. Para Poesía, la tradición puede propagarse de forma masiva únicamente cuando el autor no presenta mezcla de géneros; ante mezcla de géneros se revisan individualmente los libros de poesía. Corriente/período siempre requiere revisión individual. Historia y períodos de recopilaciones no se infieren por autor.
+
+
+## v193 — Historia como taxonomía multietiqueta
+
+Historia adopta un modelo facetado/multietiqueta: cada libro puede pertenecer a varias líneas históricas canónicas a través de `historia.lineaIds[]`. El catálogo vive en `lumen_historical_lines_v1`; la relación entre dos líneas se deriva de libros que pertenecen a ambas, en lugar de mantener un segundo mecanismo manual de “líneas relacionadas”.
+
+Compatibilidad de migración:
+- `ambito/ambitoId` legacy se transforma en una línea histórica normalizada;
+- `lineaPrincipal*` y `lineasRelacionadas*` se incorporan a `lineaIds[]`;
+- por compatibilidad, el primer ID sigue espejado en `lineaPrincipalId` y los restantes en `lineasRelacionadasIds`, pero ya no son la fuente de verdad de la UX.
+
+El mapa temporal materializa una vista por línea: un mismo libro puede aparecer en varias filas sin duplicarse como entidad. Descubrir evalúa intersección de líneas, apertura de líneas nuevas y función de puente.
+
+## v195 — MetadataInferenceEngine
+Se agrega `js/metadata-inference.js` como capa derivada entre entidades/taxonomías y la UX de Normalizar. No es una nueva fuente de verdad: calcula sugerencias desde datos canónicos existentes y registra procedencia solo cuando el usuario las aplica. La propagación masiva opera por Autor canónico + Género y nunca sobrescribe valores existentes.

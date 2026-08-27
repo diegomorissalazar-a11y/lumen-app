@@ -24,24 +24,13 @@ function incompleteBibliographyBooks() {
 }
 
 function renderIncompleteBibliographyBooks() {
+  if (typeof renderMetadataNormalizerBooks === 'function') return renderMetadataNormalizerBooks();
   const count = document.getElementById('norm-books-count');
   const list = document.getElementById('norm-books-list');
   if (!list) return;
   const rows = incompleteBibliographyBooks();
   if (count) count.textContent = `${rows.length} libro${rows.length === 1 ? '' : 's'} con ficha bibliográfica incompleta`;
-  if (!rows.length) {
-    list.innerHTML = '<div style="padding:34px 16px;text-align:center;color:var(--ink4);"><div style="font-size:30px;margin-bottom:8px;">✓</div><div style="font-size:13px;font-style:italic;">Todas las fichas bibliográficas tienen los campos obligatorios completos.</div></div>';
-    return;
-  }
-  list.innerHTML = rows.map(({book, missing}) => `
-    <div class="norm-book-row">
-      <div class="norm-book-main">
-        <div class="norm-book-title">${escapeHtml(book.titulo || 'Sin título')}</div>
-        <div class="norm-book-author">${escapeHtml(book.autor || 'Autor no informado')}</div>
-        <div class="norm-book-missing">Falta: ${missing.map(escapeHtml).join(' · ')}</div>
-      </div>
-      <button class="btn btn-secondary btn-sm" style="width:auto;white-space:nowrap;" onclick="openBibliographyFromNormalizerBooks('${String(book.id).replace(/'/g,"\\'")}')">📥 Cargar JSON bibliográfico</button>
-    </div>`).join('');
+  list.innerHTML = rows.map(({book, missing}) => `<div class="norm-book-row"><div class="norm-book-main"><div class="norm-book-title">${escapeHtml(book.titulo || 'Sin título')}</div><div class="norm-book-author">${escapeHtml(book.autor || 'Autor no informado')}</div><div class="norm-book-missing">Falta: ${missing.map(escapeHtml).join(' · ')}</div></div><button class="btn btn-secondary btn-sm" style="width:auto;white-space:nowrap;" onclick="openBibliographyFromNormalizerBooks('${String(book.id).replace(/'/g,"\\'")}')">📥 Cargar JSON bibliográfico</button></div>`).join('');
 }
 
 function openBibliographyFromNormalizerBooks(bookId) {
@@ -51,8 +40,14 @@ function openBibliographyFromNormalizerBooks(bookId) {
 }
 
 function afterBibliographicApplyV188() {
+  const targetId=_bibJsonContext?.targetId||'';
+  const target=targetId&&targetId!=='__form__'?(db.entries||[]).find(e=>String(e.id)===String(targetId)):null;
+  if (target && typeof metadataSuggestionsForBook==='function') {
+    const suggestions=metadataSuggestionsForBook(target);
+    if(suggestions.length && _bibJsonContext?.mode!=='normalizer-books') showToast(`ℹ ${suggestions.length} sugerencia(s) de clasificación disponibles en Normalizar → Libros`,4200);
+  }
   if (_bibJsonContext?.mode === 'normalizer-books') {
     switchNormTab('libros');
-    renderIncompleteBibliographyBooks();
+    if (typeof renderMetadataNormalizerBooks === 'function') renderMetadataNormalizerBooks(); else renderIncompleteBibliographyBooks();
   }
 }

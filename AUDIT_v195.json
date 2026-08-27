@@ -1,0 +1,88 @@
+{
+  "version": "195",
+  "base_version": "194",
+  "base_manifest_sha256": "b6731d05679a5f45cfa98e3660afaedcd858175db2fec9b4a8b6bbd90b879c41",
+  "functions": {
+    "base": 725,
+    "new": 746,
+    "removed": [],
+    "added": [
+      "applyAllHighConfidenceMetadata",
+      "applyHighConfidenceMetadataForBook",
+      "applyMetadataPropagation",
+      "applyMetadataSuggestion",
+      "inferenceAuthorKey",
+      "inferenceConsensus",
+      "inferenceGenres",
+      "inferenceNorm",
+      "inferencePct",
+      "inferencePeers",
+      "inferenceSuggestion",
+      "inferenceSuggestionForLanguage",
+      "inferenceSuggestionForPoetry",
+      "inferenceTaxonomyLanguageForTradition",
+      "metadataApplySuggestion",
+      "metadataFieldSpecForGenre",
+      "metadataNormalizerRows",
+      "metadataPropagationGroups",
+      "metadataRecordProvenance",
+      "metadataSuggestionsForBook",
+      "renderMetadataNormalizerBooks"
+    ]
+  },
+  "callables": {
+    "base": 802,
+    "new": 824,
+    "removed": [],
+    "added": [
+      "MetadataInferenceEngine",
+      "applyAllHighConfidenceMetadata",
+      "applyHighConfidenceMetadataForBook",
+      "applyMetadataPropagation",
+      "applyMetadataSuggestion",
+      "inferenceAuthorKey",
+      "inferenceConsensus",
+      "inferenceGenres",
+      "inferenceNorm",
+      "inferencePct",
+      "inferencePeers",
+      "inferenceSuggestion",
+      "inferenceSuggestionForLanguage",
+      "inferenceSuggestionForPoetry",
+      "inferenceTaxonomyLanguageForTradition",
+      "metadataApplySuggestion",
+      "metadataFieldSpecForGenre",
+      "metadataNormalizerRows",
+      "metadataPropagationGroups",
+      "metadataRecordProvenance",
+      "metadataSuggestionsForBook",
+      "renderMetadataNormalizerBooks"
+    ]
+  },
+  "variables": {
+    "base": 1384,
+    "new": 1401,
+    "removed": [],
+    "added_count": 17
+  },
+  "ids": {
+    "base": 629,
+    "new": 631,
+    "removed": [],
+    "added": [
+      "norm-books-propagation-list",
+      "norm-books-suggestion-count"
+    ],
+    "duplicates": []
+  },
+  "handlers": {
+    "base": 107,
+    "new": 108,
+    "removed": [],
+    "added": [
+      "applyAllHighConfidenceMetadata"
+    ]
+  },
+  "missing_manifest_paths": [],
+  "files": 94
+}

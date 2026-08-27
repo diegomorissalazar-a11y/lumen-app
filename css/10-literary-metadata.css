@@ -2,3 +2,21 @@
 
 /* v192 — taxonomías visibles como flags canónicos */
 .literary-taxonomy-chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:6px}.literary-taxonomy-chip{border:1.5px solid var(--border);background:#fff;color:var(--ink3);border-radius:18px;padding:7px 12px;font:700 11px var(--font-sans);cursor:pointer}.literary-taxonomy-chip.active{background:var(--ink);color:#fff;border-color:var(--ink)}.literary-taxonomy-chip.add{border-style:dashed;color:var(--gold);background:var(--cream1)}.literary-secondary-chip{font-size:9px;background:#fff8e8;border:1px solid #d9b96f;border-radius:10px;padding:2px 7px;color:#8b6010;cursor:pointer}.literary-propagation-note{font-size:10px;color:var(--ink4);line-height:1.45;margin-top:7px}
+
+/* LUMEN v195 — Normalizar / Libros: workbench de metadatos */
+.norm-books-summary{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:10px 14px;border-bottom:1px solid var(--border);background:#fff}
+.norm-books-stat{font-size:10px;font-weight:700;letter-spacing:.4px;color:var(--ink3);padding:5px 8px;border:1px solid var(--border);border-radius:3px;background:var(--cream2)}
+.norm-propagation-panel{border-bottom:1px solid var(--border);background:var(--cream2);max-height:220px;overflow:auto;padding:8px 12px}
+.norm-propagation-title{font-size:10px;text-transform:uppercase;letter-spacing:1.1px;color:var(--ink4);font-weight:700;margin-bottom:6px}
+.norm-propagation-row{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:9px 10px;background:#fff;border:1px solid var(--border);border-radius:4px;margin:6px 0;font-size:11px;color:var(--ink3)}
+.norm-propagation-row strong{font-size:12px;color:var(--ink)}
+.norm-propagation-row small,.metadata-suggestion small{display:block;color:var(--ink4);margin-top:2px;line-height:1.35}
+.norm-book-row-v195{align-items:flex-start}
+.norm-book-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.norm-book-complete{font-size:10px;color:var(--green);margin-top:3px}
+.metadata-suggestion-list{display:flex;flex-direction:column;gap:5px;margin-top:8px}
+.metadata-suggestion{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 8px;border-left:3px solid var(--gold);background:rgba(200,149,42,.08);font-size:10px;color:var(--ink3)}
+.metadata-suggestion strong{color:var(--ink);font-size:11px}
+.metadata-apply-btn{border:1px solid var(--gold);background:#fff;color:var(--gold);font:700 9px var(--font-sans);text-transform:uppercase;letter-spacing:.5px;border-radius:3px;padding:5px 7px;cursor:pointer;white-space:nowrap}
+.norm-workbench-empty{padding:22px 14px;text-align:center;color:var(--ink4);font-size:12px;font-style:italic}
+@media(max-width:700px){.norm-propagation-row,.norm-book-row-v195{flex-direction:column;align-items:stretch}.norm-book-actions{justify-content:flex-start}.metadata-suggestion{align-items:flex-start}.norm-propagation-panel{max-height:260px}}

@@ -242,7 +242,9 @@ function confirmInventoryJsonImport() {
     if (currentScreen === 'home') renderHome();
     const authorMsg = n.autor && !authorWasExact && authorEntity ? ` · Autor: ${authorEntity.nombreCanonico}` : '';
     const containedMsg = book.inventoryContainer && book.containedWorkIds?.length ? ` · ${book.containedWorkIds.length} obra(s) vinculada(s)` : '';
-    showToast(`${isNewBook ? '✓ Libro creado' : '✓ Ficha existente enriquecida'} y agregado al inventario${authorMsg}${containedMsg}`, 4600);
+    const inferred = typeof metadataSuggestionsForBook==='function' ? metadataSuggestionsForBook(book) : [];
+    const inferenceMsg = inferred.length ? ` · ${inferred.length} sugerencia(s) en Normalizar → Libros` : '';
+    showToast(`${isNewBook ? '✓ Libro creado' : '✓ Ficha existente enriquecida'} y agregado al inventario${authorMsg}${containedMsg}${inferenceMsg}`, 5200);
   });
 }
 

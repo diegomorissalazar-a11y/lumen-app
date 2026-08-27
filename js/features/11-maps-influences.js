@@ -47,9 +47,11 @@ function getHistoriaTimelineItems(){
   (db.entries||[]).filter(e=>e&&e.type==='libro'&&e.historia).forEach(e=>{
     ensureHistoriaCanonicalRefs(e);
     const h=e.historia||{}, periods=Array.isArray(h.periodos)?h.periodos:[];
-    const linea=h.lineaPrincipal||'Sin línea histórica', lineaId=h.lineaPrincipalId||canonicalEntityId('histline',linea);
-    periods.forEach((p,i)=>{let a=p.inicio,b=p.fin;a=(a===null||a===''||a===undefined)?null:Number(a);b=(b===null||b===''||b===undefined)?null:Number(b);if(Number.isFinite(a)&&!Number.isFinite(b))b=a;if(Number.isFinite(b)&&!Number.isFinite(a))a=b;out.push({entry:e,period:p,index:i,linea,lineaId,periodoId:p.periodoId||'',inicio:Number.isFinite(a)?a:null,fin:Number.isFinite(b)?b:null});});
-    if(!periods.length) out.push({entry:e,period:{nombre:'Sin período fechado'},index:0,linea,lineaId,periodoId:'',inicio:null,fin:null});
+    const ids=historyLineIdsForEntry(e), names=historyLineNamesForEntry(e), linePairs=ids.length?ids.map((id,i)=>({lineaId:id,linea:names[i]||historicalLineNamesFromIds([id])[0]||'Sin línea histórica'})):[{lineaId:'sin_linea',linea:'Sin línea histórica'}];
+    linePairs.forEach(({linea,lineaId})=>{
+      periods.forEach((p,i)=>{let a=p.inicio,b=p.fin;a=(a===null||a===''||a===undefined)?null:Number(a);b=(b===null||b===''||b===undefined)?null:Number(b);if(Number.isFinite(a)&&!Number.isFinite(b))b=a;if(Number.isFinite(b)&&!Number.isFinite(a))a=b;out.push({entry:e,period:p,index:i,linea,lineaId,periodoId:p.periodoId||'',inicio:Number.isFinite(a)?a:null,fin:Number.isFinite(b)?b:null});});
+      if(!periods.length)out.push({entry:e,period:{nombre:'Sin período fechado'},index:0,linea,lineaId,periodoId:'',inicio:null,fin:null});
+    });
   });
   return out;
 }

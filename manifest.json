@@ -1,5 +1,5 @@
 {
-  "version": "192",
+  "version": "195",
   "html": {
     "auth": [
       "views/shell/auth.html"
@@ -48,6 +48,7 @@
     "js/core/01-firebase-data.js",
     "js/core/02-canonical-history-sync.js",
     "js/literary-metadata.js",
+    "js/metadata-inference.js",
     "js/core/03-navigation-entry-search.js",
     "js/features/04-home-plan.js",
     "js/features/05-library-notes.js",

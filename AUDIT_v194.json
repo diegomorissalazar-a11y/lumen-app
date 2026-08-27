@@ -1,0 +1,70 @@
+{
+  "function_decl": {
+    "base": 707,
+    "new": 725,
+    "removed": [],
+    "added": [
+      "defaultTaxonomyRegistry",
+      "getCollectionMetadataFromForm",
+      "loadTaxonomyRegistry",
+      "mergeTaxonomyRegistry",
+      "saveTaxonomyRegistry",
+      "syncBookFacetTaxonomy",
+      "taxonomyBookFacetIds",
+      "taxonomyConceptId",
+      "taxonomyConceptName",
+      "taxonomyConceptRelatedToLanguage",
+      "taxonomyConcepts",
+      "taxonomyFind",
+      "taxonomyLanguageAffinity",
+      "taxonomyLanguageConcept",
+      "taxonomyLink",
+      "taxonomyRegistryNorm",
+      "taxonomyRegistrySlug",
+      "taxonomyResolve"
+    ]
+  },
+  "variables": {
+    "base": 1372,
+    "new": 1384,
+    "removed": [],
+    "added": [
+      "LUMEN_TAXONOMY_REGISTRY_KEY",
+      "absorb",
+      "add",
+      "concepts",
+      "facet",
+      "facets",
+      "gen",
+      "language",
+      "legacyConcepts",
+      "normalized",
+      "registry",
+      "uniq"
+    ]
+  },
+  "ids": {
+    "base": 640,
+    "new": 646,
+    "removed": [],
+    "added": [
+      "collection-fields-title",
+      "poesia-generacion",
+      "poesia-generacion-chips",
+      "poesia-generacion-list",
+      "quick-poesia-generacion",
+      "quick-poesia-generacion-chips"
+    ],
+    "duplicates": [
+      "${noteAnchorId(e.id)}",
+      "${noteItemAnchorId(e.id,i)}",
+      "${x.id}"
+    ]
+  },
+  "handlers": {
+    "base": 179,
+    "new": 179,
+    "removed": [],
+    "added": []
+  }
+}

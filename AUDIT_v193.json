@@ -1,0 +1,65 @@
+{
+  "function_decl": {
+    "base": 700,
+    "new": 707,
+    "removed": [],
+    "added": [
+      "addHistoricalLineFlag",
+      "historyLegacyAuditAliases",
+      "historyLineIdsForEntry",
+      "historyLineNamesForEntry",
+      "historyLineNamesForEntryShallow",
+      "legacyHistoryScopeLineName",
+      "renderHistoricalLineFlags"
+    ]
+  },
+  "callables": {
+    "base": 760,
+    "new": 768,
+    "removed": [],
+    "added": [
+      "addHistoricalLineFlag",
+      "historyLegacyAuditAliases",
+      "historyLineIdsForEntry",
+      "historyLineNamesForEntry",
+      "historyLineNamesForEntryShallow",
+      "legacyHistoryScopeLineName",
+      "push",
+      "renderHistoricalLineFlags"
+    ]
+  },
+  "variables": {
+    "base": 1361,
+    "new": 1372,
+    "removed": [],
+    "added": [
+      "DEFAULT_HISTORICAL_LINES",
+      "byName",
+      "catalog",
+      "finalNames",
+      "historyLines",
+      "knownIds",
+      "lineKey",
+      "lineaIds",
+      "push",
+      "readByLine",
+      "targetIds"
+    ]
+  },
+  "ids": {
+    "base": 621,
+    "new": 623,
+    "removed": [],
+    "added": [
+      "hist-line-flags",
+      "histq-line-flags"
+    ]
+  },
+  "handlers": {
+    "base": 114,
+    "new": 114,
+    "removed": [],
+    "added": []
+  },
+  "duplicate_ids": []
+}

@@ -1,4 +1,4 @@
-// LUMEN v192 — bootstrap modular
+// LUMEN v195 — bootstrap modular
 'use strict';
 
 const LUMEN_HTML_MANIFEST = {
@@ -36,7 +36,9 @@ const LUMEN_HTML_MANIFEST = {
 const LUMEN_JS_MANIFEST = [
   "js/core/01-firebase-data.js",
   "js/core/02-canonical-history-sync.js",
+  "js/taxonomy-registry.js",
   "js/literary-metadata.js",
+  "js/metadata-inference.js",
   "js/core/03-navigation-entry-search.js",
   "js/features/04-home-plan.js",
   "js/features/05-library-notes.js",
@@ -90,7 +92,7 @@ async function bootLumen() {
     if (status) status.remove();
     window.__LUMEN_MODULAR_BOOT_OK__ = true;
   } catch (err) {
-    console.error('[LUMEN v192] Error de arranque modular:', err);
+    console.error('[LUMEN v195] Error de arranque modular:', err);
     if (status) status.innerHTML = `<strong>No se pudo iniciar LUMEN.</strong><br>${String(err.message||err)}`;
     window.__LUMEN_MODULAR_BOOT_ERROR__ = String(err.message||err);
   }

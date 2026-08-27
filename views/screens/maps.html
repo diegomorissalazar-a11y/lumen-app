@@ -211,11 +211,17 @@
       </div>
     </div>
 
-    <!-- SUBTAB: LIBROS CON BIBLIOGRAFÍA INCOMPLETA -->
+    <!-- SUBTAB: LIBROS — completitud + inferencias + propagación -->
     <div id="norm-sub-libros" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
-      <div class="norm-books-toolbar">
-        <span id="norm-books-count" style="font-size:11px;color:var(--gold);font-weight:700;"></span>
-        <button class="btn btn-secondary btn-sm" style="width:auto;margin-left:auto;" onclick="renderIncompleteBibliographyBooks()">↻ Actualizar lista</button>
+      <div class="norm-books-summary">
+        <span class="norm-books-stat" id="norm-books-count"></span>
+        <span class="norm-books-stat" id="norm-books-suggestion-count"></span>
+        <button class="btn btn-secondary btn-sm" style="width:auto;margin-left:auto;" onclick="applyAllHighConfidenceMetadata()">✓ Aplicar sugerencias seguras</button>
+        <button class="btn btn-secondary btn-sm" style="width:auto;" onclick="renderIncompleteBibliographyBooks()">↻ Analizar</button>
+      </div>
+      <div class="norm-propagation-panel">
+        <div class="norm-propagation-title">Propagación asistida · Autor + Género</div>
+        <div id="norm-books-propagation-list"></div>
       </div>
       <div id="norm-books-list" style="flex:1;overflow-y:auto;"></div>
     </div>
