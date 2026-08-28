@@ -20,3 +20,6 @@
 .metadata-apply-btn{border:1px solid var(--gold);background:#fff;color:var(--gold);font:700 9px var(--font-sans);text-transform:uppercase;letter-spacing:.5px;border-radius:3px;padding:5px 7px;cursor:pointer;white-space:nowrap}
 .norm-workbench-empty{padding:22px 14px;text-align:center;color:var(--ink4);font-size:12px;font-style:italic}
 @media(max-width:700px){.norm-propagation-row,.norm-book-row-v195{flex-direction:column;align-items:stretch}.norm-book-actions{justify-content:flex-start}.metadata-suggestion{align-items:flex-start}.norm-propagation-panel{max-height:260px}}
+
+/* v197: feedback inmediato mientras Normalizar → Libros analiza y renderiza por lotes */
+.norm-loading-dot{font-style:normal;font-weight:700;letter-spacing:.4px}.norm-loading-dot:after{content:'…';display:inline-block;min-width:16px}

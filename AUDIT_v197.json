@@ -1,0 +1,35 @@
+{
+  "version": "197",
+  "base_version": "196",
+  "functions": {
+    "base": 782,
+    "new": 791,
+    "removed": [],
+    "added": [
+      "afterMetadataMutation",
+      "appendChunk",
+      "buildMetadataInferenceContext",
+      "invalidateMetadataInferenceContext",
+      "metadataAnalyzeAll",
+      "metadataBookRowHTML",
+      "metadataInferenceToken",
+      "scheduleMetadataCommit",
+      "scheduleMetadataNormalizerRender"
+    ]
+  },
+  "variables": {
+    "base": 2889,
+    "new": 2922,
+    "removed_names": [
+      "combos"
+    ],
+    "added_count": 33
+  },
+  "ids": {
+    "base": 631,
+    "new": 631,
+    "removed": [],
+    "added": [],
+    "duplicates": []
+  }
+}
