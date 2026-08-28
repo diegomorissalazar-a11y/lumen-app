@@ -1,0 +1,21 @@
+<!-- ══════ MODAL: FILTRO TAXONÓMICO DE BIBLIOTECA ══════ -->
+<div class="modal-overlay" id="modal-library-filter">
+  <div class="modal-sheet library-filter-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">⚑ Filtrar biblioteca</div>
+        <div class="modal-subtitle">Taxonomía canónica · combinación por facetas</div>
+      </div>
+      <button class="modal-close" onclick="closeModal('modal-library-filter')">×</button>
+    </div>
+    <div class="modal-body library-filter-body">
+      <div class="library-filter-help">Selecciona una o más etiquetas. Dentro de una misma faceta se aplica <strong>O</strong>; entre facetas se aplica <strong>Y</strong>.</div>
+      <div id="library-filter-facets"></div>
+    </div>
+    <div class="library-filter-actions">
+      <button class="btn btn-secondary" onclick="clearLibraryTaxonomyFilters()">Limpiar</button>
+      <button class="btn" onclick="applyLibraryTaxonomyFilters()">Aplicar filtros</button>
+    </div>
+  </div>
+</div>

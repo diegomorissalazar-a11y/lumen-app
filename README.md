@@ -1,15 +1,7 @@
-# LUMEN v197 — rendimiento de Normalizar → Libros
+# LUMEN v198
 
-Base: **LUMEN v196 modular**.
+Base: v197 modular.
 
-## Cambio principal
-Optimización de la bandeja `Mapas → Normalizar → Libros` para bibliotecas grandes y para aplicar varias sugerencias consecutivas sin congelar la app.
+Incluye filtro taxonómico facetado para **Biblioteca → Libros** y **Biblioteca → Inventario**, reutilizando la taxonomía canónica existente. También agrega en Inicio la **proyección de páginas al cierre del año** junto al ritmo promedio actual.
 
-## Implementación
-- Índices reutilizables por autor y autor+género.
-- Análisis de metadatos en una sola pasada.
-- Render progresivo de filas.
-- Guardado, recálculo de Descubrir y reconstrucción visual agrupados durante ráfagas de clics.
-- Feedback inmediato mientras analiza.
-
-No se modifican los criterios de inferencia ni el modelo de datos.
+Entrega modular: `index.html`, `css/`, `js/`, `views/`, `assets/` y `manifest.json`.

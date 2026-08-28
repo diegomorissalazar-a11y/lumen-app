@@ -677,7 +677,7 @@ function renderHome() {
       <div class="ritmo-hero-main">
         <div class="ritmo-hero-num">${ritmoActual.toFixed(1)}</div>
         <div class="ritmo-hero-label">págs / día · ${yr}</div>
-        <div class="ritmo-hero-sub">${pagsEsteAnio.toLocaleString()} págs<br>en ${dayOfYear} días</div>
+        <div class="ritmo-hero-sub">${pagsEsteAnio.toLocaleString()} págs<br>en ${dayOfYear} días<br><strong style="color:var(--gold);">Proy. cierre: ${Math.round(proyeccion).toLocaleString()} págs</strong></div>
       </div>
       <div class="ritmo-hero-vs">
         ${ritmoPrev > 0 ? `

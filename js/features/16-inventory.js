@@ -112,10 +112,12 @@ function inventoryContainerMetaHTML(book){
 }
 
 function renderInventory(){
+  if(typeof updateLibraryFilterButtonVisibility==='function')updateLibraryFilterButtonVisibility();
   const list=document.getElementById('library-list'),search=document.getElementById('lib-search');
   if(search)search.placeholder='Buscar en mi inventario físico...';
   const q=invNorm(search?.value||''),data=inventoryBooksUnified();
   let books=data.books.filter(e=>!q||[e.titulo,e.autor,e.editorial].some(v=>invNorm(v).includes(q)));
+  if(typeof libraryFilterCount==='function' && libraryFilterCount()>0 && typeof libraryBookPassesTagFilters==='function') books=books.filter(libraryBookPassesTagFilters);
   books=books.sort(inventorySortComparator);
   let unlinked=data.unlinked.filter(x=>!q||[x.titulo,x.autor,x.editorial].some(v=>invNorm(v).includes(q)));
   unlinked=unlinked.sort(inventorySortComparator);

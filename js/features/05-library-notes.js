@@ -11,13 +11,142 @@ function updateCarouselArrows(listId, arrowsId, count) {
   if (arrows) arrows.classList.toggle('visible', count > 3);
 }
 
+// ═══════════════════════════════════
+//  FILTRO TAXONÓMICO — Biblioteca / Inventario (v198)
+// ═══════════════════════════════════
+const LIBRARY_FILTER_STORAGE_KEY = 'lumen_library_taxonomy_filters_v1';
+let libraryTaxonomyFilters = (() => {
+  try {
+    const raw = JSON.parse(sessionStorage.getItem(LIBRARY_FILTER_STORAGE_KEY) || '{}');
+    return {
+      genre: new Set(Array.isArray(raw.genre) ? raw.genre : []),
+      tradition: new Set(Array.isArray(raw.tradition) ? raw.tradition : []),
+      period: new Set(Array.isArray(raw.period) ? raw.period : []),
+      history: new Set(Array.isArray(raw.history) ? raw.history : []),
+      language: new Set(Array.isArray(raw.language) ? raw.language : []),
+      collection: new Set(Array.isArray(raw.collection) ? raw.collection : [])
+    };
+  } catch (_) {
+    return {genre:new Set(),tradition:new Set(),period:new Set(),history:new Set(),language:new Set(),collection:new Set()};
+  }
+})();
+
+function persistLibraryTaxonomyFilters(){
+  try {
+    const payload={};
+    Object.entries(libraryTaxonomyFilters).forEach(([k,v])=>payload[k]=[...v]);
+    sessionStorage.setItem(LIBRARY_FILTER_STORAGE_KEY,JSON.stringify(payload));
+  } catch(_) {}
+}
+function libraryFilterCount(){ return Object.values(libraryTaxonomyFilters).reduce((n,set)=>n+set.size,0); }
+function libraryFilterEscape(value){ return String(value||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function libraryBookFilterFacets(book){
+  const p=book?.poesia||{};
+  const collection=book?.collectionMetadata||book?.cuentos||{};
+  let langId='';
+  try { langId=TaxonomyRegistry?.bookFacets?.(book)?.languageId||''; } catch(_) {}
+  return {
+    genre:new Set((book?.generos||[]).filter(Boolean)),
+    tradition:new Set([p.tradicionId||''].filter(Boolean)),
+    period:new Set([p.corrienteId||''].filter(Boolean)),
+    history:new Set(typeof historyLineIdsForEntry==='function'?historyLineIdsForEntry(book):[]),
+    language:new Set([langId].filter(Boolean)),
+    collection:new Set(collection?.esRecopilacion?[collection.tipoRecopilacion==='antologia'?'antologia':'recopilacion']:[])
+  };
+}
+function libraryBookPassesTagFilters(book){
+  if(!book||book.type!=='libro') return false;
+  const facets=libraryBookFilterFacets(book);
+  return Object.entries(libraryTaxonomyFilters).every(([facet,selected])=>{
+    if(!selected.size) return true;
+    const values=facets[facet]||new Set();
+    return [...selected].some(v=>values.has(v));
+  });
+}
+function libraryFilterLabel(facet,value){
+  if(facet==='genre') return value;
+  if(facet==='collection') return value==='antologia'?'Antología':'Recopilación';
+  if(facet==='history') {
+    try { return historicalLineNamesFromIds([value])[0]||value; } catch(_) { return value; }
+  }
+  try { return TaxonomyRegistry?.name?.(value)||value; } catch(_) { return value; }
+}
+function libraryFilterScopeBooks(){
+  if(libFilter==='inventario' && typeof inventoryBooksUnified==='function') return inventoryBooksUnified().books||[];
+  return (db.entries||[]).filter(e=>e.type==='libro');
+}
+function libraryAvailableFilterValues(){
+  const out={genre:new Map(),tradition:new Map(),period:new Map(),history:new Map(),language:new Map(),collection:new Map()};
+  libraryFilterScopeBooks().forEach(book=>{
+    const facets=libraryBookFilterFacets(book);
+    Object.entries(facets).forEach(([facet,values])=>values.forEach(v=>{
+      const label=libraryFilterLabel(facet,v); if(!label)return;
+      if(!out[facet].has(v))out[facet].set(v,{value:v,label,count:0});
+      out[facet].get(v).count++;
+    }));
+  });
+  Object.values(libraryTaxonomyFilters).forEach(()=>{});
+  return out;
+}
+function updateLibraryFilterButtonVisibility(){
+  const btn=document.getElementById('library-taxonomy-filter-btn');
+  if(!btn)return;
+  const visible=libFilter==='libro'||libFilter==='inventario';
+  btn.style.display=visible?'inline-flex':'none';
+  const count=libraryFilterCount();
+  btn.classList.toggle('active',count>0);
+  btn.textContent=count>0?`⚑ Filtrar · ${count}`:'⚑ Filtrar';
+  renderLibraryActiveFilters();
+}
+function renderLibraryActiveFilters(){
+  const host=document.getElementById('library-active-filters'); if(!host)return;
+  if(!(libFilter==='libro'||libFilter==='inventario')||!libraryFilterCount()){host.style.display='none';host.innerHTML='';return;}
+  const chips=[];
+  Object.entries(libraryTaxonomyFilters).forEach(([facet,set])=>set.forEach(value=>chips.push(`<span class="library-active-filter-chip">${libraryFilterEscape(libraryFilterLabel(facet,value))}<button onclick="removeLibraryTaxonomyFilter('${facet}','${String(value).replace(/'/g,"\\'")}')">×</button></span>`)));
+  chips.push(`<button class="btn btn-secondary btn-sm" style="width:auto;font-size:9px;" onclick="clearLibraryTaxonomyFilters()">Limpiar</button>`);
+  host.innerHTML=chips.join('');host.style.display='flex';
+}
+function toggleLibraryTaxonomyFilter(facet,value){
+  const set=libraryTaxonomyFilters[facet];if(!set)return;
+  set.has(value)?set.delete(value):set.add(value);
+  persistLibraryTaxonomyFilters();renderLibraryTaxonomyFilterModal();
+}
+function removeLibraryTaxonomyFilter(facet,value){
+  libraryTaxonomyFilters[facet]?.delete(value);persistLibraryTaxonomyFilters();renderLibrary();
+}
+function clearLibraryTaxonomyFilters(){
+  Object.values(libraryTaxonomyFilters).forEach(set=>set.clear());persistLibraryTaxonomyFilters();
+  if(document.getElementById('modal-library-filter')?.classList.contains('open'))renderLibraryTaxonomyFilterModal();
+  renderLibrary();
+}
+function renderLibraryTaxonomyFilterModal(){
+  const host=document.getElementById('library-filter-facets');if(!host)return;
+  const available=libraryAvailableFilterValues();
+  const groups=[
+    ['genre','Género'],['tradition','Tradición / ámbito literario'],['period','Período / corriente'],
+    ['history','Líneas históricas'],['language','Idioma original'],['collection','Tipo de recopilación']
+  ];
+  host.innerHTML=groups.map(([facet,title])=>{
+    const vals=[...available[facet].values()].sort((a,b)=>a.label.localeCompare(b.label,'es',{sensitivity:'base'}));
+    if(!vals.length)return '';
+    return `<section class="library-filter-facet"><div class="library-filter-facet-title">${title}</div><div class="library-filter-chip-grid">${vals.map(item=>`<button class="library-filter-chip${libraryTaxonomyFilters[facet].has(item.value)?' selected':''}" onclick="toggleLibraryTaxonomyFilter('${facet}','${String(item.value).replace(/'/g,"\\'")}')">${libraryFilterEscape(item.label)} <span style="opacity:.6">${item.count}</span></button>`).join('')}</div></section>`;
+  }).join('');
+}
+function openLibraryTaxonomyFilter(){
+  if(!(libFilter==='libro'||libFilter==='inventario'))return;
+  renderLibraryTaxonomyFilterModal();openModal('modal-library-filter');
+}
+function applyLibraryTaxonomyFilters(){ persistLibraryTaxonomyFilters();closeModal('modal-library-filter');renderLibrary(); }
+
 function filterLib(f, btn) {
   libFilter = f;
   document.querySelectorAll('#lib-seg .stats-seg-btn').forEach(t => t.classList.toggle('active', t.dataset.tab === f));
+  updateLibraryFilterButtonVisibility();
   renderLibrary();
 }
 
 function renderLibrary() {
+  updateLibraryFilterButtonVisibility();
   const q = (document.getElementById('lib-search').value || '').toLowerCase();
   if (libFilter === 'notas') {
     renderNotasLibrary(q);
@@ -31,7 +160,8 @@ function renderLibrary() {
     if (libFilter === 'disco') return e.type === 'disco';
     if (libFilter === 'libro') return e.type === 'libro'; // includes leyendo
     return e.type === libFilter;
-  }).filter(e => !q || e.titulo.toLowerCase().includes(q) || (e.autor||'').toLowerCase().includes(q) || (e.director||'').toLowerCase().includes(q) || (e.artista||'').toLowerCase().includes(q) || (e.productor||'').toLowerCase().includes(q) || (e.discografica||'').toLowerCase().includes(q));
+  }).filter(e => !(libFilter === 'libro' && libraryFilterCount()) || libraryBookPassesTagFilters(e))
+    .filter(e => !q || e.titulo.toLowerCase().includes(q) || (e.autor||'').toLowerCase().includes(q) || (e.director||'').toLowerCase().includes(q) || (e.artista||'').toLowerCase().includes(q) || (e.productor||'').toLowerCase().includes(q) || (e.discografica||'').toLowerCase().includes(q));
 
   // Sort: leyendo first, then by date desc, then id desc
   items = items.sort((a, b) => {

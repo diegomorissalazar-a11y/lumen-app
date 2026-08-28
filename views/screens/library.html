@@ -19,9 +19,11 @@
       <button class="stats-seg-btn"        data-tab="notas"    onclick="filterLib('notas',this)">📝 Notas</button>
     </div>
   </div>
-  <div style="padding:0 20px 4px;">
+  <div class="library-search-toolbar">
     <input class="input" type="text" id="lib-search" placeholder="Buscar en mi biblioteca..." oninput="renderLibrary()">
+    <button id="library-taxonomy-filter-btn" class="btn btn-secondary btn-sm library-filter-btn" onclick="openLibraryTaxonomyFilter()" style="display:none;">⚑ Filtrar</button>
   </div>
+  <div id="library-active-filters" class="library-active-filters" style="display:none;"></div>
   <div id="library-list" style="padding:4px 20px;"></div>
 </div>
 
