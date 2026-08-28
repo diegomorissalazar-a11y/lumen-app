@@ -73,7 +73,19 @@ const GraphMetrics = (() => {
     return minRadius + Math.sqrt(ratio) * (maxRadius - minRadius);
   }
 
-  return { endpointId, degrees, uniqueNeighborCounts, uniqueMoviesByNode, sqrtRadius };
+  // Escala con nivel 1 anclado exactamente al radio mínimo.
+  // Se usa cuando 1 significa el mínimo semántico real (p. ej. un autor
+  // que influye a 0/1 autores únicos), evitando que el nivel 1 crezca por
+  // normalizar contra el máximo del grafo.
+  function sqrtRadiusFromOne(score, maxScore, minRadius = 10, maxRadius = 34) {
+    const safeScore = Math.max(1, Number(score) || 1);
+    const safeMax = Math.max(1, Number(maxScore) || 1);
+    if (safeMax <= 1 || safeScore <= 1) return minRadius;
+    const ratio = Math.min(1, (safeScore - 1) / (safeMax - 1));
+    return minRadius + Math.sqrt(ratio) * (maxRadius - minRadius);
+  }
+
+  return { endpointId, degrees, uniqueNeighborCounts, uniqueMoviesByNode, sqrtRadius, sqrtRadiusFromOne };
 })();
 
 window.GraphMetrics = GraphMetrics;

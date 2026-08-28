@@ -1,4 +1,4 @@
-# LUMEN v195 — Inferencia y normalización asistida
+# LUMEN v196 — Inferencia y normalización asistida
 
 Base: LUMEN v194 modular.
 
@@ -15,4 +15,4 @@ Base: LUMEN v194 modular.
 LUMEN propone; el usuario confirma. Las sugerencias de alta confianza pueden aplicarse en lote desde Normalizar, siempre sin pisar valores existentes.
 
 ## Auditoría
-Ver `AUDIT_v195.md` y `AUDIT_v195.json` para continuidad v194 → v195.
+Ver `AUDIT_v196.md` y `AUDIT_v196.json` para continuidad v194 → v196.

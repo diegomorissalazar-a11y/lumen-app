@@ -1,5 +1,5 @@
 {
-  "version": "195",
+  "version": "196",
   "html": {
     "auth": [
       "views/shell/auth.html"

@@ -668,6 +668,9 @@ function buildD3Graph(containerId, nodes, links, colorFn, tooltipEdgeFn, fuenteT
   const nodeR = d => {
     if (Number.isFinite(Number(d.fixedRadius))) return Number(d.fixedRadius);
     const minR = d.isEvent ? 10 : 12;
+    if (d.sizeBaseline === 1 && typeof GraphMetrics.sqrtRadiusFromOne === 'function') {
+      return GraphMetrics.sqrtRadiusFromOne(visualMetric[d.id]||1, maxVisualMetric, minR, 34);
+    }
     return GraphMetrics.sqrtRadius(visualMetric[d.id]||0, maxVisualMetric, minR, 34, 1);
   };
 
@@ -945,11 +948,12 @@ function renderMapaInfluencias() {
 
   const nodes=[...nodeMap.entries()].map(([id,name])=>{
     const outUnique=outDegree[id]||0, inUnique=inDegree[id]||0;
-    // v191: tamaño por grado estructural único. Recibir una influencia nunca queda bajo el mínimo visual.
-    const structuralLevel=Math.max(1,outUnique,inUnique);
+    // v196: tamaño exclusivamente por autores únicos influidos (salidas).
+    // Recibir influencias afecta la topología/posición, no el tamaño. Nivel 1 = radio mínimo exacto.
+    const structuralLevel=Math.max(1,outUnique);
     return {
       id,label:name,inLibrary:libAuthorIds.has(id),icon:libAuthorIds.has(id)?'✍':'◉',
-      tooltip:name,sizeMetric:structuralLevel,
+      tooltip:name,sizeMetric:structuralLevel,sizeBaseline:1,
       metricTooltip:`${name}\nNivel visual: ${structuralLevel}\nAutores influidos únicos: ${outUnique}\nAutores que lo influyen: ${inUnique}\nEvidencias originadas: ${evidenceOut[id]||0}\nEvidencias recibidas: ${evidenceIn[id]||0}`
     };
   });
