@@ -214,7 +214,7 @@ function applyBibliographyToEditor(n,canon){
   const sc=document.querySelector('#modal-add .modal');
   setTimeout(()=>{if(sc)sc.scrollTop=_bibJsonContext.parentScroll||0;},20);
 }
-function applyBibliographicJson(){
+async function applyBibliographicJson(){
   if(!_bibJsonParsed){showToast('Revisa primero el JSON');return;}
   const n=_bibJsonParsed,e=n.edicionConsultada,o=n.obraOriginal;
   const canon=buildCanonicalBibliography(n);
@@ -222,6 +222,20 @@ function applyBibliographicJson(){
   const target=getBibliographyTargetBook();
   if(editorMode){
     applyBibliographyToEditor(n,canon);
+    if (!_bibJsonContext.targetId || _bibJsonContext.targetId === '__form__') {
+      const currentLanguage = getIdiomaValueFromForm ? getIdiomaValueFromForm() : '';
+      const defaults = typeof requestJsonBookDefaults === 'function' ? await requestJsonBookDefaults({
+        currentLanguage,
+        currentAcquisitionDate: document.getElementById('f-fecha-adq')?.value || '',
+        currentAcquisitionOrigin: document.getElementById('f-origen-adq')?.value || ''
+      }) : null;
+      if (defaults?.idioma) {
+        populateIdiomaSelect(defaults.idioma);
+        const other = document.getElementById('f-idioma-otro'); if (other) other.style.display = 'none';
+      }
+      if (defaults?.acquisitionDate) { const adq = document.getElementById('f-fecha-adq'); if (adq) adq.value = defaults.acquisitionDate; }
+      if (defaults?.acquisitionOrigin) { const origin = document.getElementById('f-origen-adq'); if (origin) origin.value = defaults.acquisitionOrigin; }
+    }
   } else if(target){
     const {pub,tradEnt,bib}=canon;
     target.bibliografia=bib;

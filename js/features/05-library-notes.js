@@ -518,7 +518,7 @@ function showDetail(id) {
     const originalStart=e.periodo_publicacion_inicio??bibObra.periodoInicio??originalYear;
     const originalEnd=e.periodo_publicacion_fin??bibObra.periodoFin??null;
     const originalPeriod=[originalStart,originalEnd].filter((v,i,a)=>v!==null&&v!==undefined&&v!==''&&(i===0||String(v)!==String(a[0]))).join('–');
-    html += row('Autor', e.autor) + row('Editorial', e.editorial||bibEd.editorial) + row('Edición', e.edicion||bibEd.descripcionEdicion||bibEd.numeroEdicion) + row('Ciudad / lugar pub.', e.ciudad_publicacion||e.ciudad||bibEd.ciudad) + row('Año de esta edición', e.anio_pub||bibEd.anio) + row('Publicación original', originalYear) + row('Período original', originalPeriod) + row('Título original', bibObra.tituloOriginal) + row('ISBN', e.isbn||bibEd.isbn) + row('Páginas', e.paginas) + row('Traductor', e.traductor||((bibEd.traductores||[]).join('; '))) + row('Idioma orig.', e.idioma||bibObra.idiomaOriginal) + row('Leído', `${e.mes||''} ${e.anio||''}`);
+    html += row('Autor', e.autor) + row('Editorial', e.editorial||bibEd.editorial) + row('Edición', e.edicion||bibEd.descripcionEdicion||bibEd.numeroEdicion) + row('Ciudad / lugar pub.', e.ciudad_publicacion||e.ciudad||bibEd.ciudad) + row('Año de esta edición', e.anio_pub||bibEd.anio) + row('Publicación original', originalYear) + row('Período original', originalPeriod) + row('Título original', bibObra.tituloOriginal) + row('ISBN', e.isbn||bibEd.isbn) + row('Páginas', e.paginas) + row('Traductor', e.traductor||((bibEd.traductores||[]).join('; '))) + row('Idioma orig.', e.idioma||bibObra.idiomaOriginal) + row('Leído', `${e.mes||''} ${e.anio||''}`) + row('Finalizado', e.finishDate ? fechaCL(String(e.finishDate).split('T')[0]) : '');
     html += row('Origen', origenAdquisicionLabel(e.origen_adquisicion));
     html += row('Adquirido', e.fecha_adquisicion ? fechaCL(e.fecha_adquisicion) : '');
     const espera = libroEsperaInfo(e);
@@ -816,6 +816,7 @@ function editEntry(id) {
       const normalizedIdioma = normalizeIdioma(e.idioma||'');
       populateIdiomaSelect(normalizedIdioma);
       document.getElementById('f-idioma-otro').style.display = 'none';
+      const finishDateEl = document.getElementById('f-finish-date'); if (finishDateEl) finishDateEl.value = e.finishDate ? String(e.finishDate).split('T')[0] : '';
       document.getElementById('f-mes').value = e.mes||'';
       document.getElementById('f-anio-lect').value = e.anio||'';
       const origenAdqEl = document.getElementById('f-origen-adq'); if (origenAdqEl) origenAdqEl.value = e.origen_adquisicion || '';

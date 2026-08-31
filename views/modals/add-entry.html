@@ -66,6 +66,11 @@
           <button type="button" class="btn btn-secondary" onclick="openBibliographicJsonModal(editingId||'__form__')" style="width:100%;">📥 Cargar JSON bibliográfico</button>
           <div style="font-size:10px;color:var(--ink4);margin-top:5px;line-height:1.45;">Completa edición, ISBN, traductores y fecha original desde la página legal del libro. Los cambios se revisan antes de aplicarse.</div>
         </div>
+        <div class="field">
+          <label>Fecha de finalización</label>
+          <input class="input" type="date" id="f-finish-date" onchange="syncReadingMonthYearFromFinishDate(this.value)">
+          <div style="font-size:10px;color:var(--ink4);margin-top:4px;line-height:1.4;">Si existe una fecha exacta, LUMEN guarda también automáticamente el mes y año de lectura.</div>
+        </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
           <div class="field"><label>Mes lectura</label>
             <select class="input" id="f-mes"><option value="">—</option>

@@ -114,7 +114,7 @@ function selectType(type, btn) {
 }
 
 function resetForm() {
-  ['f-titulo','f-autor','f-editorial','f-paginas','f-anio-pub','f-edicion','f-ciudad-pub','f-traductor','f-idioma','f-cover','f-notas','f-origen-adq','f-fecha-adq',
+  ['f-titulo','f-autor','f-editorial','f-paginas','f-anio-pub','f-edicion','f-ciudad-pub','f-traductor','f-idioma','f-cover','f-notas','f-origen-adq','f-fecha-adq','f-finish-date',
    'fp-titulo','fp-director','fp-anio-est','fp-duracion','fp-foto','fp-musica','fp-protagonista','fp-guionista','fp-cover','fp-elenco','fp-productora',
    'fs-titulo','fs-director','fs-anio-est','fs-duracion','fs-caps-por-temp','fs-min-episodio','fs-musica','fs-protagonista','fs-guionista','fs-cover','fs-elenco',
    'fd-titulo','fd-artista','fd-anio-pub','fd-productor','fd-discografica','fd-musicos','fd-colaboraciones','fd-mes','fd-anio-escuchado','fd-cover']
@@ -634,6 +634,107 @@ function syncInventoryFromBook(book) {
   saveInventory(inv,false);
 }
 
+
+function readingFieldsFromFinishDate(value) {
+  const raw = String(value || '').split('T')[0];
+  const m = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return null;
+  const year = Number(m[1]), month = Number(m[2]);
+  const names = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  if (!year || month < 1 || month > 12) return null;
+  return { finishDate: raw, anio: year, mes: names[month - 1] };
+}
+
+function syncReadingMonthYearFromFinishDate(value) {
+  const d = readingFieldsFromFinishDate(value);
+  if (!d) return;
+  const mesEl = document.getElementById('f-mes');
+  const anioEl = document.getElementById('f-anio-lect');
+  const estadoEl = document.getElementById('f-estado');
+  const progresoEl = document.getElementById('f-progreso');
+  if (mesEl) mesEl.value = d.mes;
+  if (anioEl) anioEl.value = d.anio;
+  if (estadoEl) estadoEl.value = 'leido';
+  if (progresoEl) progresoEl.value = 100;
+  const pct = document.getElementById('prog-pct'); if (pct) pct.textContent = '100';
+  const progressField = document.getElementById('progreso-field'); if (progressField) progressField.style.display = 'none';
+}
+
+let _jsonBookDefaultsResolver = null;
+let _jsonBookDefaultsState = null;
+
+function jsonBookDefaultsToday() {
+  return typeof todaySantiagoStr === 'function' ? todaySantiagoStr() : new Date().toISOString().slice(0,10);
+}
+
+function jsonBookDefaultsShowStep(step) {
+  ['language','date','origin'].forEach(name => {
+    const el = document.getElementById(`json-defaults-${name}-step`);
+    if (el) el.style.display = name === step ? 'block' : 'none';
+  });
+}
+
+function jsonBookDefaultsFinish() {
+  const result = {
+    idioma: _jsonBookDefaultsState?.idioma || '',
+    acquisitionDate: _jsonBookDefaultsState?.acquisitionDate || '',
+    acquisitionOrigin: _jsonBookDefaultsState?.acquisitionOrigin || ''
+  };
+  closeModal('modal-json-book-defaults');
+  const resolve = _jsonBookDefaultsResolver;
+  _jsonBookDefaultsResolver = null;
+  _jsonBookDefaultsState = null;
+  if (resolve) resolve(result);
+}
+
+function jsonBookDefaultsNextAfterLanguage() {
+  if (_jsonBookDefaultsState?.needsDate) jsonBookDefaultsShowStep('date');
+  else jsonBookDefaultsFinish();
+}
+
+// Compatibilidad v199: conserva el nombre histórico, pero delega al flujo modal asíncrono de v200.
+function confirmJsonBookDefaults(options = {}) {
+  const onlyIfMissingLanguage = options.onlyIfMissingLanguage !== false;
+  const languageMissing = !String(options.currentLanguage || '').trim();
+  void onlyIfMissingLanguage; void languageMissing;
+  return requestJsonBookDefaults(options);
+}
+
+function requestJsonBookDefaults(options = {}) {
+  const idioma = String(options.currentLanguage || '').trim();
+  const acquisitionDate = String(options.currentAcquisitionDate || '').trim();
+  const acquisitionOrigin = String(options.currentAcquisitionOrigin || '').trim();
+  const needsLanguage = !idioma;
+  const needsDate = !acquisitionDate;
+  if (!needsLanguage && !needsDate) return Promise.resolve({ idioma, acquisitionDate, acquisitionOrigin });
+
+  return new Promise(resolve => {
+    _jsonBookDefaultsResolver = resolve;
+    _jsonBookDefaultsState = { idioma, acquisitionDate, acquisitionOrigin, needsLanguage, needsDate };
+    openModal('modal-json-book-defaults');
+    jsonBookDefaultsShowStep(needsLanguage ? 'language' : 'date');
+  });
+}
+
+function bindJsonBookDefaultsModal() {
+  const yesLang = document.getElementById('json-defaults-language-yes');
+  const noLang = document.getElementById('json-defaults-language-no');
+  const yesDate = document.getElementById('json-defaults-date-yes');
+  const noDate = document.getElementById('json-defaults-date-no');
+  const buy = document.getElementById('json-defaults-origin-buy');
+  const gift = document.getElementById('json-defaults-origin-gift');
+  if (yesLang && !yesLang.dataset.bound) {
+    yesLang.dataset.bound='1'; yesLang.addEventListener('click',()=>{ if(_jsonBookDefaultsState)_jsonBookDefaultsState.idioma='Español'; jsonBookDefaultsNextAfterLanguage(); });
+    noLang.addEventListener('click',()=>{ if(_jsonBookDefaultsState)_jsonBookDefaultsState.idioma=''; jsonBookDefaultsNextAfterLanguage(); });
+    yesDate.addEventListener('click',()=>{ if(_jsonBookDefaultsState)_jsonBookDefaultsState.acquisitionDate=jsonBookDefaultsToday(); jsonBookDefaultsShowStep('origin'); });
+    noDate.addEventListener('click',()=>{ if(_jsonBookDefaultsState){_jsonBookDefaultsState.acquisitionDate='';_jsonBookDefaultsState.acquisitionOrigin='';} jsonBookDefaultsFinish(); });
+    buy.addEventListener('click',()=>{ if(_jsonBookDefaultsState)_jsonBookDefaultsState.acquisitionOrigin='compra'; jsonBookDefaultsFinish(); });
+    gift.addEventListener('click',()=>{ if(_jsonBookDefaultsState)_jsonBookDefaultsState.acquisitionOrigin='regalo'; jsonBookDefaultsFinish(); });
+  }
+}
+
+setTimeout(bindJsonBookDefaultsModal, 0);
+
 // ═══════════════════════════════════
 //  SAVE ENTRY
 // ═══════════════════════════════════
@@ -652,6 +753,7 @@ function saveEntry() {
       idioma: getIdiomaValueFromForm(),
       mes: document.getElementById('f-mes').value,
       anio: parseInt(document.getElementById('f-anio-lect').value) || new Date().getFullYear(),
+      finishDate: document.getElementById('f-finish-date')?.value || null,
       origen_adquisicion: document.getElementById('f-origen-adq')?.value || null,
       fecha_adquisicion: document.getElementById('f-fecha-adq')?.value || null,
       estado: document.getElementById('f-estado').value,
@@ -664,6 +766,8 @@ function saveEntry() {
       collectionMetadata: (getGenerosSeleccionados().includes('Cuento')||getGenerosSeleccionados().includes('Poesía')) && typeof getCollectionMetadataFromForm==='function' ? getCollectionMetadataFromForm() : null,
       cuentos: getGenerosSeleccionados().includes('Cuento') && typeof getStoryCollectionMetadataFromForm==='function' ? getStoryCollectionMetadataFromForm() : null,
       cover: document.getElementById('f-cover').value };
+    const finished = readingFieldsFromFinishDate(entry.finishDate);
+    if (finished) { entry.finishDate = finished.finishDate; entry.mes = finished.mes; entry.anio = finished.anio; entry.estado = 'leido'; entry.progreso = 100; }
     if (editingId) { const prev=db.entries.find(e=>e.id===editingId); if(prev?.bibliografia) entry.bibliografia=prev.bibliografia; if(prev?.isbn)entry.isbn=prev.isbn; if(prev?.anio_publicacion_original!=null)entry.anio_publicacion_original=prev.anio_publicacion_original; if(prev?.periodo_publicacion_inicio!=null)entry.periodo_publicacion_inicio=prev.periodo_publicacion_inicio; if(prev?.periodo_publicacion_fin!=null)entry.periodo_publicacion_fin=prev.periodo_publicacion_fin; }
     if (_pendingFormBibliography) { entry.bibliografia=_pendingFormBibliography; const bo=_pendingFormBibliography.obraOriginal||{},be=_pendingFormBibliography.edicionConsultada||{}; if(be.isbn)entry.isbn=be.isbn;if(be.editorialId)entry.editorialId=be.editorialId;if(be.traductorIds)entry.traductorIds=be.traductorIds;if(bo.anioPublicacionOriginal!=null)entry.anio_publicacion_original=Number(bo.anioPublicacionOriginal);if(bo.periodoInicio!=null)entry.periodo_publicacion_inicio=Number(bo.periodoInicio);if(bo.periodoFin!=null)entry.periodo_publicacion_fin=Number(bo.periodoFin); _pendingFormBibliography=null; }
   } else if (currentType === 'pelicula') {

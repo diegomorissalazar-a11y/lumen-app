@@ -1,0 +1,42 @@
+<div id="modal-json-book-defaults" class="modal-overlay" style="z-index:310;">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-handle"></div>
+    <div class="modal-head">
+      <div>
+        <h2 id="json-defaults-title">📚 Completar libro</h2>
+        <div class="modal-sub" id="json-defaults-subtitle">Confirmaciones antes de guardar</div>
+      </div>
+    </div>
+    <div class="modal-body" id="json-defaults-body">
+      <section id="json-defaults-language-step">
+        <div class="form-section-title">IDIOMA ORIGINAL</div>
+        <p style="font-size:14px;line-height:1.55;color:var(--taupe);margin:0 0 18px;">El JSON no indicó el idioma original.</p>
+        <div style="font-family:var(--serif);font-size:27px;font-weight:700;margin-bottom:20px;">¿El idioma original es español?</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <button class="btn btn-primary" id="json-defaults-language-yes" style="flex:1;min-width:180px;">✓ SÍ, ESPAÑOL</button>
+          <button class="btn btn-secondary" id="json-defaults-language-no" style="flex:1;min-width:140px;">NO</button>
+        </div>
+      </section>
+
+      <section id="json-defaults-date-step" style="display:none;">
+        <div class="form-section-title">FECHA DE ADQUISICIÓN</div>
+        <p style="font-size:14px;line-height:1.55;color:var(--taupe);margin:0 0 18px;">La ficha no tiene fecha de adquisición.</p>
+        <div style="font-family:var(--serif);font-size:27px;font-weight:700;margin-bottom:20px;">¿La fecha de adquisición es hoy?</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <button class="btn btn-primary" id="json-defaults-date-yes" style="flex:1;min-width:180px;">✓ SÍ, HOY</button>
+          <button class="btn btn-secondary" id="json-defaults-date-no" style="flex:1;min-width:140px;">NO</button>
+        </div>
+      </section>
+
+      <section id="json-defaults-origin-step" style="display:none;">
+        <div class="form-section-title">ORIGEN DEL LIBRO</div>
+        <p style="font-size:14px;line-height:1.55;color:var(--taupe);margin:0 0 18px;">La adquisición de hoy debe quedar clasificada.</p>
+        <div style="font-family:var(--serif);font-size:27px;font-weight:700;margin-bottom:20px;">¿Fue compra o regalo?</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <button class="btn btn-primary" id="json-defaults-origin-buy" style="flex:1;min-width:180px;">🛍 COMPRA</button>
+          <button class="btn btn-secondary" id="json-defaults-origin-gift" style="flex:1;min-width:180px;">🎁 REGALO</button>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>

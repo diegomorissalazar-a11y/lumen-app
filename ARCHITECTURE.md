@@ -1,3 +1,7 @@
+# LUMEN v200 — Arquitectura modular
+
+Base estructural heredada de v198; v200 no altera la arquitectura.
+
 # Arquitectura LUMEN v185
 
 LUMEN mantiene la arquitectura modular introducida en v183: HTML, CSS y JavaScript viven en archivos separados y `js/bootstrap.js` ensambla las vistas antes de ejecutar la lógica funcional.

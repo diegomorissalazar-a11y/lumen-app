@@ -194,7 +194,7 @@ function inventoryApplyBibliographyToBook(book, n, canon, authorEntity) {
 }
 
 function confirmInventoryJsonImport() {
-  return lumenSafeAction('Agregar libro con JSON', () => {
+  return lumenSafeAction('Agregar libro con JSON', async () => {
     const n = _inventoryBibParsed;
     if (!n || !n.titulo) { showToast('Revisa primero el JSON'); return; }
 
@@ -223,6 +223,17 @@ function confirmInventoryJsonImport() {
     }
 
     inventoryApplyBibliographyToBook(book, n, canon, authorEntity);
+    if (typeof requestJsonBookDefaults === 'function') {
+      const defaults = await requestJsonBookDefaults({
+        currentLanguage: book.idioma || '',
+        currentAcquisitionDate: book.fecha_adquisicion || '',
+        currentAcquisitionOrigin: book.origen_adquisicion || ''
+      });
+      if (defaults.idioma) book.idioma = defaults.idioma;
+      if (defaults.acquisitionDate) book.fecha_adquisicion = defaults.acquisitionDate;
+      if (defaults.acquisitionOrigin) book.origen_adquisicion = defaults.acquisitionOrigin;
+      book._updatedAt = Date.now();
+    }
     const contained = inventoryContainedWorkCandidates(n, authorEntity, book.id);
     if (contained.parts.length >= 2 && contained.matches.length) {
       book.inventoryContainer = true;
