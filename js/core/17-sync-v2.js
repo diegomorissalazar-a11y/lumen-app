@@ -34,7 +34,13 @@ function cleanForFirestoreV162(obj, depth = 0) {
 
 function buildCloudDataV162() {
   normalizeAllBookReading(db.entries || [], { repairBasic:true, source:'buildCloudDataV162' });
-  const entries = (db.entries || []).map(e => cleanForFirestoreV162(e));
+  // v201: las portadas locales son recursos del dispositivo. Antes de limpiar para
+  // Firestore quitamos coverAssetId y la imagen local para que la nube nunca pueda
+  // reemplazar el asset IndexedDB del equipo actual.
+  const entries = (db.entries || []).map(e => {
+    const cloudEntry = (typeof prepareLocalCoverForCloud === 'function') ? prepareLocalCoverForCloud(e) : e;
+    return cleanForFirestoreV162(cloudEntry);
+  });
   const modules = cleanForFirestoreV162({
     mapas: loadMapas(),
     desafios: loadDesafios(),

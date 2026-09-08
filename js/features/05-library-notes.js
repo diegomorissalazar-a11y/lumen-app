@@ -943,6 +943,7 @@ function saveSerieCover() {
   if (!e) return;
   e.cover = document.getElementById('serie-cover-url').value;
   e._updatedAt = Date.now();
+  if (typeof applyLocalCoverPolicy === 'function') applyLocalCoverPolicy(e);
   saveDB();
   // Update info header
   const img = coverUrl(e) ? `<img src="${coverUrl(e)}" style="width:50px;height:70px;object-fit:cover;border-radius:4px;flex-shrink:0;" onerror="this.style.display='none'">` : '';

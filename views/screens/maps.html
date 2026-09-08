@@ -173,6 +173,10 @@
         style="flex:1;padding:9px;border:none;background:none;font-family:var(--font-sans);font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;color:var(--ink4);border-bottom:2px solid transparent;margin-bottom:-2px;">
         🌐 Idiomas
       </button>
+      <button id="norm-tab-editoriales" onclick="switchNormTab('editoriales')"
+        style="flex:1;padding:9px;border:none;background:none;font-family:var(--font-sans);font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;color:var(--ink4);border-bottom:2px solid transparent;margin-bottom:-2px;">
+        🏛 Editoriales
+      </button>
       <button id="norm-tab-libros" onclick="switchNormTab('libros')"
         style="flex:1;padding:9px;border:none;background:none;font-family:var(--font-sans);font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;color:var(--ink4);border-bottom:2px solid transparent;margin-bottom:-2px;">
         📚 Libros
@@ -207,6 +211,23 @@
         </button>
         <div id="norm-blacklist-panel" style="display:none;padding:8px 16px;max-height:140px;overflow-y:auto;background:var(--cream2);">
           <div id="norm-blacklist-lista" style="font-size:12px;color:var(--ink3);"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SUBTAB: EDITORIALES — normalización canónica -->
+    <div id="norm-sub-editoriales" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+      <div style="padding:10px 16px;display:flex;gap:8px;align-items:center;border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap;">
+        <span style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--ink4);">Umbral:</span>
+        <input type="range" id="publisher-threshold" min="70" max="100" value="85" step="1" style="width:90px;accent-color:var(--gold);" oninput="onPublisherThresholdChange(this.value)">
+        <span id="publisher-threshold-val" style="font-size:11px;font-weight:700;color:var(--gold);min-width:34px;">85%</span>
+        <button class="btn btn-secondary btn-sm" style="width:auto;" onclick="runPublisherNormalization()">🔎 Analizar</button>
+        <span id="publisher-normalization-count" style="font-size:11px;color:var(--ink4);margin-left:auto;"></span>
+      </div>
+      <div id="publisher-normalization-list" style="flex:1;overflow-y:auto;padding:12px 16px;">
+        <div id="publisher-normalization-empty" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:8px;color:var(--ink4);">
+          <div style="font-size:30px;">🏛</div>
+          <div style="font-size:13px;font-style:italic;text-align:center;">Pulsa “Analizar” para detectar<br>editoriales posiblemente equivalentes.</div>
         </div>
       </div>
     </div>

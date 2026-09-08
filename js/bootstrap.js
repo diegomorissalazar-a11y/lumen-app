@@ -1,4 +1,4 @@
-// LUMEN v200 — bootstrap modular
+// LUMEN v201 — bootstrap modular
 'use strict';
 
 const LUMEN_HTML_MANIFEST = {
@@ -94,7 +94,7 @@ async function bootLumen() {
     if (status) status.remove();
     window.__LUMEN_MODULAR_BOOT_OK__ = true;
   } catch (err) {
-    console.error('[LUMEN v200] Error de arranque modular:', err);
+    console.error('[LUMEN v201] Error de arranque modular:', err);
     if (status) status.innerHTML = `<strong>No se pudo iniciar LUMEN.</strong><br>${String(err.message||err)}`;
     window.__LUMEN_MODULAR_BOOT_ERROR__ = String(err.message||err);
   }

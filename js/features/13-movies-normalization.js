@@ -667,6 +667,115 @@ function restaurarPar(idx) {
 }
 
 
+
+// ══════════════════════════════════════════════════════
+//  EDITORIALES — normalización canónica v201
+// ══════════════════════════════════════════════════════
+const PUBLISHER_NORM_BLACKLIST_KEY = 'lumen_publisher_norm_blacklist_v1';
+let publisherNormThreshold = 85;
+
+function publisherComparableText(value) {
+  return canonicalText(value)
+    .replace(/^(editorial|editoriales|ediciones|edicion)\s+/,'')
+    .replace(/(s\.?a\.?|ltda\.?|spa|s\.?l\.?|e\.?i\.?r\.?l\.?)$/,'')
+    .replace(/\s+/g,' ').trim();
+}
+function publisherSimilarity(a,b) {
+  const x=publisherComparableText(a), y=publisherComparableText(b);
+  if(!x||!y) return 0;
+  if(x===y) return 1;
+  return entitySimilarity(x,y);
+}
+function publisherNormBlacklist() {
+  try { return JSON.parse(localStorage.getItem(PUBLISHER_NORM_BLACKLIST_KEY)||'[]'); } catch { return []; }
+}
+function savePublisherNormBlacklist(list) { safeLocalSetItem(PUBLISHER_NORM_BLACKLIST_KEY,JSON.stringify(list||[]),{prune:true}); }
+function publisherPairKey(a,b) { return [canonicalText(a),canonicalText(b)].sort().join('||'); }
+function publisherUsageRows() {
+  const map=new Map();
+  (db.entries||[]).filter(e=>e&&e.type==='libro'&&String(e.editorial||'').trim()).forEach(e=>{
+    const name=String(e.editorial).trim(), key=canonicalText(name);
+    if(!map.has(key)) map.set(key,{name,count:0,ids:[]});
+    const row=map.get(key); row.count++; row.ids.push(e.id);
+  });
+  return [...map.values()].sort((a,b)=>a.name.localeCompare(b.name,'es'));
+}
+function publisherNormalizationPairs() {
+  const rows=publisherUsageRows(), blacklist=new Set(publisherNormBlacklist()), out=[];
+  for(let i=0;i<rows.length;i++) for(let j=i+1;j<rows.length;j++) {
+    const a=rows[i],b=rows[j], key=publisherPairKey(a.name,b.name);
+    if(blacklist.has(key)) continue;
+    const sim=publisherSimilarity(a.name,b.name);
+    if(sim*100>=publisherNormThreshold) out.push({a,b,sim});
+  }
+  return out.sort((x,y)=>y.sim-x.sim || (y.a.count+y.b.count)-(x.a.count+x.b.count));
+}
+function onPublisherThresholdChange(value) {
+  publisherNormThreshold=Number(value)||85;
+  const el=document.getElementById('publisher-threshold-val'); if(el) el.textContent=publisherNormThreshold+'%';
+}
+function publisherEscape(value){return String(value||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function publisherInlineArg(value){return String(value||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/&/g,'&amp;').replace(/</g,'&lt;');}
+function runPublisherNormalization() {
+  const list=document.getElementById('publisher-normalization-list'), count=document.getElementById('publisher-normalization-count');
+  if(!list) return;
+  const pairs=publisherNormalizationPairs();
+  if(count) count.textContent=`${pairs.length} coincidencia${pairs.length===1?'':'s'}`;
+  if(!pairs.length) { list.innerHTML='<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:8px;color:var(--ink4);"><div style="font-size:30px;">✓</div><div style="font-size:13px;font-style:italic;text-align:center;">No hay editoriales equivalentes<br>sobre el umbral actual.</div></div>'; return; }
+  list.innerHTML=pairs.map((p,idx)=>`<div style="border:1px solid var(--border);border-radius:6px;background:#fff;padding:12px;margin-bottom:10px;">
+    <div style="display:flex;align-items:flex-start;gap:12px;">
+      <div style="font-family:var(--font-serif);font-size:22px;color:var(--gold);min-width:54px;">${Math.round(p.sim*100)}%</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;font-weight:700;">${publisherEscape(p.a.name)} <span style="font-weight:400;color:var(--ink4);">· ${p.a.count} libro${p.a.count===1?'':'s'}</span></div>
+        <div style="font-size:13px;font-weight:700;margin-top:5px;">${publisherEscape(p.b.name)} <span style="font-weight:400;color:var(--ink4);">· ${p.b.count} libro${p.b.count===1?'':'s'}</span></div>
+        <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:10px;">
+          <button class="btn btn-secondary btn-sm" style="width:auto;" onclick="mergePublisherNames('${publisherInlineArg(p.b.name)}','${publisherInlineArg(p.a.name)}')">Usar “${publisherEscape(p.a.name)}”</button>
+          <button class="btn btn-secondary btn-sm" style="width:auto;" onclick="mergePublisherNames('${publisherInlineArg(p.a.name)}','${publisherInlineArg(p.b.name)}')">Usar “${publisherEscape(p.b.name)}”</button>
+          <button class="btn btn-secondary btn-sm" style="width:auto;color:var(--ink4);" onclick="discardPublisherPair('${publisherInlineArg(p.a.name)}','${publisherInlineArg(p.b.name)}')">No son iguales</button>
+        </div>
+      </div>
+    </div>
+  </div>`).join('');
+}
+function exactCanonicalPublisherByName(name,catalog) {
+  const norm=canonicalText(name), c=catalog||loadCanonicalEntities();
+  return Object.values(c.publishers||{}).find(e=>canonicalText(e?.nombreCanonico)===norm) || null;
+}
+function mergePublisherNames(sourceName,targetName) {
+  sourceName=String(sourceName||'').trim(); targetName=String(targetName||'').trim(); if(!sourceName||!targetName||canonicalText(sourceName)===canonicalText(targetName)) return;
+  const c=loadCanonicalEntities();
+  let target=exactCanonicalPublisherByName(targetName,c) || registerCanonicalEntity('edi',targetName);
+  let source=exactCanonicalPublisherByName(sourceName,c);
+  // Recargar por si register guardó el catálogo.
+  const catalog=loadCanonicalEntities(); target=exactCanonicalPublisherByName(targetName,catalog)||target; source=exactCanonicalPublisherByName(sourceName,catalog)||source;
+  target.aliases=target.aliases||[];
+  [sourceName,...(source?.aliases||[])].forEach(alias=>{ if(canonicalText(alias)!==canonicalText(target.nombreCanonico)&&!target.aliases.some(a=>canonicalText(a)===canonicalText(alias))) target.aliases.push(alias); });
+  catalog.publishers[target.id]=target;
+  if(source?.id && source.id!==target.id) delete catalog.publishers[source.id];
+  saveCanonicalEntities(catalog);
+  let changed=0;
+  (db.entries||[]).forEach(e=>{
+    if(!e||e.type!=='libro') return;
+    const isSource=(source?.id&&e.editorialId===source.id)||canonicalText(e.editorial)===canonicalText(sourceName)||(source?.aliases||[]).some(a=>canonicalText(e.editorial)===canonicalText(a));
+    if(!isSource) return;
+    e.editorial=target.nombreCanonico; e.editorialId=target.id; e._updatedAt=Date.now();
+    if(e.bibliografia?.edicionConsultada) e.bibliografia.edicionConsultada.editorial=target.nombreCanonico;
+    changed++;
+  });
+  const m=typeof loadMapas==='function'?loadMapas():null;
+  if(m?.influencias) {
+    m.influencias.forEach(inf=>{ if((source?.id&&inf.editorial_id===source.id)||canonicalText(inf.editorial)===canonicalText(sourceName)){inf.editorial=target.nombreCanonico;inf.editorial_id=target.id;} });
+    mapas=m; if(typeof saveMapas==='function') saveMapas(); else safeLocalSetItem(MAPAS_KEY,JSON.stringify(m));
+  }
+  saveDB();
+  showToast(`✓ ${changed} libro${changed===1?'':'s'} normalizados como ${target.nombreCanonico}`);
+  runPublisherNormalization();
+  if(typeof renderInventory==='function' && libFilter==='inventario') renderInventory();
+}
+function discardPublisherPair(a,b) {
+  const list=publisherNormBlacklist(), key=publisherPairKey(a,b); if(!list.includes(key)) list.push(key); savePublisherNormBlacklist(list); runPublisherNormalization();
+}
+
 // ══════════════════════════════════════════════════════
 //  ELENCOS PENDIENTES
 // ══════════════════════════════════════════════════════
@@ -679,8 +788,9 @@ function switchNormTab(tab) {
   document.getElementById('norm-sub-duplicados').style.display = tab==='duplicados' ? 'flex' : 'none';
   document.getElementById('norm-sub-elencos').style.display    = tab==='elencos'    ? 'flex' : 'none';
   document.getElementById('norm-sub-idiomas').style.display    = tab==='idiomas'    ? 'flex' : 'none';
+  document.getElementById('norm-sub-editoriales').style.display = tab==='editoriales' ? 'flex' : 'none';
   document.getElementById('norm-sub-libros').style.display     = tab==='libros'     ? 'flex' : 'none';
-  ['duplicados','elencos','idiomas','libros'].forEach(t => {
+  ['duplicados','elencos','idiomas','editoriales','libros'].forEach(t => {
     const btn = document.getElementById('norm-tab-' + t);
     if (!btn) return;
     btn.style.color        = t === tab ? 'var(--gold)' : 'var(--ink4)';
@@ -698,6 +808,7 @@ function switchNormTab(tab) {
     renderElencoPendientes();
   }
   if (tab === 'idiomas') initIdiomasTab();
+  if (tab === 'editoriales') runPublisherNormalization();
   if (tab === 'libros') { if (typeof renderMetadataNormalizerBooks === 'function') renderMetadataNormalizerBooks(); else renderIncompleteBibliographyBooks(); }
 }
 

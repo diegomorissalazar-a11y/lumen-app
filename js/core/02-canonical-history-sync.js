@@ -455,6 +455,22 @@ function mergeEntries(local, remote) {
     // campos que el ganador no conoce, pero permite que false, 0, [] y '' sean cambios
     // válidos. Evita depender de una lista manual de campos que se queda obsoleta.
     const result = { ...loser, ...winner };
+
+    // v201 — las portadas locales no participan en el conflicto nube/local.
+    // Si uno de los dos registros conserva la imagen local, no permitir que un
+    // placeholder o un cover vacío proveniente de nube la borre.
+    const winnerLocalCover = isBase64Image(winner.cover);
+    const loserLocalCover = isBase64Image(loser.cover);
+    const winnerPlaceholder = !winner.cover || winner.cover === '__local_image__';
+    if (!winnerLocalCover && loserLocalCover && winnerPlaceholder) {
+      result.cover = loser.cover;
+      if (loser.coverAssetId) result.coverAssetId = loser.coverAssetId;
+    } else if (winnerLocalCover && winner.coverAssetId) {
+      result.coverAssetId = winner.coverAssetId;
+    } else if (result.cover === '__local_image__' && (winner.coverAssetId || loser.coverAssetId)) {
+      result.coverAssetId = winner.coverAssetId || loser.coverAssetId;
+    }
+
     const wReads = Array.isArray(winner.readDates) ? winner.readDates : [];
     const lReads = Array.isArray(loser.readDates) ? loser.readDates : [];
     const mergedReads = mergeBookReadDatesSmart(lReads, wReads);

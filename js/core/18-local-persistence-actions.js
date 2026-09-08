@@ -103,7 +103,7 @@ async function hydrateLocalImagesFromIDB() {
   });
   if (jobs.length) await Promise.all(jobs);
   if (restored) {
-    console.info(`[LUMEN v184] ${restored} imagen(es) restauradas desde IndexedDB`);
+    console.info(`[LUMEN v201] ${restored} imagen(es) restauradas desde IndexedDB`);
     try { refreshCurrentScreen(); } catch (_) {}
   }
   return restored;
@@ -287,6 +287,9 @@ async function pullAndMerge(uid, silent) {
     const merged = mergeEntries(db.entries, remote.entries || []);
     restoreLocalImages(merged);
     db.entries = merged;
+    // v201: el snapshot local guarda placeholders; rehidratar desde IndexedDB
+    // antes de renderizar evita que una sincronización haga desaparecer la portada.
+    if (typeof hydrateLocalImagesFromIDB === 'function') await hydrateLocalImagesFromIDB();
     safeLocalSetItem(DB_KEY, JSON.stringify(lightweightLocalDB(db)), {prune:true});
     applyRemoteModulesV162(remote);
     setLastSync();
@@ -320,6 +323,7 @@ function subscribeToFirestore(uid) {
       const merged = mergeEntries(db.entries, remote.entries || []);
       restoreLocalImages(merged);
       db.entries = merged;
+      if (typeof hydrateLocalImagesFromIDB === 'function') await hydrateLocalImagesFromIDB();
       safeLocalSetItem(DB_KEY, JSON.stringify(lightweightLocalDB(db)), {prune:true});
       applyRemoteModulesV162(remote);
       setLastSync();
