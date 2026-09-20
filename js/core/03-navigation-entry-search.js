@@ -735,11 +735,54 @@ function bindJsonBookDefaultsModal() {
 
 setTimeout(bindJsonBookDefaultsModal, 0);
 
+
+// ═══════════════════════════════════
+//  v204 · FECHA DE VISUALIZACIÓN DE PELÍCULAS
+//  Flujo: hoy → ayer → fecha personalizada. La fecha exacta alimenta
+//  también mes/año para conservar compatibilidad con estadísticas.
+// ═══════════════════════════════════
+function lumenLocalISODate(offsetDays=0) {
+  const d = new Date();
+  d.setHours(12,0,0,0);
+  d.setDate(d.getDate()+offsetDays);
+  const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+function lumenDisplayDate(iso) {
+  const m=String(iso||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return m ? `${m[3]}-${m[2]}-${m[1]}` : String(iso||'');
+}
+function movieDateParts(iso) {
+  const m=String(iso||'').match(/^(\d{4})-(\d{2})-(\d{2})$/); if(!m)return null;
+  const months=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  return {fecha_vista:iso, mes:months[Number(m[2])-1], anio:Number(m[1])};
+}
+function askMovieViewingDate() {
+  return new Promise(resolve=>{
+    const old=document.getElementById('lumen-movie-date-modal'); if(old)old.remove();
+    const today=lumenLocalISODate(0), yesterday=lumenLocalISODate(-1);
+    const wrap=document.createElement('div'); wrap.id='lumen-movie-date-modal';
+    wrap.style.cssText='position:fixed;inset:0;z-index:10050;background:rgba(20,16,12,.72);display:flex;align-items:flex-end;justify-content:center;padding:0;';
+    wrap.innerHTML=`<div style="width:min(680px,100%);background:var(--cream,#f7f2e8);border-top:4px solid var(--red,#8b2020);padding:26px 22px 28px;box-shadow:0 -10px 35px rgba(0,0,0,.25);font-family:var(--font-sans);">
+      <div style="font-family:var(--font-serif);font-size:30px;font-weight:700;color:var(--ink);margin-bottom:8px;">Fecha de visualización</div>
+      <div id="lumen-movie-date-question" style="font-size:17px;color:var(--ink2);margin-bottom:20px;line-height:1.45;"></div>
+      <div id="lumen-movie-date-actions" style="display:grid;gap:10px;"></div>
+    </div>`;
+    document.body.appendChild(wrap);
+    const q=wrap.querySelector('#lumen-movie-date-question'), a=wrap.querySelector('#lumen-movie-date-actions');
+    const done=v=>{wrap.remove();resolve(v);};
+    const btn=(label,fn,primary=false)=>{const b=document.createElement('button');b.type='button';b.textContent=label;b.className=primary?'btn btn-primary':'btn btn-secondary';b.style.cssText='width:100%;min-height:52px;font-size:14px;letter-spacing:1.5px;';b.onclick=fn;a.appendChild(b);};
+    const custom=()=>{q.innerHTML='Selecciona la fecha en que viste la película.';a.innerHTML='';const input=document.createElement('input');input.type='date';input.className='input';input.max=today;input.value=yesterday;input.style.cssText='width:100%;margin-bottom:10px;';a.appendChild(input);btn('GUARDAR FECHA',()=>{if(!input.value){showToast('Selecciona una fecha');return;}done(input.value);},true);btn('CANCELAR · DEJAR SIN FECHA',()=>done(null));};
+    const yesterdayStep=()=>{q.innerHTML=`¿La viste ayer, <strong>${lumenDisplayDate(yesterday)}</strong>?`;a.innerHTML='';btn('SÍ · GUARDAR AYER',()=>done(yesterday),true);btn('NO · ELEGIR OTRA FECHA',custom);btn('CANCELAR · DEJAR SIN FECHA',()=>done(null));};
+    q.innerHTML=`¿La viste hoy, <strong>${lumenDisplayDate(today)}</strong>?`;btn('SÍ · GUARDAR HOY',()=>done(today),true);btn('NO',yesterdayStep);btn('CANCELAR · DEJAR SIN FECHA',()=>done(null));
+  });
+}
+
 // ═══════════════════════════════════
 //  SAVE ENTRY
 // ═══════════════════════════════════
 function saveEntry() {
-  return lumenSafeAction("Guardar ficha", () => {
+  return lumenSafeAction("Guardar ficha", async () => {
   let entry = { id: editingId || 'e_' + Date.now(), type: currentType, notas: document.getElementById('f-notas').value };
   if (currentType === 'libro') {
     const titulo = document.getElementById('f-titulo').value.trim();
@@ -766,10 +809,24 @@ function saveEntry() {
       collectionMetadata: (getGenerosSeleccionados().includes('Cuento')||getGenerosSeleccionados().includes('Poesía')) && typeof getCollectionMetadataFromForm==='function' ? getCollectionMetadataFromForm() : null,
       cuentos: getGenerosSeleccionados().includes('Cuento') && typeof getStoryCollectionMetadataFromForm==='function' ? getStoryCollectionMetadataFromForm() : null,
       cover: document.getElementById('f-cover').value };
+    // v203: los datos cargados por JSON siguen siendo editables. El valor visible/manual gana al guardar.
+    const manualIsbn=document.getElementById('f-isbn')?.value?.trim()||'';
+    const manualOriginalYear=parseInt(document.getElementById('f-anio-original')?.value)||null;
+    const manualOriginalTitle=document.getElementById('f-titulo-original')?.value?.trim()||'';
+    const manualOriginalPeriod=document.getElementById('f-periodo-original')?.value?.trim()||'';
     const finished = readingFieldsFromFinishDate(entry.finishDate);
     if (finished) { entry.finishDate = finished.finishDate; entry.mes = finished.mes; entry.anio = finished.anio; entry.estado = 'leido'; entry.progreso = 100; }
     if (editingId) { const prev=db.entries.find(e=>e.id===editingId); if(prev?.bibliografia) entry.bibliografia=prev.bibliografia; if(prev?.isbn)entry.isbn=prev.isbn; if(prev?.anio_publicacion_original!=null)entry.anio_publicacion_original=prev.anio_publicacion_original; if(prev?.periodo_publicacion_inicio!=null)entry.periodo_publicacion_inicio=prev.periodo_publicacion_inicio; if(prev?.periodo_publicacion_fin!=null)entry.periodo_publicacion_fin=prev.periodo_publicacion_fin; }
     if (_pendingFormBibliography) { entry.bibliografia=_pendingFormBibliography; const bo=_pendingFormBibliography.obraOriginal||{},be=_pendingFormBibliography.edicionConsultada||{}; if(be.isbn)entry.isbn=be.isbn;if(be.editorialId)entry.editorialId=be.editorialId;if(be.traductorIds)entry.traductorIds=be.traductorIds;if(bo.anioPublicacionOriginal!=null)entry.anio_publicacion_original=Number(bo.anioPublicacionOriginal);if(bo.periodoInicio!=null)entry.periodo_publicacion_inicio=Number(bo.periodoInicio);if(bo.periodoFin!=null)entry.periodo_publicacion_fin=Number(bo.periodoFin); _pendingFormBibliography=null; }
+    entry.bibliografia=entry.bibliografia||{}; entry.bibliografia.edicionConsultada=entry.bibliografia.edicionConsultada||{}; entry.bibliografia.obraOriginal=entry.bibliografia.obraOriginal||{};
+    if(manualIsbn){entry.isbn=manualIsbn;entry.bibliografia.edicionConsultada.isbn=manualIsbn;}
+    if(entry.anio_pub){entry.anio_edicion=entry.anio_pub;entry.bibliografia.edicionConsultada.anio=entry.anio_pub;}
+    if(entry.edicion){entry.bibliografia.edicionConsultada.descripcionEdicion=entry.edicion;}
+    if(entry.editorial){entry.bibliografia.edicionConsultada.editorial=entry.editorial;}
+    if(entry.ciudad_publicacion){entry.bibliografia.edicionConsultada.ciudad=entry.ciudad_publicacion;}
+    if(manualOriginalYear){entry.anio_publicacion_original=manualOriginalYear;entry.bibliografia.obraOriginal.anioPublicacionOriginal=manualOriginalYear;}
+    if(manualOriginalTitle)entry.bibliografia.obraOriginal.tituloOriginal=manualOriginalTitle;
+    if(manualOriginalPeriod){const m=manualOriginalPeriod.match(/(-?\d{1,4})\s*[–—-]\s*(-?\d{1,4})/);if(m){entry.periodo_publicacion_inicio=Number(m[1]);entry.periodo_publicacion_fin=Number(m[2]);entry.bibliografia.obraOriginal.periodoInicio=Number(m[1]);entry.bibliografia.obraOriginal.periodoFin=Number(m[2]);}}
   } else if (currentType === 'pelicula') {
     const titulo = document.getElementById('fp-titulo').value.trim();
     if (!titulo) { showToast('Ingresa el título'); return; }
@@ -789,6 +846,16 @@ function saveEntry() {
       mes: document.getElementById('fp-mes').value,
       anio: parseInt(document.getElementById('fp-anio-visto').value) || new Date().getFullYear(),
       cover: document.getElementById('fp-cover').value };
+    // v204: sólo al crear una película nueva y sin fecha exacta previa, confirmar hoy/ayer/personalizada.
+    if (!editingId) {
+      const pickedDate = await askMovieViewingDate();
+      const parts = movieDateParts(pickedDate);
+      if (parts) { entry.fecha_vista=parts.fecha_vista; entry.mes=parts.mes; entry.anio=parts.anio; }
+      else { entry.fecha_vista=null; }
+    } else {
+      const prevMovie=db.entries.find(e=>e.id===editingId);
+      if (prevMovie?.fecha_vista) entry.fecha_vista=prevMovie.fecha_vista;
+    }
   } else if (currentType === 'disco') {
     const titulo = document.getElementById('fd-titulo').value.trim();
     if (!titulo) { showToast('Ingresa el nombre del disco'); return; }

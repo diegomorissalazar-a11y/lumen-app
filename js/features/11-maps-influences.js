@@ -79,10 +79,66 @@ function renderMapaHistoria(){
 }
 function renderHistUndated(items){if(!items.length)return'';const books=[...new Map(items.map(x=>[x.entry.id,x.entry])).values()];return `<div class="hist-undated"><strong>Sin fecha suficiente (${books.length})</strong><div style="margin-top:6px;line-height:1.7;">${books.map(e=>`<span style="cursor:pointer;text-decoration:underline;text-decoration-style:dotted;" onclick="showDetail('${e.id}')">${histEsc(e.titulo)}</span>`).join(' · ')}</div></div>`;}
 
-// ── Colors ──
-const INF_COLORS = { cita_directa:'#e67e22', cita_indirecta:'#f1c40f', uso_personaje:'#2980b9', contexto_historico:'#27ae60', continuacion:'#8e44ad' };
+// ── Relational taxonomy v205 ──
+const INF_COLORS = {
+  referencia:'#e67e22', colaboracion:'#7f8c8d', influencia_declarada:'#c8952a',
+  uso_apropiacion:'#2980b9', adaptacion:'#8e44ad', contexto:'#27ae60'
+};
+const INF_LABELS = {
+  referencia:'Referencia', colaboracion:'Colaboración', influencia_declarada:'Influencia declarada',
+  uso_apropiacion:'Uso / apropiación', adaptacion:'Adaptación', contexto:'Contexto'
+};
+const INF_SUBTYPES = {
+  referencia:[['mencion','Mención'],['cita_textual','Cita textual'],['epigrafe','Epígrafe'],['dedicatoria','Dedicatoria'],['atribucion_idea','Atribución de idea'],['pendiente_clasificacion','Pendiente de clasificación']],
+  colaboracion:[['obra_conjunta','Obra conjunta'],['actividad_conjunta','Actividad conjunta'],['correspondencia_dialogo','Correspondencia / diálogo'],['otra_colaboracion','Otra colaboración documentada'],['pendiente_clasificacion','Pendiente de clasificación']],
+  influencia_declarada:[['influencia_reconocida','Influencia reconocida'],['admiracion_afinidad','Admiración / afinidad'],['fuente_inspiracion','Fuente de inspiración'],['oposicion_rechazo','Oposición / rechazo'],['pendiente_clasificacion','Pendiente de clasificación']],
+  uso_apropiacion:[['personaje_reutilizado','Personaje reutilizado'],['transformacion','Transformación'],['reescritura','Reescritura'],['parodia','Parodia'],['continuacion','Continuación'],['apropiacion_textual','Apropiación textual'],['pendiente_clasificacion','Pendiente de clasificación']],
+  adaptacion:[['cine','Cine'],['television','Televisión'],['teatro','Teatro'],['literatura','Literatura'],['comic','Cómic'],['otro','Otro'],['pendiente_clasificacion','Pendiente de clasificación']],
+  contexto:[['hecho_historico','Hecho histórico'],['periodo','Período'],['persona_historica','Persona histórica'],['lugar','Lugar'],['movimiento_cultural','Movimiento cultural'],['tradicion','Tradición'],['mitologia','Mitología'],['pendiente_clasificacion','Pendiente de clasificación']]
+};
+const INF_OBJECT_LABELS={autor:'Autor / persona',obra:'Obra',personaje:'Personaje',texto_verso:'Texto / verso',acontecimiento_contexto:'Acontecimiento / contexto',otro:'Otro'};
+const INF_FUNCTION_LABELS={cuerpo_texto:'Cuerpo del texto',titulo:'Título',epigrafe:'Epígrafe',dedicatoria:'Dedicatoria',nota_pie:'Nota al pie',prologo:'Prólogo',entrevista:'Entrevista',otra:'Otra'};
+const INF_EVIDENCE_LABELS={obra:'Obra',entrevista:'Entrevista',prensa:'Prensa',ensayo:'Ensayo',carta_correspondencia:'Carta / correspondencia',programa:'Programa',podcast:'Podcast',documento:'Documento',otra:'Otra'};
+function normalizeRelationFamily(raw){
+  const v=String(raw||'').trim().toLowerCase().replace(/[\s-]+/g,'_');
+  const a={referencia:'referencia',reference:'referencia',cita:'referencia',cita_directa:'referencia',directa:'referencia',cita_indirecta:'referencia',colaboracion:'colaboracion',influencia_declarada:'influencia_declarada',influencia:'influencia_declarada',uso_personaje:'uso_apropiacion',uso_apropiacion:'uso_apropiacion',apropiacion:'uso_apropiacion',adaptacion:'adaptacion',contexto_historico:'contexto',contexto:'contexto',continuacion:'uso_apropiacion'};
+  return a[v]||'referencia';
+}
+function migrateInfluenceTaxonomy(inf){
+  if(!inf||typeof inf!=='object') return inf;
+  const legacy=inf.legacy_tipo||inf.tipo||inf.tipo_relacion||'';
+  if(!inf.legacy_tipo && ['cita_directa','cita_indirecta','uso_personaje','contexto_historico','continuacion'].includes(String(legacy))) inf.legacy_tipo=legacy;
+  const fam=normalizeRelationFamily(inf.tipo_relacion||inf.tipo);
+  inf.tipo_relacion=fam; inf.tipo=fam; // tipo se conserva como alias de compatibilidad
+  if(!inf.subtipo_relacion){
+    if(legacy==='uso_personaje') inf.subtipo_relacion='personaje_reutilizado';
+    else if(legacy==='contexto_historico') inf.subtipo_relacion='pendiente_clasificacion';
+    else if(legacy==='continuacion') inf.subtipo_relacion='pendiente_clasificacion';
+    else if(legacy==='cita_indirecta' || legacy==='cita_directa') inf.subtipo_relacion='pendiente_clasificacion';
+    else if(fam==='referencia') inf.subtipo_relacion='mencion';
+    else inf.subtipo_relacion='pendiente_clasificacion';
+  }
+  if(!inf.objeto_tipo){
+    if(legacy==='uso_personaje') inf.objeto_tipo='personaje';
+    else if(fam==='contexto') inf.objeto_tipo='acontecimiento_contexto';
+    else inf.objeto_tipo=inf.obra?'obra':'autor';
+  }
+  if(!inf.ubicacion_funcional){
+    const u=String(inf.ubicacion_tipo||'');
+    inf.ubicacion_funcional=['titulo','epigrafe','dedicatoria'].includes(u)?u:'cuerpo_texto';
+  }
+  if(!inf.fuente_evidencia){
+    if(legacy==='cita_indirecta'){
+      const ft=String(inf.fuente_ind_tipo||'');
+      inf.fuente_evidencia=ft.includes('entrevista')?'entrevista':ft==='prensa'?'prensa':'obra';
+    } else inf.fuente_evidencia='obra';
+  }
+  if(inf.subtipo_relacion==='pendiente_clasificacion') inf.clasificacion_pendiente=true;
+  inf._relationModel='lumen_relation_v2';
+  return inf;
+}
+function influenceFamily(inf){return migrateInfluenceTaxonomy(inf)?.tipo_relacion||'referencia';}
 const RUTA_COLORS = { mismo_autor:'#8e44ad', libro:'#c8952a', charla:'#2980b9', serie:'#e74c3c', pelicula:'#e67e22', persona:'#27ae60', cancion:'#1a6e3c', podcast:'#8b2020', entrevista:'#5a3e8b', programa:'#2e6b5e' };
-const INF_LABELS  = { cita_directa:'Cita directa', cita_indirecta:'Cita indirecta', uso_personaje:'Uso de personaje', contexto_historico:'Contexto histórico', continuacion:'Continuación' };
 const RUTA_LABELS = { referencia:'Referencia', recomendacion:'Recomendación', curiosidad:'Curiosidad temática', mismo_autor:'Mismo autor', contexto_vital:'Contexto vital' };
 
 // ── Autocomplete helpers ──
@@ -323,23 +379,19 @@ function rellenarInfDestinoSel() {
 
 // ── Eventos de cambio ────────────────────────────────────
 function onInfTipoChange() {
-  const tipo = document.getElementById('inf-tipo').value;
-  const esDirecta = tipo === 'cita_directa';
-  const esIndirecta = tipo === 'cita_indirecta';
-  document.getElementById('inf-panel-cita-directa').style.display   = esDirecta   ? 'block' : 'none';
-  document.getElementById('inf-panel-cita-indirecta').style.display = esIndirecta ? 'block' : 'none';
-  // Otros tipos: no muestran panel extra
-  const lbl = document.getElementById('inf-fuente-label');
-  const labels = {
-    cita_directa:      'Autor que es citado',
-    cita_indirecta:    'Autor o fuente que menciona',
-    uso_personaje:     'Obra de origen del personaje',
-    contexto_historico:'Contexto histórico / obra de referencia',
-    continuacion:      'Obra original',
-  };
-  if (lbl) lbl.textContent = labels[tipo] || 'Fuente';
+  const tipo=normalizeRelationFamily(document.getElementById('inf-tipo')?.value);
+  const subtype=document.getElementById('inf-subtipo');
+  if(subtype){
+    const previous=subtype.value;
+    subtype.innerHTML=(INF_SUBTYPES[tipo]||[]).map(([v,l])=>`<option value="${v}">${l}</option>`).join('');
+    if([...subtype.options].some(o=>o.value===previous)) subtype.value=previous;
+  }
+  // El panel bibliográfico/evidencia sirve para todas las familias; la fuente ya no define el tipo.
+  const direct=document.getElementById('inf-panel-cita-directa'); if(direct) direct.style.display='block';
+  const indirect=document.getElementById('inf-panel-cita-indirecta'); if(indirect) indirect.style.display='none';
+  const lbl=document.getElementById('inf-fuente-label'); if(lbl) lbl.textContent='Autor / persona relacionada';
+  actualizarIsoPreview();
 }
-
 function onInfFuenteSelChange() {
   const sel   = document.getElementById('inf-fuente-sel');
   const libre = document.getElementById('inf-fuente-libre');
@@ -416,7 +468,7 @@ function actualizarIsoPreview() {
   const preview = document.getElementById('inf-iso-preview');
   if (!preview) return;
   const tipo = document.getElementById('inf-tipo')?.value;
-  if (tipo !== 'cita_directa') { preview.style.display = 'none'; return; }
+  if (!tipo) { preview.style.display = 'none'; return; }
 
   const evidence  = syncInfCanonicalBibliography();
   const bib       = canonicalBookBibliography(evidence);
@@ -443,12 +495,13 @@ function escapeHtml(v) {
 
 // ── UX operativa: tarjetas e importador JSON ───────────────────────────────
 const INF_CARD_DEFS = [
-  { tipo:'cita_directa', icon:'🟠', title:'Cita directa', desc:'Menciones explícitas entre autores, obras, personajes o fuentes.' },
-  { tipo:'uso_personaje', icon:'🔵', title:'Uso de personaje', desc:'Reutilización, transformación, parodia o reescritura de personajes.' },
-  { tipo:'cita_indirecta', icon:'🟡', title:'Cita indirecta', desc:'Relaciones mediadas por entrevista, prensa, ensayo, programa, podcast u otra fuente secundaria.' },
-  { tipo:'contexto_historico', icon:'🟢', title:'Contexto histórico', desc:'Conexiones con hechos, periodos, dinastías, guerras o contextos culturales.' },
-  { tipo:'continuacion', icon:'🟣', title:'Continuación / adaptación', desc:'Obra original, adaptación, secuela, relectura o derivación.' }
-];
+  { tipo:'referencia', icon:'🟠', title:'Referencia', desc:'Mención, cita textual, epígrafe, dedicatoria o atribución explícita.' },
+  { tipo:'colaboracion', icon:'⚪', title:'Colaboración', desc:'Obra, actividad, correspondencia o diálogo realizado conjuntamente.' },
+  { tipo:'influencia_declarada', icon:'🟡', title:'Influencia declarada', desc:'Influencia, admiración, inspiración u oposición respaldada por evidencia explícita.' },
+  { tipo:'uso_apropiacion', icon:'🔵', title:'Uso / apropiación', desc:'Reutilización, transformación, reescritura, parodia, continuación o apropiación.' },
+  { tipo:'adaptacion', icon:'🟣', title:'Adaptación', desc:'Transformación de una obra hacia otra obra o medio.' },
+  { tipo:'contexto', icon:'🟢', title:'Contexto', desc:'Hechos, períodos, personas históricas, lugares, movimientos, tradiciones o mitología.' }
+]
 let _infJsonPreviewItems = [];
 
 function renderInfluenciasTypeCards(targetId='inf-type-cards-panel') {
@@ -583,11 +636,20 @@ function importedInfExists(inf) {
 }
 function asArr(v) { return Array.isArray(v) ? v : (v ? [v] : []); }
 
+function normalizeImportedInfluenceType(rawType) { return normalizeRelationFamily(rawType); }
+function influenceBibliographyMissing(obj) {
+  const missing=[];
+  if(!obj?.editorial)missing.push('editorial');
+  if(!obj?.anio_pub)missing.push('año de edición');
+  if(!obj?.ciudad)missing.push('ciudad');
+  if(!obj?.edicion)missing.push('edición');
+  return missing;
+}
 function mapJsonInfluenceToLumen(item, forcedTipo) {
-  const tipo = forcedTipo || item.tipo || 'cita_directa';
+  const tipo = normalizeImportedInfluenceType(item.tipo || forcedTipo);
   const fuente = item.fuente?.nombre || item.fuente || item.autor_citado || item.origen || '';
   const destinoTitulo = item.destino?.titulo || item.destino || item.libro_destino || '';
-  const destinoAutor = item.destino?.autor || '';
+  const destinoAutor = item.destino?.autor || item.autor_destino || '';
   const evidenceBook=findBookCanonicalByTitle(destinoTitulo,destinoAutor);
   if(evidenceBook)ensureBookCanonicalRefs(evidenceBook);
   const destinoMeta = getInfluenceDestinoAutorMeta(destinoTitulo, destinoAutor);
@@ -601,16 +663,26 @@ function mapJsonInfluenceToLumen(item, forcedTipo) {
   if(!ubicTipo)ubicTipo='pagina';
   const obra = item.obra_citada?.titulo || item.obra || item.fuente?.nombre_en_texto || fuente;
   const bib=canonicalBookBibliography(evidenceBook);
+  // Los metadatos explícitos del JSON tienen prioridad en la relación importada.
+  // Se aceptan las claves históricas y las canónicas sin exigir cambiar el JSON.
+  const importedEditorial=item.editorial||item.iso?.editorial||'';
+  const importedYear=item.anio_edicion??item.anio_pub??item.iso?.anio_edicion??item.iso?.anio??'';
+  const importedEdition=item.edicion??item.iso?.edicion??'';
+  const importedIsbn=item.isbn||item.iso?.isbn||'';
+  const importedCity=item.ciudad_publicacion||item.ciudad||item.iso?.ciudad_publicacion||item.iso?.ciudad||'';
   const obj = {
-    id: 'inf_' + Date.now() + '_' + Math.random().toString(36).slice(2,7), id_import:item.id_import||'', tipo, fuente, destino, obra,
-    editorial:bib.editorial||item.iso?.editorial||item.editorial||'', anio_pub:bib.anio||item.iso?.anio||item.anio_pub||'', ciudad:bib.ciudad||item.iso?.ciudad||item.ciudad||'', edicion:bib.edicion||item.iso?.edicion||item.edicion||'',
+    id: 'inf_' + Date.now() + '_' + Math.random().toString(36).slice(2,7), id_import:item.id_import||'', tipo, tipo_relacion:tipo, fuente, destino, obra,
+    subtipo_relacion:item.subtipo_relacion||item.forma||item.subtipo||'', objeto_tipo:item.objeto_tipo||item.objeto||'',
+    ubicacion_funcional:item.ubicacion_funcional||'', fuente_evidencia:item.fuente_evidencia||item.evidencia?.fuente||'',
+    editorial:importedEditorial||bib.editorial||'', anio_pub:importedYear||bib.anio||'', anio_edicion:importedYear||bib.anio||'', ciudad:importedCity||bib.ciudad||'', edicion:importedEdition||bib.edicion||'', isbn:importedIsbn||bib.isbn||'',
     fuente_autor_id:'', destino_libro_id:evidenceBook?.id||'', evidencia_libro_id:evidenceBook?.id||'', destino_autor_id:evidenceBook?.autorId||'', editorial_id:evidenceBook?.editorialId||'',
     ubicacion_tipo:ubicTipo, ubicacion_detalle:ubicDetalle, texto:ev.texto||item.texto_citado||item.texto||'', fuente_nombre_en_texto:item.fuente?.nombre_en_texto||'', obra_tipo:item.obra_citada?.tipo||'', peso:item.peso||1, nota:item.nota||'', tags:asArr(item.tags),
     destino_tipo:'autor', destino_autor:destinoMeta.destinoAutor||destino, destino_titulo:destinoMeta.libroRef||destinoTitulo, destino_original:destinoTitulo, libro_ref:destinoMeta.libroRef||destinoTitulo,
     pagina:ubicTipo==='pagina'?(parseInt(ubicDetalle)||null):null, import_schema:'lumen_influencias_import_v1', importedAt:Date.now(), createdAt:Date.now()
   };
+  migrateInfluenceTaxonomy(obj);
   obj.import_key=normalizeInfDedupeKey(obj);
-  return {obj,destinoExiste:!!destinoMeta.destinoExiste,destinoOriginal:destinoTitulo,destinoAutor:destinoMeta.destinoAutor||destinoAutor,evidenceBook,missingBib:bibliographyMissing(evidenceBook)};
+  return {obj,destinoExiste:!!destinoMeta.destinoExiste,destinoOriginal:destinoTitulo,destinoAutor:destinoMeta.destinoAutor||destinoAutor,evidenceBook,missingBib:influenceBibliographyMissing(obj)};
 }
 function prepareInfJsonPreview(raw) {
   const forcedTipo = document.getElementById('inf-json-tipo').value || '';
@@ -656,6 +728,21 @@ function confirmInfJsonImport() {
   mapas.influencias=mapas.influencias||[];mapas.influencias.push(...nuevos);saveMapas();closeModal('modal-inf-json');showToast(`✓ ${nuevos.length} relación(es) importada(s)`);renderMapaInfluencias();
 }
 
+
+function getInfluenceFilters(){return {family:document.getElementById('inf-filter-family')?.value||'',subtype:document.getElementById('inf-filter-subtype')?.value||'',object:document.getElementById('inf-filter-object')?.value||'',location:document.getElementById('inf-filter-location')?.value||'',evidence:document.getElementById('inf-filter-evidence')?.value||''};}
+function filteredInfluences(){const f=getInfluenceFilters();return (mapas.influencias||[]).map(migrateInfluenceTaxonomy).filter(r=>(!f.family||r.tipo_relacion===f.family)&&(!f.subtype||r.subtipo_relacion===f.subtype)&&(!f.object||r.objeto_tipo===f.object)&&(!f.location||r.ubicacion_funcional===f.location)&&(!f.evidence||r.fuente_evidencia===f.evidence));}
+function refreshInfluenceFilterOptions(){
+ const data=(mapas.influencias||[]).map(migrateInfluenceTaxonomy), defs=[['inf-filter-subtype','subtipo_relacion'],['inf-filter-object','objeto_tipo'],['inf-filter-location','ubicacion_funcional'],['inf-filter-evidence','fuente_evidencia']];
+ defs.forEach(([id,key])=>{const el=document.getElementById(id);if(!el)return;const cur=el.value;const vals=[...new Set(data.map(x=>x[key]).filter(Boolean))].sort();const label=id.includes('subtype')?'Todos los subtipos':id.includes('object')?'Todos los objetos':id.includes('location')?'Todas las ubicaciones':'Todas las fuentes';el.innerHTML=`<option value="">${label}</option>`+vals.map(v=>`<option value="${escapeHtml(v)}">${escapeHtml(v.replaceAll('_',' '))}</option>`).join('');if(vals.includes(cur))el.value=cur;});
+}
+function csvCell(v){const s=String(v??'').replaceAll('"','""');return `"${s}"`;}
+function exportInfluenciasGephi(){
+ const rows=(mapas.influencias||[]).map(migrateInfluenceTaxonomy); if(!rows.length){showToast('No hay relaciones para exportar');return;}
+ const headers=['id','source','target','tipo_relacion','subtipo_relacion','objeto_tipo','ubicacion_funcional','fuente_evidencia','autor_origen','autor_destino','obra_origen','obra_destino','pagina','anio','texto_evidencia','color','clasificacion_pendiente'];
+ const lines=[headers.join(',')]; rows.forEach(r=>{const fam=r.tipo_relacion||influenceFamily(r);const vals=[r.id,r.fuente_autor_id||r.fuente,r.destino_autor_id||r.destino_autor||r.destino,fam,r.subtipo_relacion,r.objeto_tipo,r.ubicacion_funcional,r.fuente_evidencia,r.fuente,r.destino_autor||r.destino,r.obra||'',r.libro_ref||r.destino_titulo||'',r.pagina||r.ubicacion_detalle||'',r.anio_edicion||r.anio_pub||r.ind_anio||r.ind_tv_anio||'',r.texto||'',INF_COLORS[fam]||'#999',r.clasificacion_pendiente?'1':'0'];lines.push(vals.map(csvCell).join(','));});
+ const blob=new Blob(['\ufeff'+lines.join('\n')],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='lumen_relaciones_gephi_v205.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);showToast('✓ CSV para Gephi exportado');
+}
+
 // ── CRUD ─────────────────────────────────────────────────
 function openModalInfluencia(editId, presetTipo) {
   rellenarInfFuenteSel();
@@ -665,8 +752,13 @@ function openModalInfluencia(editId, presetTipo) {
   if (editId) {
     const inf = mapas.influencias.find(x => x.id === editId);
     if (inf) {
-      document.getElementById('inf-tipo').value = inf.tipo||'cita_directa';
+      migrateInfluenceTaxonomy(inf);
+      document.getElementById('inf-tipo').value = inf.tipo_relacion||'referencia';
       onInfTipoChange();
+      if(document.getElementById('inf-subtipo')) document.getElementById('inf-subtipo').value=inf.subtipo_relacion||'pendiente_clasificacion';
+      if(document.getElementById('inf-objeto-tipo')) document.getElementById('inf-objeto-tipo').value=inf.objeto_tipo||'autor';
+      if(document.getElementById('inf-ubicacion-funcional')) document.getElementById('inf-ubicacion-funcional').value=inf.ubicacion_funcional||'cuerpo_texto';
+      if(document.getElementById('inf-fuente-evidencia')) document.getElementById('inf-fuente-evidencia').value=inf.fuente_evidencia||'obra';
       // Fuente
       const fuenteSel = document.getElementById('inf-fuente-sel');
       if ([...fuenteSel.options].some(o => o.value === inf.fuente)) {
@@ -695,7 +787,7 @@ function openModalInfluencia(editId, presetTipo) {
       document.getElementById('inf-ubicacion-detalle').value = inf.ubicacion_detalle||'';
       document.getElementById('inf-texto').value             = inf.texto||'';
       // Indirecta
-      if (inf.tipo === 'cita_indirecta') {
+      if (inf.legacy_tipo === 'cita_indirecta') {
         document.getElementById('inf-fuente-indirecta-tipo').value = inf.fuente_ind_tipo||'libro';
         onInfFuenteIndirectaChange();
         document.getElementById('inf-ind-anio').value        = inf.ind_anio||'';
@@ -719,7 +811,7 @@ function openModalInfluencia(editId, presetTipo) {
     }
   } else {
     // Reset
-    document.getElementById('inf-tipo').value = presetTipo || 'cita_directa';
+    document.getElementById('inf-tipo').value = normalizeRelationFamily(presetTipo || 'referencia');
     onInfTipoChange();
     onInfFuenteIndirectaChange();
     ['inf-editorial','inf-anio-pub','inf-ciudad','inf-edicion',
@@ -756,14 +848,20 @@ function saveInfluencia() {
   const evidenceBib = canonicalBookBibliography(evidenceBook);
   const selectedFuenteId=getSelectedOptionData('inf-fuente-sel','authorId'); const sourceEntity=selectedFuenteId?{id:selectedFuenteId,nombreCanonico:canonicalNameById('aut',selectedFuenteId,fuente)}:resolveCanonicalEntity('aut',fuente,true); const fuenteAutorId=sourceEntity.id; const fuenteCanon=sourceEntity.nombreCanonico||fuente;
 
+  const previous = editId ? (mapas.influencias.find(x=>x.id===editId)||{}) : {};
   const obj = {
+    ...previous,
     id:               editId || 'inf_' + Date.now(),
-    tipo, fuente: fuenteCanon, destino, obra,
-    editorial:        evidenceBib.editorial || '',
+    tipo, tipo_relacion:tipo, fuente: fuenteCanon, destino, obra,
+    subtipo_relacion: document.getElementById('inf-subtipo')?.value||'pendiente_clasificacion',
+    objeto_tipo: document.getElementById('inf-objeto-tipo')?.value||'autor',
+    ubicacion_funcional: document.getElementById('inf-ubicacion-funcional')?.value||'cuerpo_texto',
+    fuente_evidencia: document.getElementById('inf-fuente-evidencia')?.value||'obra',
+    editorial:        document.getElementById('inf-editorial')?.value.trim() || evidenceBib.editorial || '',
     editorial_id:     evidenceBook?.editorialId || canonicalEntityId('edi', evidenceBib.editorial),
-    anio_pub:         evidenceBib.anio || '',
-    ciudad:           evidenceBib.ciudad || '',
-    edicion:          evidenceBib.edicion || '',
+    anio_pub:         document.getElementById('inf-anio-pub')?.value.trim() || evidenceBib.anio || '',
+    ciudad:           document.getElementById('inf-ciudad')?.value.trim() || evidenceBib.ciudad || '',
+    edicion:          document.getElementById('inf-edicion')?.value.trim() || evidenceBib.edicion || '',
     fuente_autor_id:  fuenteAutorId,
     fuente_libro_id:  sourceBook?.id || '',
     destino_libro_id: evidenceBook?.id || '',
@@ -771,9 +869,7 @@ function saveInfluencia() {
     evidencia_libro_id:evidenceBook?.id || '',
     ubicacion_tipo:   document.getElementById('inf-ubicacion-tipo')?.value||'pagina',
     ubicacion_detalle:document.getElementById('inf-ubicacion-detalle')?.value.trim()||'',
-    texto:            (tipo==='cita_indirecta'
-                        ? document.getElementById('inf-texto-ind')?.value.trim()
-                        : document.getElementById('inf-texto')?.value.trim())||'',
+    texto:            document.getElementById('inf-texto')?.value.trim()||document.getElementById('inf-texto-ind')?.value.trim()||'',
     // Campos cita indirecta
     fuente_ind_tipo:  document.getElementById('inf-fuente-indirecta-tipo')?.value||'',
     ind_anio:         document.getElementById('inf-ind-anio')?.value.trim()||'',
@@ -795,6 +891,7 @@ function saveInfluencia() {
     createdAt:        editId ? (mapas.influencias.find(x=>x.id===editId)?.createdAt||Date.now()) : Date.now()
   };
 
+  migrateInfluenceTaxonomy(obj);
   ensureInfluenceCanonicalRefs(obj);
   if (editId) { const i=mapas.influencias.findIndex(x=>x.id===editId); if(i>=0) mapas.influencias[i]=obj; }
   else mapas.influencias.push(obj);
@@ -829,7 +926,8 @@ function openInfluenciaDetalle(id) {
   if (!inf) return;
   const body = document.getElementById('inf-detail-body');
   if (!body) return;
-  const tipoLabel = INF_TIPO_LABELS[inf.tipo] || inf.tipo || 'Relación';
+  migrateInfluenceTaxonomy(inf);
+  const tipoLabel = INF_LABELS[inf.tipo_relacion] || inf.tipo_relacion || 'Relación';
   const tags = Array.isArray(inf.tags) ? inf.tags.join(', ') : (inf.tags || '');
   const obraDestino = inf.libro_ref || inf.destino_titulo || inf.destino_original || '';
   const ubic = [inf.ubicacion_tipo, inf.ubicacion_detalle].filter(Boolean).join(': ');
@@ -842,7 +940,12 @@ function openInfluenciaDetalle(id) {
     </div>
     <div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:14px;">
       ${isoRef?`<div style="background:var(--cream2);border-radius:6px;padding:10px 12px;margin-bottom:8px;"><div style="font-size:9px;letter-spacing:1.2px;text-transform:uppercase;color:var(--ink4);font-weight:700;margin-bottom:4px;">Referencia ISO 690</div><div style="font-family:var(--font-serif);font-size:13px;line-height:1.6;color:var(--ink);">${escapeHtml(isoRef)}</div></div>`:''}
-      ${fieldRow('Tipo', tipoLabel)}
+      ${fieldRow('Familia', tipoLabel)}
+      ${fieldRow('Forma / subtipo', (inf.subtipo_relacion||'').replaceAll('_',' '))}
+      ${fieldRow('Objeto relacionado', INF_OBJECT_LABELS[inf.objeto_tipo]||inf.objeto_tipo)}
+      ${fieldRow('Ubicación funcional', INF_FUNCTION_LABELS[inf.ubicacion_funcional]||inf.ubicacion_funcional)}
+      ${fieldRow('Fuente de evidencia', INF_EVIDENCE_LABELS[inf.fuente_evidencia]||inf.fuente_evidencia)}
+      ${inf.clasificacion_pendiente?fieldRow('Migración','Pendiente de clasificación'):''}
       ${fieldRow('Fuente / autor citado', inf.fuente)}
       ${fieldRow('Nombre en texto', inf.fuente_nombre_en_texto)}
       ${fieldRow('Destino / autor influido', inf.destino)}

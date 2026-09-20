@@ -31,7 +31,13 @@
       <button class="btn btn-secondary btn-sm" style="width:auto;" onclick="openInfluenciasCargaPanel()">+ Añadir relación</button>
       <button class="btn btn-secondary btn-sm" style="width:auto;" onclick="renderMapaInfluencias()">↻ Actualizar</button>
       <button class="btn btn-secondary btn-sm" style="width:auto;" onclick="openReferenciasInfluencias()">📚 Referencias</button>
-      <span class="map-centrality-legend">Tamaño = influencias originadas</span>
+      <select id="inf-filter-family" onchange="renderMapaInfluencias()" style="border:1px solid var(--border);padding:5px;background:#fff;"><option value="">Todas las familias</option><option value="referencia">Referencia</option><option value="colaboracion">Colaboración</option><option value="influencia_declarada">Influencia declarada</option><option value="uso_apropiacion">Uso / apropiación</option><option value="adaptacion">Adaptación</option><option value="contexto">Contexto</option></select>
+      <select id="inf-filter-subtype" onchange="renderMapaInfluencias()" style="border:1px solid var(--border);padding:5px;background:#fff;"><option value="">Todos los subtipos</option></select>
+      <select id="inf-filter-object" onchange="renderMapaInfluencias()" style="border:1px solid var(--border);padding:5px;background:#fff;"><option value="">Todos los objetos</option></select>
+      <select id="inf-filter-location" onchange="renderMapaInfluencias()" style="border:1px solid var(--border);padding:5px;background:#fff;"><option value="">Todas las ubicaciones</option></select>
+      <select id="inf-filter-evidence" onchange="renderMapaInfluencias()" style="border:1px solid var(--border);padding:5px;background:#fff;"><option value="">Todas las fuentes</option></select>
+      <button class="btn btn-secondary btn-sm" style="width:auto;" onclick="exportInfluenciasGephi()">⬇ Gephi</button>
+      <span class="map-centrality-legend">Tamaño = autores únicos conectados</span><span style="font-size:9px;display:flex;gap:7px;flex-wrap:wrap;"><b style="color:#e67e22">● Referencia</b><b style="color:#7f8c8d">● Colaboración</b><b style="color:#c8952a">● Influencia declarada</b><b style="color:#2980b9">● Uso/apropiación</b><b style="color:#8e44ad">● Adaptación</b><b style="color:#27ae60">● Contexto</b></span>
       <span id="inf-count" style="font-size:11px;color:var(--ink4);margin-left:auto;"></span>
       <button class="btn btn-secondary btn-sm map-expand-trigger" style="width:auto;" onclick="toggleMapWorkspace('influencias')">⛶ Ampliar</button>
     </div>

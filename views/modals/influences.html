@@ -69,12 +69,16 @@
       <div class="field">
         <label>Tipo de relación</label>
         <select class="input" id="inf-tipo" onchange="onInfTipoChange()">
-          <option value="cita_directa">🟠 Cita directa</option>
-          <option value="cita_indirecta">🟡 Cita indirecta</option>
-          <option value="uso_personaje">🔵 Uso de personaje</option>
-          <option value="contexto_historico">🟢 Contexto histórico</option>
-          <option value="continuacion">🟣 Continuación / adaptación</option>
+          <option value="referencia">🟠 Referencia</option><option value="colaboracion">⚪ Colaboración</option><option value="influencia_declarada">🟡 Influencia declarada</option><option value="uso_apropiacion">🔵 Uso / apropiación</option><option value="adaptacion">🟣 Adaptación</option><option value="contexto">🟢 Contexto</option>
         </select>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div class="field"><label>Forma / subtipo</label><select class="input" id="inf-subtipo"></select></div>
+        <div class="field"><label>Objeto relacionado</label><select class="input" id="inf-objeto-tipo"><option value="autor">Autor / persona</option><option value="obra">Obra</option><option value="personaje">Personaje</option><option value="texto_verso">Texto / verso</option><option value="acontecimiento_contexto">Acontecimiento / contexto</option><option value="otro">Otro</option></select></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div class="field"><label>Ubicación funcional</label><select class="input" id="inf-ubicacion-funcional"><option value="cuerpo_texto">Cuerpo del texto</option><option value="titulo">Título</option><option value="epigrafe">Epígrafe</option><option value="dedicatoria">Dedicatoria</option><option value="nota_pie">Nota al pie</option><option value="prologo">Prólogo</option><option value="entrevista">Entrevista</option><option value="otra">Otra</option></select></div>
+        <div class="field"><label>Fuente de evidencia</label><select class="input" id="inf-fuente-evidencia"><option value="obra">Obra</option><option value="entrevista">Entrevista</option><option value="prensa">Prensa</option><option value="ensayo">Ensayo</option><option value="carta_correspondencia">Carta / correspondencia</option><option value="programa">Programa</option><option value="podcast">Podcast</option><option value="documento">Documento</option><option value="otra">Otra</option></select></div>
       </div>
 
       <!-- 2. Fuente — autor que influye -->

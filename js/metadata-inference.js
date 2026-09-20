@@ -251,9 +251,86 @@ function metadataAnalyzeAll(ctx){
   return {rows,groups:metadataPropagationGroups(context),context};
 }
 function metadataNormalizerRows(){ return metadataAnalyzeAll().rows; }
-function metadataBookRowHTML({book,missing,suggestions}){
-  return `<div class="norm-book-row norm-book-row-v195"><div class="norm-book-main"><div class="norm-book-title">${escapeHtml(book.titulo||'Sin título')}</div><div class="norm-book-author">${escapeHtml(book.autor||'Autor no informado')}</div>${missing.length?`<div class="norm-book-missing">Falta bibliografía: ${missing.map(escapeHtml).join(' · ')}</div>`:'<div class="norm-book-complete">✓ Bibliografía obligatoria completa</div>'}${suggestions.length?`<div class="metadata-suggestion-list">${suggestions.map(s=>`<div class="metadata-suggestion"><div><strong>${escapeHtml(s.label)} → ${escapeHtml(String(s.value))}</strong><small>${escapeHtml(s.detail)} · confianza ${inferencePct(s.confidence)}%</small></div><button class="metadata-apply-btn" onclick="applyMetadataSuggestion('${String(book.id).replace(/'/g,"\\'")}','${s.key}')">Aplicar</button></div>`).join('')}</div>`:''}</div><div class="norm-book-actions">${suggestions.some(s=>s.confidence>=.92)?`<button class="btn btn-secondary btn-sm" style="width:auto" onclick="applyHighConfidenceMetadataForBook('${String(book.id).replace(/'/g,"\\'")}')">✓ Aplicar seguras</button>`:''}${missing.length?`<button class="btn btn-secondary btn-sm" style="width:auto;white-space:nowrap" onclick="openBibliographyFromNormalizerBooks('${String(book.id).replace(/'/g,"\\'")}')">📥 JSON bibliográfico</button>`:''}</div></div>`;
+
+// ═══════════════════════════════════════════════════════════════
+// LUMEN v202 — edición rápida inline en Normalizar → Libros
+// ═══════════════════════════════════════════════════════════════
+function metadataPublisherOptions(current='') {
+  const rows=[]; const seen=new Set();
+  try {
+    const catalog=loadCanonicalEntities();
+    Object.values(catalog.publishers||{}).forEach(e=>{
+      const name=String(e?.nombreCanonico||'').trim(); if(!name)return;
+      const key=canonicalText(name); if(seen.has(key))return;
+      seen.add(key); rows.push({id:e.id||'',name});
+    });
+  } catch(_) {}
+  (db.entries||[]).filter(e=>e?.type==='libro'&&String(e.editorial||'').trim()).forEach(e=>{
+    const raw=String(e.editorial).trim(); let name=raw,id=e.editorialId||'';
+    try { const c=findCanonicalEntity('edi',raw); if(c){name=c.nombreCanonico||raw;id=c.id||id;} } catch(_) {}
+    const key=canonicalText(name); if(seen.has(key))return; seen.add(key); rows.push({id,name});
+  });
+  if(current){const key=canonicalText(current);if(!seen.has(key))rows.push({id:'',name:String(current).trim()});}
+  return rows.sort((a,b)=>a.name.localeCompare(b.name,'es',{sensitivity:'base'}));
 }
+function metadataLanguageOptions(current='') {
+  let langs=[];
+  try { langs=typeof getIdiomasDisponibles==='function'?getIdiomasDisponibles():[]; } catch(_) {}
+  try { if(typeof taxonomyConcepts==='function') taxonomyConcepts('language').forEach(c=>langs.push(c.preferredLabel)); } catch(_) {}
+  if(current)langs.push(normalizeIdioma(current));
+  return [...new Set(langs.filter(Boolean).map(x=>normalizeIdioma(x)))].sort((a,b)=>a.localeCompare(b,'es',{sensitivity:'base'}));
+}
+function metadataQuickFieldId(bookId,key){return `normq-${String(bookId).replace(/[^a-zA-Z0-9_-]/g,'_')}-${key.replace(/[^a-zA-Z0-9_-]/g,'_')}`;}
+function metadataQuickEditHTML(book,missing){
+  if(!missing?.length)return '';
+  const b=canonicalBookBibliography(book), id=String(book.id), controls=[];
+  if(missing.includes('editorial')){
+    const fid=metadataQuickFieldId(id,'editorial');
+    controls.push(`<div class="norm-quick-field"><label>Editorial</label><select id="${fid}" class="input norm-quick-input"><option value="">— Seleccionar —</option>${metadataPublisherOptions(b.editorial).map(x=>`<option value="${escapeHtml(x.name)}" data-entity-id="${escapeHtml(x.id||'')}">${escapeHtml(x.name)}</option>`).join('')}</select></div>`);
+  }
+  if(!String(book.idioma||'').trim()){
+    const fid=metadataQuickFieldId(id,'idioma');
+    controls.push(`<div class="norm-quick-field"><label>Idioma original</label><select id="${fid}" class="input norm-quick-input"><option value="">— Seleccionar —</option>${metadataLanguageOptions(book.idioma).map(x=>`<option value="${escapeHtml(x)}">${escapeHtml(x)}</option>`).join('')}</select></div>`);
+  }
+  if(missing.includes('año de esta edición'))controls.push(`<div class="norm-quick-field"><label>Año de esta edición</label><input id="${metadataQuickFieldId(id,'anio_edicion')}" class="input norm-quick-input" type="number" inputmode="numeric" min="0" max="3000" placeholder="AAAA"></div>`);
+  if(missing.includes('edición'))controls.push(`<div class="norm-quick-field"><label>Edición</label><input id="${metadataQuickFieldId(id,'edicion')}" class="input norm-quick-input" type="text" placeholder="Ej: 2ª edición"></div>`);
+  if(missing.includes('ciudad'))controls.push(`<div class="norm-quick-field"><label>Ciudad</label><input id="${metadataQuickFieldId(id,'ciudad')}" class="input norm-quick-input" type="text" placeholder="Ciudad de publicación"></div>`);
+  if(missing.includes('ISBN'))controls.push(`<div class="norm-quick-field"><label>ISBN</label><input id="${metadataQuickFieldId(id,'isbn')}" class="input norm-quick-input" type="text" placeholder="ISBN"></div>`);
+  if(missing.includes('publicación original'))controls.push(`<div class="norm-quick-field"><label>Publicación original</label><input id="${metadataQuickFieldId(id,'anio_original')}" class="input norm-quick-input" type="number" inputmode="numeric" min="-5000" max="3000" placeholder="AAAA"></div>`);
+  if(!controls.length)return '';
+  return `<div class="norm-quick-edit"><div class="norm-quick-title">Completar directamente</div><div class="norm-quick-grid">${controls.join('')}</div><button class="btn btn-secondary btn-sm norm-quick-save" onclick="saveMetadataQuickEdit('${id.replace(/'/g,"\\'")}')">Guardar campos</button></div>`;
+}
+function ensureBibliographyEdition(book){
+  book.bibliografia=book.bibliografia||{schema:'lumen_ficha_bibliografica_v1'};
+  book.bibliografia.edicionConsultada=book.bibliografia.edicionConsultada||{};
+  book.bibliografia.obraOriginal=book.bibliografia.obraOriginal||{};
+  return book.bibliografia;
+}
+function quickInputValue(bookId,key){return String(document.getElementById(metadataQuickFieldId(bookId,key))?.value||'').trim();}
+function saveMetadataQuickEdit(bookId){
+  const ctx=buildMetadataInferenceContext(), book=ctx.byId.get(String(bookId)); if(!book)return false;
+  const bib=ensureBibliographyEdition(book), ed=bib.edicionConsultada, obra=bib.obraOriginal; let changed=0;
+  const publisher=quickInputValue(bookId,'editorial');
+  if(publisher){const ent=resolveCanonicalEntity('edi',publisher,false), canonical=ent?.nombreCanonico||publisher;if(canonicalText(book.editorial)!==canonicalText(canonical)||book.editorialId!==ent?.id){book.editorial=canonical;book.editorialId=ent?.id||book.editorialId||'';ed.editorial=canonical;changed++;}}
+  const language=quickInputValue(bookId,'idioma');
+  if(language){const v=normalizeIdioma(language);if(book.idioma!==v){book.idioma=v;obra.idiomaOriginal=v;changed++;}}
+  const year=quickInputValue(bookId,'anio_edicion');
+  if(year){const n=Number(year);if(Number.isFinite(n)&&n>0){book.anio_edicion=n;book.anio_pub=n;ed.anio=n;changed++;}}
+  const edition=quickInputValue(bookId,'edicion'); if(edition){book.edicion_descripcion=edition;ed.descripcionEdicion=edition;changed++;}
+  const city=quickInputValue(bookId,'ciudad'); if(city){book.ciudad_publicacion=city;ed.ciudad=city;changed++;}
+  const isbn=quickInputValue(bookId,'isbn'); if(isbn){book.isbn=isbn;ed.isbn=isbn;changed++;}
+  const original=quickInputValue(bookId,'anio_original');
+  if(original){const n=Number(original);if(Number.isFinite(n)){book.anio_publicacion_original=n;book.periodo_publicacion_inicio=n;obra.anioPublicacionOriginal=n;obra.periodoInicio=n;changed++;}}
+  if(!changed){showToast('No hay campos nuevos para guardar');return false;}
+  book._updatedAt=Date.now(); if(typeof syncBookFacetTaxonomy==='function')syncBookFacetTaxonomy(book);
+  afterMetadataMutation('edición rápida de bibliografía',`✓ ${changed} campo${changed===1?'':'s'} guardado${changed===1?'':'s'}`); return true;
+}
+
+function metadataBookRowHTML({book,missing,suggestions}){
+  const quick=metadataQuickEditHTML(book,missing);
+  return `<div class="norm-book-row norm-book-row-v202"><div class="norm-book-main"><div class="norm-book-title">${escapeHtml(book.titulo||'Sin título')}</div><div class="norm-book-author">${escapeHtml(book.autor||'Autor no informado')}</div>${missing.length?`<div class="norm-book-missing">Falta bibliografía: ${missing.map(escapeHtml).join(' · ')}</div>`:'<div class="norm-book-complete">✓ Bibliografía obligatoria completa</div>'}${quick}${suggestions.length?`<div class="metadata-suggestion-list">${suggestions.map(s=>`<div class="metadata-suggestion"><div><strong>${escapeHtml(s.label)} → ${escapeHtml(String(s.value))}</strong><small>${escapeHtml(s.detail)} · confianza ${inferencePct(s.confidence)}%</small></div><button class="metadata-apply-btn" onclick="applyMetadataSuggestion('${String(book.id).replace(/'/g,"\\'")}','${s.key}')">Aplicar</button></div>`).join('')}</div>`:''}</div><div class="norm-book-actions">${suggestions.some(s=>s.confidence>=.92)?`<button class="btn btn-secondary btn-sm" style="width:auto" onclick="applyHighConfidenceMetadataForBook('${String(book.id).replace(/'/g,"\\'")}')">✓ Aplicar seguras</button>`:''}${missing.length?`<button class="btn btn-secondary btn-sm" style="width:auto;white-space:nowrap" onclick="openBibliographyFromNormalizerBooks('${String(book.id).replace(/'/g,"\\'")}')">📥 JSON bibliográfico</button>`:''}</div></div>`;
+}
+
 let _metadataRenderGeneration=0;
 function renderMetadataNormalizerBooks(){
   const count=document.getElementById('norm-books-count'), list=document.getElementById('norm-books-list'), suggestionCount=document.getElementById('norm-books-suggestion-count'), propagationList=document.getElementById('norm-books-propagation-list');
@@ -287,7 +364,7 @@ function renderMetadataNormalizerBooks(){
         if(typeof requestIdleCallback==='function') requestIdleCallback(appendChunk,{timeout:80});
         else setTimeout(appendChunk,0);
       }else{
-        console.info(`[LUMEN v197] Normalizar → Libros: ${rows.length} fila(s), ${groups.length} propagación(es), ${Math.round(performance.now()-t0)} ms`);
+        console.info(`[LUMEN v202] Normalizar → Libros: ${rows.length} fila(s), ${groups.length} propagación(es), ${Math.round(performance.now()-t0)} ms`);
       }
     };
     appendChunk();

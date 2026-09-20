@@ -852,17 +852,11 @@ function buildD3Graph(containerId, nodes, links, colorFn, tooltipEdgeFn, fuenteT
 // ══════════════════════════
 //  RENDER INFLUENCIAS
 // ══════════════════════════
-const INF_TIPO_LABELS = {
-  cita_directa:      '🟠 Cita directa',
-  cita_indirecta:    '🟡 Cita indirecta',
-  uso_personaje:     '🔵 Uso de personaje',
-  contexto_historico:'🟢 Contexto histórico',
-  continuacion:      '🟣 Continuación',
-};
+const INF_TIPO_LABELS = {referencia:'🟠 Referencia',colaboracion:'⚪ Colaboración',influencia_declarada:'🟡 Influencia declarada',uso_apropiacion:'🔵 Uso / apropiación',adaptacion:'🟣 Adaptación',contexto:'🟢 Contexto'};
 
 function renderListaInfluencias() {
   const el = document.getElementById('inf-lista'); if (!el) return;
-  const data = mapas.influencias;
+  const data = filteredInfluences();
   if (data.length === 0) { el.style.display = 'none'; return; }
   el.style.display = 'block';
   el.innerHTML = data.map(r => `
@@ -886,7 +880,8 @@ function renderListaInfluencias() {
 
 function renderMapaInfluencias() {
   migrateInfluenciasToAuthorGraph();
-  const data=mapas.influencias;
+  refreshInfluenceFilterOptions();
+  const data=filteredInfluences();
   const elCount = document.getElementById('inf-count');
   const elEmpty = document.getElementById('inf-empty');
   if (elEmpty) elEmpty.style.display=data.length===0?'flex':'none';
@@ -921,10 +916,11 @@ function renderMapaInfluencias() {
     evidenceOut[sid]=(evidenceOut[sid]||0)+1;
     evidenceIn[tid]=(evidenceIn[tid]||0)+1;
 
-    const key=`${sid}→${tid}`;
+    const fam=influenceFamily(rel);
+    const key=`${sid}→${tid}→${fam}`;
     if(!edgeMap.has(key)){
       edgeMap.set(key,{
-        source:sid,target:tid,tipo:rel.tipo,id:rel.id,
+        source:sid,target:tid,tipo:fam,id:rel.id,
         pagina:rel.pagina,texto:rel.texto,libro_ref:rel.libro_ref,
         evidenceIds:[rel.id],evidenceCount:1
       });
@@ -936,11 +932,12 @@ function renderMapaInfluencias() {
   });
 
   const links=[...edgeMap.values()];
-  const outDegree={},inDegree={};
+  const outSets={},inSets={};
   links.forEach(edge=>{
-    outDegree[edge.source]=(outDegree[edge.source]||0)+1;
-    inDegree[edge.target]=(inDegree[edge.target]||0)+1;
+    (outSets[edge.source]||(outSets[edge.source]=new Set())).add(edge.target);
+    (inSets[edge.target]||(inSets[edge.target]=new Set())).add(edge.source);
   });
+  const outDegree={},inDegree={}; Object.keys(outSets).forEach(k=>outDegree[k]=outSets[k].size); Object.keys(inSets).forEach(k=>inDegree[k]=inSets[k].size);
 
   if (elCount) {
     elCount.textContent=`${data.length} evidencia${data.length!==1?'s':''} · ${links.length} conexión${links.length!==1?'es':''} única${links.length!==1?'s':''}`;
@@ -959,7 +956,7 @@ function renderMapaInfluencias() {
   });
 
   buildD3Graph('mapa-influencias-svg', nodes, links,
-    tipo=>INF_COLORS[tipo]||'#999',
+    tipo=>INF_COLORS[normalizeRelationFamily(tipo)]||'#999',
     d=>`${INF_LABELS[d.tipo]||d.tipo}${d.libro_ref?' · '+d.libro_ref:''}${d.evidenceCount>1?` · ${d.evidenceCount} evidencias`:''}${d.pagina?' p.'+d.pagina:''}${d.texto?'\n"'+d.texto+'"':''}`,
     {},
     d=>openInfluenciaDetalle(d.id)

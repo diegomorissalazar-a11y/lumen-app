@@ -384,17 +384,20 @@ function ensureInfluenceCanonicalRefs(inf) {
     inf.destino_titulo = evidenceBook.titulo || inf.destino_titulo;
     inf.destino_autor = evidenceBook.autor || inf.destino_autor;
     inf.destino = evidenceBook.autor || inf.destino;
-    inf.editorial = bib.editorial || '';
-    inf.anio_pub = bib.anio || '';
-    inf.ciudad = bib.ciudad || '';
-    inf.edicion = bib.edicion || '';
+    // No sobrescribir metadatos ISO explícitos ya persistidos en la relación.
+    inf.editorial = inf.editorial || bib.editorial || '';
+    inf.anio_pub = inf.anio_pub || inf.anio_edicion || bib.anio || '';
+    inf.anio_edicion = inf.anio_edicion || inf.anio_pub || bib.anio || '';
+    inf.ciudad = inf.ciudad || bib.ciudad || '';
+    inf.edicion = inf.edicion || bib.edicion || '';
+    inf.isbn = inf.isbn || bib.isbn || '';
   }
   inf._canonicalModel = 'lumen_influence_v1';
   return inf;
 }
 function normalizeMapasCanonical(input) {
   const m=input || {influencias:[],rutas:[]};
-  m.influencias=(m.influencias||[]).map(ensureInfluenceCanonicalRefs);
+  m.influencias=(m.influencias||[]).map(x=>{const inf=ensureInfluenceCanonicalRefs(x);return typeof migrateInfluenceTaxonomy==='function'?migrateInfluenceTaxonomy(inf):inf;});
   // Las rutas conservan texto por compatibilidad, pero referencian libros cuando es posible.
   m.rutas=(m.rutas||[]).map(r=>{
     if(!r) return r;
