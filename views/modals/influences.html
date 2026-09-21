@@ -248,3 +248,23 @@
     <div class="modal-body" id="referencias-body"></div>
   </div>
 </div>
+
+
+<!-- ══════ v208: REPARAR IDENTIDAD DE AUTORES ══════ -->
+<div id="modal-author-identity-v208" class="modal-overlay">
+  <div class="modal" style="max-height:88vh;">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div><div class="modal-title">Reparar identidad de autores</div><div style="font-size:10px;color:var(--ink4);margin-top:3px;">Fusiona dos IDs que representan a la misma persona. Las relaciones y evidencias se conservan.</div></div>
+      <button class="btn-icon" onclick="closeModal('modal-author-identity-v208')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Duplicados detectados</div>
+      <div id="author-duplicate-candidates-v208" style="margin-bottom:14px;"></div>
+      <div class="field"><label>ID duplicado que se reemplazará</label><select class="input" id="author-merge-from-v208"></select></div>
+      <div class="field"><label>ID canónico que se conservará</label><select class="input" id="author-merge-to-v208"></select></div>
+      <div style="font-size:10px;color:var(--ink4);line-height:1.5;margin-bottom:10px;">La operación actualiza libros y relaciones que usan el ID antiguo. Antes de fusionar se crea un respaldo local automático.</div>
+      <button class="btn btn-primary" onclick="mergeCanonicalAuthorsV208()">Fusionar identidades</button>
+    </div>
+  </div>
+</div>

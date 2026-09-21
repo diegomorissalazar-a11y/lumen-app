@@ -799,6 +799,53 @@ function exportInfluenciasGephi(){
  const blob=new Blob(['\ufeff'+lines.join('\n')],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='lumen_relaciones_gephi_v206.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);showToast('✓ CSV para Gephi exportado');
 }
 
+
+
+// ═══════════════════════════════════════════════════════════
+// v208 — REPARACIÓN MANUAL DE IDENTIDAD DE AUTORES
+// Fusiona IDs sin borrar relaciones ni evidencia.
+// ═══════════════════════════════════════════════════════════
+function authorIdentityRowsV208(){
+  const rows=[]; const seen=new Set();
+  allKnownEntityNames('aut').forEach(x=>{
+    if(!x?.id||!x?.name)return; const k=x.id+'|'+canonicalText(x.name); if(seen.has(k))return; seen.add(k);
+    rows.push({id:x.id,name:canonicalNameById('aut',x.id,x.name)||x.name,norm:canonicalText(x.name)});
+  });
+  return rows.sort((a,b)=>a.name.localeCompare(b.name,'es')||a.id.localeCompare(b.id));
+}
+function openAuthorIdentityRepairV208(){
+  const rows=authorIdentityRowsV208();
+  const byNorm=new Map(); rows.forEach(r=>{if(!byNorm.has(r.norm))byNorm.set(r.norm,[]);byNorm.get(r.norm).push(r);});
+  const dup=[...byNorm.values()].filter(g=>new Set(g.map(x=>x.id)).size>1);
+  const selA=document.getElementById('author-merge-from-v208'), selB=document.getElementById('author-merge-to-v208');
+  const opts=rows.map(r=>`<option value="${escapeHtml(r.id)}">${escapeHtml(r.name)} · ${escapeHtml(r.id)}</option>`).join('');
+  if(selA) selA.innerHTML='<option value="">— ID duplicado que se reemplazará —</option>'+opts;
+  if(selB) selB.innerHTML='<option value="">— ID canónico que se conservará —</option>'+opts;
+  const box=document.getElementById('author-duplicate-candidates-v208');
+  if(box) box.innerHTML=dup.length?dup.map(g=>`<div style="padding:9px 0;border-bottom:1px solid var(--cream2);"><strong>${escapeHtml(g[0].name)}</strong><div style="font-size:10px;color:var(--ink4);margin-top:3px;">${g.map(x=>escapeHtml(x.id)).join('<br>')}</div><button class="btn btn-secondary btn-sm" style="width:auto;margin-top:6px;" onclick="prefillAuthorMergeV208('${String(g[0].id).replace(/'/g,"\\'")}','${String(g[1].id).replace(/'/g,"\\'")}')">Reparar este duplicado</button></div>`).join(''):'<div style="font-size:12px;color:var(--ink4);">No se detectan nombres idénticos con IDs distintos. Puedes seleccionar manualmente dos identidades.</div>';
+  openModal('modal-author-identity-v208');
+}
+function prefillAuthorMergeV208(a,b){const x=document.getElementById('author-merge-from-v208'),y=document.getElementById('author-merge-to-v208');if(x)x.value=b;if(y)y.value=a;}
+function mergeCanonicalAuthorsV208(){
+  const from=document.getElementById('author-merge-from-v208')?.value||'', to=document.getElementById('author-merge-to-v208')?.value||'';
+  if(!from||!to){showToast('Selecciona los dos IDs de autor');return;} if(from===to){showToast('Los IDs deben ser distintos');return;}
+  const rows=authorIdentityRowsV208(), a=rows.find(x=>x.id===from), b=rows.find(x=>x.id===to); if(!a||!b){showToast('No se encontraron las identidades');return;}
+  if(!confirm(`Fusionar “${a.name}” (${from}) con “${b.name}” (${to})?\n\nSe conservará ${to}. No se eliminarán relaciones.`))return;
+  const backup={at:new Date().toISOString(),from,to,mapas:JSON.parse(JSON.stringify(mapas||{})),entities:loadCanonicalEntities()};
+  try{safeLocalSetItem('lumen_author_merge_backup_v208_'+Date.now(),JSON.stringify(backup),{prune:true});}catch(e){}
+  const c=loadCanonicalEntities(), bucket=c.authors||{}; let target=bucket[to]||{id:to,nombreCanonico:b.name,aliases:[]}; const source=bucket[from];
+  target.aliases=target.aliases||[]; [a.name,source?.nombreCanonico,...(source?.aliases||[])].filter(Boolean).forEach(n=>{if(canonicalText(n)!==canonicalText(target.nombreCanonico)&&!target.aliases.some(z=>canonicalText(z)===canonicalText(n)))target.aliases.push(n);});
+  bucket[to]=target; if(bucket[from])delete bucket[from]; c.authors=bucket; saveCanonicalEntities(c);
+  let changed=0;
+  (db?.entries||[]).forEach(e=>{if(e?.type==='libro'&&e.autorId===from){e.autorId=to;e._updatedAt=Date.now();changed++;}});
+  (mapas?.influencias||[]).forEach(r=>{if(r.fuente_autor_id===from){r.fuente_autor_id=to;r.fuente=target.nombreCanonico||r.fuente;changed++;}if(r.destino_autor_id===from){r.destino_autor_id=to;r.destino_autor=target.nombreCanonico||r.destino_autor;changed++;}});
+  saveDB(); saveMapas(); closeModal('modal-author-identity-v208'); renderMapaInfluencias(); if(typeof renderMapaRutas==='function')renderMapaRutas();
+  showToast(`✓ Autor fusionado · ${changed} referencia(s) reparada(s)`);
+}
+function compactInfluenceEditorV208(){
+  ['inf-editorial','inf-anio-pub','inf-ciudad','inf-edicion'].forEach(id=>{const el=document.getElementById(id);if(el?.closest('.field'))el.closest('.field').style.display='none';});
+}
+
 // ── CRUD ─────────────────────────────────────────────────
 function openModalInfluencia(editId, presetTipo) {
   rellenarInfFuenteSel();
@@ -883,6 +930,7 @@ function openModalInfluencia(editId, presetTipo) {
   }
   syncInfCanonicalBibliography();
   actualizarIsoPreview();
+  compactInfluenceEditorV208();
   openModal('modal-influencia');
 }
 
