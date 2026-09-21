@@ -2,9 +2,47 @@
 //  MAPAS — implementación completa
 // ═══════════════════════════════════
 const MAPAS_KEY = 'lumen_mapas_v1';
+function mapPayloadCount(m){return ((m&&Array.isArray(m.influencias))?m.influencias.length:0)+((m&&Array.isArray(m.rutas))?m.rutas.length:0);}
+function parseMapPayload(raw){try{const x=raw?JSON.parse(raw):null;return x&&typeof x==='object'?x:null;}catch(_){return null;}}
+function findBestMapRecoveryCandidate(){
+  const candidates=[];
+  for(let i=0;i<localStorage.length;i++){
+    const key=localStorage.key(i)||'';
+    if(key===MAPAS_KEY || /^lumen_mapas_backup_before_/.test(key) || key==='lumen_mapas_v1_backup_before_import'){
+      const raw=localStorage.getItem(key), payload=parseMapPayload(raw), count=mapPayloadCount(payload);
+      if(payload&&count>0)candidates.push({key,raw,payload,count});
+    }
+  }
+  candidates.sort((a,b)=>b.count-a.count); return candidates[0]||null;
+}
+function recoverMapasIfEmptyV207(){
+  const currentRaw=localStorage.getItem(MAPAS_KEY), current=parseMapPayload(currentRaw)||{influencias:[],rutas:[]};
+  if(mapPayloadCount(current)>0)return current;
+  const best=findBestMapRecoveryCandidate();
+  if(!best)return current;
+  try{
+    localStorage.setItem('lumen_mapas_empty_snapshot_before_v207_recovery_'+Date.now(),currentRaw||JSON.stringify(current));
+    localStorage.setItem(MAPAS_KEY,best.raw);
+    localStorage.setItem('lumen_v207_recovered_from',best.key);
+    console.warn(`[LUMEN v207] mapas recuperados desde ${best.key}: ${best.count} registros`);
+    return best.payload;
+  }catch(err){console.error('[LUMEN v207] no se pudo restaurar el respaldo de mapas',err);return current;}
+}
 function loadMapas() {
-  try { const r=localStorage.getItem(MAPAS_KEY); return normalizeMapasCanonical(r?JSON.parse(r):{influencias:[],rutas:[]}); }
-  catch { return {influencias:[],rutas:[]}; }
+  try { const payload=recoverMapasIfEmptyV207(); return normalizeMapasCanonical(payload||{influencias:[],rutas:[]}); }
+  catch (err) { console.error('[LUMEN v207] loadMapas:',err); return {influencias:[],rutas:[]}; }
+}
+function recoverMapasManualV207(){
+  const best=findBestMapRecoveryCandidate();
+  if(!best){showToast('No encontré un respaldo local de mapas con datos');return;}
+  const currentRaw=localStorage.getItem(MAPAS_KEY)||JSON.stringify({influencias:[],rutas:[]});
+  try{
+    localStorage.setItem('lumen_mapas_before_manual_v207_recovery_'+Date.now(),currentRaw);
+    localStorage.setItem(MAPAS_KEY,best.raw);
+    mapas=normalizeMapasCanonical(JSON.parse(best.raw));
+    showToast(`✓ Recuperados ${best.count} registros de mapas`);
+    if(currentMapaTab==='rutas')renderMapaRutas();else renderMapaInfluencias();
+  }catch(err){console.error(err);showToast('No se pudo restaurar el respaldo local');}
 }
 function saveMapas() {
   // v177: persistir el mapa actual sin normalizar toda la red en cada click.
