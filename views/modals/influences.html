@@ -9,10 +9,10 @@
     <div class="modal-body">
       <input type="hidden" id="inf-json-tipo">
       <p style="font-size:12px;color:var(--ink3);line-height:1.6;margin-bottom:10px;">
-        Pega una o varias relaciones de influencia en formato <strong>lumen_influencias_import_v1</strong>. Primero se cargará una vista previa y luego podrás confirmar.
+        Pega la evidencia. El libro fuente, su autor y sus datos ISO se toman de la ficha seleccionada. También siguen siendo compatibles los JSON completos anteriores.
       </p>
       <textarea id="inf-json-text" class="input" rows="15" spellcheck="false"
-        placeholder='{"schema":"lumen_influencias_import_v1","influencias":[{"tipo":"cita_directa","fuente":{"nombre":"Arthur Conan Doyle","nombre_en_texto":"Conan Doyle"},"destino":{"tipo":"libro","titulo":"Arsenio Lupin contra Herlock Sholmes","autor":"Maurice Leblanc"}}]}'
+        placeholder='{"autor_citado":"Miguel de Cervantes","obra_citada":"Don Quijote de la Mancha","pagina":"47","texto_citado":"..."}'
         style="width:100%;min-height:310px;font-family:monospace;font-size:12px;line-height:1.55;background:#fff;resize:vertical;margin-bottom:12px;"></textarea>
       <div id="inf-json-status" style="font-size:12px;color:var(--ink4);min-height:18px;margin-bottom:8px;"></div>
       <div id="inf-json-preview" style="display:none;max-height:320px;overflow:auto;border:1px solid var(--border);border-radius:6px;background:#fff;margin-bottom:12px;"></div>
@@ -31,13 +31,17 @@
     <div class="modal-handle"></div>
     <div class="modal-header">
       <div>
-        <div class="modal-title">Nueva relación de influencia</div>
-        <div style="font-size:11px;color:var(--ink4);margin-top:3px;letter-spacing:1px;text-transform:uppercase;">Carga manual o JSON por tipo</div>
+        <div class="modal-title">Nueva relación</div>
+        <div style="font-size:11px;color:var(--ink4);margin-top:3px;letter-spacing:1px;text-transform:uppercase;">Selecciona tipo, libro y carga la evidencia</div>
       </div>
       <button class="btn-icon" onclick="closeModal('modal-inf-actions')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
     <div class="modal-body">
-      <div id="inf-type-cards-panel" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;"></div>
+      <div class="field"><label>Tipo de relación</label><select class="input" id="inf-quick-type" onchange="updateInfluenceQuickSubtype()"></select></div>
+      <div class="field"><label>Forma / subtipo</label><select class="input" id="inf-quick-subtype"></select></div>
+      <div class="field"><label>Autor del libro fuente</label><select class="input" id="inf-quick-author"></select></div>
+      <div class="field"><label>Libro fuente</label><select class="input" id="inf-quick-book"></select><div style="font-size:10px;color:var(--ink4);margin-top:5px;line-height:1.45;">Puede ser leído, estar en curso o permanecer en tu biblioteca. LUMEN reutiliza su ficha bibliográfica e identidad canónica.</div></div>
+      <button class="btn btn-primary" onclick="startInfluenceQuickJson()" style="width:100%;">Cargar JSON de evidencia</button>
     </div>
   </div>
 </div>

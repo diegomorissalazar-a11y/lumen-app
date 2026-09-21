@@ -504,29 +504,38 @@ const INF_CARD_DEFS = [
 ]
 let _infJsonPreviewItems = [];
 
-function renderInfluenciasTypeCards(targetId='inf-type-cards-panel') {
-  const el = document.getElementById(targetId) || document.getElementById('inf-type-cards-panel');
-  if (!el) return;
-  el.innerHTML = INF_CARD_DEFS.map(c => `
-    <div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:12px;box-shadow:0 1px 5px rgba(26,21,16,0.05);display:flex;flex-direction:column;gap:8px;min-height:138px;">
-      <div style="display:flex;align-items:center;gap:8px;">
-        <span style="font-size:18px;">${c.icon}</span>
-        <div style="font-family:var(--font-serif);font-size:15px;font-weight:700;color:var(--ink);line-height:1.2;">${c.title}</div>
-      </div>
-      <div style="font-size:11px;color:var(--ink3);line-height:1.5;flex:1;">${c.desc}</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
-        <button onclick="closeModal('modal-inf-actions');openModalInfluencia(null,'${c.tipo}')" style="padding:7px 8px;border:1.5px solid var(--border);border-radius:4px;background:var(--cream2);font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;font-family:var(--font-sans);color:var(--ink2);">Cargar datos</button>
-        <button onclick="closeModal('modal-inf-actions');openInfJsonImport('${c.tipo}')" style="padding:7px 8px;border:1.5px solid var(--ink);border-radius:4px;background:var(--ink);font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;font-family:var(--font-sans);color:var(--cream);">Cargar JSON</button>
-      </div>
-    </div>`).join('');
+function fillInfluenceQuickLoader(){
+  const type=document.getElementById('inf-quick-type'), sub=document.getElementById('inf-quick-subtype');
+  if(type && !type.options.length) type.innerHTML=INF_CARD_DEFS.map(x=>`<option value="${x.tipo}">${x.title}</option>`).join('');
+  updateInfluenceQuickSubtype();
+  const author=document.getElementById('inf-quick-author'), book=document.getElementById('inf-quick-book');
+  if(!author||!book)return;
+  const books=(db.entries||[]).filter(e=>e&&e.type==='libro').slice().sort((a,b)=>String(a.autor||'').localeCompare(String(b.autor||''),'es')||String(a.titulo||'').localeCompare(String(b.titulo||''),'es'));
+  const authors=[...new Set(books.map(e=>e.autor).filter(Boolean))];
+  author.innerHTML='<option value="">Todos los autores</option>'+authors.map(a=>`<option value="${escapeHtml(a)}">${escapeHtml(a)}</option>`).join('');
+  author.onchange=()=>fillInfluenceQuickBooks(); fillInfluenceQuickBooks();
 }
-
-function openInfluenciasCargaPanel() {
-  renderInfluenciasTypeCards('inf-type-cards-panel');
-  openModal('modal-inf-actions');
+function updateInfluenceQuickSubtype(){
+  const type=document.getElementById('inf-quick-type'), sub=document.getElementById('inf-quick-subtype'); if(!type||!sub)return;
+  sub.innerHTML=(INF_SUBTYPES[type.value]||[]).map(([v,l])=>`<option value="${v}">${l}</option>`).join('');
 }
+function fillInfluenceQuickBooks(){
+  const author=document.getElementById('inf-quick-author'), book=document.getElementById('inf-quick-book'); if(!book)return;
+  const av=author?.value||''; const books=(db.entries||[]).filter(e=>e&&e.type==='libro'&&(!av||e.autor===av)).slice().sort((a,b)=>String(a.titulo||'').localeCompare(String(b.titulo||''),'es'));
+  book.innerHTML='<option value="">— Selecciona el libro fuente —</option>'+books.map(e=>`<option value="${escapeHtml(e.id)}">${escapeHtml(e.titulo)} · ${escapeHtml(e.autor||'')}</option>`).join('');
+}
+function openInfluenciasCargaPanel(){ fillInfluenceQuickLoader(); openModal('modal-inf-actions'); }
+function startInfluenceQuickJson(){
+  const type=document.getElementById('inf-quick-type')?.value||'referencia', subtype=document.getElementById('inf-quick-subtype')?.value||'', bookId=document.getElementById('inf-quick-book')?.value||'';
+  if(!bookId){showToast('Selecciona el libro desde el que registras la relación');return;}
+  const book=findBookCanonicalById(bookId); if(!book){showToast('No se encontró el libro seleccionado');return;}
+  ensureBookCanonicalRefs(book);
+  closeModal('modal-inf-actions'); openInfJsonImport(type,{subtype,bookId});
+}
+let _infJsonContext={subtype:'',bookId:''};
 
-function openInfJsonImport(tipo) {
+function openInfJsonImport(tipo,context={}) {
+  _infJsonContext={subtype:context.subtype||'',bookId:context.bookId||''};
   document.getElementById('inf-json-tipo').value = tipo || '';
   const title = INF_TIPO_LABELS[tipo] || 'Cargar influencias JSON';
   document.getElementById('inf-json-title').textContent = `Cargar JSON · ${String(title).replace(/^[^\wÁÉÍÓÚÑáéíóúñ]+\s*/, '')}`;
@@ -647,21 +656,22 @@ function influenceBibliographyMissing(obj) {
 }
 function mapJsonInfluenceToLumen(item, forcedTipo) {
   const tipo = normalizeImportedInfluenceType(item.tipo || forcedTipo);
-  const fuente = item.fuente?.nombre || item.fuente || item.autor_citado || item.origen || '';
-  const destinoTitulo = item.destino?.titulo || item.destino || item.libro_destino || '';
-  const destinoAutor = item.destino?.autor || item.autor_destino || '';
-  const evidenceBook=findBookCanonicalByTitle(destinoTitulo,destinoAutor);
+  const fuente = item.fuente?.nombre || item.fuente || item.autor_citado || item.autor || item.origen || '';
+  const contextBook=_infJsonContext.bookId?findBookCanonicalById(_infJsonContext.bookId):null;
+  const destinoTitulo = item.destino?.titulo || item.destino || item.libro_destino || contextBook?.titulo || '';
+  const destinoAutor = item.destino?.autor || item.autor_destino || contextBook?.autor || '';
+  const evidenceBook=contextBook || findBookCanonicalByTitle(destinoTitulo,destinoAutor);
   if(evidenceBook)ensureBookCanonicalRefs(evidenceBook);
   const destinoMeta = getInfluenceDestinoAutorMeta(destinoTitulo, destinoAutor);
   const destino = destinoMeta.destinoNodo;
   const ev=item.evidencia||{};
   let ubicTipo=item.iso?.ubicacion_tipo||item.ubicacion_tipo||'';
-  let ubicDetalle=item.iso?.ubicacion_detalle||item.ubicacion_detalle||item.ubicacion||'';
+  let ubicDetalle=item.iso?.ubicacion_detalle||item.ubicacion_detalle||item.ubicacion||item.pagina||'';
   if(!ubicDetalle && ev.pagina!=null){ubicTipo='pagina';ubicDetalle=String(ev.pagina);}
   else if(!ubicDetalle && ev.loc!=null){ubicTipo='loc';ubicDetalle=String(ev.loc);}
   else if(!ubicDetalle && ev.capitulo!=null){ubicTipo='capitulo';ubicDetalle=String(ev.capitulo);}
   if(!ubicTipo)ubicTipo='pagina';
-  const obra = item.obra_citada?.titulo || item.obra || item.fuente?.nombre_en_texto || fuente;
+  const obra = (typeof item.obra_citada==='string'?item.obra_citada:item.obra_citada?.titulo) || item.obra || item.fuente?.nombre_en_texto || fuente;
   const bib=canonicalBookBibliography(evidenceBook);
   // Los metadatos explícitos del JSON tienen prioridad en la relación importada.
   // Se aceptan las claves históricas y las canónicas sin exigir cambiar el JSON.
@@ -672,7 +682,7 @@ function mapJsonInfluenceToLumen(item, forcedTipo) {
   const importedCity=item.ciudad_publicacion||item.ciudad||item.iso?.ciudad_publicacion||item.iso?.ciudad||'';
   const obj = {
     id: 'inf_' + Date.now() + '_' + Math.random().toString(36).slice(2,7), id_import:item.id_import||'', tipo, tipo_relacion:tipo, fuente, destino, obra,
-    subtipo_relacion:item.subtipo_relacion||item.forma||item.subtipo||'', objeto_tipo:item.objeto_tipo||item.objeto||'',
+    subtipo_relacion:item.subtipo_relacion||item.forma||item.subtipo||_infJsonContext.subtype||'', objeto_tipo:item.objeto_tipo||item.objeto||'',
     ubicacion_funcional:item.ubicacion_funcional||'', fuente_evidencia:item.fuente_evidencia||item.evidencia?.fuente||'',
     editorial:importedEditorial||bib.editorial||'', anio_pub:importedYear||bib.anio||'', anio_edicion:importedYear||bib.anio||'', ciudad:importedCity||bib.ciudad||'', edicion:importedEdition||bib.edicion||'', isbn:importedIsbn||bib.isbn||'',
     fuente_autor_id:'', destino_libro_id:evidenceBook?.id||'', evidencia_libro_id:evidenceBook?.id||'', destino_autor_id:evidenceBook?.autorId||'', editorial_id:evidenceBook?.editorialId||'',
@@ -689,7 +699,7 @@ function prepareInfJsonPreview(raw) {
   let arr = [];
   if (Array.isArray(raw)) arr = raw;
   else if (Array.isArray(raw.influencias)) arr = raw.influencias;
-  else if (raw.tipo || raw.fuente || raw.destino) arr = [raw];
+  else if (raw.tipo || raw.fuente || raw.destino || raw.autor_citado || raw.autor || raw.texto || raw.texto_citado) arr = [raw];
   if (!arr.length) throw new Error('No se encontraron relaciones en el JSON.');
   _infJsonPreviewItems = arr.map(x => mapJsonInfluenceToLumen(x, forcedTipo));
   _infJsonPreviewItems.forEach(p => { p.duplicada = importedInfExists(p.obj); });
@@ -729,6 +739,14 @@ function confirmInfJsonImport() {
 }
 
 
+function repairInfluenceCanonicalIdsV206(){
+  const key='lumen_v206_relations_repaired'; if(localStorage.getItem(key)==='1')return;
+  const raw=localStorage.getItem(MAPAS_KEY); if(raw) safeLocalSetItem('lumen_mapas_backup_before_v206_repair_'+Date.now(),raw,{prune:false});
+  let changed=0;
+  (mapas.influencias||[]).forEach(inf=>{const a=inf.fuente_autor_id,b=inf.destino_autor_id,t=inf.tipo;ensureInfluenceCanonicalRefs(inf);migrateInfluenceTaxonomy(inf);if(a!==inf.fuente_autor_id||b!==inf.destino_autor_id||t!==inf.tipo)changed++;});
+  if(changed)saveMapas(); localStorage.setItem(key,'1'); console.info(`[LUMEN v206] reparación canónica: ${changed} relación(es) reconciliadas`);
+}
+
 function getInfluenceFilters(){return {family:document.getElementById('inf-filter-family')?.value||'',subtype:document.getElementById('inf-filter-subtype')?.value||'',object:document.getElementById('inf-filter-object')?.value||'',location:document.getElementById('inf-filter-location')?.value||'',evidence:document.getElementById('inf-filter-evidence')?.value||''};}
 function filteredInfluences(){const f=getInfluenceFilters();return (mapas.influencias||[]).map(migrateInfluenceTaxonomy).filter(r=>(!f.family||r.tipo_relacion===f.family)&&(!f.subtype||r.subtipo_relacion===f.subtype)&&(!f.object||r.objeto_tipo===f.object)&&(!f.location||r.ubicacion_funcional===f.location)&&(!f.evidence||r.fuente_evidencia===f.evidence));}
 function refreshInfluenceFilterOptions(){
@@ -740,7 +758,7 @@ function exportInfluenciasGephi(){
  const rows=(mapas.influencias||[]).map(migrateInfluenceTaxonomy); if(!rows.length){showToast('No hay relaciones para exportar');return;}
  const headers=['id','source','target','tipo_relacion','subtipo_relacion','objeto_tipo','ubicacion_funcional','fuente_evidencia','autor_origen','autor_destino','obra_origen','obra_destino','pagina','anio','texto_evidencia','color','clasificacion_pendiente'];
  const lines=[headers.join(',')]; rows.forEach(r=>{const fam=r.tipo_relacion||influenceFamily(r);const vals=[r.id,r.fuente_autor_id||r.fuente,r.destino_autor_id||r.destino_autor||r.destino,fam,r.subtipo_relacion,r.objeto_tipo,r.ubicacion_funcional,r.fuente_evidencia,r.fuente,r.destino_autor||r.destino,r.obra||'',r.libro_ref||r.destino_titulo||'',r.pagina||r.ubicacion_detalle||'',r.anio_edicion||r.anio_pub||r.ind_anio||r.ind_tv_anio||'',r.texto||'',INF_COLORS[fam]||'#999',r.clasificacion_pendiente?'1':'0'];lines.push(vals.map(csvCell).join(','));});
- const blob=new Blob(['\ufeff'+lines.join('\n')],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='lumen_relaciones_gephi_v205.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);showToast('✓ CSV para Gephi exportado');
+ const blob=new Blob(['\ufeff'+lines.join('\n')],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='lumen_relaciones_gephi_v206.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);showToast('✓ CSV para Gephi exportado');
 }
 
 // ── CRUD ─────────────────────────────────────────────────

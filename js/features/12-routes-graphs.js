@@ -879,6 +879,7 @@ function renderListaInfluencias() {
 }
 
 function renderMapaInfluencias() {
+  if(typeof repairInfluenceCanonicalIdsV206==='function') repairInfluenceCanonicalIdsV206();
   migrateInfluenciasToAuthorGraph();
   refreshInfluenceFilterOptions();
   const data=filteredInfluences();

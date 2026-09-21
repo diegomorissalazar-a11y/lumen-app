@@ -1,50 +1,46 @@
-# LUMEN v200
+# LUMEN v206
 
-Base: **v198 modular**.
-Fecha: 2026-08-30.
+Fecha: 21-09-2026
 
-## Cambios aplicados
-- Los libros admiten **Fecha de finalización** exacta en la ficha de edición.
-- Cuando existe `finishDate`, LUMEN deriva y guarda automáticamente **Mes lectura** y **Año lectura**, y normaliza el libro como leído.
-- La fecha exacta queda visible en la ficha de detalle como **Finalizado**.
-- Al agregar/enriquecer un libro nuevo mediante JSON bibliográfico, si falta el idioma original LUMEN pregunta si es **Español**.
-- Al agregar un libro mediante JSON y faltar la fecha de adquisición, LUMEN pregunta si la adquisición fue **hoy** y usa la fecha local de Santiago.
-- El flujo aplica tanto al cargador bibliográfico del editor como a **Inventario → + Libro con JSON** sin sobrescribir datos ya existentes.
+## Cambios
+- Reparación no destructiva de identidades canónicas en Relaciones/Influencias.
+- Respaldo local automático del mapa antes de la primera reconciliación v206.
+- Recuperación de referencias bibliográficas antiguas migradas de `cita_directa` a `referencia`.
+- Grafo autor→autor reconciliado por ID canónico para evitar nodos duplicados por variantes del nombre.
+- Nuevo flujo simplificado para cargar relaciones: tipo → subtipo → autor/libro fuente → JSON de evidencia.
+- El libro fuente puede estar leído, en curso o simplemente existir en Biblioteca.
+- Los datos ISO se reutilizan desde la ficha bibliográfica seleccionada.
+- JSON simplificado compatible con `autor_citado`, `obra_citada`, `pagina` y `texto_citado`.
+- Compatibilidad conservada con JSON completos/anteriores y taxonomía v205.
+- Exportación Gephi mantiene familias, subtipos y atributos; nombre de exportación actualizado a v206.
 
 ## Archivos modificados
-- `views/modals/add-entry.html`
-- `js/core/03-navigation-entry-search.js`
-- `js/features/05-library-notes.js`
-- `js/features/11-maps-influences.js`
-- `js/inventory-json-import.js`
 - `index.html`
 - `manifest.json`
 - `js/bootstrap.js`
+- `js/core/02-canonical-history-sync.js`
+- `js/features/11-maps-influences.js`
+- `js/features/12-routes-graphs.js`
+- `views/modals/influences.html`
 
 ## No tocado
-- Login/Auth.
-- Firebase/sincronización.
-- Mapas e Influencias.
-- Descubrir/scoring.
-- Normalizar/rendimiento.
-- Estadísticas y Control de Plan.
-- Notas.
+- Firebase/Auth y reglas de sincronización.
+- Estadísticas, hábitos, inventario, películas, historia y recomendaciones fuera de las referencias necesarias.
+- Paleta de colores de las seis familias de relaciones.
 
-## Validación
-- Todos los archivos JS pasan `node --check`.
-- 0 funciones declaradas eliminadas respecto de v198.
-- 0 variables declaradas eliminadas respecto de v198.
-- 0 IDs DOM eliminados y 0 IDs duplicados.
-- 0 referencias locales faltantes desde `index.html`/`bootstrap.js`.
+## Validación realizada
+- `node --check` sobre los JS modificados.
+- Verificación de integridad del manifest y existencia de recursos declarados.
+- Verificación estática de IDs del nuevo cargador.
+- Revisión de compatibilidad de tipos antiguos y `referencia`.
 
-## Prueba rápida
-1. Editar un libro leído y cargar una fecha exacta de finalización; comprobar que Mes/Año se actualizan y que la ficha muestra `Finalizado`.
-2. Crear un libro nuevo, cargar JSON bibliográfico sin idioma, confirmar `Español`, confirmar adquisición de hoy y guardar.
-3. Probar `Inventario → + Libro con JSON` con una ficha sin fecha de adquisición.
+## Prueba recomendada
+1. Abrir Mapas → Influencias.
+2. Confirmar que referencias antiguas vuelven a aparecer.
+3. Confirmar que autores equivalentes aparecen como un único nodo cuando ya están normalizados/canonizados.
+4. Crear una relación: elegir tipo, subtipo, autor/libro y cargar JSON simplificado.
+5. Confirmar que la vista previa hereda bibliografía de la ficha del libro.
+6. Guardar, cerrar y volver a abrir la relación.
+7. Exportar Gephi y comprobar IDs canónicos y atributos.
 
-## v200 — Confirmaciones secuenciales al agregar libros con JSON
-- Modal propio de LUMEN en vez de `confirm()` del navegador.
-- Si falta idioma original: confirma Español Sí/No.
-- Si falta fecha de adquisición: confirma si es hoy.
-- Si es hoy: exige clasificar la adquisición como Compra o Regalo.
-- Los valores ya presentes en JSON/ficha nunca son sobreescritos por estas preguntas.
+Solo la carpeta `github/` debe publicarse en GitHub Pages. La carpeta `documentation/` del ZIP es de auditoría y no necesita subirse.

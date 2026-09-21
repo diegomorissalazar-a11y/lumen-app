@@ -331,7 +331,7 @@ function formatIsoBookReference(book,ubTipo='',ubDetalle=''){
 function getReferenceEntriesFromInfluences() {
   const refs=[];
   const seen=new Set();
-  (mapas.influencias||[]).filter(r=>r&&r.tipo==='cita_directa').forEach(r=>{
+  (mapas.influencias||[]).filter(r=>r&&((typeof normalizeRelationFamily==='function'?normalizeRelationFamily(r.tipo_relacion||r.tipo):r.tipo)==='referencia')).forEach(r=>{
     const id=r.evidencia_libro_id||r.destino_libro_id||'';
     const e=(id&&findBookCanonicalById(id)) || findBookCanonicalByTitle(r.libro_ref||r.destino_titulo||r.destino||'');
     if(!e)return;
@@ -365,7 +365,13 @@ function ensureInfluenceCanonicalRefs(inf) {
   const sourceBook = inf.fuente_libro_id ? findBookCanonicalById(inf.fuente_libro_id) : findBookCanonicalByTitle(inf.obra, inf.fuente);
   const evidenceBook = inf.evidencia_libro_id ? findBookCanonicalById(inf.evidencia_libro_id) :
     (inf.destino_libro_id ? findBookCanonicalById(inf.destino_libro_id) : findBookCanonicalByTitle(inf.libro_ref || inf.destino_titulo));
-  inf.fuente_autor_id = inf.fuente_autor_id || canonicalEntityId('aut', inf.fuente);
+  // v206: la identidad del nodo se resuelve siempre desde el catálogo canónico actual.
+  // No conservar IDs históricos derivados de variantes textuales del nombre.
+  const sourceCanonical = inf.fuente ? resolveCanonicalEntity('aut', inf.fuente, false) : null;
+  if (sourceCanonical?.id) {
+    inf.fuente_autor_id = sourceCanonical.id;
+    inf.fuente = sourceCanonical.nombreCanonico || inf.fuente;
+  } else inf.fuente_autor_id = canonicalEntityId('aut', inf.fuente);
   if (sourceBook) {
     ensureBookCanonicalRefs(sourceBook);
     inf.fuente_libro_id = sourceBook.id;
@@ -392,7 +398,15 @@ function ensureInfluenceCanonicalRefs(inf) {
     inf.edicion = inf.edicion || bib.edicion || '';
     inf.isbn = inf.isbn || bib.isbn || '';
   }
-  inf._canonicalModel = 'lumen_influence_v1';
+  if (!evidenceBook && (inf.destino_autor || inf.destino)) {
+    const targetCanonical=resolveCanonicalEntity('aut', inf.destino_autor || inf.destino, false);
+    if(targetCanonical?.id){
+      inf.destino_autor_id=targetCanonical.id;
+      inf.destino_autor=targetCanonical.nombreCanonico || inf.destino_autor || inf.destino;
+      inf.destino=inf.destino_autor;
+    }
+  }
+  inf._canonicalModel = 'lumen_influence_v2';
   return inf;
 }
 function normalizeMapasCanonical(input) {
