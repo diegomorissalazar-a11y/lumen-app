@@ -731,7 +731,8 @@ function buildD3Graph(containerId, nodes, links, colorFn, tooltipEdgeFn, fuenteT
     .attr('fill','var(--ink2)').attr('font-weight','700')
     .text(d=>d.label.length>22?d.label.slice(0,20)+'…':d.label);
 
-  node.append('title').text(d=>d.metricTooltip || `${d.tooltip||d.label}\nConexiones: ${degree[d.id]||0}`);
+  // v210: el tooltip nativo se elimina cuando hay evidencia estructurada; hover y click usan el mismo popup LUMEN.
+  node.filter(d=>!d.evidencePopup).append('title').text(d=>d.metricTooltip || `${d.tooltip||d.label}\nConexiones: ${degree[d.id]||0}`);
 
   // ── Popup flotante al hacer click en nodo fuente ──────────
   const popup = g.append('g').attr('class','node-popup').style('display','none');
@@ -745,8 +746,29 @@ function buildD3Graph(containerId, nodes, links, colorFn, tooltipEdgeFn, fuenteT
 
   let activePopupNode = null;
 
-  node.on('click', function(event, d) {
+  function showNodePopupV210(d, persistent){
+    const evidence=d.evidencePopup;
+    if(!evidence){ return false; }
+    if(persistent && activePopupNode===d.id){ popup.style('display','none');activePopupNode=null;return true; }
+    if(persistent) activePopupNode=d.id;
+    popup.selectAll('.popup-item,.popup-title,.popup-divider').remove();
+    const blocks=(evidence.blocks||[]).length?evidence.blocks:[{quote:'Texto citado pendiente',iso:''}];
+    const lines=[];
+    blocks.forEach((b,i)=>{ if(b.quote) lines.push({text:b.quote==='Texto citado pendiente'?b.quote:'“'+b.quote+'”',kind:b.quote==='Texto citado pendiente'?'pending':'quote'}); if(b.iso) lines.push({text:b.iso,kind:'iso'}); if(i<blocks.length-1)lines.push({text:'',kind:'gap'}); });
+    const maxChars=54, wrapped=[];
+    lines.forEach(x=>{ if(x.kind==='gap'){wrapped.push(x);return;} const words=x.text.split(/\s+/);let line='';words.forEach(w=>{const test=(line+' '+w).trim();if(test.length>maxChars&&line){wrapped.push({text:line,kind:x.kind});line=w;}else line=test;});if(line)wrapped.push({text:line,kind:x.kind}); });
+    const PW2=360, lineH=14, totalH=Math.max(48,32+wrapped.reduce((a,x)=>a+(x.kind==='gap'?8:lineH),0)+8);
+    popupRect.attr('width',PW2).attr('height',totalH);
+    popup.append('text').attr('class','popup-title').attr('x',12).attr('y',18).attr('font-size',11).attr('font-weight',700).attr('letter-spacing',1.4).attr('fill','rgba(200,149,42,0.98)').attr('font-family','Lato, sans-serif').text(String(evidence.title||d.label).toUpperCase());
+    popup.append('line').attr('class','popup-divider').attr('x1',10).attr('x2',PW2-10).attr('y1',24).attr('y2',24).attr('stroke','rgba(200,149,42,0.35)').attr('stroke-width',0.7);
+    let y=39;wrapped.forEach(x=>{if(x.kind==='gap'){y+=8;return;}popup.append('text').attr('class','popup-item').attr('x',14).attr('y',y).attr('font-size',x.kind==='iso'?9.5:10.5).attr('fill',x.kind==='pending'?'rgba(200,149,42,0.78)':'#f2ede6').attr('font-style',x.kind==='pending'?'italic':'normal').attr('font-family','Lato, sans-serif').text(x.text);y+=lineH;});
+    const r=nodeR(d);popup.attr('transform',`translate(${d.x-PW2/2},${d.y+r+6})`).style('display',null).raise();return true;
+  }
+  node.on('mouseenter',function(event,d){ if(activePopupNode)return; showNodePopupV210(d,false); })
+      .on('mouseleave',function(event,d){ if(!activePopupNode)popup.style('display','none'); })
+      .on('click', function(event, d) {
     event.stopPropagation();
+    if(showNodePopupV210(d,true))return;
 
     // Toggle: cerrar si ya estaba abierto
     if (activePopupNode === d.id) {
@@ -769,66 +791,15 @@ function buildD3Graph(containerId, nodes, links, colorFn, tooltipEdgeFn, fuenteT
     }[tipoNodo] || '';
     const conDetalle = tipoNodo === 'charla' || tipoNodo === 'cancion' || tipoNodo === 'podcast' || tipoNodo === 'entrevista';
 
-    // Limpiar items anteriores
     popup.selectAll('.popup-item,.popup-title,.popup-divider').remove();
-
-    // Calcular altura: título(22) + separador(1) + N * (linea destino 18 + detalle si hay 14) + padding
     let totalH = 28;
-    salientes.forEach(l => {
-      const nota0 = ((l.nota||'').split(' · ')[0]);
-      totalH += conDetalle && nota0 ? 32 : 20;
-    });
-
-    popupRect.attr('height', totalH);
-
-    // Título del nodo
+    salientes.forEach(l => { const nota0=((l.nota||'').split(' · ')[0]); totalH += conDetalle&&nota0?32:20; });
+    popupRect.attr('width',PW).attr('height', totalH);
     const labelTrunc = d.label.length > 24 ? d.label.slice(0,22)+'…' : d.label;
-    popup.append('text').attr('class','popup-title')
-      .attr('x', 10).attr('y', 16)
-      .attr('font-size', 9).attr('font-weight', 700)
-      .attr('letter-spacing', 1.3)
-      .attr('fill', 'rgba(200,149,42,0.95)')
-      .attr('font-family', 'Lato, sans-serif')
-      .text(labelTrunc.toUpperCase() + (tipoLabel ? '  ·  ' + tipoLabel.toUpperCase() : ''));
-
-    // Línea separadora
-    popup.append('line').attr('class','popup-divider')
-      .attr('x1', 8).attr('x2', PW - 8).attr('y1', 22).attr('y2', 22)
-      .attr('stroke', 'rgba(200,149,42,0.3)').attr('stroke-width', 0.5);
-
-    // Items
-    let curY = 28;
-    salientes.forEach(l => {
-      const destino = typeof l.target === 'object' ? l.target.id : l.target;
-      const nota0   = (l.nota||'').split(' · ')[0];
-      const detalle = conDetalle ? nota0 : '';
-      const dTrunc  = destino.length > 28 ? destino.slice(0,26)+'…' : destino;
-
-      popup.append('text').attr('class','popup-item')
-        .attr('x', 14).attr('y', curY + 12)
-        .attr('font-size', 10.5).attr('fill', '#f2ede6')
-        .attr('font-family', 'Lato, sans-serif')
-        .text('· ' + dTrunc);
-
-      curY += 18;
-
-      if (detalle) {
-        const deTrunc = detalle.length > 32 ? detalle.slice(0,30)+'…' : detalle;
-        popup.append('text').attr('class','popup-item')
-          .attr('x', 20).attr('y', curY + 6)
-          .attr('font-size', 9).attr('fill', 'rgba(200,149,42,0.75)')
-          .attr('font-style', 'italic')
-          .attr('font-family', 'Lato, sans-serif')
-          .text(deTrunc);
-        curY += 14;
-      }
-    });
-
-    // Posicionar debajo del nodo
-    const r = nodeR(d);
-    popup.attr('transform', `translate(${d.x - PW/2},${d.y + r + 6})`);
-    popup.style('display', null);
-    popup.raise();
+    popup.append('text').attr('class','popup-title').attr('x',10).attr('y',16).attr('font-size',9).attr('font-weight',700).attr('letter-spacing',1.3).attr('fill','rgba(200,149,42,0.95)').attr('font-family','Lato, sans-serif').text(labelTrunc.toUpperCase()+(tipoLabel?'  ·  '+tipoLabel.toUpperCase():''));
+    popup.append('line').attr('class','popup-divider').attr('x1',8).attr('x2',PW-8).attr('y1',22).attr('y2',22).attr('stroke','rgba(200,149,42,0.3)').attr('stroke-width',0.5);
+    let curY=28;salientes.forEach(l=>{const destino=typeof l.target==='object'?l.target.id:l.target;const nota0=(l.nota||'').split(' · ')[0];const detalle=conDetalle?nota0:'';const dTrunc=destino.length>28?destino.slice(0,26)+'…':destino;popup.append('text').attr('class','popup-item').attr('x',14).attr('y',curY+12).attr('font-size',10.5).attr('fill','#f2ede6').attr('font-family','Lato, sans-serif').text('· '+dTrunc);curY+=18;if(detalle){const deTrunc=detalle.length>32?detalle.slice(0,30)+'…':detalle;popup.append('text').attr('class','popup-item').attr('x',20).attr('y',curY+6).attr('font-size',9).attr('fill','rgba(200,149,42,0.75)').attr('font-style','italic').attr('font-family','Lato, sans-serif').text(deTrunc);curY+=14;}});
+    const r=nodeR(d);popup.attr('transform',`translate(${d.x-PW/2},${d.y+r+6})`).style('display',null).raise();
   });
 
   // Click en fondo SVG → cerrar
@@ -952,7 +923,8 @@ function renderMapaInfluencias() {
     return {
       id,label:name,inLibrary:libAuthorIds.has(id),icon:libAuthorIds.has(id)?'✍':'◉',
       tooltip:name,sizeMetric:structuralLevel,sizeBaseline:1,
-      metricTooltip:(typeof nodeEvidenceTooltipV209==='function'?nodeEvidenceTooltipV209(id,name,data):name)
+      metricTooltip:(typeof nodeEvidenceTooltipV209==='function'?nodeEvidenceTooltipV209(id,name,data):name),
+      evidencePopup:(typeof nodeEvidenceBlocksV210==='function'?nodeEvidenceBlocksV210(id,name,data):null)
     };
   });
 

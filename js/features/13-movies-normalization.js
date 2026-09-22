@@ -760,7 +760,8 @@ function switchNormTab(tab) {
   document.getElementById('norm-sub-idiomas').style.display    = tab==='idiomas'    ? 'flex' : 'none';
   document.getElementById('norm-sub-editoriales').style.display = tab==='editoriales' ? 'flex' : 'none';
   document.getElementById('norm-sub-libros').style.display     = tab==='libros'     ? 'flex' : 'none';
-  ['duplicados','elencos','idiomas','editoriales','libros'].forEach(t => {
+  const textosPanel=document.getElementById('norm-sub-textos'); if(textosPanel) textosPanel.style.display=tab==='textos'?'flex':'none';
+  ['duplicados','elencos','idiomas','editoriales','libros','textos'].forEach(t => {
     const btn = document.getElementById('norm-tab-' + t);
     if (!btn) return;
     btn.style.color        = t === tab ? 'var(--gold)' : 'var(--ink4)';
@@ -780,6 +781,7 @@ function switchNormTab(tab) {
   if (tab === 'idiomas') initIdiomasTab();
   if (tab === 'editoriales') runPublisherNormalization();
   if (tab === 'libros') { if (typeof renderMetadataNormalizerBooks === 'function') renderMetadataNormalizerBooks(); else renderIncompleteBibliographyBooks(); }
+  if (tab === 'textos' && typeof renderMissingQuotedTextsV210==='function') renderMissingQuotedTextsV210();
 }
 
 function setElencTipo(tipo, btn) {

@@ -1123,3 +1123,40 @@ function openInfluenciaDetalle(id) {
   openModal('modal-inf-detail');
 }
 
+
+// ═══════════════════════════════════════════════════════════
+// v210 — CORPUS DE EVIDENCIAS / TEXTOS CITADOS
+// ═══════════════════════════════════════════════════════════
+function relationEvidenceBookV210(r){
+  const title=r.libro_ref||r.destino_titulo||r.obra_destino||'';
+  return r.evidencia_libro_id?findBookCanonicalById(r.evidencia_libro_id):findBookCanonicalByTitle(title,r.destino_autor||r.destino);
+}
+function relationIsoV210(r){
+  return formatIsoBookReference(relationEvidenceBookV210(r),r.ubicacion_tipo,r.ubicacion_detalle||r.pagina)||'';
+}
+function renderMissingQuotedTextsV210(){
+  const box=document.getElementById('norm-textos-lista'), count=document.getElementById('norm-textos-count'); if(!box)return;
+  const rows=(mapas.influencias||[]).filter(r=>!String(r.texto||r.texto_citado||'').trim());
+  if(count)count.textContent=`${rows.length} pendiente${rows.length===1?'':'s'}`;
+  if(!rows.length){box.innerHTML='<div style="padding:40px;text-align:center;color:var(--ink4);font-style:italic;">✓ Todas las relaciones tienen texto citado/evidencia.</div>';return;}
+  box.innerHTML=rows.map(r=>{
+    const who=canonicalNameById('aut',r.fuente_autor_id,r.fuente||'Autor'); const iso=relationIsoV210(r);
+    const where=[r.libro_ref||r.destino_titulo||'',r.ubicacion_detalle?((r.ubicacion_tipo==='pagina'?'p. ':'')+r.ubicacion_detalle):''].filter(Boolean).join(' · ');
+    return `<div style="background:#fff;border:1.5px solid var(--border);border-radius:6px;padding:12px;margin-bottom:10px;">
+      <div style="font-family:var(--font-serif);font-size:15px;font-weight:700;color:var(--ink);">${escapeHtml(who)}</div>
+      <div style="font-size:11px;color:var(--ink4);margin:3px 0 8px;">${escapeHtml(where)} · ${escapeHtml(INF_LABELS[influenceFamily(r)]||influenceFamily(r))}</div>
+      ${iso?`<div style="font-size:11px;color:var(--ink3);margin-bottom:8px;">${escapeHtml(iso)}</div>`:''}
+      <textarea id="norm-texto-${r.id}" rows="3" placeholder="Transcribe aquí el texto citado o evidencia…" style="width:100%;box-sizing:border-box;padding:9px;border:1.5px solid var(--border);border-radius:4px;font-family:var(--font-serif);font-size:13px;"></textarea>
+      <button class="btn btn-primary btn-sm" style="width:auto;margin-top:7px;" onclick="saveQuotedTextV210('${r.id}')">✓ Guardar texto citado</button>
+    </div>`;
+  }).join('');
+}
+function saveQuotedTextV210(id){
+  const r=(mapas.influencias||[]).find(x=>x.id===id), el=document.getElementById('norm-texto-'+id); if(!r||!el)return;
+  const text=String(el.value||'').trim(); if(!text){showToast('Escribe el texto citado antes de guardar');return;}
+  r.texto=text; r.texto_citado=text; r._updatedAt=Date.now(); saveMapas(); renderMissingQuotedTextsV210(); renderMapaInfluencias(); showToast('✓ Texto citado guardado');
+}
+function nodeEvidenceBlocksV210(authorId,authorName,data){
+  const rows=(data||[]).filter(r=>r.fuente_autor_id===authorId||r.destino_autor_id===authorId).slice(0,12);
+  return {title:authorName, blocks:rows.map(r=>({quote:String(r.texto||r.texto_citado||'').trim(),iso:relationIsoV210(r)})).filter(b=>b.quote||b.iso)};
+}
