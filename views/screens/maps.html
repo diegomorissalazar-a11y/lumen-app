@@ -31,7 +31,6 @@
       <button class="btn btn-secondary btn-sm" style="width:auto;" onclick="openInfluenciasCargaPanel()">+ Añadir relación</button>
       <button class="btn btn-secondary btn-sm" style="width:auto;" onclick="renderMapaInfluencias()">↻ Actualizar</button>
       <button class="btn btn-secondary btn-sm" style="width:auto;" onclick="recoverMapasManualV207()">⟲ Recuperar mapas</button>
-      <button class="btn btn-secondary btn-sm" style="width:auto;" onclick="openAuthorIdentityRepairV208()">👤 Reparar autores</button>
       <button class="btn btn-secondary btn-sm" style="width:auto;" onclick="openReferenciasInfluencias()">📚 Referencias</button>
       <select id="inf-filter-family" onchange="renderMapaInfluencias()" style="border:1px solid var(--border);padding:5px;background:#fff;"><option value="">Todas las familias</option><option value="referencia">Referencia</option><option value="colaboracion">Colaboración</option><option value="influencia_declarada">Influencia declarada</option><option value="uso_apropiacion">Uso / apropiación</option><option value="adaptacion">Adaptación</option><option value="contexto">Contexto</option></select>
       <select id="inf-filter-subtype" onchange="renderMapaInfluencias()" style="border:1px solid var(--border);padding:5px;background:#fff;"><option value="">Todos los subtipos</option></select>
@@ -195,10 +194,12 @@
     <div id="norm-sub-duplicados" style="display:flex;flex-direction:column;flex:1;overflow:hidden;">
       <div style="padding:10px 16px;display:flex;gap:8px;align-items:center;border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap;">
         <span style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--ink4);">Ámbito:</span>
-        <button class="norm-scope-btn active" id="norm-scope-peliculas" onclick="setNormScope('peliculas',this)"
-          style="padding:4px 10px;border:1.5px solid var(--ink);border-radius:3px;background:var(--ink);color:#fff;font-size:10px;font-weight:700;font-family:var(--font-sans);cursor:pointer;">🎬 Películas/Series</button>
-        <button class="norm-scope-btn" id="norm-scope-mapas" onclick="setNormScope('mapas',this)"
-          style="padding:4px 10px;border:1.5px solid var(--border);border-radius:3px;background:#fff;color:var(--ink3);font-size:10px;font-weight:700;font-family:var(--font-sans);cursor:pointer;">🔗 Influencias & Rutas</button>
+        <button class="norm-scope-btn active" id="norm-scope-autores" onclick="setNormScope('autores',this)"
+          style="padding:4px 10px;border:1.5px solid var(--ink);border-radius:3px;background:var(--ink);color:#fff;font-size:10px;font-weight:700;font-family:var(--font-sans);cursor:pointer;">✍ Autores</button>
+        <button class="norm-scope-btn" id="norm-scope-libros" onclick="setNormScope('libros',this)"
+          style="padding:4px 10px;border:1.5px solid var(--border);border-radius:3px;background:#fff;color:var(--ink3);font-size:10px;font-weight:700;font-family:var(--font-sans);cursor:pointer;">📚 Libros / obras</button>
+        <button class="norm-scope-btn" id="norm-scope-peliculas" onclick="setNormScope('peliculas',this)"
+          style="padding:4px 10px;border:1.5px solid var(--border);border-radius:3px;background:#fff;color:var(--ink3);font-size:10px;font-weight:700;font-family:var(--font-sans);cursor:pointer;">🎬 Películas / series</button>
         <span style="font-size:10px;color:var(--ink4);margin-left:4px;">Umbral:</span>
         <input type="range" id="norm-threshold" min="75" max="100" value="85" step="1"
           style="width:80px;accent-color:var(--gold);" oninput="onNormThresholdChange(this.value)">

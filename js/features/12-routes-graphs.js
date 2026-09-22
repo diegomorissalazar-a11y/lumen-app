@@ -952,7 +952,7 @@ function renderMapaInfluencias() {
     return {
       id,label:name,inLibrary:libAuthorIds.has(id),icon:libAuthorIds.has(id)?'✍':'◉',
       tooltip:name,sizeMetric:structuralLevel,sizeBaseline:1,
-      metricTooltip:`${name}\nNivel visual: ${structuralLevel}\nAutores influidos únicos: ${outUnique}\nAutores que lo influyen: ${inUnique}\nEvidencias originadas: ${evidenceOut[id]||0}\nEvidencias recibidas: ${evidenceIn[id]||0}`
+      metricTooltip:(typeof nodeEvidenceTooltipV209==='function'?nodeEvidenceTooltipV209(id,name,data):name)
     };
   });
 

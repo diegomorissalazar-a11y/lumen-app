@@ -846,10 +846,51 @@ function compactInfluenceEditorV208(){
   ['inf-editorial','inf-anio-pub','inf-ciudad','inf-edicion'].forEach(id=>{const el=document.getElementById(id);if(el?.closest('.field'))el.closest('.field').style.display='none';});
 }
 
+
+// ═══════════════════════════════════════════════════════════
+// v209 — IDENTIDAD CANÓNICA EDITABLE + NORMALIZACIÓN SEGURA
+// ═══════════════════════════════════════════════════════════
+function mergeCanonicalAuthorsDirectV209(from,to){
+  if(!from||!to||from===to){showToast('Selecciona identidades distintas');return;}
+  const rows=authorIdentityRowsV208(), a=rows.find(x=>x.id===from), b=rows.find(x=>x.id===to);
+  if(!a||!b){showToast('No se encontraron las identidades');return;}
+  if(!confirm(`Fusionar “${a.name}” con “${b.name}”?\n\nSe conservará “${b.name}”. Las relaciones, citas y evidencias no se eliminan.`))return;
+  const c=loadCanonicalEntities(), bucket=c.authors||{};
+  let target=bucket[to]||{id:to,nombreCanonico:b.name,aliases:[]}, source=bucket[from]; target.aliases=target.aliases||[];
+  [a.name,source?.nombreCanonico,...(source?.aliases||[])].filter(Boolean).forEach(n=>{if(canonicalText(n)!==canonicalText(target.nombreCanonico)&&!target.aliases.some(z=>canonicalText(z)===canonicalText(n)))target.aliases.push(n);});
+  bucket[to]=target;if(bucket[from])delete bucket[from];c.authors=bucket;saveCanonicalEntities(c);
+  let changed=0;
+  (db.entries||[]).forEach(e=>{if(e.type==='libro'&&(e.autorId===from||(e.autorIds||[]).includes(from))){if(e.autorId===from)e.autorId=to;if(Array.isArray(e.autorIds))e.autorIds=e.autorIds.map(id=>id===from?to:id);e.autor=splitCanonicalAuthors(e.autor).map(n=>canonicalText(n)===canonicalText(a.name)?target.nombreCanonico:n).join('; ');e._updatedAt=Date.now();changed++;}});
+  (mapas.influencias||[]).forEach(r=>{if(r.fuente_autor_id===from){r.fuente_autor_id=to;r.fuente=target.nombreCanonico;changed++;}if(r.destino_autor_id===from){r.destino_autor_id=to;r.destino_autor=target.nombreCanonico;r.destino=target.nombreCanonico;changed++;}});
+  (mapas.rutas||[]).forEach(r=>{if(r.fuente_autor_id===from){r.fuente_autor_id=to;r.fuente=target.nombreCanonico;changed++;}if(r.destino_autor_id===from){r.destino_autor_id=to;r.destino=target.nombreCanonico;changed++;}});
+  saveDB();saveMapas();renderMapaInfluencias();if(typeof renderMapaRutas==='function')renderMapaRutas();if(typeof runNormalizacion==='function')runNormalizacion();showToast(`✓ Autor canónico unificado · ${changed} vínculo(s) actualizados`);
+}
+function editCanonicalAuthorNameV209(id){
+  const rows=authorIdentityRowsV208(), row=rows.find(x=>x.id===id); if(!row)return;
+  const next=prompt('Nombre canónico del autor:',row.name); if(next===null)return; const name=String(next).trim(); if(!name||canonicalText(name)===canonicalText(row.name))return;
+  const c=loadCanonicalEntities(), bucket=c.authors||{}, ent=bucket[id]||{id,nombreCanonico:row.name,aliases:[]}; ent.aliases=ent.aliases||[];
+  if(row.name&&!ent.aliases.some(a=>canonicalText(a)===canonicalText(row.name)))ent.aliases.push(row.name); ent.nombreCanonico=name;bucket[id]=ent;c.authors=bucket;saveCanonicalEntities(c);
+  (db.entries||[]).forEach(e=>{if(e.type==='libro'&&(e.autorId===id||(e.autorIds||[]).includes(id))){e.autor=splitCanonicalAuthors(e.autor).map(n=>canonicalText(n)===canonicalText(row.name)?name:n).join('; ');e._updatedAt=Date.now();}});
+  (mapas.influencias||[]).forEach(r=>{if(r.fuente_autor_id===id)r.fuente=name;if(r.destino_autor_id===id){r.destino_autor=name;r.destino=name;}});
+  (mapas.rutas||[]).forEach(r=>{if(r.fuente_autor_id===id)r.fuente=name;if(r.destino_autor_id===id)r.destino=name;});
+  saveDB();saveMapas();renderMapaInfluencias();if(typeof renderMapaRutas==='function')renderMapaRutas();if(typeof runNormalizacion==='function')runNormalizacion();showToast('✓ Nombre canónico actualizado');
+}
+function rellenarInfDestinoAutorSelV209(){
+  const sel=document.getElementById('inf-destino-autor-sel');if(!sel)return;sel.innerHTML='<option value="">— Se obtiene del libro destino —</option>';
+  getAutoresBiblioteca().forEach(a=>{const o=document.createElement('option');o.value=a.id;o.textContent=a.name;o.dataset.authorName=a.name;sel.appendChild(o);});
+}
+function nodeEvidenceTooltipV209(authorId,authorName,data){
+  const rows=(data||[]).filter(r=>r.fuente_autor_id===authorId||r.destino_autor_id===authorId).slice(0,8);
+  const parts=[authorName];
+  rows.forEach(r=>{const quote=String(r.texto||'').trim();const title=r.libro_ref||r.destino_titulo||'';const book=r.evidencia_libro_id?findBookCanonicalById(r.evidencia_libro_id):findBookCanonicalByTitle(title,r.destino_autor||r.destino);const iso=formatIsoBookReference(book,r.ubicacion_tipo,r.ubicacion_detalle);if(quote)parts.push(`“${quote}”`);if(iso)parts.push(iso);});
+  return parts.join('\n\n');
+}
+
 // ── CRUD ─────────────────────────────────────────────────
 function openModalInfluencia(editId, presetTipo) {
   rellenarInfFuenteSel();
   rellenarInfDestinoSel();
+  rellenarInfDestinoAutorSelV209();
   document.getElementById('inf-edit-id').value = editId||'';
 
   if (editId) {
@@ -864,9 +905,10 @@ function openModalInfluencia(editId, presetTipo) {
       if(document.getElementById('inf-fuente-evidencia')) document.getElementById('inf-fuente-evidencia').value=inf.fuente_evidencia||'obra';
       // Fuente
       const fuenteSel = document.getElementById('inf-fuente-sel');
-      if ([...fuenteSel.options].some(o => o.value === inf.fuente)) {
-        fuenteSel.value = inf.fuente;
-        rellenarInfObraSel(inf.fuente);
+      const fuenteOpt=[...fuenteSel.options].find(o => (inf.fuente_autor_id && o.dataset.authorId===inf.fuente_autor_id) || (!inf.fuente_autor_id && o.value===inf.fuente));
+      if (fuenteOpt) {
+        fuenteSel.value = fuenteOpt.value;
+        rellenarInfObraSel(fuenteOpt.value);
       } else {
         fuenteSel.value = '__otro__';
         document.getElementById('inf-fuente-libre').style.display = 'block';
@@ -909,6 +951,8 @@ function openModalInfluencia(editId, presetTipo) {
       const destSel = document.getElementById('inf-destino-sel');
       const destinoSeleccion = inf.libro_ref || inf.destino_titulo || inf.destino || '';
       if ([...destSel.options].some(o => o.value === destinoSeleccion)) destSel.value = destinoSeleccion;
+      const destAuthorSel=document.getElementById('inf-destino-autor-sel');
+      if(destAuthorSel && inf.destino_autor_id && [...destAuthorSel.options].some(o=>o.value===inf.destino_autor_id)) destAuthorSel.value=inf.destino_autor_id;
       syncInfCanonicalBibliography();
       actualizarIsoPreview();
     }
@@ -953,10 +997,13 @@ function saveInfluencia() {
   const selectedFuenteId=getSelectedOptionData('inf-fuente-sel','authorId'); const sourceEntity=selectedFuenteId?{id:selectedFuenteId,nombreCanonico:canonicalNameById('aut',selectedFuenteId,fuente)}:resolveCanonicalEntity('aut',fuente,true); const fuenteAutorId=sourceEntity.id; const fuenteCanon=sourceEntity.nombreCanonico||fuente;
 
   const previous = editId ? (mapas.influencias.find(x=>x.id===editId)||{}) : {};
+  const destAuthorSel=document.getElementById('inf-destino-autor-sel');
+  const destAuthorOverrideId=destAuthorSel?.value||'';
+  const destAuthorOverrideName=destAuthorOverrideId ? canonicalNameById('aut',destAuthorOverrideId,destAuthorSel?.selectedOptions?.[0]?.dataset?.authorName||'') : '';
   const obj = {
     ...previous,
     id:               editId || 'inf_' + Date.now(),
-    tipo, tipo_relacion:tipo, fuente: fuenteCanon, destino, obra,
+    tipo, tipo_relacion:tipo, fuente: fuenteCanon, destino: destAuthorOverrideName || destino, obra,
     subtipo_relacion: document.getElementById('inf-subtipo')?.value||'pendiente_clasificacion',
     objeto_tipo: document.getElementById('inf-objeto-tipo')?.value||'autor',
     ubicacion_funcional: document.getElementById('inf-ubicacion-funcional')?.value||'cuerpo_texto',
@@ -969,7 +1016,7 @@ function saveInfluencia() {
     fuente_autor_id:  fuenteAutorId,
     fuente_libro_id:  sourceBook?.id || '',
     destino_libro_id: evidenceBook?.id || '',
-    destino_autor_id: evidenceBook?.autorId || canonicalEntityId('aut', destinoMeta.destinoAutor || destino),
+    destino_autor_id: destAuthorOverrideId || evidenceBook?.autorId || canonicalEntityId('aut', destinoMeta.destinoAutor || destino),
     evidencia_libro_id:evidenceBook?.id || '',
     ubicacion_tipo:   document.getElementById('inf-ubicacion-tipo')?.value||'pagina',
     ubicacion_detalle:document.getElementById('inf-ubicacion-detalle')?.value.trim()||'',
@@ -988,7 +1035,7 @@ function saveInfluencia() {
     ind_pag_url:      document.getElementById('inf-ind-pag-url')?.value.trim()||'',
     // Compatibilidad y grafo autor→autor
     destino_tipo:     'autor',
-    destino_autor:    destinoMeta.destinoAutor || destino,
+    destino_autor:    destAuthorOverrideName || destinoMeta.destinoAutor || destino,
     destino_titulo:   destinoMeta.libroRef || destinoLibro,
     libro_ref:        destinoMeta.libroRef || destinoLibro,
     pagina:           parseInt(document.getElementById('inf-ubicacion-detalle')?.value)||null,

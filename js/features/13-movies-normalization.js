@@ -405,7 +405,7 @@ function saveNormBlacklist(list, localOnly) {
 }
 
 let normBlacklist = loadNormBlacklist(); // array de strings "nombre1||nombre2"
-let normScope = 'peliculas';
+let normScope = 'autores';
 let normThreshold = 0.85;
 
 // ── Jaro-Winkler ──
@@ -464,37 +464,17 @@ function isBlacklisted(a, b) {
 
 // ── Extraer todos los nombres por scope ──
 function extractNombres(scope) {
-  const nombres = new Map(); // nombre_normalizado → nombre_original (primero visto)
-  if (scope === 'peliculas') {
+  const nombres = new Map();
+  if (scope === 'autores') {
+    allKnownEntityNames('aut').forEach(x=>{ if(x?.name){const k=normStr(x.name);if(!nombres.has(k))nombres.set(k,x.name);} });
+  } else if (scope === 'libros') {
+    (db.entries||[]).filter(e=>e.type==='libro').forEach(e=>{if(e.titulo){const k=normStr(e.titulo);if(!nombres.has(k))nombres.set(k,e.titulo);}});
+    (mapas.influencias||[]).forEach(r=>[r.obra,r.libro_ref,r.destino_titulo].filter(Boolean).forEach(n=>{const k=normStr(n);if(!nombres.has(k))nombres.set(k,n);}));
+  } else {
     const campos = ['director','fotografia','musica','guionista','protagonista'];
     db.entries.filter(e => e.type === 'pelicula' || e.type === 'serie').forEach(e => {
-      campos.forEach(c => {
-        if (!e[c]) return;
-        e[c].split(/[,&]/).map(s => s.trim()).filter(Boolean).forEach(nombre => {
-          const key = normStr(nombre);
-          if (!nombres.has(key)) nombres.set(key, nombre);
-        });
-      });
-      (Array.isArray(e.elenco) ? e.elenco : []).forEach(nombre => {
-        const key = normStr(nombre);
-        if (!nombres.has(key)) nombres.set(key, nombre);
-      });
-    });
-  } else {
-    // Influencias y Rutas — nodos de texto
-    (mapas.influencias||[]).forEach(inf => {
-      [inf.origen, inf.destino].forEach(n => {
-        if (!n) return;
-        const key = normStr(n);
-        if (!nombres.has(key)) nombres.set(key, n);
-      });
-    });
-    (mapas.rutas||[]).forEach(r => {
-      [r.origen, r.destino].forEach(n => {
-        if (!n) return;
-        const key = normStr(n);
-        if (!nombres.has(key)) nombres.set(key, n);
-      });
+      campos.forEach(c => { if (!e[c]) return; e[c].split(/[,&]/).map(x=>x.trim()).filter(Boolean).forEach(nombre=>{const k=normStr(nombre);if(!nombres.has(k))nombres.set(k,nombre);}); });
+      (Array.isArray(e.elenco)?e.elenco:[]).forEach(nombre=>{const k=normStr(nombre);if(!nombres.has(k))nombres.set(k,nombre);});
     });
   }
   return [...nombres.values()];
@@ -519,6 +499,13 @@ function detectarPares(nombres, threshold) {
 
 // ── Aplicar unificación: reemplaza nombre b → a en todos los datos ──
 function aplicarUnificacion(canonico, reemplazar) {
+  if(normScope==='libros'){
+    let changed=0;
+    (db.entries||[]).filter(e=>e.type==='libro').forEach(e=>{if(normStr(e.titulo)===normStr(reemplazar)){e.titulo=canonico;e._updatedAt=Date.now();changed++;}});
+    (mapas.influencias||[]).forEach(r=>{['obra','libro_ref','destino_titulo'].forEach(k=>{if(normStr(r[k])===normStr(reemplazar)){r[k]=canonico;changed++;}});});
+    (mapas.rutas||[]).forEach(r=>{if(normStr(r.origen)===normStr(reemplazar)){r.origen=canonico;changed++;}if(normStr(r.destino)===normStr(reemplazar)){r.destino=canonico;changed++;}});
+    saveDB();saveMapas();showToast(`✓ Obra normalizada · ${changed} referencia(s) actualizadas`);runNormalizacion();return;
+  }
   const campos = ['director','fotografia','musica','guionista','protagonista'];
 
   db.entries.filter(e => e.type === 'pelicula' || e.type === 'serie').forEach(e => {
@@ -581,49 +568,32 @@ function initNormalizacion() {
 }
 
 function runNormalizacion() {
-  const nombres = extractNombres(normScope);
-  const pares   = detectarPares(nombres, normThreshold);
-  const lista   = document.getElementById('norm-pares-lista');
-  const empty   = document.getElementById('norm-empty');
-  const countEl = document.getElementById('norm-count');
-
-  if (!pares.length) {
-    empty.style.display = 'flex';
-    empty.querySelector('div:last-child').innerHTML = 'Sin duplicados detectados<br>con el umbral actual.';
-    lista.innerHTML = '';
-    countEl.textContent = '';
-    return;
-  }
-
-  empty.style.display = 'none';
-  countEl.textContent = pares.length + ' par' + (pares.length !== 1 ? 'es' : '') + ' detectado' + (pares.length !== 1 ? 's' : '');
-
-  lista.innerHTML = pares.map((par, idx) => {
-    const pct   = Math.round(par.score * 100);
-    const zona  = pct >= 92 ? '#2d6b3a' : '#c8952a';
-    const label = pct >= 92 ? 'Alta' : 'Media';
-    return `
-      <div style="border:1.5px solid var(--border);border-radius:6px;padding:12px;margin-bottom:10px;background:#fff;">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-          <span style="background:${zona};color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;font-family:var(--font-sans);letter-spacing:0.5px;">${label} ${pct}%</span>
-          <span style="font-size:11px;color:var(--ink4);">¿Son la misma persona?</span>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
-          <button onclick="aplicarUnificacion('${par.a.replace(/'/g,"\'")}','${par.b.replace(/'/g,"\'")}'); "
-            style="padding:8px;border:2px solid var(--gold);border-radius:4px;background:var(--cream2);font-family:var(--font-serif);font-size:13px;font-weight:700;cursor:pointer;text-align:center;line-height:1.3;">
-            ✓ "${par.a}"
-          </button>
-          <button onclick="aplicarUnificacion('${par.b.replace(/'/g,"\'")}','${par.a.replace(/'/g,"\'")}');"
-            style="padding:8px;border:2px solid var(--gold);border-radius:4px;background:var(--cream2);font-family:var(--font-serif);font-size:13px;font-weight:700;cursor:pointer;text-align:center;line-height:1.3;">
-            ✓ "${par.b}"
-          </button>
-        </div>
-        <button onclick="descartarPar('${par.a.replace(/'/g,"\'")}','${par.b.replace(/'/g,"\'")}');"
-          style="width:100%;padding:6px;border:1.5px solid var(--border);border-radius:4px;background:#fff;font-family:var(--font-sans);font-size:10px;color:var(--ink4);cursor:pointer;font-weight:700;letter-spacing:0.5px;">
-          🚫 No es la misma persona
-        </button>
-      </div>`;
-  }).join('');
+  const lista=document.getElementById('norm-pares-lista'), empty=document.getElementById('norm-empty'), countEl=document.getElementById('norm-count');
+  let pares=[];
+  if(normScope==='autores'){
+    const rows=typeof authorIdentityRowsV208==='function'?authorIdentityRowsV208():[];
+    for(let i=0;i<rows.length;i++) for(let j=i+1;j<rows.length;j++){
+      if(rows[i].id===rows[j].id) continue;
+      const score=jaroWinkler(normStr(rows[i].name),normStr(rows[j].name));
+      if(score>=normThreshold && !isBlacklisted(rows[i].name,rows[j].name)) pares.push({a:rows[i].name,b:rows[j].name,score,idA:rows[i].id,idB:rows[j].id});
+    }
+    pares.sort((x,y)=>y.score-x.score);
+  } else pares=detectarPares(extractNombres(normScope),normThreshold);
+  if(!pares.length){empty.style.display='flex';empty.querySelector('div:last-child').innerHTML='Sin duplicados detectados<br>con el umbral actual.';lista.innerHTML='';countEl.textContent='';return;}
+  empty.style.display='none'; countEl.textContent=pares.length+' par'+(pares.length!==1?'es':'')+' detectado'+(pares.length!==1?'s':'');
+  const isAuthor=normScope==='autores', noun=isAuthor?'persona':(normScope==='libros'?'obra':'persona');
+  lista.innerHTML=pares.map(par=>{const pct=Math.round(par.score*100),zona=pct>=92?'#2d6b3a':'#c8952a',label=pct>=92?'Alta':'Media';
+    const a=String(par.a).replace(/'/g,"\'"),b=String(par.b).replace(/'/g,"\'");
+    const mergeA=isAuthor?`mergeCanonicalAuthorsDirectV209('${par.idB}','${par.idA}')`:`aplicarUnificacion('${a}','${b}')`;
+    const mergeB=isAuthor?`mergeCanonicalAuthorsDirectV209('${par.idA}','${par.idB}')`:`aplicarUnificacion('${b}','${a}')`;
+    return `<div style="border:1.5px solid var(--border);border-radius:6px;padding:12px;margin-bottom:10px;background:#fff;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;"><span style="background:${zona};color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;">${label} ${pct}%</span><span style="font-size:11px;color:var(--ink4);">¿Es la misma ${noun}?</span></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+        <button onclick="${mergeA}" style="padding:8px;border:2px solid var(--gold);border-radius:4px;background:var(--cream2);font-family:var(--font-serif);font-size:13px;font-weight:700;cursor:pointer;">✓ ${escapeHtml(par.a)}</button>
+        <button onclick="${mergeB}" style="padding:8px;border:2px solid var(--gold);border-radius:4px;background:var(--cream2);font-family:var(--font-serif);font-size:13px;font-weight:700;cursor:pointer;">✓ ${escapeHtml(par.b)}</button>
+      </div>
+      ${isAuthor?`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;"><button class="btn btn-secondary btn-sm" onclick="editCanonicalAuthorNameV209('${par.idA}')">✏ Editar nombre</button><button class="btn btn-secondary btn-sm" onclick="editCanonicalAuthorNameV209('${par.idB}')">✏ Editar nombre</button></div>`:''}
+      <button onclick="descartarPar('${a}','${b}')" style="width:100%;padding:6px;border:1.5px solid var(--border);border-radius:4px;background:#fff;font-size:10px;color:var(--ink4);cursor:pointer;font-weight:700;">🚫 No es la misma ${noun}</button></div>`;}).join('');
 }
 
 function descartarPar(a, b) {
