@@ -650,30 +650,32 @@ function calcPagsByDay(readDates) {
   return map;
 }
 
-// Calcula ritmo reciente en páginas/día usando los últimos N registros con pag
-// Retorna {ritmo, dias, paginasLeidas} o null si no hay suficientes datos
+// Calcula ritmo reciente SOLO sobre días con avance real del libro en curso.
+// Los días calendario sin lectura no entran en el denominador.
+// Retorna {ritmo, dias, paginasLeidas, registros} o null si no hay suficientes datos.
 function calcRitmoReciente(readDates, nDias) {
   nDias = nDias || 7;
   const norm = normalizeReadDates(readDates).filter(r => r.pag !== null);
   if (norm.length < 2) return null;
   norm.sort((a,b) => a.date.localeCompare(b.date));
-  // Tomar los últimos N+1 registros para calcular N diferencias
-  const recent = norm.slice(-Math.min(nDias + 1, norm.length));
-  let totalPags = 0, totalDias = 0;
-  for (let i = 1; i < recent.length; i++) {
-    const diff = Math.max(0, recent[i].pag - recent[i-1].pag);
-    // Días calendario entre los dos registros
-    const d1 = new Date(recent[i-1].date), d2 = new Date(recent[i].date);
-    const dias = Math.max(1, Math.round((d2 - d1) / 86400000));
-    totalPags += diff;
-    totalDias += dias;
+
+  const avances = [];
+  for (let i = 1; i < norm.length; i++) {
+    const diff = Math.max(0, Number(norm[i].pag || 0) - Number(norm[i-1].pag || 0));
+    if (diff > 0) avances.push({ date: norm[i].date, pags: diff });
   }
-  if (totalDias === 0) return null;
+  if (!avances.length) return null;
+
+  // Últimos N días efectivamente leídos, no últimos N días calendario.
+  const recent = avances.slice(-Math.min(nDias, avances.length));
+  const totalPags = recent.reduce((sum, x) => sum + x.pags, 0);
+  const diasLeidos = recent.length;
+  if (!diasLeidos || totalPags <= 0) return null;
   return {
-    ritmo: totalPags / totalDias,
-    dias: totalDias,
+    ritmo: totalPags / diasLeidos,
+    dias: diasLeidos,
     paginasLeidas: totalPags,
-    registros: recent.length - 1
+    registros: diasLeidos
   };
 }
 

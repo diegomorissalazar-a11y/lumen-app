@@ -39,7 +39,7 @@
     <div class="modal-body">
       <div class="field"><label>Tipo de relación</label><select class="input" id="inf-quick-type" onchange="updateInfluenceQuickSubtype()"></select></div>
       <div class="field"><label>Forma / subtipo</label><select class="input" id="inf-quick-subtype"></select></div>
-      <div class="field"><label>Autor del libro fuente</label><select class="input" id="inf-quick-author"></select></div>
+      <div class="field"><label>Autor del libro fuente</label><input class="input" id="inf-quick-author" list="inf-quick-author-list" autocomplete="off" placeholder="Escribe para buscar autor…" oninput="fillInfluenceQuickBooks()"><datalist id="inf-quick-author-list"></datalist><div style="font-size:10px;color:var(--ink4);margin-top:5px;line-height:1.45;">Escribe parte del nombre y selecciona el autor canónico sugerido.</div></div>
       <div class="field"><label>Libro fuente</label><select class="input" id="inf-quick-book"></select><div style="font-size:10px;color:var(--ink4);margin-top:5px;line-height:1.45;">Puede ser leído, estar en curso o permanecer en tu biblioteca. LUMEN reutiliza su ficha bibliográfica e identidad canónica.</div></div>
       <button class="btn btn-primary" onclick="startInfluenceQuickJson()" style="width:100%;">Cargar JSON de evidencia</button>
     </div>

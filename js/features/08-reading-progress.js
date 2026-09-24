@@ -650,7 +650,7 @@ function openProgressModal(id) {
   const pagsRestantes = e.paginas ? e.paginas - pagsLeidas : null;
   let ritmoHTML = '';
   if (ritmoInfo && ritmoInfo.ritmo > 0) {
-    const nLabel = ritmoInfo.registros >= 7 ? 'últimos 7 registros' : `últimos ${ritmoInfo.registros} registros`;
+    const nLabel = ritmoInfo.registros >= 7 ? 'últimos 7 días leídos' : `últimos ${ritmoInfo.registros} días leídos`;
     const diasRest = pagsRestantes > 0 ? Math.ceil(pagsRestantes / ritmoInfo.ritmo) : null;
     const fechaFin = diasRest ? (() => {
       const f = new Date(); f.setDate(f.getDate() + diasRest);
@@ -661,7 +661,7 @@ function openProgressModal(id) {
         <span>📖 Ritmo reciente</span>
         <b style="color:var(--ink);font-size:14px;">${ritmoInfo.ritmo.toFixed(1)} págs/día</b>
       </div>
-      <div style="font-size:11px;color:var(--ink4);">${nLabel} · ${ritmoInfo.paginasLeidas} págs en ${ritmoInfo.dias} días</div>
+      <div style="font-size:11px;color:var(--ink4);">${nLabel} · ${ritmoInfo.paginasLeidas} págs en ${ritmoInfo.dias} días con lectura</div>
       ${diasRest ? `<div style="margin-top:6px;padding-top:6px;border-top:1px solid var(--border);display:flex;justify-content:space-between;">
         <span>📅 Estimación final</span>
         <b style="color:var(--gold);">~${diasRest} días · ${fechaFin}</b>

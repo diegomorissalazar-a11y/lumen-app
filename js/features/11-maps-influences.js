@@ -546,12 +546,13 @@ function fillInfluenceQuickLoader(){
   const type=document.getElementById('inf-quick-type'), sub=document.getElementById('inf-quick-subtype');
   if(type && !type.options.length) type.innerHTML=INF_CARD_DEFS.map(x=>`<option value="${x.tipo}">${x.title}</option>`).join('');
   updateInfluenceQuickSubtype();
-  const author=document.getElementById('inf-quick-author'), book=document.getElementById('inf-quick-book');
-  if(!author||!book)return;
+  const author=document.getElementById('inf-quick-author'), authorList=document.getElementById('inf-quick-author-list'), book=document.getElementById('inf-quick-book');
+  if(!author||!authorList||!book)return;
   const books=(db.entries||[]).filter(e=>e&&e.type==='libro').slice().sort((a,b)=>String(a.autor||'').localeCompare(String(b.autor||''),'es')||String(a.titulo||'').localeCompare(String(b.titulo||''),'es'));
-  const authors=[...new Set(books.map(e=>e.autor).filter(Boolean))];
-  author.innerHTML='<option value="">Todos los autores</option>'+authors.map(a=>`<option value="${escapeHtml(a)}">${escapeHtml(a)}</option>`).join('');
-  author.onchange=()=>fillInfluenceQuickBooks(); fillInfluenceQuickBooks();
+  const authors=[...new Set(books.map(e=>String(e.autor||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'));
+  authorList.innerHTML=authors.map(a=>`<option value="${escapeHtml(a)}"></option>`).join('');
+  if(author.value && !authors.includes(author.value)) author.value='';
+  fillInfluenceQuickBooks();
 }
 function updateInfluenceQuickSubtype(){
   const type=document.getElementById('inf-quick-type'), sub=document.getElementById('inf-quick-subtype'); if(!type||!sub)return;
@@ -559,7 +560,11 @@ function updateInfluenceQuickSubtype(){
 }
 function fillInfluenceQuickBooks(){
   const author=document.getElementById('inf-quick-author'), book=document.getElementById('inf-quick-book'); if(!book)return;
-  const av=author?.value||''; const books=(db.entries||[]).filter(e=>e&&e.type==='libro'&&(!av||e.autor===av)).slice().sort((a,b)=>String(a.titulo||'').localeCompare(String(b.titulo||''),'es'));
+  const av=String(author?.value||'').trim();
+  const normText=v=>String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+  const q=normText(av);
+  const exact=(db.entries||[]).some(e=>e&&e.type==='libro'&&normText(e.autor)===q);
+  const books=(db.entries||[]).filter(e=>e&&e.type==='libro'&&(!q||(exact?normText(e.autor)===q:normText(e.autor).includes(q)))).slice().sort((a,b)=>String(a.titulo||'').localeCompare(String(b.titulo||''),'es'));
   book.innerHTML='<option value="">— Selecciona el libro fuente —</option>'+books.map(e=>`<option value="${escapeHtml(e.id)}">${escapeHtml(e.titulo)} · ${escapeHtml(e.autor||'')}</option>`).join('');
 }
 function openInfluenciasCargaPanel(){ fillInfluenceQuickLoader(); openModal('modal-inf-actions'); }

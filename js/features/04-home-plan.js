@@ -732,7 +732,7 @@ function renderHome() {
         const fechaFin = new Date();
         fechaFin.setDate(fechaFin.getDate() + diasRestantes);
         const fechaStr = fechaFin.toLocaleDateString('es', {day:'numeric', month:'short'});
-        const nLabel = ritmoInfo.registros >= 7 ? '7d' : `${ritmoInfo.registros}d`;
+        const nLabel = ritmoInfo.registros >= 7 ? '7 días leídos' : `${ritmoInfo.registros} días leídos`;
         estimacionHTML = `<div style="font-size:10px;color:var(--ink4);margin-top:3px;line-height:1.4;">
           📅 ~${diasRestantes} días · ${fechaStr}
           <span style="color:var(--ink4);opacity:0.7;">(${ritmoInfo.ritmo.toFixed(0)} p/d · ${nLabel})</span>
