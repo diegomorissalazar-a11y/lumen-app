@@ -310,6 +310,23 @@ function fillMainEditorialList() {
 }
 
 // ── Datalists para modal lectura en curso ──────────────
+function readingEsc(v){ return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function renderReadingInventoryMatches(query){
+  const host=document.getElementById('reading-inventory-matches'); if(!host)return;
+  const q=readingNorm(query);
+  if(!q){host.innerHTML='';return;}
+  const books=readingInventoryCandidates().filter(e=>readingNorm(e.titulo).includes(q)||readingNorm(e.autor).includes(q)).slice(0,30);
+  host.innerHTML=books.length?books.map(e=>`<button type="button" class="btn btn-secondary btn-sm" style="display:block;width:100%;text-align:left;margin:4px 0;white-space:normal" onclick="selectReadingInventoryBook('${String(e.id).replace(/'/g,"\'")}')"><b>${readingEsc(e.titulo||'Sin título')}</b><br><span style="font-size:10px">${readingEsc(e.autor||'Autor sin registrar')}</span></button>`).join(''):'<div style="font-size:11px;color:var(--ink4);padding:5px 0">Sin coincidencias en Inventario.</div>';
+}
+function selectReadingInventoryBook(id){
+  const e=readingInventoryCandidates().find(x=>String(x.id)===String(id)); if(!e)return;
+  readingFillFromEntry(e);
+  const q=document.getElementById('reading-inventory-search'); if(q)q.value=`${e.titulo||''}${e.autor?' — '+e.autor:''}`;
+  const host=document.getElementById('reading-inventory-matches'); if(host)host.innerHTML='';
+  if(Number(e.paginas)>0) selectReadingMode('pag',document.querySelector('.reading-mode-btn[data-mode="pag"]'));
+  showToast('✓ Ficha del inventario seleccionada');
+}
+
 function readingInventoryCandidates() {
   return (db.entries || []).filter(e => e && e.type === 'libro' && (e.enInventario || (typeof bookHasInventoryRecord === 'function' && bookHasInventoryRecord(e.id))));
 }
@@ -397,6 +414,8 @@ function fillReadingIdiomaList() {
 }
 
 function openReadingModal() {
+  const invSearch=document.getElementById('reading-inventory-search'); if(invSearch) invSearch.value='';
+  const invMatches=document.getElementById('reading-inventory-matches'); if(invMatches) invMatches.innerHTML='';
   let hid=document.getElementById('reading-existing-id'); if(!hid){hid=document.createElement('input');hid.type='hidden';hid.id='reading-existing-id';document.getElementById('modal-add-reading')?.appendChild(hid);} hid.value='';
   // Limpiar todos los campos antes de abrir
   ['reading-titulo','reading-autor','reading-editorial',
@@ -432,6 +451,15 @@ function saveReadingEntry() {
   if (!titulo) { showToast('Ingresa el título'); return; }
 
   const paginas = parseInt(val('reading-paginas')) || 0;
+  const selectedInventoryId=document.getElementById('reading-existing-id')?.value||'';
+  const selectedInventory=(db.entries||[]).find(e=>e.id===selectedInventoryId && e.type==='libro');
+  if(selectedInventory && !(paginas>0) && readingMode==='pag'){
+    openReadingPagesRequiredModal(selectedInventory.id,()=>{
+      const pages=Number(selectedInventory.paginas)||0; const el=document.getElementById('reading-paginas'); if(el)el.value=pages;
+      saveReadingEntry();
+    });
+    return;
+  }
   const progPct = parseInt(val('reading-prog-pct')) || 0;
   const progPag = parseInt(val('reading-prog-pag')) || 0;
   const now = Date.now();
