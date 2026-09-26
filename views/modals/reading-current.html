@@ -7,11 +7,11 @@
       <button class="btn-icon" onclick="closeModal('modal-add-reading')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
     <div class="modal-body">
-      <div class="field"><label>Título</label><input class="input" type="text" id="reading-titulo" placeholder="Título del libro"></div>
+      <div class="field"><label>Título</label><input class="input" type="text" id="reading-titulo" list="reading-titulo-list" placeholder="Escribe para buscar en tu inventario..." oninput="fillReadingTitleList();readingTryAutofillFromInventory('title')"><datalist id="reading-titulo-list"></datalist></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
         <div class="field">
           <label>Autor</label>
-          <input class="input" type="text" id="reading-autor" list="reading-autor-list" placeholder="Autor..." oninput="fillReadingAutorList()">
+          <input class="input" type="text" id="reading-autor" list="reading-autor-list" placeholder="Escribe para buscar autor..." oninput="fillReadingAutorList();fillReadingTitleList();readingTryAutofillFromInventory('author')">
           <datalist id="reading-autor-list"></datalist>
         </div>
         <div class="field">

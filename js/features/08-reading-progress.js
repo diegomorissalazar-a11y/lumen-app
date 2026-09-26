@@ -310,6 +310,57 @@ function fillMainEditorialList() {
 }
 
 // ── Datalists para modal lectura en curso ──────────────
+function readingInventoryCandidates() {
+  return (db.entries || []).filter(e => e && e.type === 'libro' && (e.enInventario || (typeof bookHasInventoryRecord === 'function' && bookHasInventoryRecord(e.id))));
+}
+function readingNorm(v){ return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim().replace(/\s+/g,' '); }
+function fillReadingTitleList() {
+  const q=readingNorm(document.getElementById('reading-titulo')?.value||'');
+  const author=readingNorm(document.getElementById('reading-autor')?.value||'');
+  const books=readingInventoryCandidates().filter(e=>(!author||readingNorm(e.autor)===author)&&(!q||readingNorm(e.titulo).includes(q))).slice(0,20);
+  const dl=document.getElementById('reading-titulo-list');
+  if(dl) dl.innerHTML=books.map(e=>`<option value="${String(e.titulo||'').replace(/"/g,'&quot;')}">${e.autor||''}</option>`).join('');
+}
+function readingFillFromEntry(e){
+  if(!e) return;
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v??'';};
+  set('reading-titulo',e.titulo); set('reading-autor',e.autor); set('reading-editorial',e.editorial);
+  set('reading-paginas',e.paginas||''); set('reading-anio-pub',e.anio_pub||''); set('reading-edicion',e.edicion||'');
+  set('reading-ciudad-pub',e.ciudad_publicacion||e.ciudad||''); set('reading-traductor',e.traductor||''); set('reading-idioma',e.idioma||'');
+  set('reading-cover',e.cover||''); set('reading-origen-adq',e.origen_adquisicion||''); set('reading-fecha-adq',e.fecha_adquisicion||'');
+  const hidden=document.getElementById('reading-existing-id'); if(hidden) hidden.value=e.id;
+  if(e.cover && typeof previewReadingCover==='function') previewReadingCover(e.cover);
+  fillReadingAutorList(); fillReadingTitleList(); fillReadingEditorialList(); fillReadingIdiomaList();
+}
+function readingTryAutofillFromInventory(source){
+  const title=readingNorm(document.getElementById('reading-titulo')?.value||'');
+  const author=readingNorm(document.getElementById('reading-autor')?.value||'');
+  let match=null;
+  if(source==='title' && title) match=readingInventoryCandidates().find(e=>readingNorm(e.titulo)===title && (!author||readingNorm(e.autor)===author));
+  if(source==='author' && author && title) match=readingInventoryCandidates().find(e=>readingNorm(e.autor)===author && readingNorm(e.titulo)===title);
+  if(match) readingFillFromEntry(match);
+}
+function startReadingFromInventoryEntry(id){
+  const e=(db.entries||[]).find(x=>x.id===id&&x.type==='libro'); if(!e)return;
+  const launch=()=>{ openReadingModal(); setTimeout(()=>{readingFillFromEntry(e); if(e.paginas>0){selectReadingMode('pag',document.querySelector('.reading-mode-btn[data-mode="pag"]'));} },30); };
+  const detail=document.getElementById('modal-detail'); if(detail?.classList.contains('open')) closeModal('modal-detail');
+  if(!(Number(e.paginas)>0)){
+    openReadingPagesRequiredModal(e.id,launch); return;
+  }
+  setTimeout(launch,80);
+}
+function openReadingPagesRequiredModal(id,after){
+  const e=(db.entries||[]).find(x=>x.id===id); if(!e)return;
+  let ov=document.getElementById('modal-reading-pages-required');
+  if(!ov){
+    ov=document.createElement('div'); ov.id='modal-reading-pages-required'; ov.className='modal-overlay';
+    ov.innerHTML=`<div class="modal"><div class="modal-handle"></div><div class="modal-header"><div class="modal-title">Indica las páginas totales</div><button class="btn-icon" onclick="closeModal('modal-reading-pages-required')">×</button></div><div class="modal-body"><div style="font-family:var(--font-serif);font-size:18px;margin-bottom:14px" id="reading-pages-book"></div><div class="field"><label>Páginas totales</label><input class="input" type="number" min="1" id="reading-pages-required-value" inputmode="numeric"></div><button class="btn btn-primary" id="reading-pages-required-save">Guardar y empezar a leer</button></div></div>`;
+    document.body.appendChild(ov);
+  }
+  document.getElementById('reading-pages-book').textContent=e.titulo||'Libro'; document.getElementById('reading-pages-required-value').value='';
+  document.getElementById('reading-pages-required-save').onclick=()=>{const n=parseInt(document.getElementById('reading-pages-required-value').value);if(!(n>0)){showToast('Indica las páginas totales');return;}e.paginas=n;e._updatedAt=Date.now();saveDB();closeModal('modal-reading-pages-required');after();};
+  openModal('modal-reading-pages-required');
+}
 function fillReadingAutorList() {
   const q = (document.getElementById('reading-autor')?.value || '').toLowerCase();
   const autores = [...new Set(
@@ -346,6 +397,7 @@ function fillReadingIdiomaList() {
 }
 
 function openReadingModal() {
+  let hid=document.getElementById('reading-existing-id'); if(!hid){hid=document.createElement('input');hid.type='hidden';hid.id='reading-existing-id';document.getElementById('modal-add-reading')?.appendChild(hid);} hid.value='';
   // Limpiar todos los campos antes de abrir
   ['reading-titulo','reading-autor','reading-editorial',
    'reading-paginas','reading-anio-pub','reading-edicion','reading-ciudad-pub','reading-traductor','reading-idioma','reading-cover','reading-origen-adq','reading-fecha-adq']
@@ -353,6 +405,7 @@ function openReadingModal() {
   document.getElementById('reading-cover-preview').innerHTML = '';
   // Pre-poblar datalists con datos de la biblioteca
   fillReadingAutorList();
+  fillReadingTitleList();
   fillReadingEditorialList();
   fillReadingIdiomaList();
   document.getElementById('reading-prog-pct').value = 0;
@@ -386,7 +439,8 @@ function saveReadingEntry() {
   const autor = val('reading-autor').trim();
 
   // Si el libro ya existe como pendiente/leyendo/inventario, reutilizar el mismo registro.
-  let entry = (db.entries||[]).find(e => e && e.type==='libro' && norm(e.titulo)===norm(titulo) && (!autor || !e.autor || norm(e.autor)===norm(autor)) && e.estado!=='leido');
+  const existingId=document.getElementById('reading-existing-id')?.value||'';
+  let entry = existingId ? (db.entries||[]).find(e=>e.id===existingId&&e.type==='libro') : (db.entries||[]).find(e => e && e.type==='libro' && norm(e.titulo)===norm(titulo) && (!autor || !e.autor || norm(e.autor)===norm(autor)) && e.estado!=='leido');
   const created = !entry;
   const before = entry ? JSON.parse(JSON.stringify(entry)) : null;
 

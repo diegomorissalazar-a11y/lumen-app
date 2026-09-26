@@ -571,6 +571,7 @@ function showDetail(id) {
   }
   if (e.notas) html += `<div style="margin-top:14px;padding:12px;background:var(--cream2);border-radius:4px;font-family:var(--font-serif);font-style:italic;font-size:14px;color:var(--ink2);line-height:1.5;">${e.notas.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>`;
   html += `<div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap;">
+    ${e.type==='libro' && e.estado!=='leyendo' && (e.enInventario || (typeof bookHasInventoryRecord==='function' && bookHasInventoryRecord(e.id))) ? `<button class="btn btn-primary btn-sm" onclick="startReadingFromInventoryEntry('${e.id}')">📖 Empezar a leer</button>` : ''}
     <button class="btn btn-secondary btn-sm" onclick="editEntry('${e.id}')">✏ Editar</button>
     ${e.type === 'pelicula' ? `<button class="btn btn-secondary btn-sm" onclick="wikiCompletarIndividual('${e.id}')" style="background:var(--cream2);">🌐 Wikipedia</button>` : ''}
     <button class="btn btn-sm" style="background:var(--red);color:var(--cream);width:auto;" onclick="deleteEntry('${e.id}')">🗑 Eliminar</button>
