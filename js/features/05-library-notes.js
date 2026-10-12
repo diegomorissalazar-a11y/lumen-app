@@ -158,13 +158,17 @@ function renderLibrary() {
     if (libFilter === 'serie') return e.type === 'serie';
     if (libFilter === 'pelicula') return e.type === 'pelicula';
     if (libFilter === 'disco') return e.type === 'disco';
-    if (libFilter === 'libro') return e.type === 'libro'; // includes leyendo
+    if (libFilter === 'libro') return e.type === 'libro' && e.estado === 'leido';
     return e.type === libFilter;
   }).filter(e => !(libFilter === 'libro' && libraryFilterCount()) || libraryBookPassesTagFilters(e))
     .filter(e => !q || e.titulo.toLowerCase().includes(q) || (e.autor||'').toLowerCase().includes(q) || (e.director||'').toLowerCase().includes(q) || (e.artista||'').toLowerCase().includes(q) || (e.productor||'').toLowerCase().includes(q) || (e.discografica||'').toLowerCase().includes(q));
 
-  // Sort: leyendo first, then by date desc, then id desc
+  // Libros: fecha de término descendente; otros medios mantienen orden histórico.
   items = items.sort((a, b) => {
+    if (libFilter === 'libro') {
+      const finish = e => String(e.fechaFin||e.fecha_fin||e.fechaTermino||e.fecha_termino||e.fechaLecturaFin||'') || `${e.anio||0}-${String(MESES.indexOf(e.mes)+1).padStart(2,'0')}`;
+      return finish(b).localeCompare(finish(a)) || String(b.id).localeCompare(String(a.id));
+    }
     if (a.estado === 'leyendo' && b.estado !== 'leyendo') return -1;
     if (b.estado === 'leyendo' && a.estado !== 'leyendo') return 1;
     const mi = MESES.indexOf(a.mes), mj = MESES.indexOf(b.mes);

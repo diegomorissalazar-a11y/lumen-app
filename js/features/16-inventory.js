@@ -66,6 +66,10 @@ function inventoryAuthorLabel(book){
 function inventorySortComparator(a,b){
   const opts={sensitivity:'base',numeric:true};
   const titleA=String(a?.titulo||''), titleB=String(b?.titulo||'');
+  if(inventorySortMode==='added'||inventorySortMode==='acquired'){
+    const date = e => inventorySortMode==='acquired' ? (e?.fecha_adquisicion||'') : String(e?._createdAt||e?.createdAt||e?.fecha_registro||e?._updatedAt||'');
+    return date(b).localeCompare(date(a)) || titleA.localeCompare(titleB,'es',opts);
+  }
   if(inventorySortMode==='author'){
     const authorA=String(a?.autorCanonico||inventoryAuthorLabel(a)||a?.autor||'');
     const authorB=String(b?.autorCanonico||inventoryAuthorLabel(b)||b?.autor||'');
@@ -75,7 +79,7 @@ function inventorySortComparator(a,b){
   return titleA.localeCompare(titleB,'es',opts) || String(a?.id||a?.inventoryId||'').localeCompare(String(b?.id||b?.inventoryId||''),'es',opts);
 }
 function setInventorySortMode(mode){
-  inventorySortMode = mode === 'author' ? 'author' : 'title';
+  inventorySortMode = ['author','added','acquired'].includes(mode) ? mode : 'title';
   try { sessionStorage.setItem('lumen_inventory_sort_mode',inventorySortMode); } catch(e){}
   renderInventory();
 }
@@ -130,6 +134,8 @@ function renderInventory(){
       <select class="input" onchange="setInventorySortMode(this.value)">
         <option value="title"${inventorySortMode==='title'?' selected':''}>Título A–Z</option>
         <option value="author"${inventorySortMode==='author'?' selected':''}>Autor A–Z</option>
+        <option value="added"${inventorySortMode==='added'?' selected':''}>Últimos añadidos</option>
+        <option value="acquired"${inventorySortMode==='acquired'?' selected':''}>Adquiridos recientemente</option>
       </select>
     </label>
     <span class="inventory-count">${visible} de ${total}</span>
@@ -222,6 +228,9 @@ function openInventoryData(){
   <div class="inventory-stat-section"><div class="chart-section-title" style="margin-bottom:6px;">Autores del inventario</div>${inventoryStatRows(inventoryTopRows(books,e=>e.autor))}</div>
   <div class="inventory-stat-section"><div class="chart-section-title" style="margin-bottom:6px;">Editoriales del inventario</div>${inventoryStatRows(inventoryTopRows(books,e=>e.editorial))}</div>
   <div class="inventory-stat-section"><div class="chart-section-title" style="margin-bottom:6px;">Géneros del inventario</div>${inventoryStatRows(inventoryTopRows(books,e=>e.generos||[]))}</div>
+  <div class="inventory-stat-section"><div class="chart-section-title">Adquisiciones por año</div>${inventoryStatRows(inventoryTopRows(books,e=>String(e.fecha_adquisicion||'').match(/^\d{4}/)?.[0]||'',100))}</div>
+  <div class="inventory-stat-section"><div class="chart-section-title">Adquisiciones por mes (año-mes)</div>${inventoryStatRows(inventoryTopRows(books,e=>String(e.fecha_adquisicion||'').match(/^\d{4}-\d{2}/)?.[0]||'',100))}</div>
+  <div class="inventory-stat-section"><div class="chart-section-title">Datos curiosos del inventario</div>${inventoryInventoryCuriosities(books,total,read)}</div>
   <div style="font-size:11px;color:var(--ink4);line-height:1.5;margin-top:8px;">Los ejemplares multiobra se consideran leídos en Inventario cuando todas sus obras vinculadas están leídas. Esto no crea un libro leído adicional en las estadísticas generales.</div>`;
   openModal('modal-inventory-data');
 }
@@ -241,3 +250,13 @@ function inventoryCol(row,...names){for(const name of names){const key=Object.ke
 function handleInventoryCSV(event){const file=event.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=ev=>analyzeInventoryCSV(ev.target.result);reader.readAsText(file,'UTF-8');}
 function analyzeInventoryCSV(text){const clean=String(text||'').replace(/^\uFEFF/,'');const lines=clean.split(/\r?\n/).filter(x=>x.trim());if(lines.length<2){showToast('CSV vacío');return;}const headers=parseCSVLine(lines[0]);const existing=loadInventory();const exact=new Map(existing.map(x=>[inventoryKey(x,true),x]));const base=new Map();existing.forEach(x=>{const k=inventoryKey(x,false);if(!base.has(k))base.set(k,[]);base.get(k).push(x);});const rows=[];for(let i=1;i<lines.length;i++){const cols=parseCSVLine(lines[i]);const row={};headers.forEach((h,j)=>row[h]=(cols[j]||'').trim());const item={sourceId:inventoryCol(row,'ID','id'),titulo:inventoryCol(row,'Título','Titulo','Nombre'),autor:inventoryCol(row,'Autor'),editorial:inventoryCol(row,'Editorial')};if(!item.titulo){rows.push({...item,status:'incompleto',reason:'Sin título'});continue;}const ek=inventoryKey(item,true),bk=inventoryKey(item,false);if(exact.has(ek)){rows.push({...item,status:'duplicado',existingId:exact.get(ek).inventoryId});}else if(base.has(bk)){rows.push({...item,status:'posible',reason:'Mismo título y autor; editorial distinta o vacía'});}else{const link=findBookLink(item);rows.push({...item,status:link?'vinculado':'nuevo',linkedEntryId:link?.id||''});}}inventoryImportPending=rows;const counts=rows.reduce((a,x)=>(a[x.status]=(a[x.status]||0)+1,a),{});const labels={nuevo:'Nuevos',vinculado:'Nuevos vinculados',duplicado:'Duplicados exactos',posible:'Posibles ediciones',incompleto:'Incompletos'};document.getElementById('inventory-import-preview').innerHTML=`<div class="card" style="box-shadow:none;"><div style="font-family:var(--font-serif);font-weight:700;margin-bottom:8px;">Resultado del análisis</div>${Object.entries(labels).map(([k,l])=>`<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12px;"><span>${l}</span><strong>${counts[k]||0}</strong></div>`).join('')}</div><div style="max-height:230px;overflow:auto;">${rows.map(x=>`<div class="inventory-import-row"><strong>${x.titulo||'Sin título'}</strong><br><span style="color:var(--ink4);">${[x.autor,x.editorial].filter(Boolean).join(' · ')}</span><br><span style="color:${x.status==='duplicado'?'var(--red)':x.status==='posible'?'var(--gold)':'var(--green)'};font-weight:700;">${labels[x.status]}</span></div>`).join('')}</div>`;document.getElementById('inventory-import-confirm').style.display=rows.some(x=>['nuevo','vinculado','posible','incompleto'].includes(x.status))?'block':'none';}
 function confirmInventoryImport(){return lumenSafeAction('Importar inventario',()=>{let inv=loadInventory();const exact=new Set(inv.map(x=>inventoryKey(x,true)));let added=0,skipped=0,createdBooks=0,linkedBooks=0;inventoryImportPending.forEach((x,i)=>{if(x.status==='duplicado'){skipped++;return;}const k=inventoryKey(x,true);if(exact.has(k)){skipped++;return;}const hadLink=!!(x.linkedEntryId||findBookLink(x));const book=ensureInventoryBookFromBasicItem(x);if(book){if(hadLink)linkedBooks++;else createdBooks++;x.linkedEntryId=book.id;}const item={inventoryId:'inv_'+Date.now()+'_'+i,sourceId:x.sourceId||'',titulo:x.titulo||'',autor:book?.autor||x.autor||'',editorial:book?.editorial||x.editorial||'',linkedEntryId:book?.id||'',inCart:false,_updatedAt:Date.now()};inv.push(item);exact.add(k);added++;});saveInventory(inv,false);if(typeof invalidateRecommendations==='function')invalidateRecommendations('inventario importado');const ok=saveDB();if(ok===false)throw new Error('No se pudo persistir el inventario localmente.');closeModal('modal-inventory-import');renderInventory();showToast(`✓ ${added} libros agregados · ${createdBooks} fichas nuevas · ${skipped} omitidos`,4500);});}
+
+function inventoryInventoryCuriosities(books,total,read){
+  const dated=books.filter(e=>/^\d{4}-\d{2}/.test(e.fecha_adquisicion||''));
+  const months=inventoryTopRows(dated,e=>e.fecha_adquisicion.slice(0,7),100);
+  const years=inventoryTopRows(dated,e=>e.fecha_adquisicion.slice(0,4),100);
+  const longest=books.filter(e=>Number(e.paginas)>0).sort((a,b)=>Number(b.paginas)-Number(a.paginas))[0];
+  const authors=new Set(books.map(e=>invNorm(inventoryAuthorLabel(e))).filter(Boolean)).size;
+  const publishers=new Set(books.map(e=>invNorm(e.editorial)).filter(Boolean)).size;
+  return `<div class="inventory-data-grid"><div class="stat-box"><div class="stat-num">${authors}</div><div class="stat-label">Autores diferentes</div></div><div class="stat-box"><div class="stat-num">${publishers}</div><div class="stat-label">Editoriales diferentes</div></div><div class="stat-box"><div class="stat-num">${dated.length}</div><div class="stat-label">Con fecha de adquisición</div></div></div><p>Mes con más adquisiciones: <strong>${months[0]?months[0].join(' · '):'Sin datos'}</strong></p><p>Año con más adquisiciones: <strong>${years[0]?years[0].join(' · '):'Sin datos'}</strong></p><p>Libro con más páginas: <strong>${longest?escapeHtml(longest.titulo)+' · '+longest.paginas:'Sin datos'}</strong></p>`;
+}

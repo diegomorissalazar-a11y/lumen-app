@@ -27,6 +27,7 @@
 
   <!-- TAB: INFLUENCIAS -->
   <div id="mapa-influencias-panel" class="map-workspace" style="display:flex;flex-direction:column;flex:1;overflow:hidden;">
+    <button class="btn btn-secondary btn-sm" style="align-self:flex-start;margin:5px 12px" onclick="this.parentElement.classList.toggle('map-controls-collapsed');this.textContent=this.parentElement.classList.contains('map-controls-collapsed')?'Mostrar controles':'Ocultar controles'">Ocultar controles</button>
     <div class="map-workspace-toolbar" style="padding:10px 16px;display:flex;gap:8px;align-items:center;border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap;">
       <button class="btn btn-secondary btn-sm" style="width:auto;" onclick="openInfluenciasCargaPanel()">+ Añadir relación</button>
       <button class="btn btn-secondary btn-sm" style="width:auto;" onclick="renderMapaInfluencias()">↻ Actualizar</button>

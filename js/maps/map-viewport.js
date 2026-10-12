@@ -74,3 +74,13 @@ window.rerenderExpandedMap = rerenderExpandedMap;
 window.enterMapWorkspace = enterMapWorkspace;
 window.exitMapWorkspace = exitMapWorkspace;
 window.toggleMapWorkspace = toggleMapWorkspace;
+
+// v213: reflow al girar el dispositivo, sin alterar los datos del grafo.
+let _mapOrientationRaf=0;
+function refreshExpandedMapViewport(){
+  if(!_expandedMapWorkspace)return;
+  cancelAnimationFrame(_mapOrientationRaf);
+  _mapOrientationRaf=requestAnimationFrame(()=>rerenderExpandedMap(_expandedMapWorkspace));
+}
+window.addEventListener('orientationchange',refreshExpandedMapViewport);
+window.addEventListener('resize',refreshExpandedMapViewport);

@@ -42,3 +42,9 @@ body.map-workspace-mode{overflow:hidden!important;}
   .map-workspace.map-workspace-expanded{padding-bottom:env(safe-area-inset-bottom)}
   .map-centrality-legend{display:none}
 }
+
+/* v213: liberar espacio y ajustar mapa ampliado a orientación real */
+#mapa-influencias-panel.map-controls-collapsed > .map-workspace-toolbar{display:none!important}
+.map-workspace.map-workspace-expanded{width:100dvw!important;height:100dvh!important;max-width:100dvw!important;max-height:100dvh!important}
+.map-workspace.map-workspace-expanded > [id$="-svg"]{min-height:0!important;flex:1!important}
+@media(orientation:landscape){.map-workspace.map-workspace-expanded{width:100dvw!important;height:100dvh!important}}
