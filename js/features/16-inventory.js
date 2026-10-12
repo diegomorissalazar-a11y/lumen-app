@@ -228,11 +228,17 @@ function openInventoryData(){
   <div class="inventory-stat-section"><div class="chart-section-title" style="margin-bottom:6px;">Autores del inventario</div>${inventoryStatRows(inventoryTopRows(books,e=>e.autor))}</div>
   <div class="inventory-stat-section"><div class="chart-section-title" style="margin-bottom:6px;">Editoriales del inventario</div>${inventoryStatRows(inventoryTopRows(books,e=>e.editorial))}</div>
   <div class="inventory-stat-section"><div class="chart-section-title" style="margin-bottom:6px;">Géneros del inventario</div>${inventoryStatRows(inventoryTopRows(books,e=>e.generos||[]))}</div>
+  <div class="inventory-stat-section"><div class="chart-section-title">Traductores</div>${inventoryStatRows(inventoryTopRows(books,e=>Array.isArray(e.traductores)?e.traductores:(e.traductor||'').split(/\s*(?:;|\s&\s)\s*/)))}</div>
+  <div class="inventory-stat-section"><div class="chart-section-title">Idiomas originales</div>${inventoryStatRows(inventoryTopRows(books,e=>e.idioma_original||e.idioma))}</div>
+  <div class="inventory-stat-section"><div class="chart-section-title">Publicaciones originales por década</div>${inventoryStatRows(inventoryTopRows(books,e=>{const y=Number(typeof getBookOriginalPublicationYear==='function'?getBookOriginalPublicationYear(e):e.anio_pub||e.anio_est);return y?Math.floor(y/10)*10+'–'+(Math.floor(y/10)*10+9):''},100))}</div>
+  <div class="inventory-stat-section"><div class="chart-section-title">Ediciones por año</div>${inventoryStatRows(inventoryTopRows(books,e=>e.anio_edicion||e.edicion_anio||e.anio_ed||'',100))}</div>
+  <div class="inventory-stat-section"><div class="chart-section-title">Catálogo de libros del inventario</div><input class="input" id="inventory-data-catalog-query" placeholder="Buscar título, autor o editorial" oninput="filterInventoryDataCatalog(this.value)" style="margin:10px 0"><div id="inventory-data-catalog-list">${books.map(e=>`<div class="inventory-catalog-item" data-search="${escapeHtml(invNorm((e.titulo||'')+' '+(e.autor||'')+' '+(e.editorial||'')))}" style="padding:7px 0;border-bottom:1px solid var(--border)"><strong>${escapeHtml(e.titulo||'Sin título')}</strong><div style="font-size:11px;color:var(--ink3)">${escapeHtml(e.autor||'')} · ${escapeHtml(e.editorial||'')}</div></div>`).join('')}</div></div>
   <div class="inventory-stat-section"><div class="chart-section-title">Adquisiciones por año</div>${inventoryStatRows(inventoryTopRows(books,e=>String(e.fecha_adquisicion||'').match(/^\d{4}/)?.[0]||'',100))}</div>
   <div class="inventory-stat-section"><div class="chart-section-title">Adquisiciones por mes (año-mes)</div>${inventoryStatRows(inventoryTopRows(books,e=>String(e.fecha_adquisicion||'').match(/^\d{4}-\d{2}/)?.[0]||'',100))}</div>
   <div class="inventory-stat-section"><div class="chart-section-title">Datos curiosos del inventario</div>${inventoryInventoryCuriosities(books,total,read)}</div>
   <div style="font-size:11px;color:var(--ink4);line-height:1.5;margin-top:8px;">Los ejemplares multiobra se consideran leídos en Inventario cuando todas sus obras vinculadas están leídas. Esto no crea un libro leído adicional en las estadísticas generales.</div>`;
   openModal('modal-inventory-data');
+  renderInventoryDataNavigation();
 }
 
 function startInventoryReading(id){
@@ -260,3 +266,21 @@ function inventoryInventoryCuriosities(books,total,read){
   const publishers=new Set(books.map(e=>invNorm(e.editorial)).filter(Boolean)).size;
   return `<div class="inventory-data-grid"><div class="stat-box"><div class="stat-num">${authors}</div><div class="stat-label">Autores diferentes</div></div><div class="stat-box"><div class="stat-num">${publishers}</div><div class="stat-label">Editoriales diferentes</div></div><div class="stat-box"><div class="stat-num">${dated.length}</div><div class="stat-label">Con fecha de adquisición</div></div></div><p>Mes con más adquisiciones: <strong>${months[0]?months[0].join(' · '):'Sin datos'}</strong></p><p>Año con más adquisiciones: <strong>${years[0]?years[0].join(' · '):'Sin datos'}</strong></p><p>Libro con más páginas: <strong>${longest?escapeHtml(longest.titulo)+' · '+longest.paginas:'Sin datos'}</strong></p>`;
 }
+
+const INVENTORY_DATA_SECTIONS=[['Resumen',0],['Autores',1],['Editoriales',2],['Géneros',3],['Traductores',4],['Idiomas',5],['Publicaciones',6],['Ediciones',7],['Catálogo',8],['Adquisiciones por año',9],['Adquisiciones por mes',10],['Datos curiosos',11]];
+let _inventoryDataTab=0;
+function renderInventoryDataNavigation(){
+  const body=document.getElementById('inventory-data-body'),nav=document.getElementById('inventory-data-tabs');if(!body||!nav)return;
+  const groups=[...body.children].filter(e=>e.matches('.inventory-data-grid,.inventory-stat-section'));
+  groups.forEach((el,i)=>{el.dataset.inventoryGroup=String(i);});
+  const last=body.querySelector(':scope > div:last-child');if(last&&!last.dataset.inventoryGroup)last.style.display='none';
+  nav.innerHTML=INVENTORY_DATA_SECTIONS.map(([label,n])=>`<button type="button" class="btn btn-secondary btn-sm" data-inv-tab="${n}" onclick="selectInventoryDataTab(${n})">${label}</button>`).join('');
+  selectInventoryDataTab(0);
+}
+function selectInventoryDataTab(tab){
+  _inventoryDataTab=tab;
+  document.querySelectorAll('#inventory-data-body [data-inventory-group]').forEach(el=>el.style.display=Number(el.dataset.inventoryGroup)===tab?'':'none');
+  document.querySelectorAll('#inventory-data-tabs [data-inv-tab]').forEach(btn=>btn.classList.toggle('active',Number(btn.dataset.invTab)===tab));
+}
+
+function filterInventoryDataCatalog(query){const q=invNorm(query);document.querySelectorAll('#inventory-data-catalog-list .inventory-catalog-item').forEach(el=>{el.style.display=(!q||el.dataset.search.includes(q))?'':'none';});}

@@ -78,7 +78,7 @@
       <div class="divider"></div>
 
       <!-- Scatter -->
-      <div class="chart-section-title" style="margin-bottom:4px;">Libros en el tiempo (publicación original)</div>
+      <div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><div class="chart-section-title" style="margin-bottom:4px;">Libros en el tiempo (publicación original)</div><button type="button" class="btn btn-secondary btn-sm" onclick="openScatterExpanded()">⛶ Ampliar</button></div>
       <p style="font-size:11px;color:var(--ink4);margin-bottom:8px;">Cada punto es un libro. Pasa el cursor para ver título y autor.</p>
       <div style="position:relative;height:260px;margin-bottom:8px;"><canvas id="lb-chart-scatter"></canvas></div>
 
@@ -282,3 +282,11 @@
   </div>
 </div>
 
+
+<div id="scatter-expanded" class="scatter-expanded" style="display:none">
+  <div class="scatter-toolbar"><button class="btn btn-secondary btn-sm" onclick="closeScatterExpanded()">← Volver a estadísticas</button><strong>Publicaciones originales</strong><button class="btn btn-secondary btn-sm" onclick="resetScatterExpanded()">Restablecer</button></div>
+  <div class="scatter-filters"><label>Colorear por <select id="scatter-segment" onchange="renderScatterExpanded()"><option value="editorial">Editorial</option><option value="idioma">Idioma original</option><option value="genero">Género</option></select></label><label>Desde <input id="scatter-year-min" type="range" oninput="scatterRangeChanged()"></label><output id="scatter-year-min-label"></output><label>Hasta <input id="scatter-year-max" type="range" oninput="scatterRangeChanged()"></label><output id="scatter-year-max-label"></output></div>
+  <div class="scatter-plot-area"><canvas id="scatter-expanded-canvas"></canvas></div>
+  <div id="scatter-expanded-legend" class="scatter-expanded-legend"></div>
+  <div class="scatter-hint">Rueda del ratón: ampliar/reducir período · Arrastrar el gráfico: desplazar · Deslizar los controles circulares: filtrar años.</div>
+</div>

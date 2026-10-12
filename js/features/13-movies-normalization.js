@@ -255,7 +255,9 @@ function renderMapaPeliculas() {
   const svg = d3.select('#mapa-peliculas-svg')
     .append('svg').attr('width', W).attr('height', H);
   const g = svg.append('g');
-  svg.call(d3.zoom().scaleExtent([0.2, 4]).on('zoom', e => g.attr('transform', e.transform)));
+  const pelZoom=d3.zoom().scaleExtent([0.2, 4]).on('zoom', e => g.attr('transform', e.transform));
+  svg.call(pelZoom);
+  svg.node().__lumenGraph={nodes,zoom:pelZoom,selection:g};
 
   const sim = d3.forceSimulation(nodes)
     .force('link', d3.forceLink(links).id(d=>d.id)

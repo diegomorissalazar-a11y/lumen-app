@@ -7,11 +7,16 @@
       <button class="btn-icon" onclick="closeModal('modal-add-watching')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
     <div class="modal-body">
+      <div class="field" style="padding:12px;background:var(--cream2);border-radius:6px">
+        <label>Tipo de registro</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn btn-secondary btn-sm" id="watch-mode-new" onclick="setWatchingMode('new')">Serie nueva</button><button type="button" class="btn btn-secondary btn-sm" id="watch-mode-season" onclick="setWatchingMode('season')">Nueva temporada</button></div>
+        <div id="watch-mode-help" style="font-size:11px;margin-top:7px">Crear serie y temporada inicial.</div>
+      </div>
       <div class="field">
         <label>Título</label>
         <input class="input" type="text" id="watching-titulo" placeholder="Nombre de la serie" oninput="renderWatchingTitleSuggestions()" onfocus="renderWatchingTitleSuggestions()" autocomplete="off">
         <div id="watching-title-suggestions" style="display:none;margin-top:6px;border:1.5px solid var(--border);border-radius:6px;background:#fff;overflow:hidden;box-shadow:var(--shadow);"></div>
-        <div style="font-size:10px;color:var(--ink4);margin-top:4px;line-height:1.4;">Si ya existe en tu biblioteca, selecciona la sugerencia para usar el nombre canónico. Si no existe, puedes dejar el título escrito a mano.</div>
+        <div style="font-size:10px;color:var(--ink4);margin-top:4px;line-height:1.4;">Para reutilizar una serie de la biblioteca, selecciona «Nueva temporada» y elige una sugerencia.</div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
         <div class="field"><label>Creador / Director</label><input class="input" type="text" id="watching-director"></div>
@@ -25,6 +30,7 @@
           <input class="input" type="number" id="watching-temporadas" min="1" value="1">
         </div>
       </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div class="field"><label>Minutos por episodio</label><input id="watching-min-episodio" class="input" type="number" min="0"></div><div class="field"><label>Año estreno de temporada</label><input id="watching-anio-temporada" class="input" type="number" min="1900"></div></div>
       <div class="field"><label>Protagonista</label><input class="input" type="text" id="watching-protagonista"></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
         <div class="field">

@@ -652,6 +652,7 @@ function buildD3Graph(containerId, nodes, links, colorFn, tooltipEdgeFn, fuenteT
   // Exponer zoom para búsqueda externa
   svg.node().__zoomBehavior = zoomBehavior;
   svg.node().__zoomG = g;
+  svg.node().__lumenGraph={nodes,zoom:zoomBehavior,selection:g};
 
   // ── Métricas del grafo ──
   // v185: una sola gramática visual. Cada mapa entrega su semántica en sizeMetric;

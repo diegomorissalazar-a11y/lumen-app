@@ -68,9 +68,10 @@
 <!-- ══════ MODAL: IMPORTAR INVENTARIO ══════ -->
 <!-- ══════ MODAL: DATOS DE INVENTARIO v167 ══════ -->
 <div id="modal-inventory-data" class="modal-overlay">
-  <div class="modal" style="max-height:90dvh;">
-    <div class="modal-handle"></div>
-    <div class="modal-header"><div><div class="modal-title">📊 Datos del inventario</div><div style="font-size:10px;color:var(--ink4);margin-top:3px;letter-spacing:1px;text-transform:uppercase;">Biblioteca física</div></div><button class="btn-icon" onclick="closeModal('modal-inventory-data')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+  <div class="modal inventory-fullscreen">
+    <div class="modal-header"><div><div class="modal-title">Datos del inventario</div><div style="font-size:10px;color:var(--ink4);margin-top:3px;letter-spacing:1px;text-transform:uppercase;">Biblioteca física</div></div><button class="btn-icon" onclick="closeModal('modal-inventory-data')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+    <div style="padding:5px 12px"><button type="button" class="btn btn-secondary btn-sm" onclick="closeModal('modal-inventory-data')">← Volver a inventario</button></div>
+    <div id="inventory-data-tabs" class="inventory-data-tabs"></div>
     <div class="modal-body" id="inventory-data-body"></div>
   </div>
 </div>

@@ -1170,3 +1170,62 @@ function renderStatsGlobal() {
     </div>`;
 }
 
+
+// LUMEN v213.2 — scatter ampliado interactivo de libros leídos.
+let _expandedScatterChart=null;
+let _expandedScatterAll=[];
+let _expandedScatterDomain=[1900,2026];
+let _expandedScatterDragged=false;
+const EXPANDED_SCATTER_COLORS=['#8b2020','#2d5a3d','#1a3a5c','#c8952a','#7b5397','#b8643d','#288d94','#776246','#ad6b8d','#557c45','#666b8f','#8b6d4d'];
+function expandedScatterSource(){
+  return (db.entries||[]).filter(e=>e.type==='libro'&&e.estado==='leido'&&Number(e.paginas)>0&&Number(getBookOriginalPublicationYear(e)))
+    .map(e=>({...e,scatterYear:Number(getBookOriginalPublicationYear(e))}));
+}
+function openScatterExpanded(){
+  const area=document.getElementById('scatter-expanded');if(!area)return;
+  _expandedScatterAll=expandedScatterSource();
+  const years=_expandedScatterAll.map(e=>e.scatterYear);
+  const min=years.length?Math.min(...years):1800,max=years.length?Math.max(...years):new Date().getFullYear();
+  _expandedScatterDomain=[min,max];
+  ['min','max'].forEach((part,i)=>{const input=document.getElementById('scatter-year-'+part);if(input){input.min=min;input.max=Math.max(min+1,max);input.value=i?max:min;}});
+  area.style.display='flex';document.body.classList.add('scatter-expanded-mode');
+  renderScatterExpanded();
+}
+function closeScatterExpanded(){document.getElementById('scatter-expanded').style.display='none';document.body.classList.remove('scatter-expanded-mode');if(_expandedScatterChart){_expandedScatterChart.destroy();_expandedScatterChart=null;}}
+function resetScatterExpanded(){
+  const from=document.getElementById('scatter-year-min'),to=document.getElementById('scatter-year-max');
+  if(from)from.value=_expandedScatterDomain[0];if(to)to.value=_expandedScatterDomain[1];renderScatterExpanded();
+}
+function scatterRangeChanged(){
+  const a=document.getElementById('scatter-year-min'),b=document.getElementById('scatter-year-max');if(!a||!b)return;
+  if(Number(a.value)>Number(b.value)){if(document.activeElement===a)b.value=a.value;else a.value=b.value;}
+  renderScatterExpanded();
+}
+function renderScatterExpanded(){
+  const el=document.getElementById('scatter-expanded-canvas'),legend=document.getElementById('scatter-expanded-legend');if(!el)return;
+  let min=Number(document.getElementById('scatter-year-min')?.value),max=Number(document.getElementById('scatter-year-max')?.value);
+  document.getElementById('scatter-year-min-label').textContent=min;
+  document.getElementById('scatter-year-max-label').textContent=max;
+  const segment=document.getElementById('scatter-segment').value;
+  const key=e=>segment==='genero'?(Array.isArray(e.generos)?e.generos[0]:e.genero)||'Sin género':segment==='idioma'?(e.idioma||e.idioma_original||'Sin idioma'):(e.editorial||'Sin editorial');
+  const all=[...new Set(_expandedScatterAll.map(key))].sort((a,b)=>a.localeCompare(b,'es'));
+  const colorMap=new Map(all.map((name,i)=>[name,EXPANDED_SCATTER_COLORS[i%EXPANDED_SCATTER_COLORS.length]]));
+  const visible=_expandedScatterAll.filter(e=>e.scatterYear>=min&&e.scatterYear<=max);
+  const groups=[...new Set(visible.map(key))];
+  if(_expandedScatterChart){_expandedScatterChart.destroy();_expandedScatterChart=null;}
+  _expandedScatterChart=new Chart(el.getContext('2d'),{type:'scatter',data:{datasets:groups.map(g=>({label:g,data:visible.filter(e=>key(e)===g).map(e=>({x:e.scatterYear,y:e.paginas,title:e.titulo,author:e.autor})),backgroundColor:colorMap.get(g),borderColor:colorMap.get(g),pointRadius:6,pointHoverRadius:9}))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.raw.title} · ${c.raw.author||'—'} (${c.raw.x}, ${c.raw.y} páginas)`}}},scales:{x:{type:'linear',min:min-1,max:max+1,title:{display:true,text:'Año de publicación original'}},y:{title:{display:true,text:'Páginas'},beginAtZero:true}}}});
+  legend.replaceChildren();all.forEach(name=>{const btn=document.createElement('button');btn.type='button';btn.className='scatter-legend-item';btn.innerHTML=`<i style="background:${colorMap.get(name)}"></i>`;btn.append(document.createTextNode(name));btn.onclick=()=>{const group=_expandedScatterChart?.data.datasets.find(x=>x.label===name);if(!group)return;const i=_expandedScatterChart.data.datasets.indexOf(group);_expandedScatterChart.setDatasetVisibility(i,!_expandedScatterChart.isDatasetVisible(i));_expandedScatterChart.update();btn.classList.toggle('dimmed');};legend.append(btn);});
+}
+function scatterExpandedWheel(ev){
+ if(!document.getElementById('scatter-expanded')||document.getElementById('scatter-expanded').style.display==='none')return;
+ ev.preventDefault();const a=document.getElementById('scatter-year-min'),b=document.getElementById('scatter-year-max');
+ const lo=Number(a.value),hi=Number(b.value),mid=(lo+hi)/2;
+ const width=Math.max(2,Math.min(_expandedScatterDomain[1]-_expandedScatterDomain[0],(hi-lo)*(ev.deltaY>0?1.2:0.8)));
+ a.value=Math.max(_expandedScatterDomain[0],Math.round(mid-width/2));b.value=Math.min(_expandedScatterDomain[1],Math.round(mid+width/2));scatterRangeChanged();
+}
+document.addEventListener('wheel',e=>{if(e.target?.closest?.('#scatter-expanded-canvas'))scatterExpandedWheel(e)},{passive:false});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('scatter-expanded')?.style.display==='flex')closeScatterExpanded();});
+
+let _scatterDragStart=null;
+document.addEventListener('pointerdown',ev=>{if(ev.target?.id==='scatter-expanded-canvas')_scatterDragStart={x:ev.clientX,from:Number(document.getElementById('scatter-year-min')?.value),to:Number(document.getElementById('scatter-year-max')?.value)};});
+document.addEventListener('pointerup',ev=>{if(!_scatterDragStart)return;const drag=_scatterDragStart;_scatterDragStart=null;const canvas=document.getElementById('scatter-expanded-canvas');if(!canvas)return;const delta=Math.round((drag.x-ev.clientX)/Math.max(canvas.clientWidth,1)*(drag.to-drag.from));const span=drag.to-drag.from;const lo=Math.min(_expandedScatterDomain[1]-span,Math.max(_expandedScatterDomain[0],drag.from+delta));const a=document.getElementById('scatter-year-min'),b=document.getElementById('scatter-year-max');if(a&&b){a.value=lo;b.value=lo+span;scatterRangeChanged();}});

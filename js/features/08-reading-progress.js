@@ -608,29 +608,28 @@ function renderWatchingTitleSuggestions() {
   box.style.display = 'block';
 }
 
+let _watchingMode = 'new';
+let _watchingExistingId = null;
+function setWatchingMode(mode) {
+  _watchingMode = mode === 'season' ? 'season' : 'new'; _watchingExistingId=null;
+  const title=document.getElementById('watching-titulo');if(title){title.value='';title.readOnly=false;}
+  const help=document.getElementById('watch-mode-help');if(help)help.textContent=_watchingMode==='season'?'Busca y selecciona una serie registrada. Se conservan los datos de las temporadas anteriores.':'Crear una serie nueva con su primera temporada.';
+  ['new','season'].forEach(m=>{const btn=document.getElementById('watch-mode-'+m);if(btn)btn.style.background=m===_watchingMode?'var(--gold)':'';});
+  const suggestions=document.getElementById('watching-title-suggestions');if(suggestions)suggestions.style.display='none';
+}
 function applyWatchingTitleSuggestion(id) {
-  const serie = (db.entries || []).find(e => e && e.id === id);
-  if (!serie) return;
-
-  const setIfBlank = (fieldId, value) => {
-    const el = document.getElementById(fieldId);
-    if (!el || value === undefined || value === null || value === '') return;
-    if (!String(el.value || '').trim() || el.value === '0') el.value = value;
-  };
-
-  const titleEl = document.getElementById('watching-titulo');
-  if (titleEl) titleEl.value = serie.titulo || titleEl.value;
-
-  setIfBlank('watching-director', serie.director || serie.creador);
-  setIfBlank('watching-anio-est', serie.anio_est);
-  setIfBlank('watching-protagonista', serie.protagonista);
-  setIfBlank('watching-cover', serie.cover);
-  setIfBlank('watching-cap-total', serie.capTotal || serie.capsPorTemp);
-
-  const box = document.getElementById('watching-title-suggestions');
-  if (box) { box.innerHTML = ''; box.style.display = 'none'; }
-  updateWatchingBar();
-  showToast('✓ Nombre canónico aplicado');
+  const serie=(db.entries||[]).find(e=>e&&e.type==='serie'&&String(e.id)===String(id));if(!serie)return;
+  if(_watchingMode!=='season'){showToast('Para reutilizar esta serie, selecciona Nueva temporada');return;}
+  _watchingExistingId=serie.id;
+  const values={'watching-titulo':serie.titulo,'watching-director':serie.director||serie.creador,'watching-anio-est':serie.anio_est,'watching-protagonista':serie.protagonista,'watching-cover':serie.cover,'watching-min-episodio':serie.minEpisodio||serie.duracionEpisodio};
+  Object.entries(values).forEach(([id,value])=>{const el=document.getElementById(id);if(el&&value!=null)el.value=value;});
+  const series=(db.entries||[]).filter(e=>e.type==='serie'&&normalizeSerieTitleForMatch(e.titulo)===normalizeSerieTitleForMatch(serie.titulo));
+  const next=Math.max(0,...series.map(e=>Number(e.temporadaActual||e.temporadas||0)))+1;
+  const temp=document.getElementById('watching-temporada-actual');if(temp)temp.value=next;
+  const total=document.getElementById('watching-temporadas');if(total)total.value=next;
+  const cap=document.getElementById('watching-cap-total');if(cap)cap.value='';
+  const suggestions=document.getElementById('watching-title-suggestions');if(suggestions){suggestions.style.display='none';suggestions.innerHTML='';}
+  showToast('✓ Serie existente recuperada');
 }
 
 function updateWatchingBar() {
@@ -642,40 +641,28 @@ function updateWatchingBar() {
 }
 
 function saveWatchingEntry() {
-  const titulo = document.getElementById('watching-titulo').value.trim();
-  if (!titulo) { showToast('Ingresa el título'); return; }
-  const entry = {
-    id: 'e_' + Date.now(),
-    type: 'serie',
-    titulo,
-    director:        document.getElementById('watching-director').value.trim(),
-    anio_est:        parseInt(document.getElementById('watching-anio-est').value) || null,
-    temporadas:      parseInt(document.getElementById('watching-temporadas').value) || 1,
-    temporadaActual: parseInt(document.getElementById('watching-temporada-actual').value) || 1,
-    protagonista:    document.getElementById('watching-protagonista').value.trim(),
-    capActual:       parseInt(document.getElementById('watching-cap-actual').value) || 0,
-    capTotal:        parseInt(document.getElementById('watching-cap-total').value)  || 0,
-    cover:           document.getElementById('watching-cover').value.trim(),
-    estado: 'viendo',
-    rating: 0, notas: '',
-    _updatedAt: Date.now()
-  };
-  // Reset form
-  ['watching-titulo','watching-director','watching-anio-est','watching-protagonista','watching-cap-actual','watching-cap-total','watching-cover'].forEach(id => {
-    const el = document.getElementById(id); if (el) el.value = '';
-  });
-  const watchingSug = document.getElementById('watching-title-suggestions');
-  if (watchingSug) { watchingSug.innerHTML = ''; watchingSug.style.display = 'none'; }
-  document.getElementById('watching-temporadas').value = 1;
-  document.getElementById('watching-temporada-actual').value = 1;
-  document.getElementById('watching-progress-bar').style.width = '0%';
-  document.getElementById('watching-progress-pct').textContent = '';
-  if (typeof applyLocalCoverPolicy === 'function') applyLocalCoverPolicy(entry);
-  db.entries.push(entry);
-  saveDB();
-  closeModal('modal-add-watching');
-  showToast('✓ Serie en curso guardada');
-  renderHome();
+  const val=id=>document.getElementById(id)?.value?.trim()||'';
+  const titulo=val('watching-titulo');if(!titulo){showToast('Ingresa el título');return;}
+  const temporada=Number(val('watching-temporada-actual'))||1;
+  const existing=_watchingMode==='season'?(db.entries||[]).find(e=>e.id===_watchingExistingId&&e.type==='serie'):null;
+  if(_watchingMode==='season'&&!existing){showToast('Selecciona una serie existente de la lista');return;}
+  const related=(db.entries||[]).filter(e=>e.type==='serie'&&normalizeSerieTitleForMatch(e.titulo)===normalizeSerieTitleForMatch(existing?.titulo||titulo));
+  if(_watchingMode==='new'&&related.length){showToast('Esta serie ya existe. Elige Nueva temporada');return;}
+  if(_watchingMode==='season'&&related.some(e=>Number(e.temporadaActual||e.temporadas||0)===temporada)) {showToast('La temporada ya está registrada; no se duplicó');return;}
+  const entry={...(existing||{}),id:'e_'+Date.now(),type:'serie',titulo:existing?.titulo||titulo,
+    serieId:existing?(existing.serieId||existing.id):null,
+    director:val('watching-director')||existing?.director||'',anio_est:Number(val('watching-anio-est'))||existing?.anio_est||null,
+    temporadas:Math.max(temporada,Number(val('watching-temporadas'))||1),temporadaActual:temporada,
+    protagonista:val('watching-protagonista')||existing?.protagonista||'',
+    capActual:Number(val('watching-cap-actual'))||0,capTotal:Number(val('watching-cap-total'))||0,
+    capsPorTemp:Number(val('watching-cap-total'))||0,minEpisodio:Number(val('watching-min-episodio'))||existing?.minEpisodio||0,
+    anioTemporada:Number(val('watching-anio-temporada'))||null,cover:val('watching-cover')||existing?.cover||'',
+    estado:'viendo',rating:0,notas:'',anio:null,mes:'',_updatedAt:Date.now()};
+  if(!entry.serieId)entry.serieId=entry.id;
+  if(typeof applyLocalCoverPolicy==='function')applyLocalCoverPolicy(entry);
+  db.entries.push(entry);saveDB();closeModal('modal-add-watching');
+  ['watching-titulo','watching-director','watching-anio-est','watching-protagonista','watching-cap-actual','watching-cap-total','watching-cover','watching-min-episodio','watching-anio-temporada'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  setWatchingMode('new');showToast('✓ Temporada en curso guardada');renderHome();
 }
 
 // ── MODAL PROGRESO ──────────────────

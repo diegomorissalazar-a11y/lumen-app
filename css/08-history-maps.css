@@ -48,3 +48,16 @@ body.map-workspace-mode{overflow:hidden!important;}
 .map-workspace.map-workspace-expanded{width:100dvw!important;height:100dvh!important;max-width:100dvw!important;max-height:100dvh!important}
 .map-workspace.map-workspace-expanded > [id$="-svg"]{min-height:0!important;flex:1!important}
 @media(orientation:landscape){.map-workspace.map-workspace-expanded{width:100dvw!important;height:100dvh!important}}
+
+/* v213.2: ampliar siempre accesible y mapa adaptable */
+#mapa-influencias-panel.map-controls-collapsed > .map-workspace-toolbar{display:flex!important;padding:5px 12px!important;border:0!important}
+#mapa-influencias-panel.map-controls-collapsed > .map-workspace-toolbar > :not(.map-expand-trigger){display:none!important}
+.inventory-fullscreen{width:100vw!important;height:100dvh!important;max-height:100dvh!important;border-top:0!important;display:flex;flex-direction:column;padding-bottom:0!important;overflow:hidden!important}
+#modal-inventory-data{align-items:stretch!important;z-index:500!important}
+#modal-inventory-data .modal-body{overflow:auto;flex:1;min-height:0;padding-bottom:40px}
+.inventory-data-tabs{display:flex;overflow-x:auto;gap:6px;padding:8px 12px;flex-shrink:0;border-bottom:1px solid var(--border)}
+.inventory-data-tabs button{flex-shrink:0}.inventory-data-tabs button.active{background:var(--ink);color:#fff}
+
+.map-expanded-search{position:fixed;top:60px;right:12px;width:min(320px,85vw);z-index:10002;background:var(--cream);border:1px solid var(--border);padding:8px;box-shadow:var(--shadow);border-radius:6px}
+#map-expanded-search-results{max-height:36vh;overflow:auto}#map-expanded-search-results button{display:block;width:100%;text-align:left;border:0;background:white;padding:9px;border-bottom:1px solid var(--cream2);cursor:pointer}
+.lumen-node-highlight circle{stroke:#ffb900!important;stroke-width:5!important}

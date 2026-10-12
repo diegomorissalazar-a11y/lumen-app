@@ -51,12 +51,13 @@ function enterMapWorkspace(name) {
     exit.id = 'map-expanded-exit';
     exit.className = 'map-expanded-exit';
     exit.type = 'button';
-    exit.textContent = '↙ Salir de ampliar';
+    exit.textContent = '← Volver a mapas';
     exit.onclick = exitMapWorkspace;
     document.body.appendChild(exit);
   }
   exit.style.display = 'flex';
   rerenderExpandedMap(name);
+  initExpandedMapSearch(name);
 }
 
 function toggleMapWorkspace(name) {
@@ -84,3 +85,32 @@ function refreshExpandedMapViewport(){
 }
 window.addEventListener('orientationchange',refreshExpandedMapViewport);
 window.addEventListener('resize',refreshExpandedMapViewport);
+
+function initExpandedMapSearch(name){
+ const previous=document.getElementById('map-expanded-search');previous?.remove();
+ if(!['influencias','peliculas'].includes(name))return;
+ const root=document.createElement('div');root.id='map-expanded-search';root.className='map-expanded-search';
+ root.innerHTML='<input type="search" class="input" placeholder="Buscar nodo (nombre)..." aria-label="Buscar nodo" oninput="searchExpandedMapNode(this.value)"><div id="map-expanded-search-results"></div>';
+ document.body.appendChild(root);
+}
+function searchExpandedMapNode(term){
+ const target=document.getElementById('map-expanded-search-results');if(!target||!_expandedMapWorkspace)return;
+ const normalize=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+ const q=normalize(term);if(q.length<2){target.replaceChildren();return;}
+ const c=mapWorkspaceSvgContainer(_expandedMapWorkspace),graph=c?.querySelector('svg')?.__lumenGraph;
+ if(!graph){target.textContent='El mapa aún se está dibujando';return;}
+ const matches=graph.nodes.filter(n=>normalize(n.label||n.id).includes(q)).slice(0,20);
+ target.replaceChildren();if(!matches.length){target.textContent='Sin coincidencias';return;}
+ matches.forEach(n=>{const btn=document.createElement('button');btn.type='button';btn.textContent=n.label||n.id;btn.onclick=()=>focusExpandedMapNode(n.id);target.appendChild(btn);});
+}
+function focusExpandedMapNode(id){
+ const c=mapWorkspaceSvgContainer(_expandedMapWorkspace),svg=c?.querySelector('svg'),graph=svg?.__lumenGraph;
+ const node=graph?.nodes.find(n=>String(n.id)===String(id));if(!node||!graph)return;
+ const w=svg.clientWidth||c.clientWidth,h=svg.clientHeight||c.clientHeight,k=1.6;
+ d3.select(svg).transition().duration(650).call(graph.zoom.transform,d3.zoomIdentity.translate(w/2-k*node.x,h/2-k*node.y).scale(k));
+ const results=document.getElementById('map-expanded-search-results');if(results)results.replaceChildren();
+ graph.selection?.selectAll('g').classed('lumen-node-highlight',d=>d.id===id);
+}
+const _exitMapWorkspaceOriginal=exitMapWorkspace;
+exitMapWorkspace=function(){document.getElementById('map-expanded-search')?.remove();_exitMapWorkspaceOriginal();};
+window.exitMapWorkspace=exitMapWorkspace;
