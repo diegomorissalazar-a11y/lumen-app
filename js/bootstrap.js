@@ -38,6 +38,7 @@ const LUMEN_HTML_MANIFEST = {
 const LUMEN_JS_MANIFEST = [
   "js/core/01-firebase-data.js",
   "js/core/02-canonical-history-sync.js",
+  "js/core/18-local-persistence-actions.js",
   "js/taxonomy-registry.js",
   "js/literary-metadata.js",
   "js/metadata-inference.js",
@@ -63,7 +64,6 @@ const LUMEN_JS_MANIFEST = [
   "js/recommendations.js",
   "js/core/17-sync-v2.js",
   "js/data/assets.js",
-  "js/core/18-local-persistence-actions.js"
 ];
 
 async function loadFragment(path, targetId) {

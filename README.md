@@ -1,1 +1,1 @@
-LUMEN v214.2. Para publicar en GitHub subir el contenido de esta carpeta.
+LUMEN v214.3 — Contenido de esta carpeta listo para GitHub Pages. Consultar documentación y auditoría fuera de github/.

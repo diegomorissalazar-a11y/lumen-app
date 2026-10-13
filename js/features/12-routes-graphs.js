@@ -717,13 +717,13 @@ function buildD3Graph(containerId, nodes, links, colorFn, tooltipEdgeFn, fuenteT
 
   node.append('circle')
     .attr('r', d=>nodeR(d))
-    .attr('fill', d=>d.inLibrary?'var(--ink)':(d.isEvent?'#e8e0d0':'#fff'))
+    .attr('fill', d=>d.authorStatus==='read'?'#171411':(d.authorStatus==='inventory'?'#737373':(d.inLibrary?'var(--ink)':(d.isEvent?'#e8e0d0':'#fff'))))
     .attr('stroke', d=>d.inLibrary?'var(--gold)':'var(--border)')
     .attr('stroke-width', d => 1 + Math.min(3, (visualMetric[d.id]||0)));
 
   node.append('text').attr('text-anchor','middle').attr('dy',4)
     .attr('font-size', d => Math.max(9, Math.min(13, 9 + (visualMetric[d.id]||0))))
-    .attr('fill', d=>d.inLibrary?'var(--gold)':'var(--ink3)')
+    .attr('fill', d=>d.authorStatus==='read'||d.authorStatus==='inventory'?'#fff':(d.inLibrary?'var(--gold)':'var(--ink3)'))
     .text(d=>d.icon||'●');
 
   node.append('text').attr('text-anchor','middle')
@@ -865,11 +865,22 @@ function renderMapaInfluencias() {
     return;
   }
 
-  const libAuthorIds=new Set();
+  const libAuthorIds=new Set(), readAuthorIds=new Set(), inventoryAuthorIds=new Set();
   (db.entries||[]).filter(e=>e.type==='libro').forEach(e=>{
     ensureBookCanonicalRefs(e);
-    (e.autorIds||[]).forEach(id=>libAuthorIds.add(id));
+    const ids=(e.autorIds&&e.autorIds.length?e.autorIds:splitCanonicalAuthors(e.autor).map(a=>canonicalEntityId('aut',a)));
+    ids.forEach(id=>{
+      libAuthorIds.add(id);
+      if(e.estado==='leido')readAuthorIds.add(id);
+      if(e.enInventario || e.inventario || e.esInventario || e.inventory || e.inventoryId || e.en_inventario)inventoryAuthorIds.add(id);
+    });
   });
+  if(typeof loadInventory==='function'){
+    (loadInventory()||[]).forEach(item=>{
+      if(item.linkedEntryId){const linked=(db.entries||[]).find(e=>e.id===item.linkedEntryId);if(linked){(linked.autorIds||[]).forEach(id=>inventoryAuthorIds.add(id));}}
+      splitCanonicalAuthors(item.autor||'').forEach(a=>{const canonical=findCanonicalEntity('aut',a);inventoryAuthorIds.add(canonical?.id||canonicalEntityId('aut',a));});
+    });
+  }
 
   // v187: la centralidad estructural cuenta autores únicos conectados.
   // Varias citas Tolstói → Chéjov siguen visibles como evidencias en la lista,
@@ -922,7 +933,7 @@ function renderMapaInfluencias() {
     // Recibir influencias afecta la topología/posición, no el tamaño. Nivel 1 = radio mínimo exacto.
     const structuralLevel=Math.max(1,outUnique);
     return {
-      id,label:name,inLibrary:libAuthorIds.has(id),icon:libAuthorIds.has(id)?'✍':'◉',
+      id,label:name,inLibrary:libAuthorIds.has(id)||inventoryAuthorIds.has(id),authorStatus:readAuthorIds.has(id)?'read':(inventoryAuthorIds.has(id)?'inventory':'external'),icon:readAuthorIds.has(id)||inventoryAuthorIds.has(id)?'✍':'◉',
       tooltip:name,sizeMetric:structuralLevel,sizeBaseline:1,
       metricTooltip:(typeof nodeEvidenceTooltipV209==='function'?nodeEvidenceTooltipV209(id,name,data):name),
       evidencePopup:(typeof nodeEvidenceBlocksV210==='function'?nodeEvidenceBlocksV210(id,name,data):null)
