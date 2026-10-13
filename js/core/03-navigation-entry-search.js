@@ -55,6 +55,7 @@ function saveGeneroQuick() {
   closeModal('modal-genero-quick');
   showToast('✓ Etiquetas guardadas');
   renderLibrary();
+  if(typeof renderIncompleteBibliographyBooks==='function')renderIncompleteBibliographyBooks();
   if(shouldOfferPoetryPropagation)setTimeout(()=>offerPoetryMetadataPropagation(e),180);
   if(e.generos.includes('Historia')&&!hadHistoria&&typeof openHistoriaQuick==='function') setTimeout(()=>openHistoriaQuick(e.id),140);
 }
@@ -787,7 +788,9 @@ function saveEntry() {
   if (currentType === 'libro') {
     const titulo = document.getElementById('f-titulo').value.trim();
     if (!titulo) { showToast('Ingresa el título del libro'); return; }
-    entry = { ...entry, titulo, autor: document.getElementById('f-autor').value, editorial: document.getElementById('f-editorial').value,
+    const submittedAuthor=document.getElementById('f-autor').value;
+    const authorCheck=confirmAuthorSplitInput(submittedAuthor,titulo);
+    entry = { ...entry, titulo, autor: authorCheck.author, editorial: document.getElementById('f-editorial').value,
       paginas: parseInt(document.getElementById('f-paginas').value) || 0,
       anio_pub: parseInt(document.getElementById('f-anio-pub').value) || (editingId ? (db.entries.find(e=>e.id===editingId)||{}).anio_pub||null : null),
       edicion: document.getElementById('f-edicion')?.value?.trim() || '',
@@ -809,6 +812,7 @@ function saveEntry() {
       collectionMetadata: (getGenerosSeleccionados().includes('Cuento')||getGenerosSeleccionados().includes('Poesía')) && typeof getCollectionMetadataFromForm==='function' ? getCollectionMetadataFromForm() : null,
       cuentos: getGenerosSeleccionados().includes('Cuento') && typeof getStoryCollectionMetadataFromForm==='function' ? getStoryCollectionMetadataFromForm() : null,
       cover: document.getElementById('f-cover').value };
+    if(authorCheck.reviewed){entry.autorOriginalCredito=submittedAuthor;authorSplitPostcheck(entry);}
     // v203: los datos cargados por JSON siguen siendo editables. El valor visible/manual gana al guardar.
     const manualIsbn=document.getElementById('f-isbn')?.value?.trim()||'';
     const manualOriginalYear=parseInt(document.getElementById('f-anio-original')?.value)||null;

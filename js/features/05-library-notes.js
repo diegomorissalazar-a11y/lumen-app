@@ -182,7 +182,7 @@ function renderLibrary() {
     el.innerHTML = '<div class="empty"><div class="empty-icon">📖</div><div class="empty-text">Tu biblioteca está vacía.<br>Empieza añadiendo algo.</div></div>';
     return;
   }
-  el.innerHTML = items.map(e => entryCardHTML(e)).join('');
+  el.innerHTML = (libFilter==='disco' ? '<div style="margin:7px 0"><button class="btn btn-secondary btn-sm" onclick="exportDiscosGephiV214()">⬇ Gephi Discos (sello y colaboraciones)</button></div>' : '') + items.map(e => entryCardHTML(e)).join('');
 }
 
 
@@ -1022,3 +1022,35 @@ function finishSerie(id) {
   });
 }
 
+
+// v214 — Gephi: disco como obra única; sello y cada colaboración como entidad independiente.
+function exportDiscosGephiV214(){
+  const discs=(db.entries||[]).filter(e=>e&&e.type==='disco');
+  if(!discs.length){showToast('No hay discos para exportar');return;}
+  const nodes=new Map(),edges=[],seen=new Set();
+  const norm=s=>String(s||'').trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+  const row=(...cells)=>cells.map(c=>'"'+String(c??'').replace(/"/g,'""')+'"').join(',');
+  const addNode=(id,name,type)=>{if(!nodes.has(id))nodes.set(id,[id,name,type]);};
+  const link=(disc,id,value,type)=>{
+    const label=String(value||'').trim();if(!label)return;
+    addNode(id,label,type);const k=disc+'|'+id+'|'+type;if(seen.has(k))return;seen.add(k);edges.push([disc,id,type]);
+  };
+  discs.forEach(e=>{
+    const disc='disco:'+e.id;addNode(disc,e.titulo||'Sin título','disco');
+    if(e.artista)link(disc,'artista:'+norm(e.artista),e.artista,'artista');
+    if(e.productor)link(disc,'productor:'+norm(e.productor),e.productor,'productor');
+    const label=e.discografica||e.sello_discografico||e.sello;
+    if(label)link(disc,'sello:'+norm(label),label,'sello');
+    (Array.isArray(e.colaboraciones)?e.colaboraciones:String(e.colaboraciones||'').split(/\n|;/)).forEach(credit=>{
+      const name=String(credit||'').split(/\s+[—–-]\s+/)[0].trim();
+      if(name)link(disc,'colaborador:'+norm(name),name,'colaboracion');
+    });
+  });
+  const download=(filename,lines)=>{
+    const blob=new Blob(['\ufeff'+lines.join('\n')],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');
+    a.href=url;a.download=filename;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),3000);
+  };
+  download('lumen_discs_gephi_nodes_v214.csv',[row('Id','Label','Type'),...[...nodes.values()].map(x=>row(...x))]);
+  download('lumen_discs_gephi_edges_v214.csv',[row('Source','Target','Type'),...edges.map(x=>row(...x))]);
+  showToast(`✓ Gephi discos: ${nodes.size} nodos, ${edges.length} relaciones`);
+}

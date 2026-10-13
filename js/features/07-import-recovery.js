@@ -230,6 +230,9 @@ function handleImport(e) {
     const lines = clean.split(/\r?\n/).filter(l => l.trim());
     if (lines.length < 2) { showToast('El archivo está vacío o no tiene datos'); return; }
 
+    const authorHeaderIndex=parseCSVLine(lines[0]).findIndex(h=>/^(autor|autor\s*\/\s*director|autor\s*o\s*director|author|autor\(a\))$/i.test(h.trim()));
+    const flaggedRows=authorHeaderIndex>=0?lines.slice(1).map(line=>parseCSVLine(line)).filter(cols=>authorSplitCandidate(cols[authorHeaderIndex])).length:0;
+    if(flaggedRows && !confirm(`La importación contiene ${flaggedRows} fila(s) con posibles autores múltiples.\n\nNo se dividirán automáticamente. Revisa estos libros en Mapas → Normalizar → Dividir autores.\n\n¿Continuar con la importación?`))return;
     const rawHeaders = parseCSVLine(lines[0]);
     // Construir mapa header → índice
     const headerMap = {};

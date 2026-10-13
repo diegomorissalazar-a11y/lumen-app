@@ -183,10 +183,21 @@
         style="flex:1;padding:9px;border:none;background:none;font-family:var(--font-sans);font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;color:var(--ink4);border-bottom:2px solid transparent;margin-bottom:-2px;">
         📚 Libros
       </button>
+      <button id="norm-tab-dividir" onclick="switchNormTab('dividir')" style="flex:1;padding:9px;border:none;background:none;font-family:var(--font-sans);font-size:10px;font-weight:700;cursor:pointer;color:var(--ink4);border-bottom:2px solid transparent;">Dividir autores</button>
       <button id="norm-tab-textos" onclick="switchNormTab('textos')"
         style="flex:1;padding:9px;border:none;background:none;font-family:var(--font-sans);font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;color:var(--ink4);border-bottom:2px solid transparent;margin-bottom:-2px;">
         ✒ Textos citados
       </button>
+    </div>
+
+    <!-- v213.4: dividir autorías sin multiplicar obras -->
+    <div id="norm-sub-dividir" style="display:none;flex-direction:column;flex:1;overflow:auto;padding:14px;gap:10px;">
+      <strong style="font-family:var(--font-serif);">Detectar autorías múltiples</strong>
+      <div style="font-size:12px;color:var(--ink3)">Las coincidencias son propuestas, no divisiones automáticas. Un libro mantiene su identificador.</div>
+      <div id="author-split-controls" style="display:flex;flex-wrap:wrap;gap:10px;"></div>
+      <label style="font-size:12px">Separador adicional (texto literal) <input id="author-split-custom" class="input" placeholder="Ej.: +, |, con" style="max-width:280px" oninput="renderAuthorSplitReview()"></label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><button class="btn btn-secondary btn-sm" onclick="renderAuthorSplitReview()">Buscar coincidencias</button><span id="author-split-counter" style="font-size:12px;color:var(--ink3)"></span></div>
+      <div id="author-split-results" style="display:flex;flex-direction:column;gap:10px"></div>
     </div>
 
     <!-- SUBTAB: TEXTOS CITADOS v210 -->

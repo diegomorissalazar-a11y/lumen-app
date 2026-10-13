@@ -53,6 +53,7 @@ const LUMEN_JS_MANIFEST = [
   "js/maps/graph-metrics.js",
   "js/features/12-routes-graphs.js",
   "js/features/13-movies-normalization.js",
+  "js/author-split-review.js",
   "js/bibliography-completeness.js",
   "js/maps/map-viewport.js",
   "js/features/14-reading-export.js",

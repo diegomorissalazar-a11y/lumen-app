@@ -1172,16 +1172,22 @@ function renderStatsGlobal() {
 
 
 // LUMEN v213.2 — scatter ampliado interactivo de libros leídos.
+let _inventoryScatterMode=false;
+let _inventoryScatterStatus='all';
 let _expandedScatterChart=null;
 let _expandedScatterAll=[];
 let _expandedScatterDomain=[1900,2026];
 let _expandedScatterDragged=false;
 const EXPANDED_SCATTER_COLORS=['#8b2020','#2d5a3d','#1a3a5c','#c8952a','#7b5397','#b8643d','#288d94','#776246','#ad6b8d','#557c45','#666b8f','#8b6d4d'];
 function expandedScatterSource(){
-  return (db.entries||[]).filter(e=>e.type==='libro'&&e.estado==='leido'&&Number(e.paginas)>0&&Number(getBookOriginalPublicationYear(e)))
+  const source=_inventoryScatterMode ? inventoryBooksUnified().books : (db.entries||[]);
+  return source.filter(e=>e.type==='libro'&&(!_inventoryScatterMode ? e.estado==='leido' : (_inventoryScatterStatus==='all'||(_inventoryScatterStatus==='read'?inventoryIsRead(e):!inventoryIsRead(e))))&&Number(e.paginas)>0&&Number(getBookOriginalPublicationYear(e)))
     .map(e=>({...e,scatterYear:Number(getBookOriginalPublicationYear(e))}));
 }
 function openScatterExpanded(){
+  _inventoryScatterMode=false;
+  const status=document.getElementById('scatter-inventory-status');if(status){status.style.display='none';status.parentElement.style.display='none';}
+  const back=document.getElementById('scatter-expanded-back');if(back)back.textContent='← Volver a estadísticas';
   const area=document.getElementById('scatter-expanded');if(!area)return;
   _expandedScatterAll=expandedScatterSource();
   const years=_expandedScatterAll.map(e=>e.scatterYear);
@@ -1192,7 +1198,7 @@ function openScatterExpanded(){
   area.style.display='flex';document.body.classList.add('scatter-expanded-mode');
   renderScatterExpanded();
 }
-function closeScatterExpanded(){document.getElementById('scatter-expanded').style.display='none';document.body.classList.remove('scatter-expanded-mode');if(_expandedScatterChart){_expandedScatterChart.destroy();_expandedScatterChart=null;}}
+function closeScatterExpanded(){_inventoryScatterMode=false;document.getElementById('scatter-expanded').style.display='none';document.body.classList.remove('scatter-expanded-mode');if(_expandedScatterChart){_expandedScatterChart.destroy();_expandedScatterChart=null;}}
 function resetScatterExpanded(){
   _scatterLegendSelection.clear();const select=document.getElementById('scatter-segment');if(select)select.value='none';_scatterLastSegment='none';
   const from=document.getElementById('scatter-year-min'),to=document.getElementById('scatter-year-max');
@@ -1247,3 +1253,21 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElement
 let _scatterDragStart=null;
 document.addEventListener('pointerdown',ev=>{if(ev.target?.id==='scatter-expanded-canvas')_scatterDragStart={x:ev.clientX,from:Number(document.getElementById('scatter-year-min')?.value),to:Number(document.getElementById('scatter-year-max')?.value)};});
 document.addEventListener('pointerup',ev=>{if(!_scatterDragStart)return;const drag=_scatterDragStart;_scatterDragStart=null;const canvas=document.getElementById('scatter-expanded-canvas');if(!canvas)return;const delta=Math.round((drag.x-ev.clientX)/Math.max(canvas.clientWidth,1)*(drag.to-drag.from));const span=drag.to-drag.from;const lo=Math.min(_expandedScatterDomain[1]-span,Math.max(_expandedScatterDomain[0],drag.from+delta));const a=document.getElementById('scatter-year-min'),b=document.getElementById('scatter-year-max');if(a&&b){a.value=lo;b.value=lo+span;scatterRangeChanged();}});
+
+function openInventoryScatterExpanded(){
+  const area=document.getElementById('scatter-expanded');if(!area)return;
+  _inventoryScatterMode=true;_inventoryScatterStatus='all';
+  const filter=document.getElementById('scatter-inventory-status');if(filter){filter.style.display='inline-flex';filter.parentElement.style.display='inline-flex';filter.value='all';}
+  const back=document.getElementById('scatter-expanded-back');if(back)back.textContent='← Volver al inventario';
+  _expandedScatterAll=expandedScatterSource();
+  const years=_expandedScatterAll.map(e=>e.scatterYear),min=years.length?Math.min(...years):1800,max=years.length?Math.max(...years):new Date().getFullYear();
+  _expandedScatterDomain=[min,max];
+  ['min','max'].forEach((p,i)=>{const el=document.getElementById('scatter-year-'+p);if(el){el.min=min;el.max=Math.max(min+1,max);el.value=i?max:min;}});
+  const segment=document.getElementById('scatter-segment');if(segment)segment.value='none';_scatterLegendSelection.clear();_scatterLastSegment='none';
+  area.style.display='flex';document.body.classList.add('scatter-expanded-mode');renderScatterExpanded();
+}
+function inventoryScatterStatusChanged(){
+  _inventoryScatterStatus=document.getElementById('scatter-inventory-status')?.value||'all';
+  _expandedScatterAll=expandedScatterSource();
+  _scatterLegendSelection.clear();renderScatterExpanded();
+}

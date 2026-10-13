@@ -763,8 +763,9 @@ function switchNormTab(tab) {
   const nombresPanel=document.getElementById('norm-sub-nombres');if(nombresPanel)nombresPanel.style.display=tab==='nombres'?'flex':'none';
   document.getElementById('norm-sub-editoriales').style.display='none';
   document.getElementById('norm-sub-libros').style.display     = tab==='libros'     ? 'flex' : 'none';
+  const splitPanel=document.getElementById('norm-sub-dividir'); if(splitPanel)splitPanel.style.display=tab==='dividir'?'flex':'none';
   const textosPanel=document.getElementById('norm-sub-textos'); if(textosPanel) textosPanel.style.display=tab==='textos'?'flex':'none';
-  ['duplicados','elencos','nombres','libros','textos'].forEach(t => {
+  ['duplicados','elencos','nombres','libros','dividir','textos'].forEach(t => {
     const btn = document.getElementById('norm-tab-' + t);
     if (!btn) return;
     btn.style.color        = t === tab ? 'var(--gold)' : 'var(--ink4)';
@@ -785,6 +786,7 @@ function switchNormTab(tab) {
   if (tab === 'editoriales') runPublisherNormalization();
   if (tab === 'libros') renderIncompleteBibliographyBooks();
   if (tab === 'nombres') setManualNormType(_manualNormType);
+  if (tab === 'dividir') initAuthorSplitReview();
   if (tab === 'textos' && typeof renderMissingQuotedTextsV210==='function') renderMissingQuotedTextsV210();
 }
 
@@ -1403,11 +1405,11 @@ function renderManualNormNames(){
 function previewManualNormMerge(){
   const from=document.getElementById('manual-norm-from')?.value||'',to=document.getElementById('manual-norm-to')?.value||'';
   const box=document.getElementById('manual-norm-preview');if(!box)return;
-  if(!from||!to||from===to){box.textContent='Selecciona dos nombres diferentes. El destino se conservará como nombre canónico.';return;}
-  const matches=(db.entries||[]).filter(e=>e.type==='libro'&&(_manualNormType==='autores'?String(e.autor||'').split(/\s*;\s*/).includes(from):_manualNormType==='editoriales'?e.editorial===from:(e.idioma_original||e.idioma)===from));
-  const inv=_manualNormType==='idiomas'?[]:loadInventory().filter(e=>e[_manualNormType==='autores'?'autor':'editorial']===from);
-  box.textContent=`${from} → ${to} · ${matches.length} ficha(s) bibliográficas y ${inv.length} registro(s) de inventario. Se generará respaldo previo. Para autores, también se actualizan las relaciones que tengan una coincidencia exacta de nombre.`;
+  const grouped=name=>(db.entries||[]).filter(e=>e.type==='libro'&&(_manualNormType==='autores'?inventoryIndividualAuthors(e).includes(name):_manualNormType==='editoriales'?e.editorial===name:(e.idioma_original||e.idioma)===name));
+  const make=(label,name)=>`<div style="border:1px solid var(--border);padding:10px;margin:6px 0"><strong>${label}: ${escapeHtml(name||'Sin seleccionar')}</strong>${name?grouped(name).map(e=>`<div style="padding:5px 0;border-bottom:1px solid var(--cream2)">${escapeHtml(e.titulo||'Sin título')} · <span style="color:var(--ink3)">${escapeHtml(e.autor||'')}</span></div>`).join('')||'<div>Sin obras asociadas</div>':''}</div>`;
+  box.innerHTML=make('Nombre a reemplazar',from)+make('Nombre canónico',to)+((!from||!to||from===to)?'<p>Selecciona origen y destino diferentes.</p>':`<p>${escapeHtml(from)} → ${escapeHtml(to)}. Se creará respaldo antes del merge.</p>`);
 }
+
 function applyManualNormMerge(){
   const from=document.getElementById('manual-norm-from')?.value||'',to=document.getElementById('manual-norm-to')?.value||'',type=_manualNormType;
   if(!from||!to||from===to){showToast('Selecciona origen y destino distintos');return;}

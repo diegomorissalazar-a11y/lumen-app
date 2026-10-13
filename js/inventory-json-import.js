@@ -198,6 +198,9 @@ function confirmInventoryJsonImport() {
     const n = _inventoryBibParsed;
     if (!n || !n.titulo) { showToast('Revisa primero el JSON'); return; }
 
+    const originalCredit=n.autor;
+    const authorCheck=confirmAuthorSplitInput(n.autor,n.titulo);
+    n.autor=authorCheck.author;
     const authorWasExact = !!findCanonicalEntity('aut', n.autor);
     const authorEntity = n.autor ? resolveCanonicalEntity('aut', n.autor, true) : null;
     const canon = buildCanonicalBibliography(n); // normaliza editorial + traductores con confirmación ≥90%
@@ -242,6 +245,7 @@ function confirmInventoryJsonImport() {
       if (isNewBook && book.estado === 'leido') book.estado = 'pendiente';
       book._updatedAt = Date.now();
     }
+    if(authorCheck.reviewed){book.autor=authorCheck.author;book.autorOriginalCredito=book.autorOriginalCredito||originalCredit;authorSplitPostcheck(book);}
     syncInventoryFromBook(book);
     if(typeof invalidateRecommendations==='function') invalidateRecommendations('inventario enriquecido con JSON');
     const ok = saveDB();
