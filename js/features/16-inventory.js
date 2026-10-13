@@ -201,7 +201,7 @@ function saveInventoryContents(){
 }
 
 function inventoryUnlinkedCardHTML(item){const esc2=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');return `<div class="inventory-card"><div class="inventory-card-title">${esc2(item.titulo||'Sin título')}</div><div class="inventory-card-sub">${[item.autor,item.editorial].filter(Boolean).map(esc2).join(' · ')||'Información incompleta'}</div><div class="inventory-card-actions"><span class="inventory-status">Sin vincular</span><button class="btn btn-primary btn-sm" onclick="startInventoryReading('${item.inventoryId}')">Crear / comenzar lectura</button></div></div>`;}
-function inventoryTopRows(entries,getter,limit=8){const counts=new Map();entries.forEach(e=>{let vals=getter(e);if(!Array.isArray(vals))vals=[vals];vals.filter(Boolean).forEach(v=>{const k=String(v).trim();if(k)counts.set(k,(counts.get(k)||0)+1);});});return[...counts.entries()].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0])).slice(0,limit);}
+function inventoryTopRows(entries,getter,limit=Infinity){const counts=new Map();entries.forEach(e=>{let vals=getter(e);if(!Array.isArray(vals))vals=[vals];vals.filter(Boolean).forEach(v=>{const k=String(v).trim();if(k)counts.set(k,(counts.get(k)||0)+1);});});return[...counts.entries()].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0])).slice(0,limit);}
 function inventoryStatRows(rows){if(!rows.length)return'<div style="font-size:12px;color:var(--ink4);font-style:italic;">Sin datos suficientes.</div>';const max=Math.max(...rows.map(x=>x[1]),1);return rows.map(([name,count])=>`<div class="inventory-stat-row"><div class="inventory-stat-name">${String(name).replace(/&/g,'&amp;').replace(/</g,'&lt;')}</div><div class="inventory-stat-bar"><div class="inventory-stat-bar-fill" style="width:${Math.round(count/max*100)}%"></div></div><strong>${count}</strong></div>`).join('');}
 function openInventoryData(){
   const body=document.getElementById('inventory-data-body');if(!body)return;
@@ -235,11 +235,14 @@ function openInventoryData(){
   <div class="inventory-stat-section"><div class="chart-section-title">Catálogo de libros del inventario</div><input class="input" id="inventory-data-catalog-query" placeholder="Buscar título, autor o editorial" oninput="filterInventoryDataCatalog(this.value)" style="margin:10px 0"><div id="inventory-data-catalog-list">${books.map(e=>`<div class="inventory-catalog-item" data-search="${escapeHtml(invNorm((e.titulo||'')+' '+(e.autor||'')+' '+(e.editorial||'')))}" style="padding:7px 0;border-bottom:1px solid var(--border)"><strong>${escapeHtml(e.titulo||'Sin título')}</strong><div style="font-size:11px;color:var(--ink3)">${escapeHtml(e.autor||'')} · ${escapeHtml(e.editorial||'')}</div></div>`).join('')}</div></div>
   <div class="inventory-stat-section"><div class="chart-section-title">Adquisiciones por año</div>${inventoryStatRows(inventoryTopRows(books,e=>String(e.fecha_adquisicion||'').match(/^\d{4}/)?.[0]||'',100))}</div>
   <div class="inventory-stat-section"><div class="chart-section-title">Adquisiciones por mes (año-mes)</div>${inventoryStatRows(inventoryTopRows(books,e=>String(e.fecha_adquisicion||'').match(/^\d{4}-\d{2}/)?.[0]||'',100))}</div>
+  <div class="inventory-stat-section"><div class="chart-section-title">Evolución mensual: adquisiciones y lecturas</div><label>Año <select class="input" id="inventory-acq-read-year" style="max-width:150px"></select></label><div style="height:270px;position:relative"><canvas id="inventory-acq-read-chart"></canvas></div><div id="inventory-acq-read-totals" style="font-size:11px;color:var(--ink3)"></div></div>
   <div class="inventory-stat-section"><div class="chart-section-title">Datos curiosos del inventario</div>${inventoryInventoryCuriosities(books,total,read)}</div>
   <div style="font-size:11px;color:var(--ink4);line-height:1.5;margin-top:8px;">Los ejemplares multiobra se consideran leídos en Inventario cuando todas sus obras vinculadas están leídas. Esto no crea un libro leído adicional en las estadísticas generales.</div>`;
   openModal('modal-inventory-data');
   renderInventoryDataNavigation();
+  // El gráfico se inicializa al mostrar su pestaña (canvas con dimensiones visibles).
 }
+
 
 function startInventoryReading(id){
   const inv=loadInventory();const item=inv.find(x=>x.inventoryId===id);if(!item)return;
@@ -267,7 +270,7 @@ function inventoryInventoryCuriosities(books,total,read){
   return `<div class="inventory-data-grid"><div class="stat-box"><div class="stat-num">${authors}</div><div class="stat-label">Autores diferentes</div></div><div class="stat-box"><div class="stat-num">${publishers}</div><div class="stat-label">Editoriales diferentes</div></div><div class="stat-box"><div class="stat-num">${dated.length}</div><div class="stat-label">Con fecha de adquisición</div></div></div><p>Mes con más adquisiciones: <strong>${months[0]?months[0].join(' · '):'Sin datos'}</strong></p><p>Año con más adquisiciones: <strong>${years[0]?years[0].join(' · '):'Sin datos'}</strong></p><p>Libro con más páginas: <strong>${longest?escapeHtml(longest.titulo)+' · '+longest.paginas:'Sin datos'}</strong></p>`;
 }
 
-const INVENTORY_DATA_SECTIONS=[['Resumen',0],['Autores',1],['Editoriales',2],['Géneros',3],['Traductores',4],['Idiomas',5],['Publicaciones',6],['Ediciones',7],['Catálogo',8],['Adquisiciones por año',9],['Adquisiciones por mes',10],['Datos curiosos',11]];
+const INVENTORY_DATA_SECTIONS=[['Resumen',0],['Autores',1],['Editoriales',2],['Géneros',3],['Traductores',4],['Idiomas',5],['Publicaciones',6],['Ediciones',7],['Catálogo',8],['Adquisiciones por año',9],['Adquisiciones por mes',10],['Datos curiosos',12],['Evolución mensual',11]];
 let _inventoryDataTab=0;
 function renderInventoryDataNavigation(){
   const body=document.getElementById('inventory-data-body'),nav=document.getElementById('inventory-data-tabs');if(!body||!nav)return;
@@ -281,6 +284,30 @@ function selectInventoryDataTab(tab){
   _inventoryDataTab=tab;
   document.querySelectorAll('#inventory-data-body [data-inventory-group]').forEach(el=>el.style.display=Number(el.dataset.inventoryGroup)===tab?'':'none');
   document.querySelectorAll('#inventory-data-tabs [data-inv-tab]').forEach(btn=>btn.classList.toggle('active',Number(btn.dataset.invTab)===tab));
+  if(tab===11){const data=inventoryBooksUnified();inventoryReadAcquisitionChart(data.books||[]);}
 }
 
 function filterInventoryDataCatalog(query){const q=invNorm(query);document.querySelectorAll('#inventory-data-catalog-list .inventory-catalog-item').forEach(el=>{el.style.display=(!q||el.dataset.search.includes(q))?'':'none';});}
+
+function inventoryReadAcquisitionChart(books){
+  const yearSelector=document.getElementById('inventory-acq-read-year'),canvas=document.getElementById('inventory-acq-read-chart');if(!yearSelector||!canvas||typeof Chart==='undefined')return;
+  const months=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  const readDate=e=>{const exact=String(e.fecha_fin||e.fechaFin||e.fecha_lectura||'');if(/^\d{4}-\d{2}/.test(exact))return exact;const month=months.indexOf(e.mes);return e.estado==='leido'&&Number(e.anio)>0&&month>=0?`${e.anio}-${String(month+1).padStart(2,'0')}`:'';};
+  const dates=books.flatMap(e=>[String(e.fecha_adquisicion||''),readDate(e)].filter(s=>/^\d{4}-\d{2}/.test(s)));
+  const years=[...new Set(dates.map(s=>s.slice(0,4)))].sort((a,b)=>b.localeCompare(a));
+  if(!years.length){canvas.parentElement.innerHTML='<p>Sin suficientes fechas de adquisición y término de lectura para construir el gráfico.</p>';return;}
+  yearSelector.replaceChildren();years.forEach(y=>{const op=document.createElement('option');op.value=y;op.textContent=y;yearSelector.append(op);});
+  const update=()=>{
+    const year=yearSelector.value;
+    const acquisition=Array(12).fill(0),reading=Array(12).fill(0);
+    for(const e of books){
+      const bought=String(e.fecha_adquisicion||''),finished=readDate(e);
+      if(bought.startsWith(year+'-')){const m=Number(bought.slice(5,7));if(m>=1&&m<=12)acquisition[m-1]++;}
+      if(e.estado==='leido'&&finished.startsWith(year+'-')){const m=Number(finished.slice(5,7));if(m>=1&&m<=12)reading[m-1]++;}
+    }
+    const old=Chart.getChart(canvas);if(old)old.destroy();
+    new Chart(canvas,{type:'line',data:{labels:['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'],datasets:[{label:'Adquisiciones',data:acquisition,borderColor:'#bd8d25',backgroundColor:'#bd8d25',tension:.25},{label:'Lecturas',data:reading,borderColor:'#315d46',backgroundColor:'#315d46',tension:.25}]},options:{responsive:true,maintainAspectRatio:false,scales:{y:{beginAtZero:true,ticks:{precision:0}}}}});
+    const note=document.getElementById('inventory-acq-read-totals');if(note)note.textContent=`${acquisition.reduce((a,b)=>a+b,0)} adquiridos · ${reading.reduce((a,b)=>a+b,0)} leídos en ${year} (según fechas y meses de lectura registrados)`;
+  };
+  yearSelector.onchange=update;update();
+}

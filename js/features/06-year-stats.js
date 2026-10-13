@@ -1188,11 +1188,13 @@ function openScatterExpanded(){
   const min=years.length?Math.min(...years):1800,max=years.length?Math.max(...years):new Date().getFullYear();
   _expandedScatterDomain=[min,max];
   ['min','max'].forEach((part,i)=>{const input=document.getElementById('scatter-year-'+part);if(input){input.min=min;input.max=Math.max(min+1,max);input.value=i?max:min;}});
+  const segmentSelect=document.getElementById('scatter-segment');if(segmentSelect)segmentSelect.value='none';_scatterLegendSelection.clear();_scatterLastSegment='none';
   area.style.display='flex';document.body.classList.add('scatter-expanded-mode');
   renderScatterExpanded();
 }
 function closeScatterExpanded(){document.getElementById('scatter-expanded').style.display='none';document.body.classList.remove('scatter-expanded-mode');if(_expandedScatterChart){_expandedScatterChart.destroy();_expandedScatterChart=null;}}
 function resetScatterExpanded(){
+  _scatterLegendSelection.clear();const select=document.getElementById('scatter-segment');if(select)select.value='none';_scatterLastSegment='none';
   const from=document.getElementById('scatter-year-min'),to=document.getElementById('scatter-year-max');
   if(from)from.value=_expandedScatterDomain[0];if(to)to.value=_expandedScatterDomain[1];renderScatterExpanded();
 }
@@ -1201,21 +1203,37 @@ function scatterRangeChanged(){
   if(Number(a.value)>Number(b.value)){if(document.activeElement===a)b.value=a.value;else a.value=b.value;}
   renderScatterExpanded();
 }
+let _scatterLegendSelection = new Set();
+let _scatterLastSegment = 'none';
+function scatterSegmentChanged(){_scatterLegendSelection.clear();_scatterLastSegment=document.getElementById('scatter-segment')?.value||'none';renderScatterExpanded();}
+function scatterLegendToggle(name,event){
+  if(event&&(event.ctrlKey||event.metaKey)){
+    if(_scatterLegendSelection.has(name))_scatterLegendSelection.delete(name);
+    else _scatterLegendSelection.add(name);
+  }else if(_scatterLegendSelection.size===1&&_scatterLegendSelection.has(name))_scatterLegendSelection.clear();
+  else _scatterLegendSelection=new Set([name]);
+  renderScatterExpanded();
+}
 function renderScatterExpanded(){
-  const el=document.getElementById('scatter-expanded-canvas'),legend=document.getElementById('scatter-expanded-legend');if(!el)return;
-  let min=Number(document.getElementById('scatter-year-min')?.value),max=Number(document.getElementById('scatter-year-max')?.value);
+  const el=document.getElementById('scatter-expanded-canvas'),legend=document.getElementById('scatter-expanded-legend');if(!el||!legend)return;
+  const min=Number(document.getElementById('scatter-year-min')?.value),max=Number(document.getElementById('scatter-year-max')?.value);
   document.getElementById('scatter-year-min-label').textContent=min;
   document.getElementById('scatter-year-max-label').textContent=max;
   const segment=document.getElementById('scatter-segment').value;
-  const key=e=>segment==='genero'?(Array.isArray(e.generos)?e.generos[0]:e.genero)||'Sin género':segment==='idioma'?(e.idioma||e.idioma_original||'Sin idioma'):(e.editorial||'Sin editorial');
+  if(segment!==_scatterLastSegment){_scatterLegendSelection.clear();_scatterLastSegment=segment;}
+  const key=e=>segment==='genero'?(Array.isArray(e.generos)?e.generos[0]:e.genero)||'Sin género':segment==='idioma'?(e.idioma_original||e.idioma||'Sin idioma'):segment==='none'?'Libros':(e.editorial||'Sin editorial');
   const all=[...new Set(_expandedScatterAll.map(key))].sort((a,b)=>a.localeCompare(b,'es'));
-  const colorMap=new Map(all.map((name,i)=>[name,EXPANDED_SCATTER_COLORS[i%EXPANDED_SCATTER_COLORS.length]]));
+  const colorMap=new Map(all.map((name,i)=>[name,segment==='none'?'#2d5a3d':EXPANDED_SCATTER_COLORS[i%EXPANDED_SCATTER_COLORS.length]]));
   const visible=_expandedScatterAll.filter(e=>e.scatterYear>=min&&e.scatterYear<=max);
-  const groups=[...new Set(visible.map(key))];
+  const inWindow=[...new Set(visible.map(key))].sort((a,b)=>a.localeCompare(b,'es'));
+  const groups=inWindow.filter(g=>!_scatterLegendSelection.size||_scatterLegendSelection.has(g));
   if(_expandedScatterChart){_expandedScatterChart.destroy();_expandedScatterChart=null;}
   _expandedScatterChart=new Chart(el.getContext('2d'),{type:'scatter',data:{datasets:groups.map(g=>({label:g,data:visible.filter(e=>key(e)===g).map(e=>({x:e.scatterYear,y:e.paginas,title:e.titulo,author:e.autor})),backgroundColor:colorMap.get(g),borderColor:colorMap.get(g),pointRadius:6,pointHoverRadius:9}))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.raw.title} · ${c.raw.author||'—'} (${c.raw.x}, ${c.raw.y} páginas)`}}},scales:{x:{type:'linear',min:min-1,max:max+1,title:{display:true,text:'Año de publicación original'}},y:{title:{display:true,text:'Páginas'},beginAtZero:true}}}});
-  legend.replaceChildren();all.forEach(name=>{const btn=document.createElement('button');btn.type='button';btn.className='scatter-legend-item';btn.innerHTML=`<i style="background:${colorMap.get(name)}"></i>`;btn.append(document.createTextNode(name));btn.onclick=()=>{const group=_expandedScatterChart?.data.datasets.find(x=>x.label===name);if(!group)return;const i=_expandedScatterChart.data.datasets.indexOf(group);_expandedScatterChart.setDatasetVisibility(i,!_expandedScatterChart.isDatasetVisible(i));_expandedScatterChart.update();btn.classList.toggle('dimmed');};legend.append(btn);});
+  legend.replaceChildren();legend.style.display=segment==='none'?'none':'';
+  // Solo categorías existentes en el período visible. Clic filtra; Ctrl/Cmd + clic agrega selección.
+  inWindow.forEach(name=>{const btn=document.createElement('button');btn.type='button';btn.className='scatter-legend-item';if(_scatterLegendSelection.size&&!_scatterLegendSelection.has(name))btn.classList.add('dimmed');btn.setAttribute('aria-pressed',String(_scatterLegendSelection.has(name)));btn.innerHTML=`<i style="background:${colorMap.get(name)}"></i>`;btn.append(document.createTextNode(name));btn.onclick=event=>scatterLegendToggle(name,event);legend.append(btn);});
 }
+
 function scatterExpandedWheel(ev){
  if(!document.getElementById('scatter-expanded')||document.getElementById('scatter-expanded').style.display==='none')return;
  ev.preventDefault();const a=document.getElementById('scatter-year-min'),b=document.getElementById('scatter-year-max');

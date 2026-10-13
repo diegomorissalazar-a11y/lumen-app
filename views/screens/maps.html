@@ -177,14 +177,8 @@
         style="flex:1;padding:9px;border:none;background:none;font-family:var(--font-sans);font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;color:var(--ink4);border-bottom:2px solid transparent;margin-bottom:-2px;">
         📋 Elencos
       </button>
-      <button id="norm-tab-idiomas" onclick="switchNormTab('idiomas')"
-        style="flex:1;padding:9px;border:none;background:none;font-family:var(--font-sans);font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;color:var(--ink4);border-bottom:2px solid transparent;margin-bottom:-2px;">
-        🌐 Idiomas
-      </button>
-      <button id="norm-tab-editoriales" onclick="switchNormTab('editoriales')"
-        style="flex:1;padding:9px;border:none;background:none;font-family:var(--font-sans);font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;color:var(--ink4);border-bottom:2px solid transparent;margin-bottom:-2px;">
-        🏛 Editoriales
-      </button>
+      <button id="norm-tab-nombres" onclick="switchNormTab('nombres')"
+        style="flex:1;padding:9px;border:none;background:none;font-family:var(--font-sans);font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;color:var(--ink4);border-bottom:2px solid transparent;margin-bottom:-2px;">Normalizar nombres</button>
       <button id="norm-tab-libros" onclick="switchNormTab('libros')"
         style="flex:1;padding:9px;border:none;background:none;font-family:var(--font-sans);font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;color:var(--ink4);border-bottom:2px solid transparent;margin-bottom:-2px;">
         📚 Libros
@@ -238,6 +232,25 @@
       </div>
     </div>
 
+    <!-- v213.3: normalización manual, sin perder los motores antiguos -->
+    <div id="norm-sub-nombres" style="display:none;flex-direction:column;flex:1;overflow:auto;padding:14px;gap:12px;">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-secondary btn-sm" onclick="setManualNormType('autores')">Autores</button>
+        <button class="btn btn-secondary btn-sm" onclick="setManualNormType('editoriales')">Editoriales</button>
+        <button class="btn btn-secondary btn-sm" onclick="setManualNormType('idiomas')">Idiomas</button>
+      </div>
+      <div id="manual-norm-counter" style="font-size:12px;color:var(--ink3)"></div>
+      <label>Buscar nombres <input class="input" id="manual-norm-query" placeholder="Filtrar lista alfabética" oninput="renderManualNormNames()"></label>
+      <div id="manual-norm-list" style="max-height:35vh;overflow:auto;background:white;border:1px solid var(--border);padding:10px"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <label>Nombre a reemplazar<select class="input" id="manual-norm-from" onchange="previewManualNormMerge()"></select></label>
+        <label>Nombre canónico<select class="input" id="manual-norm-to" onchange="previewManualNormMerge()"></select></label>
+      </div>
+      <div id="manual-norm-preview" style="font-size:12px;padding:12px;background:var(--cream2);"></div>
+      <button class="btn btn-primary btn-sm" style="width:max-content" onclick="applyManualNormMerge()">Revisar y fusionar</button>
+      <p style="font-size:11px;color:var(--ink3)">Cada operación genera respaldo local previo. No fusiona nombres automáticamente.</p>
+    </div>
+
     <!-- SUBTAB: EDITORIALES — normalización canónica -->
     <div id="norm-sub-editoriales" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
       <div style="padding:10px 16px;display:flex;gap:8px;align-items:center;border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap;">
@@ -255,15 +268,15 @@
       </div>
     </div>
 
-    <!-- SUBTAB: LIBROS — completitud + inferencias + propagación -->
+    <!-- SUBTAB: LIBROS — cuatro campos obligatorios -->
     <div id="norm-sub-libros" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
       <div class="norm-books-summary">
         <span class="norm-books-stat" id="norm-books-count"></span>
         <span class="norm-books-stat" id="norm-books-suggestion-count"></span>
-        <button class="btn btn-secondary btn-sm" style="width:auto;margin-left:auto;" onclick="applyAllHighConfidenceMetadata()">✓ Aplicar sugerencias seguras</button>
+        
         <button class="btn btn-secondary btn-sm" style="width:auto;" onclick="renderIncompleteBibliographyBooks()">↻ Analizar</button>
       </div>
-      <div class="norm-propagation-panel">
+      <div class="norm-propagation-panel" style="display:none">
         <div class="norm-propagation-title">Propagación asistida · Autor + Género</div>
         <div id="norm-books-propagation-list"></div>
       </div>
