@@ -757,15 +757,16 @@ let elencPendientes = [];
 let elencIdSeleccionado = null; // guardamos ID en lugar de índice
 
 function switchNormTab(tab) {
+  if (tab==='dividir') { switchNormTab('nombres'); switchManualNormView('dividir'); return; }
   document.getElementById('norm-sub-duplicados').style.display = tab==='duplicados' ? 'flex' : 'none';
   document.getElementById('norm-sub-elencos').style.display    = tab==='elencos'    ? 'flex' : 'none';
   document.getElementById('norm-sub-idiomas').style.display='none';
   const nombresPanel=document.getElementById('norm-sub-nombres');if(nombresPanel)nombresPanel.style.display=tab==='nombres'?'flex':'none';
   document.getElementById('norm-sub-editoriales').style.display='none';
   document.getElementById('norm-sub-libros').style.display     = tab==='libros'     ? 'flex' : 'none';
-  const splitPanel=document.getElementById('norm-sub-dividir'); if(splitPanel)splitPanel.style.display=tab==='dividir'?'flex':'none';
+
   const textosPanel=document.getElementById('norm-sub-textos'); if(textosPanel) textosPanel.style.display=tab==='textos'?'flex':'none';
-  ['duplicados','elencos','nombres','libros','dividir','textos'].forEach(t => {
+  ['duplicados','elencos','nombres','libros','textos'].forEach(t => {
     const btn = document.getElementById('norm-tab-' + t);
     if (!btn) return;
     btn.style.color        = t === tab ? 'var(--gold)' : 'var(--ink4)';
@@ -785,8 +786,7 @@ function switchNormTab(tab) {
   if (tab === 'idiomas') initIdiomasTab();
   if (tab === 'editoriales') runPublisherNormalization();
   if (tab === 'libros') renderIncompleteBibliographyBooks();
-  if (tab === 'nombres') setManualNormType(_manualNormType);
-  if (tab === 'dividir') initAuthorSplitReview();
+  if (tab === 'nombres') { setManualNormType(_manualNormType); switchManualNormView('merge'); }
   if (tab === 'textos' && typeof renderMissingQuotedTextsV210==='function') renderMissingQuotedTextsV210();
 }
 
@@ -1380,6 +1380,7 @@ function manualNormValues(type=_manualNormType){
   return [...counts.entries()].sort((a,b)=>a[0].localeCompare(b[0],'es',{sensitivity:'base'}));
 }
 function setManualNormType(type){
+  switchManualNormView('merge');
   _manualNormType=['autores','editoriales','idiomas'].includes(type)?type:'autores';
   const query=document.getElementById('manual-norm-query');if(query)query.value='';
   const items=manualNormValues();
@@ -1415,10 +1416,51 @@ function applyManualNormMerge(){
   if(!from||!to||from===to){showToast('Selecciona origen y destino distintos');return;}
   if(!confirm(`¿Fusionar ${from} → ${to}?\nSe conservará «${to}». Se actualizarán las fichas afectadas y se creará respaldo antes de guardar.`))return;
   const inv=loadInventory();
-  const backup={version:'213.3',at:new Date().toISOString(),type,from,to,entries:JSON.parse(JSON.stringify(db.entries||[])),inventory:JSON.parse(JSON.stringify(inv)),mapas:type==='autores'?JSON.parse(JSON.stringify(mapas||{})):null,canonical:type==='autores'?loadCanonicalEntities():null};
+  // Respaldo incremental: la operación nunca debe duplicar db, inventario ni mapas completos.
+  // Se almacenan exactamente las filas que podrían ser alteradas, identificadas por ID o índice.
+  const includesAuthor=e=>String(e?.autor||'').split(/\s*;\s*/).includes(from);
+  const touchesBook=e=>e?.type==='libro' && (type==='autores'?includesAuthor(e):type==='editoriales'?e.editorial===from:type==='idiomas'?(e.idioma_original===from||e.idioma===from):false);
+  const touchesInventory=e=>type!=='idiomas' && (type==='autores'?e?.autor===from:e?.editorial===from);
+  const affectedEntries=(db.entries||[]).filter(touchesBook).map(e=>JSON.parse(JSON.stringify(e)));
+  const affectedInventory=inv.map((e,index)=>({e,index})).filter(({e})=>touchesInventory(e)).map(({e,index})=>({index,entry:JSON.parse(JSON.stringify(e))}));
+  const affectedRelations=[];
+  if(type==='autores')for(const group of ['influencias','rutas']){
+    (mapas?.[group]||[]).forEach((rel,index)=>{
+      if(!rel)return;
+      if(['fuente','fuente_autor','destino','destino_autor'].some(k=>rel[k]===from))affectedRelations.push({group,index,entry:JSON.parse(JSON.stringify(rel))});
+    });
+  }
+  const rows=type==='autores'&&typeof authorIdentityRowsV208==='function'?authorIdentityRowsV208():[];
+  const idsFrom=[...new Set(rows.filter(r=>r.name===from).map(r=>r.id))];
+  const idsTo=[...new Set(rows.filter(r=>r.name===to).map(r=>r.id))];
+  // La consolidación de IDs también puede afectar referencias en otras fichas/mapas.
+  const sourceId=idsFrom.length===1&&idsTo.length===1&&idsFrom[0]!==idsTo[0]?idsFrom[0]:null;
+  if(sourceId){
+    const seen=new Set(affectedEntries.map(e=>e.id));
+    for(const e of db.entries||[])if(e.type==='libro'&&!seen.has(e.id)&&(e.autorId===sourceId||(e.autorIds||[]).includes(sourceId))){affectedEntries.push(JSON.parse(JSON.stringify(e)));seen.add(e.id);}
+    for(const group of ['influencias','rutas'])(mapas?.[group]||[]).forEach((rel,index)=>{
+      if(!rel||!['fuente_autor_id','destino_autor_id'].some(k=>rel[k]===sourceId)||affectedRelations.some(x=>x.group===group&&x.index===index))return;
+      affectedRelations.push({group,index,entry:JSON.parse(JSON.stringify(rel))});
+    });
+  }
+  const canonical=sourceId?loadCanonicalEntities():null;
+  const affectedCanonical=canonical&&sourceId?{
+    sourceId,targetId:idsTo[0],
+    source:canonical.authors?.[sourceId]??null,
+    target:canonical.authors?.[idsTo[0]]??null
+  }:null;
+  const backup={schema:'lumen_manual_norm_delta_v1',version:'214.1',at:new Date().toISOString(),type,from,to,
+    entries:affectedEntries,inventory:affectedInventory,relations:affectedRelations,canonical:affectedCanonical};
   const backupKey='lumen_manual_norm_backup_'+Date.now();
-  try{localStorage.setItem(backupKey,JSON.stringify(backup));}
-  catch(err){showToast('No se pudo crear respaldo. No se aplicó el merge.');return;}
+  let backupOk=false;
+  try{
+    // Sin poda automática: eliminar respaldos previos comprometería la reversibilidad.
+    backupOk=typeof safeLocalSetItem==='function'
+      ?safeLocalSetItem(backupKey,JSON.stringify(backup),{prune:false})
+      :(localStorage.setItem(backupKey,JSON.stringify(backup)),true);
+    backupOk=backupOk&&localStorage.getItem(backupKey)!==null;
+  }catch(err){console.warn('[LUMEN v214.1] Respaldo incremental falló:',err);}
+  if(!backupOk){showToast('Sin espacio para respaldo del merge. No se modificaron datos.');return;}
   let changed=0;
   const replaceAuthor=x=>String(x||'').split(/\s*;\s*/).map(n=>n===from?to:n).join('; ');
   (db.entries||[]).forEach(e=>{if(e.type!=='libro')return;let rowChanged=false;
@@ -1459,4 +1501,19 @@ function applyManualNormMerge(){
   if(typeof renderMapaInfluencias==='function'&&type==='autores')renderMapaInfluencias();
   if(typeof renderInventory==='function')renderInventory();
   showToast(`✓ ${changed} referencias actualizadas · respaldo: ${backupKey}`);
+}
+
+// v214.2: Dividir autores es una vista interna de Normalizar nombres.
+function switchManualNormView(view) {
+  const split = view === 'dividir';
+  const mergePanel = document.getElementById('manual-norm-merge-content');
+  const splitPanel = document.getElementById('norm-sub-dividir');
+  if (mergePanel) mergePanel.style.display = split ? 'none' : 'flex';
+  if (splitPanel) splitPanel.style.display = split ? 'flex' : 'none';
+  const buttons = document.querySelectorAll('#norm-sub-nombres > div:first-child > button');
+  buttons.forEach(btn => {
+    const active = split ? btn.id === 'manual-norm-split-button' : btn.id !== 'manual-norm-split-button';
+    if (!active) { btn.style.background = ''; btn.style.color = ''; }
+  });
+  if (split && typeof initAuthorSplitReview === 'function') initAuthorSplitReview();
 }
