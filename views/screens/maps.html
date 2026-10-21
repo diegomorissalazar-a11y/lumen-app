@@ -249,7 +249,7 @@
         <label>Nombre canónico<select class="input" id="manual-norm-to" onchange="previewManualNormMerge()"></select></label>
       </div>
       <div id="manual-norm-preview" style="font-size:12px;padding:12px;background:var(--cream2);"></div>
-      <button class="btn btn-primary btn-sm" style="width:max-content" onclick="applyManualNormMerge()">Revisar y fusionar</button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-primary btn-sm" onclick="applyManualNormMerge()">Revisar y fusionar</button><button class="btn btn-secondary btn-sm" onclick="editManualNormCanonicalName()">Editar nombre canónico</button></div>
       <p style="font-size:11px;color:var(--ink3)">Cada operación genera respaldo local previo. No fusiona nombres automáticamente.</p>
       </div>
     <!-- v213.4: dividir autorías sin multiplicar obras -->

@@ -49,6 +49,15 @@ function allKnownEntityNames(kind){
   else (db?.entries||[]).filter(e=>e?.type==='libro'&&e.traductor).forEach(e=>String(e.traductor).split(/\s*;\s*|\s*,\s*(?=[A-ZÁÉÍÓÚÑ])/).filter(Boolean).forEach(n=>out.push({id:canonicalEntityId('tra',n),name:n,registered:false})));
   const seen=new Set(); return out.filter(x=>{const k=x.id+'|'+canonicalText(x.name);if(seen.has(k))return false;seen.add(k);return true;});
 }
+// v214.5: valores históricos de autoría colectiva, no identidades individuales.
+function retireSplitCollectiveAuthor(name){
+  const text=String(name||'').trim();if(!text)return;
+  const c=loadCanonicalEntities();c.retiredCollectiveAuthors=c.retiredCollectiveAuthors||[];
+  if(!c.retiredCollectiveAuthors.some(v=>canonicalText(v)===canonicalText(text)))c.retiredCollectiveAuthors.push(text);
+  for(const [id,e] of Object.entries(c.authors||{}))if(canonicalText(e.nombreCanonico)===canonicalText(text)&&!e.autoriaCompuestaProtegida){delete c.authors[id];}
+  saveCanonicalEntities(c);
+}
+function isRetiredCollectiveAuthor(name){const c=loadCanonicalEntities();return (c.retiredCollectiveAuthors||[]).some(v=>canonicalText(v)===canonicalText(String(name||'')));}
 function findCanonicalEntity(kind,name){
   const norm=canonicalText(name); if(!norm)return null; const c=loadCanonicalEntities(),b=catalogBucket(kind,c);
   for(const e of Object.values(b)){if(canonicalText(e.nombreCanonico)===norm || (e.aliases||[]).some(a=>canonicalText(a)===norm))return e;}

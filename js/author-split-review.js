@@ -68,8 +68,8 @@ function renderAuthorSplitReview(){
     candidate.parts.forEach(part=>{const row=document.createElement('div');row.style.cssText='display:flex;align-items:center;gap:6px;margin:4px 0';const input=document.createElement('input');input.className='input';input.dataset.splitPart='1';input.value=part;input.setAttribute('list','lumen-authors-existing');row.append(input);card.append(row);});
     const add=document.createElement('button');add.type='button';add.className='btn btn-secondary btn-sm';add.textContent='+ Añadir autor';add.onclick=()=>{const input=document.createElement('input');input.className='input';input.dataset.splitPart='1';input.placeholder='Otro autor';card.insertBefore(input,action);};
     const action=document.createElement('div');action.style.cssText='display:flex;gap:8px;flex-wrap:wrap;margin-top:8px';action.append(add);
-    const confirm=document.createElement('button');confirm.type='button';confirm.className='btn btn-primary btn-sm';confirm.textContent='Revisar y dividir';confirm.onclick=()=>applyAuthorSplitBook(book.id,authorSplitCurrentParts(card));action.append(confirm);
-    const protect=document.createElement('button');protect.type='button';protect.className='btn btn-secondary btn-sm';protect.textContent='Es un nombre canónico compuesto';protect.onclick=()=>{if(confirm(`¿Conservar «${book.autor}» como UNA entidad y excluirlo de futuras propuestas de división?`))setAuthorSplitProtected(book.autor,true);};action.append(protect);
+    const splitButton=document.createElement('button');splitButton.type='button';splitButton.className='btn btn-primary btn-sm';splitButton.textContent='Revisar y dividir';splitButton.onclick=()=>applyAuthorSplitBook(book.id,authorSplitCurrentParts(card));action.append(splitButton);
+    const protect=document.createElement('button');protect.type='button';protect.className='btn btn-secondary btn-sm';protect.textContent='Es un nombre canónico compuesto';protect.onclick=()=>{if(window.confirm(`¿Conservar «${book.autor}» como UNA entidad y excluirlo de futuras propuestas de división?`))setAuthorSplitProtected(book.autor,true);};action.append(protect);
     card.append(action);out.append(card);
   }
   const protectedList=Object.values((typeof loadCanonicalEntities==='function'?loadCanonicalEntities().authors:{})||{}).filter(e=>e.autoriaCompuestaProtegida);
@@ -109,10 +109,12 @@ function applyAuthorSplitBook(bookId,parts){
   const original=book.autor;
   const ids=names.map(n=>resolveCanonicalEntity('aut',n,false).id);
   book.autorOriginalCredito=book.autorOriginalCredito||original;
+  // Una cadena con varios autores no constituye una entidad canónica independiente.
   book.autor=names.join('; ');book.autorIds=[...new Set(ids)];book.autorId=book.autorIds[0]||'';
   book._updatedAt=Date.now();
   const ok=saveDB();if(ok===false){showToast('Error al persistir. Respaldo '+key);return;}
-  const verified=book.autorIds.length===names.length&&book.id===bookId;
+  if(typeof retireSplitCollectiveAuthor==='function')retireSplitCollectiveAuthor(original);
+  const verified=book.autorIds.length===names.length&&String(book.id)===String(bookId);
   if(typeof renderInventory==='function')renderInventory();
   renderAuthorSplitReview();showToast(verified?'✓ Autoría dividida; 1 libro y '+names.length+' autores.':'Revisar autorías; respaldo '+key);
 }

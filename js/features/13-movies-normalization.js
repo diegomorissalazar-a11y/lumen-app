@@ -1370,15 +1370,27 @@ async function wikiMasivoConfirmar() {
 // LUMEN v213.3: normalización manual reversible de nombres.
 let _manualNormType='autores';
 function manualNormValues(type=_manualNormType){
-  const counts=new Map();const add=(value)=>{if(!value)return;const text=String(value).trim();if(text)counts.set(text,(counts.get(text)||0)+1);};
+  const counts=new Map(), c=loadCanonicalEntities(), bucket=c.authors||{};
+  const resolve=name=>{
+    const t=String(name||'').trim();if(!t)return '';
+    if(type==='idiomas'){const c=loadCanonicalEntities();return c.languageAliases?.[t]||t;}
+    if(type!=='autores')return t;
+    if(typeof isRetiredCollectiveAuthor==='function'&&isRetiredCollectiveAuthor(t))return '';
+    const match=Object.values(bucket).find(e=>e&&[e.nombreCanonico,...(e.aliases||[])].some(n=>canonicalText(n)===canonicalText(t)));
+    return match?.nombreCanonico||t;
+  };
+  const add=value=>{const text=resolve(value);if(text)counts.set(text,(counts.get(text)||0)+1);};
   (db.entries||[]).filter(e=>e&&e.type==='libro').forEach(e=>{
     if(type==='autores')String(e.autor||'').split(/\s*;\s*/).forEach(add);
     else if(type==='editoriales')add(e.editorial);
-    else add(e.idioma_original||e.idioma);
+    else {add(e.idioma_original);add(e.idioma);}
   });
-  if(type!=='idiomas')loadInventory().forEach(e=>add(type==='autores'?e.autor:e.editorial));
+  if(type!=='idiomas')loadInventory().forEach(e=>{
+    if(type==='autores')String(e.autor||'').split(/\s*;\s*/).forEach(add);
+    else add(e.editorial);
+  });
   if(type==='autores'){
-    if(typeof allKnownEntityNames==='function') (allKnownEntityNames('aut')||[]).forEach(name=>add(typeof name==='string'?name:(name?.name||name?.nombreCanonico||name?.nombre||'')));
+    Object.values(bucket).forEach(e=>add(e?.nombreCanonico));
     (mapas?.influencias||[]).forEach(rel=>{if(!rel)return;[rel.fuente,rel.fuente_autor,rel.destino_autor,rel.destino].forEach(add);
       for(const key of ['fuente_autor_id','destino_autor_id'])if(rel[key]&&typeof canonicalNameById==='function')add(canonicalNameById('aut',rel[key],''));
     });
@@ -1441,8 +1453,8 @@ function applyManualNormMerge(){
     });
   }
   const rows=type==='autores'&&typeof authorIdentityRowsV208==='function'?authorIdentityRowsV208():[];
-  const idsFrom=[...new Set(rows.filter(r=>r.name===from).map(r=>r.id))];
-  const idsTo=[...new Set(rows.filter(r=>r.name===to).map(r=>r.id))];
+  const idsFrom=[...new Set([...rows.filter(r=>r.name===from).map(r=>r.id),...(type==='autores'&&findCanonicalEntity('aut',from)?[findCanonicalEntity('aut',from).id]:[])])];
+  const idsTo=[...new Set([...rows.filter(r=>r.name===to).map(r=>r.id),...(type==='autores'&&findCanonicalEntity('aut',to)?[findCanonicalEntity('aut',to).id]:[])])];
   // La consolidación de IDs también puede afectar referencias en otras fichas/mapas.
   const sourceId=idsFrom.length===1&&idsTo.length===1&&idsFrom[0]!==idsTo[0]?idsFrom[0]:null;
   if(sourceId){
@@ -1453,14 +1465,15 @@ function applyManualNormMerge(){
       affectedRelations.push({group,index,entry:JSON.parse(JSON.stringify(rel))});
     });
   }
-  const canonical=sourceId?loadCanonicalEntities():null;
-  const affectedCanonical=canonical&&sourceId?{
+  const canonical=type==='autores'?loadCanonicalEntities():null;
+  const affectedCanonical=canonical?{
     sourceId,targetId:idsTo[0],
     source:canonical.authors?.[sourceId]??null,
-    target:canonical.authors?.[idsTo[0]]??null
+    target:canonical.authors?.[idsTo[0]]??null,
+    entireSource:findCanonicalEntity('aut',from)||null,entireTarget:findCanonicalEntity('aut',to)||null
   }:null;
   const backup={schema:'lumen_manual_norm_delta_v1',version:'214.1',at:new Date().toISOString(),type,from,to,
-    entries:affectedEntries,inventory:affectedInventory,relations:affectedRelations,canonical:affectedCanonical};
+    entries:affectedEntries,inventory:affectedInventory,relations:affectedRelations,canonical:affectedCanonical,languageAliases:type==='idiomas'?loadCanonicalEntities().languageAliases||{}:null};
   const backupKey='lumen_manual_norm_backup_'+Date.now();
   let backupOk=false;
   try{
@@ -1503,6 +1516,30 @@ function applyManualNormMerge(){
       console.warn('[LUMEN v213.3] Merge de nombres hecho, IDs ambiguos sin fusionar:',from,to);
     }
   }
+  if(type==='idiomas'){
+    const catalog=loadCanonicalEntities();catalog.languageAliases=catalog.languageAliases||{};
+    catalog.languageAliases[from]=to;
+    for(const [old,val] of Object.entries(catalog.languageAliases))if(val===from)catalog.languageAliases[old]=to;
+    saveCanonicalEntities(catalog);
+  }
+  if(type==='autores'){
+    // Resolver identidades aun si sólo se usaron en influencias; preservar el ID destino.
+    const c=loadCanonicalEntities(), b=c.authors||{};
+    const src=Object.values(b).find(e=>e&&canonicalText(e.nombreCanonico)===canonicalText(from));
+    let dst=Object.values(b).find(e=>e&&canonicalText(e.nombreCanonico)===canonicalText(to));
+    if(!dst){const id=canonicalEntityId('aut',to);dst=b[id]||{id,nombreCanonico:to,aliases:[]};b[id]=dst;}
+    if(src&&src.id!==dst.id){
+      dst.aliases=[...new Set([...(dst.aliases||[]),from,...(src.aliases||[])])].filter(n=>canonicalText(n)!==canonicalText(to));
+      dst.autoriaCompuestaProtegida=!!(dst.autoriaCompuestaProtegida||src.autoriaCompuestaProtegida);
+      for(const e of db.entries||[])if(e.type==='libro'){
+        if(e.autorId===src.id)e.autorId=dst.id;
+        if(Array.isArray(e.autorIds))e.autorIds=[...new Set(e.autorIds.map(id=>id===src.id?dst.id:id))];
+      }
+      for(const r of [...(mapas?.influencias||[]),...(mapas?.rutas||[])])for(const key of ['fuente_autor_id','destino_autor_id'])if(r[key]===src.id)r[key]=dst.id;
+      delete b[src.id];
+    }else if(!src){dst.aliases=[...new Set([...(dst.aliases||[]),from])].filter(n=>canonicalText(n)!==canonicalText(to));}
+    saveCanonicalEntities(c);
+  }
   try{
     if(type!=='idiomas')saveInventory(inv,false);
     saveDB();if(type==='autores')saveMapas();
@@ -1511,6 +1548,47 @@ function applyManualNormMerge(){
   if(typeof renderMapaInfluencias==='function'&&type==='autores')renderMapaInfluencias();
   if(typeof renderInventory==='function')renderInventory();
   showToast(`✓ ${changed} referencias actualizadas · respaldo: ${backupKey}`);
+}
+
+// v214.5: renombrar una entidad conservando su ID y dejando alias de entrada.
+function editManualNormCanonicalName(){
+  const kind=_manualNormType,oldName=document.getElementById('manual-norm-from')?.value;
+  if(!oldName){showToast('Selecciona el nombre a editar');return;}
+  const nextName=window.prompt('Nuevo nombre canónico para «'+oldName+'»:',oldName)?.trim();
+  if(!nextName||nextName===oldName)return;
+  if(manualNormValues(kind).some(([n])=>canonicalText(n)===canonicalText(nextName))){showToast('El nombre ya existe. Utiliza Revisar y fusionar.');return;}
+  if(!window.confirm('¿Cambiar «'+oldName+'» por «'+nextName+'» conservando las referencias y el ID?'))return;
+  const inv=loadInventory(), c=loadCanonicalEntities(), b=c.authors||{};
+  const src=kind==='autores'?findCanonicalEntity('aut',oldName):null;
+  const touchedEntries=(db.entries||[]).filter(e=>e.type==='libro'&&(
+    kind==='autores'?String(e.autor||'').split(/\s*;\s*/).includes(oldName):
+    kind==='editoriales'?e.editorial===oldName:(e.idioma===oldName||e.idioma_original===oldName)));
+  const touchedInventory=inv.map((e,i)=>({e,i})).filter(({e})=>kind==='autores'?String(e.autor||'').split(/\s*;\s*/).includes(oldName):kind==='editoriales'&&e.editorial===oldName);
+  const touchedRelations=kind==='autores'?[...(mapas?.influencias||[]),...(mapas?.rutas||[])].filter(r=>r&&['fuente','fuente_autor','destino','destino_autor'].some(k=>r[k]===oldName)):[];
+  const backup={schema:'lumen_canonical_rename_delta_v1',kind,oldName,nextName,at:Date.now(),entries:touchedEntries,inventory:touchedInventory,relations:touchedRelations,canonical:src||null,languageAliases:kind==='idiomas'?c.languageAliases||{}:null};
+  const key='lumen_rename_backup_'+Date.now();
+  try{const json=JSON.stringify(backup);localStorage.setItem(key,json);if(localStorage.getItem(key)!==json)throw Error('Respaldo no verificable');}
+  catch(e){showToast('No se pudo respaldar la edición. Sin cambios.');return;}
+  const replace=s=>String(s||'').split(/\s*;\s*/).map(n=>n===oldName?nextName:n).join('; ');
+  for(const e of touchedEntries){
+    if(kind==='autores')e.autor=replace(e.autor);
+    if(kind==='editoriales'){e.editorial=nextName;if(e.bibliografia?.edicion?.editorial===oldName)e.bibliografia.edicion.editorial=nextName;}
+    if(kind==='idiomas'){if(e.idioma===oldName)e.idioma=nextName;if(e.idioma_original===oldName)e.idioma_original=nextName;}
+    e._updatedAt=Date.now();
+  }
+  for(const {e} of touchedInventory){if(kind==='autores')e.autor=replace(e.autor);else e.editorial=nextName;e._updatedAt=Date.now();}
+  for(const r of touchedRelations)for(const k of ['fuente','fuente_autor','destino','destino_autor'])if(r[k]===oldName)r[k]=nextName;
+  if(kind==='autores'){
+    const entry=src||{id:canonicalEntityId('aut',oldName),nombreCanonico:oldName,aliases:[]};
+    entry.aliases=[...new Set([...(entry.aliases||[]),oldName])].filter(n=>canonicalText(n)!==canonicalText(nextName));
+    entry.nombreCanonico=nextName;b[entry.id]=entry;saveCanonicalEntities(c);
+  }
+  if(kind==='idiomas'){
+    c.languageAliases=c.languageAliases||{};c.languageAliases[oldName]=nextName;saveCanonicalEntities(c);
+  }
+  if(kind!=='idiomas')saveInventory(inv,false);
+  saveDB();if(kind==='autores')saveMapas();
+  setManualNormType(kind);showToast('✓ Nombre canónico actualizado; respaldo '+key);
 }
 
 // v214.2: Dividir autores es una vista interna de Normalizar nombres.
