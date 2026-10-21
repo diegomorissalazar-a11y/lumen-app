@@ -1377,6 +1377,12 @@ function manualNormValues(type=_manualNormType){
     else add(e.idioma_original||e.idioma);
   });
   if(type!=='idiomas')loadInventory().forEach(e=>add(type==='autores'?e.autor:e.editorial));
+  if(type==='autores'){
+    if(typeof allKnownEntityNames==='function') (allKnownEntityNames('aut')||[]).forEach(name=>add(typeof name==='string'?name:(name?.name||name?.nombreCanonico||name?.nombre||'')));
+    (mapas?.influencias||[]).forEach(rel=>{if(!rel)return;[rel.fuente,rel.fuente_autor,rel.destino_autor,rel.destino].forEach(add);
+      for(const key of ['fuente_autor_id','destino_autor_id'])if(rel[key]&&typeof canonicalNameById==='function')add(canonicalNameById('aut',rel[key],''));
+    });
+  }
   return [...counts.entries()].sort((a,b)=>a[0].localeCompare(b[0],'es',{sensitivity:'base'}));
 }
 function setManualNormType(type){
@@ -1407,7 +1413,11 @@ function previewManualNormMerge(){
   const from=document.getElementById('manual-norm-from')?.value||'',to=document.getElementById('manual-norm-to')?.value||'';
   const box=document.getElementById('manual-norm-preview');if(!box)return;
   const grouped=name=>(db.entries||[]).filter(e=>e.type==='libro'&&(_manualNormType==='autores'?inventoryIndividualAuthors(e).includes(name):_manualNormType==='editoriales'?e.editorial===name:(e.idioma_original||e.idioma)===name));
-  const make=(label,name)=>`<div style="border:1px solid var(--border);padding:10px;margin:6px 0"><strong>${label}: ${escapeHtml(name||'Sin seleccionar')}</strong>${name?grouped(name).map(e=>`<div style="padding:5px 0;border-bottom:1px solid var(--cream2)">${escapeHtml(e.titulo||'Sin título')} · <span style="color:var(--ink3)">${escapeHtml(e.autor||'')}</span></div>`).join('')||'<div>Sin obras asociadas</div>':''}</div>`;
+  const make=(label,name)=>{
+    const books=name?grouped(name).map(e=>`<div style="padding:5px 0;border-bottom:1px solid var(--cream2)">${escapeHtml(e.titulo||'Sin título')} · <span style="color:var(--ink3)">${escapeHtml(e.autor||'')}</span></div>`).join(''):'';
+    const infs=name&&_manualNormType==='autores'?(mapas?.influencias||[]).filter(rel=>[rel.fuente,rel.fuente_autor,rel.destino_autor,rel.destino].includes(name)).map(rel=>`<div style="padding:5px 0;border-bottom:1px solid var(--cream2)">Influencia: ${escapeHtml(rel.fuente||'')} → ${escapeHtml(rel.destino_autor||rel.destino||'')} · ${escapeHtml(rel.ubicacion_detalle||'')}</div>`).join(''):'';
+    return `<div style="border:1px solid var(--border);padding:10px;margin:6px 0"><strong>${label}: ${escapeHtml(name||'Sin seleccionar')}</strong>${books}${infs}${name&&!books&&!infs?'<div>Sin obras ni relaciones asociadas</div>':''}</div>`;
+  };
   box.innerHTML=make('Nombre a reemplazar',from)+make('Nombre canónico',to)+((!from||!to||from===to)?'<p>Selecciona origen y destino diferentes.</p>':`<p>${escapeHtml(from)} → ${escapeHtml(to)}. Se creará respaldo antes del merge.</p>`);
 }
 

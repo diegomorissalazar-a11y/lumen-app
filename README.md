@@ -1,1 +1,1 @@
-LUMEN v214.3 — Contenido de esta carpeta listo para GitHub Pages. Consultar documentación y auditoría fuera de github/.
+LUMEN v214.4 — Lista para publicar en GitHub Pages. Ver auditoría en la carpeta externa audits/.

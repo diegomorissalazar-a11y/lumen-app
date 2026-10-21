@@ -698,7 +698,7 @@ function renderHome() {
     </div>` : '';
 
   // ── LEYENDO AHORA — carousel ──────────
-  const reading = db.entries.filter(e => e.type === 'libro' && e.estado === 'leyendo');
+  const reading = db.entries.filter(e => e.type === 'libro' && e.estado === 'leyendo').sort(lumenProgressSortV2144);
   const crEl = document.getElementById('currently-reading-list');
   if (reading.length === 0) {
     crEl.innerHTML = '<div style="font-size:13px;color:var(--ink4);font-style:italic;padding:4px 0;">Ningún libro en curso. Toca "+ Lectura en curso" para empezar.</div>';
@@ -762,7 +762,7 @@ function renderHome() {
   updateCarouselArrows('currently-reading-list', 'reading-carousel-arrows', reading.length);
 
   // ── VIENDO AHORA ─────────────────────
-  const watching = db.entries.filter(e => e.type === 'serie' && e.estado === 'viendo');
+  const watching = db.entries.filter(e => e.type === 'serie' && e.estado === 'viendo').sort(lumenProgressSortV2144);
   const watchEl = document.getElementById('currently-watching-list');
   if (watching.length === 0) {
     watchEl.innerHTML = '<div style="font-size:13px;color:var(--ink4);font-style:italic;padding:4px 0;">Ninguna serie en curso. Toca "+ Serie en curso" para empezar.</div>';
@@ -813,3 +813,10 @@ function renderHome() {
   document.getElementById('recent-series').innerHTML = recentSeries.length ? recentSeries.map(e=>entryCardHTML(e)).join('') : empty;
 }
 
+
+// El último avance efectivo ocupa la primera posición; ediciones de ficha no mueven el carrusel.
+function lumenProgressSortV2144(a,b){
+  const at=Number(a?.lastProgressAt)||0,bt=Number(b?.lastProgressAt)||0;
+  if(at!==bt)return bt-at;
+  return (Number(b?._updatedAt)||0)-(Number(a?._updatedAt)||0);
+}

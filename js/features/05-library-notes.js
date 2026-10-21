@@ -986,11 +986,13 @@ function saveSerieProgress() {
   const id = document.getElementById('serie-progress-id').value;
   const e = db.entries.find(x => x.id === id);
   if (!e) return;
+  const previousCap=e.capActual;
   e.capActual        = parseInt(document.getElementById('serie-cap-actual').value) || 0;
   e.capTotal         = parseInt(document.getElementById('serie-cap-total').value)  || 0;
   e.temporadaActual  = parseInt(document.getElementById('serie-temporada-actual').value) || 1;
   e.temporadas       = parseInt(document.getElementById('serie-temporadas-total').value) || e.temporadas || 1;
   e._updatedAt = Date.now();
+  if(Number(previousCap||0)!==Number(e.capActual||0))e.lastProgressAt=e._updatedAt;
   saveDB();
   closeModal('modal-serie-progress');
   showToast('✓ Progreso guardado');

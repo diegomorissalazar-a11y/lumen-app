@@ -14,11 +14,13 @@
       <textarea id="inf-json-text" class="input" rows="15" spellcheck="false"
         placeholder='{"autor_citado":"Miguel de Cervantes","obra_citada":"Don Quijote de la Mancha","pagina":"47","texto_citado":"..."}'
         style="width:100%;min-height:310px;font-family:monospace;font-size:12px;line-height:1.55;background:#fff;resize:vertical;margin-bottom:12px;"></textarea>
+      <div id="inf-json-session" style="display:none;padding:8px 0;font-size:12px;color:var(--ink2)"></div>
       <div id="inf-json-status" style="font-size:12px;color:var(--ink4);min-height:18px;margin-bottom:8px;"></div>
       <div id="inf-json-preview" style="display:none;max-height:320px;overflow:auto;border:1px solid var(--border);border-radius:6px;background:#fff;margin-bottom:12px;"></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
         <button id="inf-json-load" class="btn btn-primary" onclick="loadInfJsonFromTextarea()" style="flex:1;min-width:180px;">Cargar JSON</button>
         <button id="inf-json-confirm" class="btn btn-primary" onclick="confirmInfJsonImport()" style="flex:1;min-width:180px;display:none;">✓ Confirmar importación</button>
+        <button id="inf-json-done" class="btn btn-secondary" onclick="finishInfluenceMultiImportV2144()" style="display:none;flex:1;min-width:180px">Terminé con las referencias</button>
         <button class="btn btn-secondary" onclick="closeModal('modal-inf-json')" style="flex:1;min-width:140px;">Cancelar</button>
       </div>
     </div>
@@ -41,7 +43,11 @@
       <div class="field"><label>Forma / subtipo</label><select class="input" id="inf-quick-subtype"></select></div>
       <div class="field"><label>Autor del libro fuente</label><input class="input" id="inf-quick-author" list="inf-quick-author-list" autocomplete="off" placeholder="Escribe para buscar autor…" oninput="fillInfluenceQuickBooks()"><datalist id="inf-quick-author-list"></datalist><div style="font-size:10px;color:var(--ink4);margin-top:5px;line-height:1.45;">Escribe parte del nombre y selecciona el autor canónico sugerido.</div></div>
       <div class="field"><label>Libro fuente</label><select class="input" id="inf-quick-book"></select><div style="font-size:10px;color:var(--ink4);margin-top:5px;line-height:1.45;">Puede ser leído, estar en curso o permanecer en tu biblioteca. LUMEN reutiliza su ficha bibliográfica e identidad canónica.</div></div>
-      <button class="btn btn-primary" onclick="startInfluenceQuickJson()" style="width:100%;">Cargar JSON de evidencia</button>
+      <div class="field"><label>Modalidad</label><div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button type="button" class="btn btn-secondary btn-sm" id="inf-mode-single" onclick="setInfluenceImportModeV2144('single')">Referencia única</button>
+        <button type="button" class="btn btn-secondary btn-sm" id="inf-mode-multiple" onclick="setInfluenceImportModeV2144('multiple')">Varias referencias</button>
+      </div></div>
+      <button class="btn btn-primary" onclick="startInfluenceQuickJson()" style="width:100%;">Continuar a cargar JSON</button>
     </div>
   </div>
 </div>

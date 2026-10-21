@@ -798,6 +798,7 @@ function saveProgress() {
   // Leer el modo desde la UI (sección visible) — más fiable que e.readingMode
   const pagSectionVisible = document.getElementById('progress-pag-section')?.style.display !== 'none';
   const mode = pagSectionVisible ? 'pag' : 'pct';
+  const previousProgress=Number(e.progresoPag ?? e.progreso ?? 0);
   e.readingMode = mode; // sincronizar siempre
   if (mode === 'pct') {
     e.progreso = parseInt(document.getElementById('progress-pct-slider').value) || 0;
@@ -822,6 +823,7 @@ function saveProgress() {
     e.readDates.push({ date: today, pag: pagActual });
   }
   e._updatedAt = Date.now();
+  if(previousProgress !== Number(e.progresoPag ?? e.progreso ?? 0))e.lastProgressAt=e._updatedAt;
   saveDB();
   closeModal('modal-progress');
   showToast('✓ Progreso actualizado');

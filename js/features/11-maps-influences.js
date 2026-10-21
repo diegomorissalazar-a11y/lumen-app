@@ -541,6 +541,26 @@ const INF_CARD_DEFS = [
   { tipo:'contexto', icon:'🟢', title:'Contexto', desc:'Hechos, períodos, personas históricas, lugares, movimientos, tradiciones o mitología.' }
 ]
 let _infJsonPreviewItems = [];
+let _infJsonImportModeV2144='single';
+let _infJsonSessionSavedV2144=[];
+function setInfluenceImportModeV2144(mode){
+  _infJsonImportModeV2144=mode==='multiple'?'multiple':'single';
+  for(const [id,val] of [['inf-mode-single','single'],['inf-mode-multiple','multiple']]){
+    const button=document.getElementById(id);if(button)button.style.background=_infJsonImportModeV2144===val?'var(--gold)':'';
+  }
+}
+function updateInfluenceSessionV2144(){
+  const block=document.getElementById('inf-json-session'), done=document.getElementById('inf-json-done');
+  if(block){block.style.display=_infJsonImportModeV2144==='multiple'?'block':'none';block.textContent=_infJsonSessionSavedV2144.length+' referencia(s) guardada(s) en esta sesión. El autor y el libro de origen permanecen seleccionados.';}
+  if(done)done.style.display=_infJsonImportModeV2144==='multiple'?'inline-flex':'none';
+}
+function finishInfluenceMultiImportV2144(){
+  closeModal('modal-inf-json');
+  showToast('✓ Sesión terminada · '+_infJsonSessionSavedV2144.length+' referencias guardadas');
+  _infJsonSessionSavedV2144=[];
+  renderMapaInfluencias();
+}
+
 
 function fillInfluenceQuickLoader(){
   const type=document.getElementById('inf-quick-type'), sub=document.getElementById('inf-quick-subtype');
@@ -567,7 +587,7 @@ function fillInfluenceQuickBooks(){
   const books=(db.entries||[]).filter(e=>e&&e.type==='libro'&&(!q||(exact?normText(e.autor)===q:normText(e.autor).includes(q)))).slice().sort((a,b)=>String(a.titulo||'').localeCompare(String(b.titulo||''),'es'));
   book.innerHTML='<option value="">— Selecciona el libro fuente —</option>'+books.map(e=>`<option value="${escapeHtml(e.id)}">${escapeHtml(e.titulo)} · ${escapeHtml(e.autor||'')}</option>`).join('');
 }
-function openInfluenciasCargaPanel(){ fillInfluenceQuickLoader(); openModal('modal-inf-actions'); }
+function openInfluenciasCargaPanel(){ fillInfluenceQuickLoader(); setInfluenceImportModeV2144('single'); openModal('modal-inf-actions'); }
 function startInfluenceQuickJson(){
   const type=document.getElementById('inf-quick-type')?.value||'referencia', subtype=document.getElementById('inf-quick-subtype')?.value||'', bookId=document.getElementById('inf-quick-book')?.value||'';
   if(!bookId){showToast('Selecciona el libro desde el que registras la relación');return;}
@@ -579,6 +599,7 @@ let _infJsonContext={subtype:'',bookId:''};
 
 function openInfJsonImport(tipo,context={}) {
   _infJsonContext={subtype:context.subtype||'',bookId:context.bookId||''};
+  _infJsonSessionSavedV2144=[];
   document.getElementById('inf-json-tipo').value = tipo || '';
   const title = INF_TIPO_LABELS[tipo] || 'Cargar influencias JSON';
   document.getElementById('inf-json-title').textContent = `Cargar JSON · ${String(title).replace(/^[^\wÁÉÍÓÚÑáéíóúñ]+\s*/, '')}`;
@@ -589,6 +610,7 @@ function openInfJsonImport(tipo,context={}) {
   document.getElementById('inf-json-preview').innerHTML = '';
   document.getElementById('inf-json-confirm').style.display = 'none';
   _infJsonPreviewItems = [];
+  updateInfluenceSessionV2144();
   openModal('modal-inf-json');
   setTimeout(() => { const el=document.getElementById('inf-json-text'); if (el) el.focus(); }, 120);
 }
@@ -778,7 +800,17 @@ function confirmInfJsonImport() {
   const nuevos=_infJsonPreviewItems.filter(x=>!x.duplicada).map(x=>x.obj); if(!nuevos.length){showToast('No hay relaciones nuevas para importar');return;}
   nuevos.forEach(obj=>{const ent=resolveCanonicalEntity('aut',obj.fuente,true);obj.fuente_autor_id=ent.id;obj.fuente=ent.nombreCanonico||obj.fuente;ensureInfluenceCanonicalRefs(obj);});
   const ts=Date.now(); try{safeLocalSetItem('lumen_mapas_backup_before_influencias_import_'+ts,JSON.stringify(mapas));}catch(e){}
-  mapas.influencias=mapas.influencias||[];mapas.influencias.push(...nuevos);saveMapas();closeModal('modal-inf-json');showToast(`✓ ${nuevos.length} relación(es) importada(s)`);renderMapaInfluencias();
+  mapas.influencias=mapas.influencias||[];mapas.influencias.push(...nuevos);saveMapas();
+  if(_infJsonImportModeV2144==='multiple'){
+    _infJsonSessionSavedV2144.push(...nuevos.map(x=>({fuente:x.fuente,destino:x.destino,ubicacion:x.ubicacion_detalle})));
+    const input=document.getElementById('inf-json-text');if(input)input.value='';
+    _infJsonPreviewItems=[];
+    const preview=document.getElementById('inf-json-preview');if(preview){preview.style.display='none';preview.innerHTML='';}
+    const confirm=document.getElementById('inf-json-confirm');if(confirm)confirm.style.display='none';
+    const status=document.getElementById('inf-json-status');if(status)status.textContent=`✓ ${nuevos.length} guardada(s). Pega la siguiente referencia o selecciona «Terminé».`;
+    updateInfluenceSessionV2144();if(input)input.focus();
+  }else{closeModal('modal-inf-json');showToast(`✓ ${nuevos.length} relación(es) importada(s)`);}
+  renderMapaInfluencias();
 }
 
 
