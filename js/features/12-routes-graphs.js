@@ -668,7 +668,7 @@ function buildD3Graph(containerId, nodes, links, colorFn, tooltipEdgeFn, fuenteT
   const maxVisualMetric = Math.max(1, ...Object.values(visualMetric));
   const nodeR = d => {
     if (Number.isFinite(Number(d.fixedRadius))) return Number(d.fixedRadius);
-    const minR = d.isEvent ? 10 : 12;
+    const minR = (d.routeAuthor || d.routePerson) ? 12 : (d.isEvent ? 10 : 12);
     if (d.sizeBaseline === 1 && typeof GraphMetrics.sqrtRadiusFromOne === 'function') {
       return GraphMetrics.sqrtRadiusFromOne(visualMetric[d.id]||1, maxVisualMetric, minR, 34);
     }
@@ -717,13 +717,13 @@ function buildD3Graph(containerId, nodes, links, colorFn, tooltipEdgeFn, fuenteT
 
   node.append('circle')
     .attr('r', d=>nodeR(d))
-    .attr('fill', d=>d.authorStatus==='read'?'#171411':(d.authorStatus==='inventory'?'#737373':(d.inLibrary?'var(--ink)':(d.isEvent?'#e8e0d0':'#fff'))))
+    .attr('fill', d=>d.routePerson?'#55758b':(d.authorStatus==='read'?'#171411':(d.authorStatus==='inventory'?'#737373':(d.inLibrary?'var(--ink)':(d.isEvent?'#e8e0d0':'#fff')))))
     .attr('stroke', d=>d.inLibrary?'var(--gold)':'var(--border)')
     .attr('stroke-width', d => 1 + Math.min(3, (visualMetric[d.id]||0)));
 
   node.append('text').attr('text-anchor','middle').attr('dy',4)
     .attr('font-size', d => Math.max(9, Math.min(13, 9 + (visualMetric[d.id]||0))))
-    .attr('fill', d=>d.authorStatus==='read'||d.authorStatus==='inventory'?'#fff':(d.inLibrary?'var(--gold)':'var(--ink3)'))
+    .attr('fill', d=>d.routePerson||d.authorStatus==='read'||d.authorStatus==='inventory'?'#fff':(d.inLibrary?'var(--gold)':'var(--ink3)'))
     .text(d=>d.icon||'●');
 
   node.append('text').attr('text-anchor','middle')
@@ -915,7 +915,11 @@ function renderMapaInfluencias() {
     }
   });
 
-  const links=[...edgeMap.values()];
+  const allLinks=[...edgeMap.values()];
+  const infMode = (typeof lumenMapInfluenceMode==='function')?lumenMapInfluenceMode():'todos';
+  const selected = id=>infMode==='todos'||(infMode==='leidos'&&readAuthorIds.has(id))||(infMode==='inventario'&&inventoryAuthorIds.has(id))||(infMode==='ambos'&&(readAuthorIds.has(id)||inventoryAuthorIds.has(id)));
+  // Mantener los vecinos externos de los autores elegidos para explorar lecturas futuras.
+  const links=infMode==='todos'?allLinks:allLinks.filter(e=>selected(e.source)||selected(e.target));
   const outSets={},inSets={};
   links.forEach(edge=>{
     (outSets[edge.source]||(outSets[edge.source]=new Set())).add(edge.target);
@@ -927,7 +931,8 @@ function renderMapaInfluencias() {
     elCount.textContent=`${data.length} evidencia${data.length!==1?'s':''} · ${links.length} conexión${links.length!==1?'es':''} única${links.length!==1?'s':''}`;
   }
 
-  const nodes=[...nodeMap.entries()].map(([id,name])=>{
+  const visibleIds=new Set(links.flatMap(l=>[l.source,l.target]));
+  const nodes=[...nodeMap.entries()].filter(([id])=>visibleIds.has(id)).map(([id,name])=>{
     const outUnique=outDegree[id]||0, inUnique=inDegree[id]||0;
     // v196: tamaño exclusivamente por autores únicos influidos (salidas).
     // Recibir influencias afecta la topología/posición, no el tamaño. Nivel 1 = radio mínimo exacto.
@@ -1001,10 +1006,10 @@ function renderMapaRutas() {
   if (elEmpty) elEmpty.style.display=data.length===0?'flex':'none';
   renderListaRutas();
   actualizarBadgeSinConectar();
-  if (data.length===0) { d3.select('#mapa-rutas-svg').selectAll('svg').remove(); return; }
+  if (data.length===0 && !(db.entries||[]).some(e=>e.type==='libro'&&e.estado==='leido')) { d3.select('#mapa-rutas-svg').selectAll('svg').remove(); return; }
 
 
-  const libTitles=new Set(db.entries.map(e=>e.titulo));
+  const libTitles=new Set(db.entries.filter(e=>e.type==='libro').map(e=>e.titulo));
 
   // Determinar ícono por tipo de conexión del nodo fuente
   const iconByTipo = {
@@ -1060,30 +1065,67 @@ function renderMapaRutas() {
     }
   });
 
+  // v215: autor como entidad propia, sin inventar decisiones de lectura.
+  // Autoría libro↔autor es estructural; los motivos explícitos permanecen en mapas.rutas.
+  const rutaAuthors = new Map();
+  (db.entries||[]).filter(e=>e.type==='libro' && e.estado==='leido' && e.titulo).forEach(book=>{
+    const authors = (typeof splitCanonicalAuthors==='function' ? splitCanonicalAuthors(book.autor||'') : [book.autor]).filter(Boolean);
+    authors.forEach(author=>{
+      const canonical=(typeof findCanonicalEntity==='function' ? findCanonicalEntity('aut',author) : null);
+      const authorName=canonical?.nombre||canonical?.name||author;
+      const id='ruta_autor:'+String(canonical?.id||authorName);
+      let obj=rutaAuthors.get(id);
+      if(!obj){obj={id,label:authorName,books:new Set()};rutaAuthors.set(id,obj);}
+      obj.books.add(book.id||book.titulo);
+      nodeSet.add(book.titulo);
+      if(!links.some(l=>l.source===id && l.target===book.titulo)) {
+        links.push({source:id,target:book.titulo,tipo:'autoria',id:'autoria_'+id+'_'+book.titulo,nota:'Autoría'});
+      }
+    });
+  });
+  rutaAuthors.forEach(author=>{if(links.some(l=>l.source===author.id))nodeSet.add(author.id);});
+  const motivatedByPerson = Object.create(null);
+  data.filter(d=>d.tipo==='persona' && d.fuente && d.destino).forEach(d=>{
+    if((db.entries||[]).some(e=>e.type==='libro'&&e.estado==='leido'&&e.titulo===d.destino)) {
+      (motivatedByPerson[d.fuente]||(motivatedByPerson[d.fuente]=new Set())).add(d.destino);
+    }
+  });
+  const mapRouteType = name => rutaAuthors.has(name)?'autor':(libTitles.has(name)?'libro':(fuenteTipo[name]==='persona'?'persona':'fuente'));
+  const selectedTypes=(typeof lumenMapSelectedTypes==='function')?lumenMapSelectedTypes('rutas'):null;
+  const shownNames=[...nodeSet].filter(name=>!selectedTypes || selectedTypes.has(mapRouteType(name)));
+  const shownSet=new Set(shownNames);
+  const shownLinks=links.filter(l=>shownSet.has(l.source)&&shownSet.has(l.target));
   // v185: Rutas comunica capacidad de originar nuevas lecturas. Los libros son obras
   // estructurales de tamaño fijo; personas, entrevistas, películas, series y otros estímulos
   // crecen por cantidad de rutas que originan.
-  const rutaDegrees = GraphMetrics.degrees([...nodeSet].map(id => ({id})), links);
-  const nodes = [...nodeSet].map(name => {
+  const rutaDegrees = GraphMetrics.degrees(shownNames.map(id => ({id})), shownLinks);
+  const nodes = shownNames.map(name => {
     const isBook = libTitles.has(name);
+    const authorEntity = rutaAuthors.get(name);
+    const isPerson = fuenteTipo[name]==='persona';
+    const count = authorEntity ? authorEntity.books.size : (isPerson ? (motivatedByPerson[name]?.size||0) : 0);
     const out = rutaDegrees.outDegree[name] || 0;
     const incoming = rutaDegrees.inDegree[name] || 0;
     return {
-      id: name, label: name,
-      inLibrary: isBook,
-      isEvent: !isBook && name !== '⭐ Origen',
-      icon: iconForNode(name),
+      id: name, label: authorEntity?.label||name,
+      entityType: mapRouteType(name),
+      routePerson: isPerson,
+      routeAuthor: !!authorEntity,
+      inLibrary: isBook || !!authorEntity,
+      isEvent: !isBook && !authorEntity && name !== '⭐ Origen',
+      icon: authorEntity?'✍':iconForNode(name),
       tooltip: name,
       fixedRadius: isBook ? 13 : undefined,
-      sizeMetric: isBook ? 0 : out,
-      metricTooltip: isBook
+      sizeMetric: isBook ? 0 : (authorEntity||isPerson ? Math.max(1,count) : out),
+      sizeBaseline: authorEntity||isPerson ? 1 : undefined,
+      metricTooltip: authorEntity ? `${authorEntity.label}\nAutor · ${count} libros leídos` : isPerson ? `${name}\nPersona · ${count} lecturas motivadas confirmadas` : isBook
         ? `${name}\nLibro · tamaño fijo\nRutas originadas: ${out}\nRutas recibidas: ${incoming}`
         : `${name}\nRutas originadas: ${out}\nRutas recibidas: ${incoming}`
     };
   });
 
-  buildD3Graph('mapa-rutas-svg', nodes, links,
-    tipo=>RUTA_COLORS[tipo]||'#999',
+  buildD3Graph('mapa-rutas-svg', nodes, shownLinks,
+    tipo=>tipo==='autoria'?'#aa9274':(RUTA_COLORS[tipo]||'#999'),
     d=>`${RUTA_LABELS[d.tipo]||d.tipo}${d.nota?'\n'+d.nota:''}`,
     fuenteTipo
   );

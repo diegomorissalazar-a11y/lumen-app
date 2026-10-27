@@ -86,12 +86,43 @@ function refreshExpandedMapViewport(){
 window.addEventListener('orientationchange',refreshExpandedMapViewport);
 window.addEventListener('resize',refreshExpandedMapViewport);
 
+const lumenMapFilters={rutas:new Set(['autor','libro','persona','fuente']),influencias:'todos'};
+function lumenMapSelectedTypes(name){return lumenMapFilters[name] instanceof Set && _expandedMapWorkspace===name?lumenMapFilters[name]:null;}
+function lumenMapInfluenceMode(){return _expandedMapWorkspace==='influencias'?lumenMapFilters.influencias:'todos';}
+function toggleExpandedMapControls(){
+ const controls=document.getElementById('map-expanded-filter-controls'),btn=document.getElementById('map-expanded-toggle');
+ if(!controls||!btn)return;
+ const hidden=controls.style.display!=='none';controls.style.display=hidden?'none':'';
+ btn.textContent=hidden?'Mostrar controles':'Ocultar controles';
+}
+function updateLumenMapFilter(key,value,checked){
+ if(key==='rutas'){
+  if(checked)lumenMapFilters.rutas.add(value);else lumenMapFilters.rutas.delete(value);
+ }else lumenMapFilters.influencias=value;
+ rerenderExpandedMap(_expandedMapWorkspace);
+}
 function initExpandedMapSearch(name){
- const previous=document.getElementById('map-expanded-search');previous?.remove();
- if(!['influencias','peliculas'].includes(name))return;
+ document.getElementById('map-expanded-search')?.remove();
+ if(!['influencias','rutas','peliculas'].includes(name))return;
  const root=document.createElement('div');root.id='map-expanded-search';root.className='map-expanded-search';
- root.innerHTML='<input type="search" class="input" placeholder="Buscar nodo (nombre)..." aria-label="Buscar nodo" oninput="searchExpandedMapNode(this.value)"><div id="map-expanded-search-results"></div>';
- document.body.appendChild(root);
+ const toggle=document.createElement('button');toggle.type='button';toggle.id='map-expanded-toggle';toggle.className='btn btn-secondary btn-sm';toggle.textContent='Ocultar controles';toggle.onclick=toggleExpandedMapControls;
+ root.appendChild(toggle);
+ const controls=document.createElement('div');controls.id='map-expanded-filter-controls';
+ controls.innerHTML='<input type="search" class="input" placeholder="Buscar y centrar nodo..." aria-label="Buscar nodo" oninput="searchExpandedMapNode(this.value)"><div id="map-expanded-search-results"></div>';
+ if(name==='influencias'){
+  const group=document.createElement('div');group.className='lumen-expanded-filter-options';
+  [['todos','Todos'],['leidos','Autores leídos'],['inventario','En inventario'],['ambos','Leídos + inventario']].forEach(([value,label])=>{
+   const wrapper=document.createElement('label'),input=document.createElement('input');input.type='radio';input.name='lumen-influence-scope';input.checked=lumenMapFilters.influencias===value;input.onchange=()=>updateLumenMapFilter('influencias',value,true);
+   wrapper.append(input,document.createTextNode(' '+label));group.appendChild(wrapper);
+  });controls.appendChild(group);
+ } else if(name==='rutas'){
+  const group=document.createElement('div');group.className='lumen-expanded-filter-options';
+  [['autor','Autores'],['libro','Libros'],['persona','Personas'],['fuente','Fuentes y otros']].forEach(([value,label])=>{
+   const wrapper=document.createElement('label'),input=document.createElement('input');input.type='checkbox';input.checked=lumenMapFilters.rutas.has(value);input.onchange=()=>updateLumenMapFilter('rutas',value,input.checked);
+   wrapper.append(input,document.createTextNode(' '+label));group.appendChild(wrapper);
+  });controls.appendChild(group);
+ }
+ root.appendChild(controls);document.body.appendChild(root);
 }
 function searchExpandedMapNode(term){
  const target=document.getElementById('map-expanded-search-results');if(!target||!_expandedMapWorkspace)return;

@@ -1,1 +1,1 @@
-LUMEN v214.5 — Lista para publicar en GitHub Pages. Ver auditoría en la carpeta externa audits/.
+LUMEN v215 — Publicar el contenido de esta carpeta en GitHub Pages. Auditoría y notas en audits/ del ZIP.
