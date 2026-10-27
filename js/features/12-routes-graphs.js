@@ -917,9 +917,15 @@ function renderMapaInfluencias() {
 
   const allLinks=[...edgeMap.values()];
   const infMode = (typeof lumenMapInfluenceMode==='function')?lumenMapInfluenceMode():'todos';
-  const selected = id=>infMode==='todos'||(infMode==='leidos'&&readAuthorIds.has(id))||(infMode==='inventario'&&inventoryAuthorIds.has(id))||(infMode==='ambos'&&(readAuthorIds.has(id)||inventoryAuthorIds.has(id)));
-  // Mantener los vecinos externos de los autores elegidos para explorar lecturas futuras.
-  const links=infMode==='todos'?allLinks:allLinks.filter(e=>selected(e.source)||selected(e.target));
+  // v216: filtro estricto de ESTADO, sin vecinos externos ni aristas con extremos ocultos.
+  // Leído tiene prioridad sobre inventario: los filtros son mutuamente excluyentes.
+  const statusOf = id => readAuthorIds.has(id) ? 'read' : (inventoryAuthorIds.has(id) ? 'inventory' : 'external');
+  const selected = id => infMode==='todos'
+    || (infMode==='leidos' && statusOf(id)==='read')
+    || (infMode==='inventario' && statusOf(id)==='inventory')
+    || (infMode==='ambos' && statusOf(id)!=='external');
+  const visibleIds = new Set([...nodeMap.keys()].filter(selected));
+  const links = allLinks.filter(e=>visibleIds.has(e.source) && visibleIds.has(e.target));
   const outSets={},inSets={};
   links.forEach(edge=>{
     (outSets[edge.source]||(outSets[edge.source]=new Set())).add(edge.target);
@@ -928,17 +934,16 @@ function renderMapaInfluencias() {
   const outDegree={},inDegree={}; Object.keys(outSets).forEach(k=>outDegree[k]=outSets[k].size); Object.keys(inSets).forEach(k=>inDegree[k]=inSets[k].size);
 
   if (elCount) {
-    elCount.textContent=`${data.length} evidencia${data.length!==1?'s':''} · ${links.length} conexión${links.length!==1?'es':''} única${links.length!==1?'s':''}`;
+    elCount.textContent=`${visibleIds.size} autor${visibleIds.size!==1?'es':''} · ${links.length} conexión${links.length!==1?'es':''} visible${links.length!==1?'s':''}`;
   }
 
-  const visibleIds=new Set(links.flatMap(l=>[l.source,l.target]));
   const nodes=[...nodeMap.entries()].filter(([id])=>visibleIds.has(id)).map(([id,name])=>{
     const outUnique=outDegree[id]||0, inUnique=inDegree[id]||0;
     // v196: tamaño exclusivamente por autores únicos influidos (salidas).
     // Recibir influencias afecta la topología/posición, no el tamaño. Nivel 1 = radio mínimo exacto.
     const structuralLevel=Math.max(1,outUnique);
     return {
-      id,label:name,inLibrary:libAuthorIds.has(id)||inventoryAuthorIds.has(id),authorStatus:readAuthorIds.has(id)?'read':(inventoryAuthorIds.has(id)?'inventory':'external'),icon:readAuthorIds.has(id)||inventoryAuthorIds.has(id)?'✍':'◉',
+      id,label:name,inLibrary:libAuthorIds.has(id)||inventoryAuthorIds.has(id),authorStatus:statusOf(id),icon:readAuthorIds.has(id)||inventoryAuthorIds.has(id)?'✍':'◉',
       tooltip:name,sizeMetric:structuralLevel,sizeBaseline:1,
       metricTooltip:(typeof nodeEvidenceTooltipV209==='function'?nodeEvidenceTooltipV209(id,name,data):name),
       evidencePopup:(typeof nodeEvidenceBlocksV210==='function'?nodeEvidenceBlocksV210(id,name,data):null)
