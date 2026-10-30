@@ -268,9 +268,12 @@ function renderWeeklyMetaHeatmap() {
   const fmtRange = w => `${w.start.slice(8,10)}-${w.start.slice(5,7)} → ${w.end.slice(8,10)}-${w.end.slice(5,7)}`;
   const cells = weeks.map((w, idx) => {
     const color = weeklyMetaColor(w.pct, w.pages);
-    const textColor = w.pct >= 120 ? '#f5f0e8' : 'transparent';
-    const title = `Semana ${idx+1} · ${fmtRange(w)}\n${w.pages} págs / ${w.meta} meta · ${w.pct}%\n${w.activeDays}/${w.daysInYear.length} días activos · ${w.status}${w.isCurrent ? ' · En curso' : ''}`;
-    return `<div class="weekly-meta-cell ${w.isCurrent ? 'current' : ''}" style="background:${color};" title="${escapeHtml(title)}" onclick="showToast('${w.pages} págs · ${w.pct}% · ${w.status.replace(/'/g,'\\\'')}')"><span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:${textColor};">${w.pct >= 120 ? w.pct + '%' : ''}</span></div>`;
+    const showPct = w.pages > 0;
+    const textColor = w.pct >= 120 ? '#ffffff' : (showPct ? '#171411' : 'transparent');
+    const title = `Semana ${idx+1} · ${fmtRange(w)}
+${w.pages} págs / ${w.meta} meta · ${w.pct}%
+${w.activeDays}/${w.daysInYear.length} días activos · ${w.status}${w.isCurrent ? ' · En curso' : ''}`;
+    return `<div class="weekly-meta-cell ${w.isCurrent ? 'current' : ''}" style="background:${color};" title="${escapeHtml(title)}" onclick="showToast('${w.pages} págs · ${w.pct}% · ${w.status.replace(/'/g,'\'')}')"><span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:${textColor};">${showPct ? w.pct + '%' : ''}</span></div>`;
   }).join('');
   el.innerHTML = `
     <div class="weekly-meta-summary">
