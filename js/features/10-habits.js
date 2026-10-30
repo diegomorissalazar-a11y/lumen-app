@@ -242,11 +242,17 @@ function calcWeeklyReadingMeta(year) {
 }
 
 function weeklyMetaColor(pct, pages) {
-  if (!pages || pct <= 0) return '#ede7d9';
-  if (pct < 50) return '#e8dcc0';
-  if (pct < 100) return '#d8bd73';
-  if (pct < 120) return '#c8952a';
-  return '#1a1510';
+  if (!pages || pct <= 0) return '#f7f1df';
+  if (pct < 50) return '#f1e4bc';
+  if (pct < 100) return '#e3c66f';
+  if (pct < 120) return '#c89b3c';
+  return '#8a5f1f';
+}
+
+function weeklyMetaTextColor(pct, pages) {
+  if (!pages || pct <= 0) return '#2a2118';
+  if (pct >= 120) return '#ffffff';
+  return '#221a12';
 }
 
 function renderWeeklyMetaHeatmap() {
@@ -275,11 +281,11 @@ function renderWeeklyMetaHeatmap() {
     </div>
     <div class="weekly-meta-grid">${cells}</div>
     <div class="weekly-meta-legend">
-      <span>0</span><div class="weekly-meta-swatch" style="background:#ede7d9;"></div>
-      <span>&lt;50%</span><div class="weekly-meta-swatch" style="background:#e8dcc0;"></div>
-      <span>50–99%</span><div class="weekly-meta-swatch" style="background:#d8bd73;"></div>
-      <span>100–119%</span><div class="weekly-meta-swatch" style="background:#c8952a;"></div>
-      <span>120%+</span><div class="weekly-meta-swatch" style="background:#1a1510;"></div>
+      <span>0</span><div class="weekly-meta-swatch" style="background:#f7f1df;"></div>
+      <span>&lt;50%</span><div class="weekly-meta-swatch" style="background:#f1e4bc;"></div>
+      <span>50–99%</span><div class="weekly-meta-swatch" style="background:#e3c66f;"></div>
+      <span>100–119%</span><div class="weekly-meta-swatch" style="background:#c89b3c;"></div>
+      <span>120%+</span><div class="weekly-meta-swatch" style="background:#8a5f1f;"></div>
     </div>
     ${best ? `<div style="font-size:11px;color:var(--ink4);margin-top:8px;line-height:1.5;">Mejor semana: <b style="color:var(--ink2);">${best.pages} págs</b> · ${fmtRange(best)}. La semana actual se marca con borde negro.</div>` : ''}`;
 }
@@ -336,7 +342,8 @@ function renderComparador() {
     const idiomas  = new Set(libros.map(e=>e.idioma).filter(Boolean)).size;
     const diasConLectura = activityDaysComparableForYear(yr);
     const ritmoDen=yr===currentYr?dayOfYearFromDateStr(todaySantiagoStr()):daysInYearLumen(yr); const ritmoPromedio=ritmoDen>0?paginas/ritmoDen:0;
-    return { libros: libros.length, peliculas: peliculas.length, series: series.length, paginas, ritmoPromedio, autores, directores, idiomas, total: libros.length+peliculas.length+series.length, diasConLectura };
+    const promedioLibro = libros.length ? Math.round(paginas / libros.length) : 0;
+    return { libros: libros.length, peliculas: peliculas.length, series: series.length, paginas, promedioLibro, ritmoPromedio, autores, directores, idiomas, total: libros.length+peliculas.length+series.length, diasConLectura };
   }
 
   const a = statsForYear(yrA), b = statsForYear(yrB);
@@ -388,6 +395,7 @@ function renderComparador() {
     </div>
     ${row('📚 Libros leídos', a.libros, b.libros)}
     ${row('📄 Páginas', a.paginas, b.paginas)}
+    ${row('📖 Págs. por libro', a.promedioLibro, b.promedioLibro)}
     ${rowRitmo(a.ritmoPromedio,b.ritmoPromedio)}
     ${rowDiasConLectura(a.diasConLectura, b.diasConLectura)}
     ${row('🎬 Películas', a.peliculas, b.peliculas)}
@@ -395,6 +403,30 @@ function renderComparador() {
     ${row('✍ Autores únicos', a.autores, b.autores)}
     ${row('🎬 Directores únicos', a.directores, b.directores)}
     ${row('🌍 Idiomas', a.idiomas, b.idiomas)}
-    ${row('⭐ Total estímulos', a.total, b.total)}`;
+    ${row('⭐ Total estímulos', a.total, b.total)}
+    ${renderHabitosProyeccionLibros(yrA, a)}`;
 }
 
+
+// Proyección calculada únicamente para el año vigente; no altera el historial de lectura.
+function renderHabitosProyeccionLibros(year, stats) {
+  if (year !== currentYearSantiago()) return '';
+  const totalDays = daysInYearLumen(year);
+  const elapsed = Math.min(totalDays, Math.max(0, dayOfYearFromDateStr(todaySantiagoStr())));
+  const remaining = Math.max(0, totalDays - elapsed);
+  const pagesPerDay = elapsed ? stats.paginas / elapsed : 0;
+  const pagesRemaining = Math.round(pagesPerDay * remaining);
+  const avgPages = stats.libros ? stats.paginas / stats.libros : 0;
+  const bookEquivalent = avgPages > 0 ? pagesRemaining / avgPages : 0;
+  const completeBooks = Math.floor(bookEquivalent);
+  const formatNum = n => Number(n).toLocaleString('es-CL');
+  return `<div style="margin-top:14px;padding:14px;border-radius:8px;background:var(--cream2);color:var(--ink);" aria-label="Proyección de libros al cierre del año">
+    <div style="font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;">Proyección de lecturas · ${year}</div>
+    <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:12px;">
+      <div><div style="font-size:22px;font-weight:800;">${formatNum(pagesRemaining)}</div><div style="font-size:10px;color:var(--ink3);">Páginas adicionales estimadas</div></div>
+      <div><div style="font-size:22px;font-weight:800;">${bookEquivalent.toLocaleString('es-CL',{maximumFractionDigits:1,minimumFractionDigits:1})}</div><div style="font-size:10px;color:var(--ink3);">Libros equivalentes</div></div>
+      <div><div style="font-size:22px;font-weight:800;">${completeBooks}</div><div style="font-size:10px;color:var(--ink3);">Libros completos equivalentes</div></div>
+    </div>
+    <div style="font-size:11px;color:var(--ink3);margin-top:10px;line-height:1.5;">${remaining} días restantes · ritmo ${pagesPerDay.toLocaleString('es-CL',{maximumFractionDigits:1})} págs/día · promedio ${stats.promedioLibro} págs/libro. Estimación de volumen, no de títulos efectivamente terminados; incluye páginas de libros en curso.</div>
+  </div>`;
+}

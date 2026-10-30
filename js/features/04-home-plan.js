@@ -618,6 +618,7 @@ function renderHome() {
   // pagsHastaDia incluye libros en curso — mismo criterio que el ritmo card
   const pags = pagsHastaDia(yr);
   const pagsTerminados = libros.reduce((a,b) => a+(b.paginas||0), 0);
+  const promedioLibro = libros.length ? Math.round(pags / libros.length) : 0;
   const peliculas = thisYear.filter(e => e.type === 'pelicula');
   // Solo series terminadas — excluye viendo/pendiente, igual que Stats
   const series = thisYear.filter(e => e.type === 'serie' && e.estado === 'vista');
@@ -649,6 +650,11 @@ function renderHome() {
       <div class="ys-num">${discos.length}</div>
       <div class="ys-label">Discos</div>
       <div class="ys-sub">Escuchados</div>
+    </div>
+    <div class="ys-box">
+      <div class="ys-num">${promedioLibro.toLocaleString('es-CL')}</div>
+      <div class="ys-label">Págs. / libro</div>
+      <div class="ys-sub">Promedio anual · ${libros.length} libros</div>
     </div>`;
 
   // ── RITMO HERO CARD ──────────────
