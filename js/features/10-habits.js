@@ -269,7 +269,7 @@ function renderWeeklyMetaHeatmap() {
   const cells = weeks.map((w, idx) => {
     const color = weeklyMetaColor(w.pct, w.pages);
     const showPct = w.pages > 0;
-    const textColor = w.pct >= 120 ? '#ffffff' : (showPct ? '#171411' : 'transparent');
+    const textColor = w.pct >= 100 ? '#ffffff' : '#171411';
     const title = `Semana ${idx+1} · ${fmtRange(w)}
 ${w.pages} págs / ${w.meta} meta · ${w.pct}%
 ${w.activeDays}/${w.daysInYear.length} días activos · ${w.status}${w.isCurrent ? ' · En curso' : ''}`;

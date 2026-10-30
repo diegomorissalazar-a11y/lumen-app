@@ -1,5 +1,8 @@
-// LUMEN v210 — bootstrap modular
+// LUMEN v220 — bootstrap modular
 'use strict';
+
+const LUMEN_ASSET_VERSION = '220';
+const lumenVersionedPath = path => path + (path.includes('?') ? '&' : '?') + 'v=' + LUMEN_ASSET_VERSION;
 
 const LUMEN_HTML_MANIFEST = {
   "auth": [
@@ -67,7 +70,7 @@ const LUMEN_JS_MANIFEST = [
 ];
 
 async function loadFragment(path, targetId) {
-  const res = await fetch(path, {cache:'no-cache'});
+  const res = await fetch(lumenVersionedPath(path), {cache:'no-store'});
   if (!res.ok) throw new Error(`No se pudo cargar ${path} (${res.status})`);
   const html = await res.text();
   document.getElementById(targetId).insertAdjacentHTML('beforeend', html);
@@ -76,7 +79,7 @@ async function loadFragment(path, targetId) {
 function loadScript(path) {
   return new Promise((resolve, reject) => {
     const s = document.createElement('script');
-    s.src = path;
+    s.src = lumenVersionedPath(path);
     s.async = false;
     s.onload = resolve;
     s.onerror = () => reject(new Error(`No se pudo cargar ${path}`));
@@ -95,7 +98,7 @@ async function bootLumen() {
     if (status) status.remove();
     window.__LUMEN_MODULAR_BOOT_OK__ = true;
   } catch (err) {
-    console.error('[LUMEN v210] Error de arranque modular:', err);
+    console.error('[LUMEN v220] Error de arranque modular:', err);
     if (status) status.innerHTML = `<strong>No se pudo iniciar LUMEN.</strong><br>${String(err.message||err)}`;
     window.__LUMEN_MODULAR_BOOT_ERROR__ = String(err.message||err);
   }
