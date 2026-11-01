@@ -698,6 +698,7 @@ function buildD3Graph(containerId, nodes, links, colorFn, tooltipEdgeFn, fuenteT
   const link=g.append('g').selectAll('line').data(links).join('line')
     .attr('stroke', d=>colorFn(d.tipo))
     .attr('stroke-width', 2).attr('stroke-opacity', 0.75)
+    .attr('stroke-dasharray',d=>d.origen_atribucion==='biografia'?'7 5':null)
     .attr('marker-end', d=>`url(#arr-${d.tipo})`)
     .style('cursor', onLinkClick ? 'pointer' : 'default')
     .on('click', function(event, d) {
@@ -904,7 +905,7 @@ function renderMapaInfluencias() {
     const key=`${sid}→${tid}→${fam}`;
     if(!edgeMap.has(key)){
       edgeMap.set(key,{
-        source:sid,target:tid,tipo:fam,id:rel.id,
+        source:sid,target:tid,tipo:fam,id:rel.id,origen_atribucion:rel.origen_atribucion||'directa',
         pagina:rel.pagina,texto:rel.texto,libro_ref:rel.libro_ref,
         evidenceIds:[rel.id],evidenceCount:1
       });
@@ -912,6 +913,7 @@ function renderMapaInfluencias() {
       const edge=edgeMap.get(key);
       edge.evidenceIds.push(rel.id);
       edge.evidenceCount++;
+      if(rel.origen_atribucion!=='biografia')edge.origen_atribucion='directa';
     }
   });
 

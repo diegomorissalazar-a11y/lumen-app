@@ -601,6 +601,7 @@ let _infJsonContext={subtype:'',bookId:''};
 
 function openInfJsonImport(tipo,context={}) {
   _infJsonContext={subtype:context.subtype||'',bookId:context.bookId||''};
+  const atribSelect=document.getElementById('inf-json-atribucion'); if(atribSelect)atribSelect.value='directa';
   _infJsonSessionSavedV2144=[];
   document.getElementById('inf-json-tipo').value = tipo || '';
   const title = INF_TIPO_LABELS[tipo] || 'Cargar influencias JSON';
@@ -701,7 +702,7 @@ function migrateInfluenciasToAuthorGraph() {
   return changed;
 }
 function normalizeInfDedupeKey(inf) {
-  return [inf.tipo, inf.fuente, inf.destino, inf.ubicacion_tipo, inf.ubicacion_detalle]
+  return [inf.tipo, inf.fuente, inf.destino, inf.ubicacion_tipo, inf.ubicacion_detalle, inf.origen_atribucion||'directa']
     .map(normalizeTxt).join('|');
 }
 function importedInfExists(inf) {
@@ -724,6 +725,9 @@ function influenceBibliographyMissing(obj) {
 function mapJsonInfluenceToLumen(item, forcedTipo) {
   const tipo = normalizeImportedInfluenceType(item.tipo || forcedTipo);
   const fuente = item.fuente?.nombre || item.fuente || item.autor_citado || item.autor || item.origen || '';
+  const atribucion = item.origen_atribucion || item.atribucion || document.getElementById('inf-json-atribucion')?.value || 'directa';
+  const biografiado=String(item.autor_biografiado || item.biografiado || '').trim();
+  if (atribucion === 'biografia' && !biografiado) throw new Error('Biografía: indica autor_biografiado en el JSON.');
   const contextBook=_infJsonContext.bookId?findBookCanonicalById(_infJsonContext.bookId):null;
   const destinoTitulo = item.destino?.titulo || item.destino || item.libro_destino || contextBook?.titulo || '';
   const destinoAutor = item.destino?.autor || item.autor_destino || contextBook?.autor || '';
@@ -748,15 +752,17 @@ function mapJsonInfluenceToLumen(item, forcedTipo) {
   const importedIsbn=item.isbn||item.iso?.isbn||'';
   const importedCity=item.ciudad_publicacion||item.ciudad||item.iso?.ciudad_publicacion||item.iso?.ciudad||'';
   const obj = {
-    id: 'inf_' + Date.now() + '_' + Math.random().toString(36).slice(2,7), id_import:item.id_import||'', tipo, tipo_relacion:tipo, fuente, destino, obra,
+    id: 'inf_' + Date.now() + '_' + Math.random().toString(36).slice(2,7), id_import:item.id_import||'', tipo, tipo_relacion:tipo, fuente:atribucion==='biografia'?biografiado:fuente, destino:atribucion==='biografia'?fuente:destino, obra,
+    origen_atribucion:atribucion, autor_documental:String(item.fuente_autor||item.autor_documental||evidenceBook?.autor||'').trim(), autor_biografiado:biografiado, accion_atribuida:item.accion||'',
     subtipo_relacion:item.subtipo_relacion||item.forma||item.subtipo||_infJsonContext.subtype||'', objeto_tipo:item.objeto_tipo||item.objeto||'',
     ubicacion_funcional:item.ubicacion_funcional||'', fuente_evidencia:item.fuente_evidencia||item.evidencia?.fuente||'',
     editorial:importedEditorial||bib.editorial||'', anio_pub:importedYear||bib.anio||'', anio_edicion:importedYear||bib.anio||'', ciudad:importedCity||bib.ciudad||'', edicion:importedEdition||bib.edicion||'', isbn:importedIsbn||bib.isbn||'',
     fuente_autor_id:'', destino_libro_id:evidenceBook?.id||'', evidencia_libro_id:evidenceBook?.id||'', destino_autor_id:evidenceBook?.autorId||'', editorial_id:evidenceBook?.editorialId||'',
     ubicacion_tipo:ubicTipo, ubicacion_detalle:ubicDetalle, texto:ev.texto||item.texto_citado||item.texto||'', fuente_nombre_en_texto:item.fuente?.nombre_en_texto||'', obra_tipo:item.obra_citada?.tipo||'', peso:item.peso||1, nota:item.nota||'', tags:asArr(item.tags),
-    destino_tipo:'autor', destino_autor:destinoMeta.destinoAutor||destino, destino_titulo:destinoMeta.libroRef||destinoTitulo, destino_original:destinoTitulo, libro_ref:destinoMeta.libroRef||destinoTitulo,
+    destino_tipo:'autor', destino_autor:atribucion==='biografia'?fuente:(destinoMeta.destinoAutor||destino), destino_titulo:destinoMeta.libroRef||destinoTitulo, destino_original:destinoTitulo, libro_ref:destinoMeta.libroRef||destinoTitulo,
     pagina:ubicTipo==='pagina'?(parseInt(ubicDetalle)||null):null, import_schema:'lumen_influencias_import_v1', importedAt:Date.now(), createdAt:Date.now()
   };
+  if (atribucion === 'biografia') {obj.destino_autor_id=canonicalEntityId('aut',fuente);obj.fuente_libro_id='';}
   migrateInfluenceTaxonomy(obj);
   obj.import_key=normalizeInfDedupeKey(obj);
   return {obj,destinoExiste:!!destinoMeta.destinoExiste,destinoOriginal:destinoTitulo,destinoAutor:destinoMeta.destinoAutor||destinoAutor,evidenceBook,missingBib:influenceBibliographyMissing(obj)};
@@ -775,7 +781,7 @@ function prepareInfJsonPreview(raw) {
 
 function renderInfJsonPreview() {
   const el = document.getElementById('inf-json-preview');
-  const validas = _infJsonPreviewItems.filter(x=>!x.duplicada).length;
+  const validas = _infJsonPreviewItems.filter(x=>!x.duplicada&&x.obj.origen_atribucion!=='comparacion').length;
   const dup = _infJsonPreviewItems.filter(x=>x.duplicada).length;
   const libres = _infJsonPreviewItems.filter(x=>!x.destinoExiste).length;
   const bibPend=_infJsonPreviewItems.filter(x=>x.destinoExiste&&x.missingBib&&x.missingBib.length).length;
@@ -792,14 +798,14 @@ function renderInfJsonPreview() {
           <strong style="font-size:12px;color:var(--ink);">${INF_TIPO_LABELS[p.obj.tipo]||p.obj.tipo}</strong>
         </div>
         <div style="font-size:12px;color:var(--ink2);line-height:1.5;"><strong>${escapeHtml(p.obj.fuente)}</strong> → <strong>${escapeHtml(p.obj.destino||'Sin destino')}</strong></div>
-        <div style="font-size:11px;color:var(--ink4);margin-top:3px;">${escapeHtml(p.obj.ubicacion_detalle||'Sin ubicación')}${p.obj.id_import?' · ID: '+escapeHtml(p.obj.id_import):''}</div>
+        <div style="font-size:11px;color:var(--ink4);margin-top:3px;">${escapeHtml(p.obj.origen_atribucion==='biografia'?'Biografía · '+p.obj.autor_documental:p.obj.origen_atribucion==='comparacion'?'Comparación — no se incorporará al grafo':'Fuente directa')} · ${escapeHtml(p.obj.ubicacion_detalle||'Sin ubicación')}${p.obj.id_import?' · ID: '+escapeHtml(p.obj.id_import):''}</div>
         ${p.missingBib?.length?`<div style="font-size:10px;color:var(--gold);margin-top:5px;">⚠ Faltan para ISO: ${escapeHtml(p.missingBib.join(', '))}</div>`:''}${p.obj.texto?`<div style="font-family:var(--font-serif);font-size:12px;color:var(--ink3);margin-top:6px;line-height:1.5;">“${escapeHtml(p.obj.texto)}”</div>`:''}
       </div>`).join('')}`;
   document.getElementById('inf-json-confirm').style.display = validas ? 'inline-flex' : 'none';
 }
 
 function confirmInfJsonImport() {
-  const nuevos=_infJsonPreviewItems.filter(x=>!x.duplicada).map(x=>x.obj); if(!nuevos.length){showToast('No hay relaciones nuevas para importar');return;}
+  const nuevos=_infJsonPreviewItems.filter(x=>!x.duplicada&&x.obj.origen_atribucion!=='comparacion').map(x=>x.obj); if(!nuevos.length){showToast('No hay relaciones nuevas para importar');return;}
   nuevos.forEach(obj=>{const ent=resolveCanonicalEntity('aut',obj.fuente,true);obj.fuente_autor_id=ent.id;obj.fuente=ent.nombreCanonico||obj.fuente;ensureInfluenceCanonicalRefs(obj);});
   const ts=Date.now(); try{safeLocalSetItem('lumen_mapas_backup_before_influencias_import_'+ts,JSON.stringify(mapas));}catch(e){}
   mapas.influencias=mapas.influencias||[];mapas.influencias.push(...nuevos);saveMapas();
@@ -942,6 +948,8 @@ function openModalInfluencia(editId, presetTipo) {
       if(document.getElementById('inf-objeto-tipo')) document.getElementById('inf-objeto-tipo').value=inf.objeto_tipo||'autor';
       if(document.getElementById('inf-ubicacion-funcional')) document.getElementById('inf-ubicacion-funcional').value=inf.ubicacion_funcional||'cuerpo_texto';
       if(document.getElementById('inf-fuente-evidencia')) document.getElementById('inf-fuente-evidencia').value=inf.fuente_evidencia||'obra';
+      if(document.getElementById('inf-origen-atribucion'))document.getElementById('inf-origen-atribucion').value=inf.origen_atribucion||'directa';
+      if(document.getElementById('inf-autor-documental'))document.getElementById('inf-autor-documental').value=inf.autor_documental||'';
       // Fuente
       const fuenteSel = document.getElementById('inf-fuente-sel');
       const fuenteOpt=[...fuenteSel.options].find(o => (inf.fuente_autor_id && o.dataset.authorId===inf.fuente_autor_id) || (!inf.fuente_autor_id && o.value===inf.fuente));
@@ -998,6 +1006,8 @@ function openModalInfluencia(editId, presetTipo) {
   } else {
     // Reset
     document.getElementById('inf-tipo').value = normalizeRelationFamily(presetTipo || 'referencia');
+    if(document.getElementById('inf-origen-atribucion'))document.getElementById('inf-origen-atribucion').value='directa';
+    if(document.getElementById('inf-autor-documental'))document.getElementById('inf-autor-documental').value='';
     onInfTipoChange();
     onInfFuenteIndirectaChange();
     ['inf-editorial','inf-anio-pub','inf-ciudad','inf-edicion',
@@ -1043,6 +1053,7 @@ function saveInfluencia() {
     ...previous,
     id:               editId || 'inf_' + Date.now(),
     tipo, tipo_relacion:tipo, fuente: fuenteCanon, destino: destAuthorOverrideName || destino, obra,
+    origen_atribucion:document.getElementById('inf-origen-atribucion')?.value||'directa', autor_documental:document.getElementById('inf-autor-documental')?.value.trim()||'',
     subtipo_relacion: document.getElementById('inf-subtipo')?.value||'pendiente_clasificacion',
     objeto_tipo: document.getElementById('inf-objeto-tipo')?.value||'autor',
     ubicacion_funcional: document.getElementById('inf-ubicacion-funcional')?.value||'cuerpo_texto',
@@ -1081,6 +1092,7 @@ function saveInfluencia() {
     createdAt:        editId ? (mapas.influencias.find(x=>x.id===editId)?.createdAt||Date.now()) : Date.now()
   };
 
+  if(obj.origen_atribucion==='comparacion'){showToast('Comparación del biógrafo: conserva la evidencia como nota; no se crea una influencia.');return;}
   migrateInfluenceTaxonomy(obj);
   ensureInfluenceCanonicalRefs(obj);
   if (editId) { const i=mapas.influencias.findIndex(x=>x.id===editId); if(i>=0) mapas.influencias[i]=obj; }

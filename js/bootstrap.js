@@ -1,7 +1,7 @@
-// LUMEN v221 — bootstrap modular
+// LUMEN v222 — bootstrap modular
 'use strict';
 
-const LUMEN_ASSET_VERSION = '221';
+const LUMEN_ASSET_VERSION = '222';
 const lumenVersionedPath = path => path + (path.includes('?') ? '&' : '?') + 'v=' + LUMEN_ASSET_VERSION;
 
 const LUMEN_HTML_MANIFEST = {
@@ -98,7 +98,7 @@ async function bootLumen() {
     if (status) status.remove();
     window.__LUMEN_MODULAR_BOOT_OK__ = true;
   } catch (err) {
-    console.error('[LUMEN v221] Error de arranque modular:', err);
+    console.error('[LUMEN v222] Error de arranque modular:', err);
     if (status) status.innerHTML = `<strong>No se pudo iniciar LUMEN.</strong><br>${String(err.message||err)}`;
     window.__LUMEN_MODULAR_BOOT_ERROR__ = String(err.message||err);
   }

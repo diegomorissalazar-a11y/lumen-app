@@ -11,6 +11,7 @@
       <p style="font-size:12px;color:var(--ink3);line-height:1.6;margin-bottom:10px;">
         Pega la evidencia. El libro fuente, su autor y sus datos ISO se toman de la ficha seleccionada. También siguen siendo compatibles los JSON completos anteriores.
       </p>
+      <div class="field"><label>Origen de atribución para este lote (se puede sobrescribir en cada JSON)</label><select class="input" id="inf-json-atribucion"><option value="directa">Fuente directa / formato anterior</option><option value="biografia">Biografía: relación atribuida al biografiado</option><option value="comparacion">Comparación del biógrafo (solo evidencia, no grafo)</option></select></div>
       <textarea id="inf-json-text" class="input" rows="15" spellcheck="false"
         placeholder='{"autor_citado":"Miguel de Cervantes","obra_citada":"Don Quijote de la Mancha","pagina":"47","texto_citado":"..."}'
         style="width:100%;min-height:310px;font-family:monospace;font-size:12px;line-height:1.55;background:#fff;resize:vertical;margin-bottom:12px;"></textarea>
@@ -91,6 +92,8 @@
         <div class="field"><label>Fuente de evidencia</label><select class="input" id="inf-fuente-evidencia"><option value="obra">Obra</option><option value="entrevista">Entrevista</option><option value="prensa">Prensa</option><option value="ensayo">Ensayo</option><option value="carta_correspondencia">Carta / correspondencia</option><option value="programa">Programa</option><option value="podcast">Podcast</option><option value="documento">Documento</option><option value="otra">Otra</option></select></div>
       </div>
 
+      <div class="field"><label>Origen de atribución</label><select class="input" id="inf-origen-atribucion"><option value="directa">Fuente directa</option><option value="biografia">Biografía: atribución al biografiado</option><option value="comparacion">Comparación del biógrafo (no sumar al grafo)</option></select></div>
+      <div class="field"><label>Autor de la fuente secundaria (si aplica)</label><input class="input" id="inf-autor-documental" placeholder="Ej.: Irène Némirovsky"></div>
       <!-- 2. Fuente — autor que influye -->
       <div class="field">
         <label id="inf-fuente-label">Autor que influye / cita</label>

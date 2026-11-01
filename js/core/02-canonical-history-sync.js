@@ -393,12 +393,14 @@ function ensureInfluenceCanonicalRefs(inf) {
     const bib=canonicalBookBibliography(evidenceBook);
     inf.destino_libro_id = evidenceBook.id;
     inf.evidencia_libro_id = evidenceBook.id;
-    inf.destino_autor_id = evidenceBook.autorId || canonicalEntityId('aut', evidenceBook.autor);
+    if (inf.origen_atribucion !== 'biografia') inf.destino_autor_id = evidenceBook.autorId || canonicalEntityId('aut', evidenceBook.autor);
     inf.editorial_id = evidenceBook.editorialId || canonicalEntityId('edi', evidenceBook.editorial);
     inf.libro_ref = evidenceBook.titulo || inf.libro_ref;
     inf.destino_titulo = evidenceBook.titulo || inf.destino_titulo;
-    inf.destino_autor = evidenceBook.autor || inf.destino_autor;
-    inf.destino = evidenceBook.autor || inf.destino;
+    if (inf.origen_atribucion !== 'biografia') {
+      inf.destino_autor = evidenceBook.autor || inf.destino_autor;
+      inf.destino = evidenceBook.autor || inf.destino;
+    }
     // No sobrescribir metadatos ISO explícitos ya persistidos en la relación.
     inf.editorial = inf.editorial || bib.editorial || '';
     inf.anio_pub = inf.anio_pub || inf.anio_edicion || bib.anio || '';

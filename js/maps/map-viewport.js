@@ -110,6 +110,8 @@ function initExpandedMapSearch(name){
  const controls=document.createElement('div');controls.id='map-expanded-filter-controls';
  controls.innerHTML='<input type="search" class="input" placeholder="Buscar y centrar nodo..." aria-label="Buscar nodo" oninput="searchExpandedMapNode(this.value)"><div id="map-expanded-search-results"></div>';
  if(name==='influencias'){
+  const legend=document.createElement('div');legend.className='lumen-attribution-legend';legend.innerHTML='<strong>Simbología · procedencia</strong><span><i class="legend-line direct"></i> Fuente directa</span><span><i class="legend-line secondary"></i> Biografía / atribución indirecta</span><span>Las comparaciones del biógrafo no se incorporan como influencias.</span>';
+  controls.prepend(legend);
   const group=document.createElement('div');group.className='lumen-expanded-filter-options';
   [['todos','Todos'],['leidos','Autores leídos'],['inventario','En inventario'],['ambos','Leídos + inventario']].forEach(([value,label])=>{
    const wrapper=document.createElement('label'),input=document.createElement('input');input.type='radio';input.name='lumen-influence-scope';input.checked=lumenMapFilters.influencias===value;input.onchange=()=>updateLumenMapFilter('influencias',value,true);
