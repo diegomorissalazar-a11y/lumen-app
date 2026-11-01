@@ -178,6 +178,7 @@ function inventoryApplyBibliographyToBook(book, n, canon, authorEntity) {
   if (pub?.id) { book.editorialId = pub.id; book.editorial = pub.nombreCanonico; }
   else if (e.editorial && !book.editorial) book.editorial = e.editorial;
   book.bibliografia = bib;
+  if (Number(n.paginas)>0 && !(Number(book.paginas)>0)) book.paginas = Number(n.paginas);
   if (e.anio != null && e.anio !== '') book.anio_pub = Number(e.anio) || e.anio;
   if (e.descripcionEdicion || e.numeroEdicion) book.edicion = String(e.descripcionEdicion || e.numeroEdicion);
   if (e.ciudad) book.ciudad_publicacion = e.ciudad;

@@ -229,21 +229,22 @@ function normalizeBibliographicPayload(raw){
 
   const isNew=schema==='lumen_bibliografia_import_v1'||('edicion' in l)||('anio_obra_original' in l)||('editorial' in l);
   const oldO=l.obra_original||{}, oldE=l.edicion_consultada||{};
-  const ne=l.edicion||{};
+  const ne=(l.edicion&&typeof l.edicion==='object')?l.edicion:{};
   const editorial=isNew?(l.editorial||oldE.editorial||''):(oldE.editorial||l.editorial||'');
   const ciudad=isNew?(l.ciudad_publicacion||oldE.ciudad||''):(oldE.ciudad||l.ciudad_publicacion||'');
   const pais=isNew?(l.pais_publicacion||oldE.pais||''):(oldE.pais||l.pais_publicacion||'');
-  const anioEd=isNew?(ne.anio??oldE.anio??null):(oldE.anio??ne.anio??null);
+  const anioEd=isNew?(ne.anio??l.anio_edicion??oldE.anio??null):(oldE.anio??ne.anio??l.anio_edicion??null);
   const mesEd=isNew?(ne.mes||oldE.mes||''):(oldE.mes||ne.mes||'');
   const numEd=isNew?(ne.numero??oldE.numero_edicion??null):(oldE.numero_edicion??ne.numero??null);
-  const descEd=isNew?(ne.descripcion||oldE.descripcion_edicion||''):(oldE.descripcion_edicion||ne.descripcion||'');
+  const descEd=isNew?(ne.descripcion||(typeof l.edicion==='string'?l.edicion:'')||oldE.descripcion_edicion||''):(oldE.descripcion_edicion||ne.descripcion||(typeof l.edicion==='string'?l.edicion:'')||'');
   const isbn=isNew?(l.isbn||oldE.isbn||''):(oldE.isbn||l.isbn||'');
   const trads=isNew?asArr(l.traductores||oldE.traductores||oldE.traductor):asArr(oldE.traductores||oldE.traductor||l.traductores);
   const tituloOriginal=isNew?(l.titulo_original||oldO.titulo_original||''):(oldO.titulo_original||l.titulo_original||'');
   const idiomaOriginal=isNew?(l.idioma_original||oldO.idioma_original||''):(oldO.idioma_original||l.idioma_original||'');
-  let pi=isNew?(l.anio_obra_original??oldO.periodo_inicio??oldO.anio_inicio??null):(oldO.periodo_inicio??oldO.anio_inicio??l.anio_obra_original??null);
-  let pf=isNew?(l.anio_obra_original_fin??oldO.periodo_fin??oldO.anio_fin??null):(oldO.periodo_fin??oldO.anio_fin??l.anio_obra_original_fin??null);
-  let original=isNew?(l.anio_obra_original??oldO.anio_publicacion_original??null):(oldO.anio_publicacion_original??l.anio_obra_original??null);
+  const originalPeriod=String(l.periodo_original||'').trim().match(/^(-?\d{1,4})\s*[-–—/]\s*(-?\d{1,4})$/);
+  let pi=isNew?(l.anio_obra_original??l.publicacion_original??(originalPeriod?Number(originalPeriod[1]):null)??oldO.periodo_inicio??oldO.anio_inicio??null):(oldO.periodo_inicio??oldO.anio_inicio??l.anio_obra_original??null);
+  let pf=isNew?(l.anio_obra_original_fin??(originalPeriod?Number(originalPeriod[2]):null)??oldO.periodo_fin??oldO.anio_fin??null):(oldO.periodo_fin??oldO.anio_fin??l.anio_obra_original_fin??null);
+  let original=isNew?(l.anio_obra_original??l.publicacion_original??oldO.anio_publicacion_original??null):(oldO.anio_publicacion_original??l.anio_obra_original??l.publicacion_original??null);
   if(original==null&&pi!=null)original=Number(pi);
   if(pi==null&&original!=null)pi=Number(original);
   if(original!=null&&pf!=null)original=Math.min(Number(original),Number(pf));
@@ -252,13 +253,13 @@ function normalizeBibliographicPayload(raw){
   const hist=asArr(l.historial_ediciones).map(x=>({numero:x?.numero??null,mes:x?.mes||'',anio:x?.anio??null}));
 
   const payload={
-    schema:'lumen_ficha_bibliografica_v1',sourceSchema:schema||'compatible',titulo:l.titulo||'',autor:l.autor||'',
+    schema:'lumen_ficha_bibliografica_v1',sourceSchema:schema||'compatible',titulo:l.titulo||'',autor:l.autor||'',paginas:Number(l.paginas)||0,
     obraOriginal:{tituloOriginal,idiomaOriginal,anioPublicacionOriginal:original,periodoInicio:pi,periodoFin:pf},
     edicionConsultada:{editorial,ciudad,pais,anio:anioEd,mes:mesEd,numeroEdicion:numEd,descripcionEdicion:descEd,isbn,
       coleccion:oldE.coleccion||'',traductores:trads,prologo:asArr(oldE.prologo),introduccion:asArr(oldE.introduccion),notas:asArr(oldE.notas),impresor:oldE.impresor||''},
     historialEdiciones:hist,notasBibliograficas:notes
   };
-  const hasUseful=[payload.titulo,payload.autor,editorial,ciudad,pais,anioEd,numEd,descEd,isbn,trads.length,original,pi,pf,tituloOriginal,idiomaOriginal,notes].some(v=>v!==''&&v!==null&&v!==undefined&&v!==0);
+  const hasUseful=[payload.paginas,payload.titulo,payload.autor,editorial,ciudad,pais,anioEd,numEd,descEd,isbn,trads.length,original,pi,pf,tituloOriginal,idiomaOriginal,notes].some(v=>v!==''&&v!==null&&v!==undefined&&v!==0);
   if(!hasUseful)throw new Error('El JSON no contiene datos bibliográficos reconocibles.');
   return payload;
 }
@@ -273,7 +274,7 @@ function previewBibliographicJson(){
     const cur=currentBibComparable(target||{}),n=_bibJsonParsed,e=n.edicionConsultada,o=n.obraOriginal;
     const periodNew=[o.periodoInicio,o.periodoFin].filter(x=>x!==null&&x!==''&&x!==undefined).join('–');
     const rows=[
-      ['Título',cur.titulo,n.titulo],['Autor',cur.autor,n.autor],['Editorial',cur.editorial,e.editorial],['Ciudad',cur.ciudad,e.ciudad],['País',cur.pais,e.pais],
+      ['Páginas',target?.paginas||'',n.paginas||''],['Título',cur.titulo,n.titulo],['Autor',cur.autor,n.autor],['Editorial',cur.editorial,e.editorial],['Ciudad',cur.ciudad,e.ciudad],['País',cur.pais,e.pais],
       ['Año de edición',cur.anioEdicion,e.anio],['Edición',cur.edicion,e.descripcionEdicion||e.numeroEdicion],['ISBN',cur.isbn,e.isbn],
       ['Traductores',cur.traductores,e.traductores.join('; ')],['Título original',cur.tituloOriginal,o.tituloOriginal],['Idioma original',cur.idiomaOriginal,o.idiomaOriginal],
       ['Publicación original',cur.anioOriginal,o.anioPublicacionOriginal],['Período original',cur.periodo,periodNew],['Notas bibliográficas',cur.notas,n.notasBibliograficas]
@@ -299,6 +300,7 @@ function buildCanonicalBibliography(n){
 function applyBibliographyToEditor(n,canon){
   const e=n.edicionConsultada,o=n.obraOriginal,{pub,tradEnt,bib}=canon;
   const set=(id,v)=>{const x=document.getElementById(id);if(x&&v!==''&&v!=null)x.value=v;};
+  if(n.paginas>0)set('f-paginas',n.paginas);
   set('f-editorial',pub?.nombreCanonico||e.editorial);set('f-ciudad-pub',e.ciudad);set('f-anio-pub',e.anio);set('f-edicion',e.descripcionEdicion||e.numeroEdicion);set('f-traductor',tradEnt.map(x=>x.nombreCanonico).join('; '));
   set('f-isbn',e.isbn);set('f-anio-original',o.anioPublicacionOriginal);set('f-titulo-original',o.tituloOriginal);
   const originalPeriod=[o.periodoInicio,o.periodoFin].filter((v,i,a)=>v!==null&&v!==undefined&&v!==''&&(i===0||String(v)!==String(a[0]))).join('–');

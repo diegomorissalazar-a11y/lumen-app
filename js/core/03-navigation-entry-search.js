@@ -31,17 +31,29 @@ function openGeneroQuick(entryId) {
   const generos = [
     'Novela','Cuento','Poesía','Ensayo','Historia','Biografía',
     'Crónica','Ciencia ficción','Filosofía','Teatro','Infantil',
-    'Entrevista','Religión','Mitología'
+    'Entrevista','Religión','Mitología',...storedCustomBookGenres()
   ];
   document.getElementById('genero-quick-chips').innerHTML = generos.map(g => `
     <button type="button" class="genero-chip${current.includes(g)?' active':''}"
-      data-g="${g}" onclick="toggleGeneroQuickMeta(this)"
-      style="padding:7px 14px;font-size:12px;">${g}</button>
-  `).join('');
+      data-g="${escapeHtml(g)}" onclick="toggleGeneroQuickMeta(this)"
+      style="padding:7px 14px;font-size:12px;">${escapeHtml(g)}</button>
+  `).join('') + `<button type="button" class="genero-chip" onclick="addCanonicalQuickGenre()">+ Otro género</button>`;
   if(typeof populateQuickLiteraryMetadata==='function') populateQuickLiteraryMetadata(e);
   openModal('modal-genero-quick');
 }
 
+async function addCanonicalQuickGenre(){
+  const value=await requestCustomGenreName();if(value===null)return;
+  const name=normalizeCustomBookGenre(value);if(!name)return;
+  const list=storedCustomBookGenres();
+  if(!list.some(g=>g.toLocaleLowerCase('es')===name.toLocaleLowerCase('es'))){list.push(name);safeLocalSetItem(LUMEN_CUSTOM_BOOK_GENRES_KEY,JSON.stringify(list));}
+  if(typeof taxonomyResolve==='function')taxonomyResolve('genre',name,{create:true});
+  const host=document.getElementById('genero-quick-chips');
+  const existing=[...host.querySelectorAll('[data-g]')].find(e=>e.dataset.g.toLocaleLowerCase('es')===name.toLocaleLowerCase('es'));
+  const btn=existing||document.createElement('button');
+  if(!existing){btn.type='button';btn.className='genero-chip';btn.dataset.g=name;btn.textContent=name;btn.onclick=()=>toggleGeneroQuickMeta(btn);host.insertBefore(btn,host.lastElementChild);}
+  btn.classList.add('active');showToast('✓ Género disponible: '+name);
+}
 function saveGeneroQuick() {
   const entryId = document.getElementById('genero-quick-id').value;
   const e = db.entries.find(x => x.id === entryId); if(!e) return;
@@ -191,11 +203,63 @@ function resetHistoriaFields(){['hist-fecha-inicio','hist-fecha-fin'].forEach(id
 function setHistoriaFields(historia){const h=historia||{},b=historyBounds(h),set=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v??''},tmp={type:'libro',historia:{...h}};ensureHistoriaCanonicalRefs(tmp);set('hist-fecha-inicio',b.inicio);set('hist-fecha-fin',b.fin);updateHistoriaFieldsVisibility();renderHistoricalLineFlags('hist-line-flags',historyLineIdsForEntry(tmp))}
 function formatHistoriaYear(y) { const n=Number(y); if(!Number.isFinite(n)) return ''; return n<0?`${Math.abs(n)} a. C.`:`${n} d. C.`; }
 
+// Modal independiente para alta de género; no usa window.prompt y confirma antes de crear.
+function requestCustomGenreName() {
+  return new Promise(resolve => {
+    const backdrop=document.createElement('div');
+    backdrop.style.cssText='position:fixed;inset:0;background:rgba(20,16,12,.65);display:flex;align-items:center;justify-content:center;z-index:99999;padding:18px;';
+    backdrop.innerHTML='<div role="dialog" aria-modal="true" aria-labelledby="custom-genre-title" style="background:#f5efe6;border:1px solid #cdbda5;border-radius:9px;padding:20px;width:min(420px,100%);box-shadow:0 12px 35px #0004;"><h3 id="custom-genre-title" style="margin:0 0 13px;">Agregar género</h3><label for="custom-genre-input" style="display:block;margin-bottom:8px;">Nombre del género</label><input id="custom-genre-input" type="text" maxlength="100" placeholder="Ej.: Memorias" style="width:100%;padding:11px;border:1px solid #cdbda5;border-radius:4px;box-sizing:border-box;"><div style="display:flex;gap:8px;justify-content:flex-end;margin-top:15px;"><button type="button" data-action="cancel" style="padding:10px;">Cancelar</button><button type="button" data-action="save" style="padding:10px;background:#241b17;color:white;border-radius:4px;">Guardar género</button></div></div>';
+    document.body.appendChild(backdrop);
+    const input=backdrop.querySelector('input');
+    const close=(v)=>{document.removeEventListener('keydown',onKey,true);backdrop.remove();resolve(v);};
+    const onKey=e=>{if(e.key==='Escape'){e.preventDefault();close(null);}else if(e.key==='Enter'){e.preventDefault();close(input.value);}};
+    document.addEventListener('keydown',onKey,true);
+    backdrop.querySelector('[data-action="cancel"]').onclick=()=>close(null);
+    backdrop.querySelector('[data-action="save"]').onclick=()=>close(input.value);
+    backdrop.onclick=e=>{if(e.target===backdrop)close(null);};
+    input.focus();
+  });
+}
+// Géneros personalizados: catálogo canónico reutilizable, respaldado por taxonomía.
+const LUMEN_CUSTOM_BOOK_GENRES_KEY = 'lumen_custom_book_genres_v1';
+function normalizeCustomBookGenre(value) {
+  const cleaned=String(value||'').trim().replace(/\s+/g,' ');
+  return cleaned ? cleaned.charAt(0).toLocaleUpperCase('es')+cleaned.slice(1).toLocaleLowerCase('es') : '';
+}
+function storedCustomBookGenres() {
+  try { const saved=JSON.parse(localStorage.getItem(LUMEN_CUSTOM_BOOK_GENRES_KEY)||'[]'); const canon=typeof taxonomyConcepts==='function'?taxonomyConcepts('genre').map(c=>c.preferredLabel):[]; return [...new Set([...(Array.isArray(saved)?saved:[]),...canon])]; } catch (_) { return []; }
+}
+function refreshCustomBookGenres() {
+  const host=document.getElementById('generos-chips'); if(!host)return;
+  const names=new Set([...storedCustomBookGenres(),...(db.entries||[]).flatMap(e=>e.type==='libro'?(e.generos||[]):[])]);
+  for(const name of names){
+    const normalized=normalizeCustomBookGenre(name);if(!normalized)continue;
+    const existing=[...host.querySelectorAll('.genero-chip[data-g]')].find(b=>b.dataset.g.toLocaleLowerCase('es')===normalized.toLocaleLowerCase('es'));
+    if(existing)continue;
+    const btn=document.createElement('button');btn.type='button';btn.className='genero-chip';btn.dataset.g=normalized;btn.textContent=normalized;btn.onclick=()=>toggleGenero(btn);
+    const other=document.getElementById('f-genero-otro');host.insertBefore(btn,other||null);
+  }
+}
+async function addCanonicalBookGenre() {
+  const input=await requestCustomGenreName();if(input===null)return;
+  const normalized=normalizeCustomBookGenre(input);if(!normalized){showToast('Ingresa un género válido');return;}
+  const names=storedCustomBookGenres();
+  const all=[...names,...(db.entries||[]).flatMap(e=>e.generos||[])];
+  const existing=all.find(g=>normalizeCustomBookGenre(g).toLocaleLowerCase('es')===normalized.toLocaleLowerCase('es'));
+  const canonical=existing||normalized;
+  if(!existing){names.push(canonical);safeLocalSetItem(LUMEN_CUSTOM_BOOK_GENRES_KEY,JSON.stringify(names));}
+  if(typeof taxonomyResolve==='function')taxonomyResolve('genre',canonical,{create:true});
+  refreshCustomBookGenres();
+  const btn=[...document.querySelectorAll('#generos-chips .genero-chip[data-g]')].find(b=>b.dataset.g.toLocaleLowerCase('es')===canonical.toLocaleLowerCase('es'));
+  if(btn&&!btn.classList.contains('active'))toggleGenero(btn);
+  showToast('✓ Género disponible: '+canonical);
+}
 function getGenerosSeleccionados() {
   return [...document.querySelectorAll('#generos-chips .genero-chip.active')].map(b => b.dataset.g);
 }
 
 function setGenerosSeleccionados(generos) {
+  refreshCustomBookGenres();
   document.querySelectorAll('#generos-chips .genero-chip').forEach(b => {
     b.classList.toggle('active', (generos||[]).includes(b.dataset.g));
   });
