@@ -1,7 +1,7 @@
-// LUMEN v222 — bootstrap modular
+// LUMEN v223 — bootstrap modular
 'use strict';
 
-const LUMEN_ASSET_VERSION = '222';
+const LUMEN_ASSET_VERSION = '223';
 const lumenVersionedPath = path => path + (path.includes('?') ? '&' : '?') + 'v=' + LUMEN_ASSET_VERSION;
 
 const LUMEN_HTML_MANIFEST = {
@@ -88,19 +88,25 @@ function loadScript(path) {
 }
 
 async function bootLumen() {
+  const bootStarted = performance.now();
+  window.__LUMEN_DIAGNOSTICS__ = {version:'223', bootStarted, resources:[], failures:[], bootDurationMs:null};
   const status = document.getElementById('boot-status');
   try {
     for (const path of LUMEN_HTML_MANIFEST.auth) await loadFragment(path, 'lumen-auth-root');
     for (const path of LUMEN_HTML_MANIFEST.app) await loadFragment(path, 'app');
     for (const path of LUMEN_HTML_MANIFEST.modal) await loadFragment(path, 'lumen-modal-root');
     for (const path of LUMEN_JS_MANIFEST) await loadScript(path);
+    await loadScript("js/diagnostics.js");
     document.documentElement.classList.add('lumen-ready');
     if (status) status.remove();
     window.__LUMEN_MODULAR_BOOT_OK__ = true;
+    window.__LUMEN_DIAGNOSTICS__.bootDurationMs = Math.round(performance.now() - bootStarted);
+    window.dispatchEvent(new Event('lumen:boot-complete'));
   } catch (err) {
-    console.error('[LUMEN v222] Error de arranque modular:', err);
+    console.error('[LUMEN v223] Error de arranque modular:', err);
     if (status) status.innerHTML = `<strong>No se pudo iniciar LUMEN.</strong><br>${String(err.message||err)}`;
     window.__LUMEN_MODULAR_BOOT_ERROR__ = String(err.message||err);
+    window.__LUMEN_DIAGNOSTICS__.failures.push(String(err.message||err));
   }
 }
 
