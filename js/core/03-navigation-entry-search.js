@@ -1010,6 +1010,7 @@ function saveEntry() {
     const finalBook = db.entries.find(e => e.id === entry.id);
     syncInventoryFromBook(finalBook);
     if(finalBook&&(finalBook.generos||[]).includes('Poesía')&&typeof offerPoetryMetadataPropagation==='function')setTimeout(()=>offerPoetryMetadataPropagation(finalBook),180);
+    lumenSaveMark('sincronizar_inventario');
     if(typeof invalidateRecommendations==='function') invalidateRecommendations('ficha de libro modificada');
   }
   lumenSaveMark('inventario');

@@ -251,12 +251,24 @@ const RecommendationEngine = (() => {
   }
 
   function load() {
-    try { const x=JSON.parse(localStorage.getItem(CACHE_KEY)||'null'); if(x?.categories) return x; } catch (_) {}
-    return calculate('sin caché');
+    if (!dirty) {
+      try { const x=JSON.parse(localStorage.getItem(CACHE_KEY)||'null'); if(x?.categories) return x; } catch (_) {}
+    }
+    return recalculate(dirtyReason || 'sin caché');
   }
 
-  function recalculate(reason='cambio relevante') { dirty=false; dirtyReason=''; return calculate(reason); }
-  function invalidate(reason='cambio relevante') { dirty=false; dirtyReason=reason; return recalculate(reason); }
+  function recalculate(reason='cambio relevante') {
+    const result = calculate(reason);
+    dirty=false; dirtyReason='';
+    return result;
+  }
+  // Do not synchronously rebuild the expensive recommendation graph on every book save.
+  // Rebuild on opening Descubrir (load) or explicit Recalcular (recalculate).
+  function invalidate(reason='cambio relevante') {
+    dirty=true; dirtyReason=reason;
+    try { localStorage.removeItem(CACHE_KEY); } catch (_) {}
+    return null;
+  }
   function status() { return {dirty, reason:lastReason || dirtyReason}; }
   return {calculate,load,recalculate,invalidate,status,isRead,isAvailable,inventoryPool,belongsToCategory};
 })();
@@ -325,5 +337,5 @@ function openDiscover() {
 
 // Compatibilidad con llamadas existentes: desde v189 un "invalidate" recalcula inmediatamente.
 function invalidateRecommendations(reason) {
-  try { return RecommendationEngine.recalculate(reason || 'cambio relevante'); } catch (err) { console.warn('[LUMEN v189] Recalcular Descubrir:', err); return null; }
+  try { return RecommendationEngine.invalidate(reason || 'cambio relevante'); } catch (err) { console.warn('[LUMEN v225] Invalidar Descubrir:', err); return null; }
 }

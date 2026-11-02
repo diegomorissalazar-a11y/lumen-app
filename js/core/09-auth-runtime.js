@@ -431,6 +431,11 @@ setTimeout(() => {
 auth.onAuthStateChanged(async user => {
   const overlay = document.getElementById('auth-overlay');
   if (user) {
+    // The auth event may fire before the sequential loader has initialized Inventory/Mapas.
+    // Wait before any render, remote merge or Firestore subscription touches those modules.
+    if (!window.__LUMEN_MODULAR_BOOT_OK__) {
+      await new Promise(resolve => window.addEventListener('lumen:boot-complete', resolve, {once:true}));
+    }
     currentUser = user;
     overlay.style.display = 'none';
     updateUserUI(user);

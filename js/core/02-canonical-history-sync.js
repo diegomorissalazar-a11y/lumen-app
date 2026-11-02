@@ -1067,7 +1067,7 @@ try {
 } catch (err) {
   console.warn('[LUMEN v184] Migración canónica inicial omitida para no bloquear el arranque:', err);
 }
-setTimeout(() => { if(typeof compactLocalDBOnStartup === "function") compactLocalDBOnStartup(); else console.warn("[LUMEN] Compactación diferida: módulo de persistencia aún no disponible"); }, 300);
+window.addEventListener("lumen:boot-complete", () => { if (typeof compactLocalDBOnStartup === "function") compactLocalDBOnStartup(); }, {once:true});
 
 
 // v193 — aliases locales de compatibilidad estática para auditoría incremental.
