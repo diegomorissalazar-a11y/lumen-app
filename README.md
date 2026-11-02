@@ -1,1 +1,2 @@
-LUMEN v223 — Publicar el contenido de esta carpeta en GitHub Pages. Auditoría y notas en audits/ del ZIP.
+LUMEN v224
+Publicar el contenido de esta carpeta como raíz de GitHub Pages. Diagnóstico: menú de usuario → Diagnóstico y rendimiento.

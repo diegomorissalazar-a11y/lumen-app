@@ -282,6 +282,7 @@ async function manualSaveToCloud() {
 async function pullAndMerge(uid, silent) {
   try {
     if (auth.currentUser) await auth.currentUser.getIdToken(false);
+    if (typeof readCloudCompatibleV162 !== 'function') throw new Error('Módulo de lectura cloud v2 no está cargado');
     const remote = await readCloudCompatibleV162(uid);
     if (!remote) { if (!silent) showToast('La nube no tiene datos aún'); return; }
     const merged = mergeEntries(db.entries, remote.entries || []);
@@ -313,6 +314,10 @@ async function manualLoadFromCloud() {
 
 function subscribeToFirestore(uid) {
   if (unsubscribeSnapshot) unsubscribeSnapshot();
+  if (typeof cloudDocRefV162 !== 'function') {
+    console.warn('[LUMEN v224] Escucha Firestore diferida: módulo cloud no disponible');
+    return;
+  }
   const manifestRef = cloudDocRefV162(uid, LUMEN_SYNC_MANIFEST_DOC);
   unsubscribeSnapshot = manifestRef.onSnapshot({ includeMetadataChanges:false }, async snap => {
     if (!snap.exists || snap.metadata.hasPendingWrites || isSyncing) return;

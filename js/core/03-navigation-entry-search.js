@@ -687,16 +687,24 @@ function syncInventoryFromBook(book) {
   if (!book || book.type !== 'libro') return;
   let inv = loadInventory();
   const linked = inv.filter(x => x.linkedEntryId === book.id);
+  let changed = false;
   if (book.enInventario) {
     if (!linked.length) {
       inv.push({inventoryId:'inv_flag_'+Date.now(),sourceId:'library_flag',titulo:book.titulo||'',autor:book.autor||'',editorial:book.editorial||'',linkedEntryId:book.id,inCart:false,_updatedAt:Date.now()});
+      changed = true;
     } else {
-      linked.forEach(x=>{x.titulo=book.titulo||x.titulo;x.autor=book.autor||x.autor;x.editorial=book.editorial||x.editorial;x._updatedAt=Date.now();});
+      linked.forEach(x => {
+        const titulo=book.titulo||x.titulo, autor=book.autor||x.autor, editorial=book.editorial||x.editorial;
+        if (x.titulo!==titulo || x.autor!==autor || x.editorial!==editorial) {
+          x.titulo=titulo; x.autor=autor; x.editorial=editorial; x._updatedAt=Date.now(); changed=true;
+        }
+      });
     }
   } else if (linked.length) {
     inv = inv.filter(x => x.linkedEntryId !== book.id);
+    changed=true;
   }
-  saveInventory(inv,false);
+  if (changed) saveInventory(inv,false);
 }
 
 
@@ -848,6 +856,9 @@ function askMovieViewingDate() {
 // ═══════════════════════════════════
 function saveEntry() {
   return lumenSafeAction("Guardar ficha", async () => {
+  const lumenSaveStarted = performance.now();
+  const lumenSavePhases = [];
+  const lumenSaveMark = label => lumenSavePhases.push({phase:label,ms:Math.round((performance.now()-lumenSaveStarted)*10)/10});
   let entry = { id: editingId || 'e_' + Date.now(), type: currentType, notas: document.getElementById('f-notas').value };
   if (currentType === 'libro') {
     const titulo = document.getElementById('f-titulo').value.trim();
@@ -958,10 +969,12 @@ function saveEntry() {
       anio: parseInt(document.getElementById('fs-anio-visto').value) || new Date().getFullYear(),
       cover: document.getElementById('fs-cover').value };
   }
+  lumenSaveMark('formulario');
   if (entry.type === 'libro') {
     ensureBookCanonicalRefs(entry);
     if (typeof saveAuthorTemporalDataFromForm === 'function') saveAuthorTemporalDataFromForm(entry.autor);
   }
+  lumenSaveMark('normalizacion');
   if (editingId) {
     entry._updatedAt = Date.now();
     const idx = db.entries.findIndex(e => e.id === editingId);
@@ -992,19 +1005,25 @@ function saveEntry() {
     }
     db.entries.push(entry);
   }
+  lumenSaveMark('actualizar_ficha');
   if (currentType === 'libro') {
     const finalBook = db.entries.find(e => e.id === entry.id);
     syncInventoryFromBook(finalBook);
     if(finalBook&&(finalBook.generos||[]).includes('Poesía')&&typeof offerPoetryMetadataPropagation==='function')setTimeout(()=>offerPoetryMetadataPropagation(finalBook),180);
     if(typeof invalidateRecommendations==='function') invalidateRecommendations('ficha de libro modificada');
   }
-  saveDB();
+  lumenSaveMark('inventario');
+  const persisted = saveDB();
+  lumenSaveMark('persistencia');
+  if (persisted === false) { showToast('⚠ No se confirmó el almacenamiento local; revisa el respaldo.', 5000); }
   closeModal('modal-add');
   showToast('✓ Guardado en biblioteca');
   if (currentScreen === 'home') renderHome();
   if (currentScreen === 'library') renderLibrary();
   if (currentScreen === 'year') renderYear();
   if (currentScreen === 'stats') renderStats();
+  lumenSaveMark('render');
+  window.__LUMEN_SAVE_PROFILES__ = (window.__LUMEN_SAVE_PROFILES__ || []).slice(-19).concat([{totalMs:Math.round((performance.now()-lumenSaveStarted)*10)/10,phases:lumenSavePhases}]);
 
   });
 }
