@@ -1,4 +1,4 @@
-// LUMEN v191 — Descubrir / próximas lecturas desde el inventario
+// LUMEN v226 — Descubrir: índices de lectura, influencias, rutas y afinidades
 'use strict';
 
 const RecommendationEngine = (() => {
@@ -72,35 +72,85 @@ const RecommendationEngine = (() => {
     return Math.min(4, Math.max(0, ...canonicalAuthorIds(book).map(id => counts.get(id) || 0), 0));
   }
 
-  function authorInfluenceScore(book) {
-    const authorIds = new Set(canonicalAuthorIds(book));
-    const aid = [...authorIds][0] || ''; // nombre legado conservado para continuidad/auditoría
-    if (!aid || !authorIds.size) return 0;
-    const readAuthorIds = new Set(readBooks().flatMap(canonicalAuthorIds).filter(Boolean));
-    const pairs = new Set();
+  function authorInfluenceScore(book, context) {
+    const authorIds = canonicalAuthorIds(book);
+    if (!authorIds.length) return 0;
     const connected = new Set();
-    (mapas.influencias || []).forEach(r => {
-      ensureInfluenceCanonicalRefs(r);
-      const s = r.fuente_autor_id || canonicalEntityId('aut', r.fuente || '');
-      const d = r.destino_autor_id || canonicalEntityId('aut', r.destino_autor || r.destino || '');
-      if (!s || !d) return;
-      const key = `${s}->${d}`;
-      if (pairs.has(key)) return;
-      pairs.add(key); // citas repetidas entre la misma pareja cuentan una vez
-      if (authorIds.has(s) && readAuthorIds.has(d)) connected.add(d);
-      if (authorIds.has(d) && readAuthorIds.has(s)) connected.add(s);
+    authorIds.forEach(id => {
+      const neighbors = context?.influenceNeighbors?.get(id);
+      if (neighbors) neighbors.forEach(other => connected.add(other));
     });
     return connected.size;
   }
 
-  function routeScore(book) {
+  function routeScore(book, context) {
     const title = norm(book.titulo);
-    let incoming = 0, outgoing = 0;
-    (mapas.rutas || []).forEach(r => {
-      if (norm(r.destino) === title) incoming += 1;
-      if (norm(r.fuente) === title) outgoing += 1;
+    return { incoming: context?.routesIn?.get(title) || 0, outgoing: context?.routesOut?.get(title) || 0 };
+  }
+
+  // Los índices son efímeros: se reconstruyen por ejecución, sin cambiar datos ni puntuaciones.
+  // Una misma pareja dirigida cuenta una sola vez; ambos extremos pueden conectar con un autor leído.
+  function buildRecommendationContext(read) {
+    const started = performance.now();
+    const readAuthorIds = new Set();
+    const readByCategory = new Map();
+    const readByHistoryLine = new Map();
+    const temporalByCategory = new Map();
+    const poetryTraditions = new Set();
+    const poetryMovements = new Set();
+    read.forEach(book => {
+      canonicalAuthorIds(book).forEach(id => readAuthorIds.add(id));
+      ['historia','poesía','cuentos','novela'].forEach(category => {
+        if (!belongsToCategory(book, category)) return;
+        if (!readByCategory.has(category)) readByCategory.set(category, []);
+        readByCategory.get(category).push(book);
+      });
+      if (belongsToCategory(book,'poesía')) {
+        const tradition = book?.poesia?.tradicionId || norm(book?.poesia?.tradicion || '');
+        const movement = book?.poesia?.corrienteId || norm(book?.poesia?.corriente || '');
+        if (tradition) poetryTraditions.add(tradition);
+        if (movement) poetryMovements.add(movement);
+      }
     });
-    return { incoming, outgoing };
+    const influenceNeighbors = new Map();
+    const seenPairs = new Set();
+    const addNeighbor = (id, other) => {
+      if (!influenceNeighbors.has(id)) influenceNeighbors.set(id, new Set());
+      influenceNeighbors.get(id).add(other);
+    };
+    (mapas.influencias || []).forEach(ref => {
+      // Mantener la misma resolución canónica que el motor anterior, pero solo una vez por relación.
+      ensureInfluenceCanonicalRefs(ref);
+      const source = ref.fuente_autor_id || canonicalEntityId('aut', ref.fuente || '');
+      const target = ref.destino_autor_id || canonicalEntityId('aut', ref.destino_autor || ref.destino || '');
+      if (!source || !target) return;
+      const key = `${source}->${target}`;
+      if (seenPairs.has(key)) return;
+      seenPairs.add(key);
+      if (readAuthorIds.has(target)) addNeighbor(source, target);
+      if (readAuthorIds.has(source)) addNeighbor(target, source);
+    });
+    const routesIn = new Map(), routesOut = new Map();
+    (mapas.rutas || []).forEach(route => {
+      const dest = norm(route.destino), source = norm(route.fuente);
+      routesIn.set(dest, (routesIn.get(dest) || 0) + 1);
+      routesOut.set(source, (routesOut.get(source) || 0) + 1);
+    });
+    (readByCategory.get('historia') || []).forEach(book => {
+      ensureHistoriaCanonicalRefs(book);
+      historyLineIdsForEntry(book).forEach(id => {
+        if (!readByHistoryLine.has(id)) readByHistoryLine.set(id, []);
+        readByHistoryLine.get(id).push(book);
+      });
+    });
+    ['poesía','cuentos','novela'].forEach(category => {
+      temporalByCategory.set(category, (readByCategory.get(category) || [])
+        .map(book => temporalRangeForBook(book, category)).filter(range => range.inicio != null));
+    });
+    const context = { influenceNeighbors, routesIn, routesOut, readByCategory,
+      readByHistoryLine, temporalByCategory, poetryTraditions, poetryMovements };
+    context.indexDurationMs = Math.round((performance.now() - started) * 10) / 10;
+    return context;
   }
 
   function exactBookClassifications(book) {
@@ -117,13 +167,11 @@ const RecommendationEngine = (() => {
     return exactBookClassifications(book).has(genre);
   }
 
-  function historyContinuity(book) {
+  function historyContinuity(book, context) {
     if (!belongsToCategory(book, 'historia')) return {score:0, reason:''};
     ensureHistoriaCanonicalRefs(book);
     const targetIds = historyLineIdsForEntry(book);
-    const readHistory = readBooks().filter(e => belongsToCategory(e,'historia'));
-    const readByLine = new Map();
-    readHistory.forEach(e=>{ensureHistoriaCanonicalRefs(e);historyLineIdsForEntry(e).forEach(id=>{if(!readByLine.has(id))readByLine.set(id,[]);readByLine.get(id).push(e);});});
+    const readByLine = context.readByHistoryLine;
     if (!targetIds.length) return {score:0, reason:'historia aún sin líneas históricas configuradas'};
     const knownIds=targetIds.filter(id=>readByLine.has(id)), newIds=targetIds.filter(id=>!readByLine.has(id));
     const reference=[...new Map(knownIds.flatMap(id=>readByLine.get(id)||[]).map(e=>[e.id,e])).values()];
@@ -159,10 +207,10 @@ const RecommendationEngine = (() => {
     return a1 < b0 ? b0-a1 : a0-b1;
   }
 
-  function temporalAffinity(book, category) {
+  function temporalAffinity(book, category, context) {
     const target=temporalRangeForBook(book,category);
     if(target.inicio==null)return {score:0,reason:''};
-    const refs=readBooks().filter(e=>belongsToCategory(e,category)).map(e=>temporalRangeForBook(e,category)).filter(r=>r.inicio!=null);
+    const refs=context.temporalByCategory.get(category) || [];
     if(!refs.length)return {score:0,reason:''};
     const distances=refs.map(r=>rangeDistance(target,r)).filter(x=>x!=null);
     if(!distances.length)return {score:0,reason:''};
@@ -173,25 +221,24 @@ const RecommendationEngine = (() => {
     return {score:0,reason:''};
   }
 
-  function poetryAffinity(book) {
+  function poetryAffinity(book, context) {
     if(!belongsToCategory(book,'poesía'))return {score:0,reasons:[]};
-    const read=readBooks().filter(e=>belongsToCategory(e,'poesía'));
     const reasons=[];let score=0;
     const tradition=book?.poesia?.tradicionId||norm(book?.poesia?.tradicion||'');
     const movement=book?.poesia?.corrienteId||norm(book?.poesia?.corriente||'');
-    if(tradition && read.some(e=>(e?.poesia?.tradicionId||norm(e?.poesia?.tradicion||''))===tradition)){score+=2;reasons.push('continúa una tradición poética presente en tus lecturas');}
-    if(movement && read.some(e=>(e?.poesia?.corrienteId||norm(e?.poesia?.corriente||''))===movement)){score+=2;reasons.push('coincide con un período o corriente poética que ya lees');}
-    const temporal=temporalAffinity(book,'poesía');score+=temporal.score;if(temporal.reason)reasons.push(temporal.reason);
+    if(tradition && context.poetryTraditions.has(tradition)){score+=2;reasons.push('continúa una tradición poética presente en tus lecturas');}
+    if(movement && context.poetryMovements.has(movement)){score+=2;reasons.push('coincide con un período o corriente poética que ya lees');}
+    const temporal=temporalAffinity(book,'poesía',context);score+=temporal.score;if(temporal.reason)reasons.push(temporal.reason);
     return {score,reasons};
   }
 
-  function scoreBook(book, counts, category='') {
+  function scoreBook(book, counts, category='', context) {
     const authorAffinity = authorAffinityScore(book, counts);
-    const influence = Math.min(5, authorInfluenceScore(book));
-    const route = routeScore(book);
-    const history = historyContinuity(book);
-    const temporal = (category==='novela'||category==='cuentos') ? temporalAffinity(book,category) : {score:0,reason:''};
-    const poetry = category==='poesía' ? poetryAffinity(book) : {score:0,reasons:[]};
+    const influence = Math.min(5, authorInfluenceScore(book, context));
+    const route = routeScore(book, context);
+    const history = historyContinuity(book, context);
+    const temporal = (category==='novela'||category==='cuentos') ? temporalAffinity(book,category,context) : {score:0,reason:''};
+    const poetry = category==='poesía' ? poetryAffinity(book,context) : {score:0,reasons:[]};
     // Disponibilidad no suma puntos: es condición de entrada al pool.
     let score = 0;
     score += authorAffinity * 2;
@@ -237,14 +284,26 @@ const RecommendationEngine = (() => {
   }
 
   function calculate(reason='recalculo') {
+    const calculationStart = performance.now();
     normalizeCompletionStates();
     const categories = ['historia','poesía','cuentos','novela'];
     const pool = inventoryPool();
+    const read = readBooks();
     const counts = authorReadCounts();
+    const context = buildRecommendationContext(read);
+    const titleById = new Map((db.entries || []).filter(e => e?.type === 'libro').map(e => [e.id, String(e.titulo || '')]));
     const result = {generatedAt:Date.now(), reason, poolCount:pool.length, categories:{}};
     categories.forEach(cat => {
-      result.categories[cat] = categoryBooks(cat, pool).map(b => scoreBook(b, counts, cat)).sort((a,b)=>b.score-a.score || String(findBookCanonicalById(a.bookId)?.titulo||'').localeCompare(String(findBookCanonicalById(b.bookId)?.titulo||''),'es')).slice(0,5);
+      result.categories[cat] = categoryBooks(cat, pool)
+        .map(b => scoreBook(b, counts, cat, context))
+        .sort((a,b)=>b.score-a.score || (titleById.get(a.bookId)||'').localeCompare(titleById.get(b.bookId)||'','es'))
+        .slice(0,5);
     });
+    // Tiempo visible en diagnósticos, sin alterar el formato persistido de las recomendaciones.
+    const durationMs = Math.round((performance.now() - calculationStart) * 10) / 10;
+    const samples = window.__LUMEN_RECOMMENDATION_PROFILES__ || (window.__LUMEN_RECOMMENDATION_PROFILES__ = []);
+    samples.push({durationMs, indexDurationMs:context.indexDurationMs, poolCount:pool.length, influenceCount:(mapas.influencias||[]).length, routeCount:(mapas.rutas||[]).length});
+    if (samples.length > 20) samples.shift();
     try { safeLocalSetItem(CACHE_KEY, JSON.stringify(result)); } catch (_) {}
     lastReason = reason;
     return result;
@@ -287,7 +346,7 @@ function startRecommendationReading(bookId) {
     book._updatedAt = Date.now();
     ensureBookCanonicalRefs(book);
     saveDB();
-    RecommendationEngine.recalculate('lectura recomendada iniciada');
+    RecommendationEngine.invalidate('lectura recomendada iniciada');
     closeModal('modal-discover');
     showToast(`✓ “${book.titulo}” agregado a Lectura en curso`, 3200);
     gotoScreen('home');
@@ -331,11 +390,20 @@ function renderDiscoverRecommendations(force=false) {
 }
 
 function openDiscover() {
-  renderDiscoverRecommendations(false);
+  const body = document.getElementById('discover-body');
   openModal('modal-discover');
+  if (body) body.innerHTML = '<div class="discover-intro">Calculando recomendaciones…</div>';
+  // Paint first: avoid an apparently inert button while building the graph indexes.
+  requestAnimationFrame(() => setTimeout(() => {
+    try { renderDiscoverRecommendations(false); }
+    catch (error) {
+      console.error('[LUMEN v226] No se pudieron calcular recomendaciones:', error);
+      if (body) body.textContent = 'No se pudieron calcular las recomendaciones. Revisa la consola.';
+    }
+  }, 0));
 }
 
-// Compatibilidad con llamadas existentes: desde v189 un "invalidate" recalcula inmediatamente.
+// Compatibilidad: invalidar solo marca la caché; el cálculo ocurre al abrir Descubrir.
 function invalidateRecommendations(reason) {
-  try { return RecommendationEngine.invalidate(reason || 'cambio relevante'); } catch (err) { console.warn('[LUMEN v225] Invalidar Descubrir:', err); return null; }
+  try { return RecommendationEngine.invalidate(reason || 'cambio relevante'); } catch (err) { console.warn('[LUMEN v226] Invalidar Descubrir:', err); return null; }
 }
