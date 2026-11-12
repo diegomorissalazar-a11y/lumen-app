@@ -143,13 +143,19 @@ function previewInventoryJson() {
       const missing = containedCandidates.unresolved.length ? ` · Sin vincular: ${containedCandidates.unresolved.join(', ')}` : '';
       rows.push(inventoryPreviewRow('Obras contenidas', found ? `${found}${missing}` : `No se encontraron obras existentes para ${containedCandidates.parts.join(' / ')}`, containedCandidates.matches.length ? 'match' : 'similar'));
     }
+    if (n.paginas>0) rows.push(inventoryPreviewRow('Páginas', n.paginas));
     if (e.isbn) rows.push(inventoryPreviewRow('ISBN', e.isbn));
     if (e.anio) rows.push(inventoryPreviewRow('Año edición', e.anio));
     if (e.descripcionEdicion || e.numeroEdicion) rows.push(inventoryPreviewRow('Edición', e.descripcionEdicion || e.numeroEdicion));
     if (e.ciudad) rows.push(inventoryPreviewRow('Ciudad', e.ciudad));
+    if (e.pais) rows.push(inventoryPreviewRow('País', e.pais));
+    if (o.tituloOriginal) rows.push(inventoryPreviewRow('Título original', o.tituloOriginal));
+    if (o.idiomaOriginal) rows.push(inventoryPreviewRow('Idioma original', o.idiomaOriginal));
     if (e.traductores?.length) rows.push(inventoryPreviewRow('Traductores', e.traductores.join('; ')));
     if (o.anioPublicacionOriginal != null) rows.push(inventoryPreviewRow('Publicación original', o.anioPublicacionOriginal));
     if (period) rows.push(inventoryPreviewRow('Período original', period));
+    if (n.notasBibliograficas) rows.push(inventoryPreviewRow('Notas bibliográficas', n.notasBibliograficas));
+    if (n.historialEdiciones?.length) rows.push(inventoryPreviewRow('Historial de ediciones', n.historialEdiciones.length+' registro(s)')); 
 
     const preview = document.getElementById('inventory-json-preview');
     if (preview) {

@@ -220,48 +220,79 @@ function sanitizeBibliographicJsonText(txt){
   return s;
 }
 function normalizeBibliographicPayload(raw){
-  if(!raw||typeof raw!=='object')throw new Error('JSON bibliográfico vacío o inválido.');
+  if(!raw||typeof raw!=='object'||Array.isArray(raw))throw new Error('JSON bibliográfico vacío o inválido.');
   const schema=raw.schema||'';
   const accepted=['lumen_bibliografia_import_v1','lumen_ficha_bibliografica_v1'];
   if(schema&&!accepted.includes(schema))throw new Error('Schema no reconocido: '+schema);
   const l=raw.libro||raw;
-  if(!l||typeof l!=='object')throw new Error('Falta el objeto libro.');
+  if(!l||typeof l!=='object'||Array.isArray(l))throw new Error('Falta el objeto libro.');
 
-  const isNew=schema==='lumen_bibliografia_import_v1'||('edicion' in l)||('anio_obra_original' in l)||('editorial' in l);
-  const oldO=l.obra_original||{}, oldE=l.edicion_consultada||{};
-  const ne=(l.edicion&&typeof l.edicion==='object')?l.edicion:{};
-  const editorial=isNew?(l.editorial||oldE.editorial||''):(oldE.editorial||l.editorial||'');
-  const ciudad=isNew?(l.ciudad_publicacion||oldE.ciudad||''):(oldE.ciudad||l.ciudad_publicacion||'');
-  const pais=isNew?(l.pais_publicacion||oldE.pais||''):(oldE.pais||l.pais_publicacion||'');
-  const anioEd=isNew?(ne.anio??l.anio_edicion??oldE.anio??null):(oldE.anio??ne.anio??l.anio_edicion??null);
-  const mesEd=isNew?(ne.mes||oldE.mes||''):(oldE.mes||ne.mes||'');
-  const numEd=isNew?(ne.numero??oldE.numero_edicion??null):(oldE.numero_edicion??ne.numero??null);
-  const descEd=isNew?(ne.descripcion||(typeof l.edicion==='string'?l.edicion:'')||oldE.descripcion_edicion||''):(oldE.descripcion_edicion||ne.descripcion||(typeof l.edicion==='string'?l.edicion:'')||'');
-  const isbn=isNew?(l.isbn||oldE.isbn||''):(oldE.isbn||l.isbn||'');
-  const trads=isNew?asArr(l.traductores||oldE.traductores||oldE.traductor):asArr(oldE.traductores||oldE.traductor||l.traductores);
-  const tituloOriginal=isNew?(l.titulo_original||oldO.titulo_original||''):(oldO.titulo_original||l.titulo_original||'');
-  const idiomaOriginal=isNew?(l.idioma_original||oldO.idioma_original||''):(oldO.idioma_original||l.idioma_original||'');
-  const originalPeriod=String(l.periodo_original||'').trim().match(/^(-?\d{1,4})\s*[-–—/]\s*(-?\d{1,4})$/);
-  let pi=isNew?(l.anio_obra_original??l.publicacion_original??(originalPeriod?Number(originalPeriod[1]):null)??oldO.periodo_inicio??oldO.anio_inicio??null):(oldO.periodo_inicio??oldO.anio_inicio??l.anio_obra_original??null);
-  let pf=isNew?(l.anio_obra_original_fin??(originalPeriod?Number(originalPeriod[2]):null)??oldO.periodo_fin??oldO.anio_fin??null):(oldO.periodo_fin??oldO.anio_fin??l.anio_obra_original_fin??null);
-  let original=isNew?(l.anio_obra_original??l.publicacion_original??oldO.anio_publicacion_original??null):(oldO.anio_publicacion_original??l.anio_obra_original??l.publicacion_original??null);
+  // Both supported schemas may have the edition/original blocks beside `libro`,
+  // or (in legacy exports) nested inside it. Do not discard root-level metadata.
+  const oldO={...(raw.obra_original||{}),...(l.obra_original||{})};
+  const oldE={...(raw.edicion_consultada||{}),...(l.edicion_consultada||{})};
+  const ne=(l.edicion&&typeof l.edicion==='object')?l.edicion:
+           ((raw.edicion&&typeof raw.edicion==='object')?raw.edicion:{});
+  const pick=(...values)=>values.find(v=>v!==null&&v!==undefined&&v!=='')??null;
+  const text=(...values)=>String(pick(...values)??'').trim();
+  const editorial=text(l.editorial,raw.editorial,oldE.editorial,ne.editorial);
+  const ciudad=text(l.ciudad_publicacion,raw.ciudad_publicacion,oldE.ciudad,oldE.ciudad_publicacion);
+  const pais=text(l.pais_publicacion,raw.pais_publicacion,oldE.pais);
+  const anioEd=pick(ne.anio,l.anio_edicion,raw.anio_edicion,oldE.anio,oldE.anio_edicion);
+  const mesEd=text(ne.mes,oldE.mes);
+  const numEd=pick(ne.numero,ne.numero_edicion,oldE.numero_edicion,oldE.numero);
+  const descEd=text(ne.descripcion,ne.descripcion_edicion,
+    typeof l.edicion==='string'?l.edicion:null,
+    typeof raw.edicion==='string'?raw.edicion:null,
+    oldE.descripcion_edicion,oldE.descripcion);
+  const isbn=text(l.isbn,raw.isbn,oldE.isbn);
+  const trads=asArr(pick(l.traductores,raw.traductores,oldE.traductores,oldE.traductor)).filter(Boolean);
+  const tituloOriginal=text(l.titulo_original,raw.titulo_original,oldO.titulo_original);
+  const idiomaOriginal=text(l.idioma_original,raw.idioma_original,oldO.idioma_original);
+  const originalPeriod=text(l.periodo_original,raw.periodo_original);
+  const match=originalPeriod.match(/^(-?\d{1,4})\s*[-–—/]\s*(-?\d{1,4})$/);
+  let original=pick(l.anio_obra_original,l.publicacion_original,raw.anio_obra_original,raw.publicacion_original,oldO.anio_publicacion_original);
+  let pi=pick(l.anio_obra_original,raw.anio_obra_original,oldO.periodo_inicio,oldO.anio_inicio,match?Number(match[1]):null);
+  let pf=pick(l.anio_obra_original_fin,raw.anio_obra_original_fin,oldO.periodo_fin,oldO.anio_fin,match?Number(match[2]):null);
   if(original==null&&pi!=null)original=Number(pi);
   if(pi==null&&original!=null)pi=Number(original);
   if(original!=null&&pf!=null)original=Math.min(Number(original),Number(pf));
   if(pi!=null&&pf!=null)original=Math.min(Number(pi),Number(pf));
-  const notes=isNew?(l.notas_bibliograficas||''):(l.notas_bibliograficas||'');
-  const hist=asArr(l.historial_ediciones).map(x=>({numero:x?.numero??null,mes:x?.mes||'',anio:x?.anio??null}));
-
+  const notes=text(l.notas_bibliograficas,raw.notas_bibliograficas);
+  const hist=asArr(pick(l.historial_ediciones,raw.historial_ediciones)).filter(x=>x&&typeof x==='object').map(x=>({numero:x?.numero??null,mes:x?.mes||'',anio:x?.anio??null}));
+  const paginas=Number(pick(l.paginas,raw.paginas,oldE.paginas))||0;
   const payload={
-    schema:'lumen_ficha_bibliografica_v1',sourceSchema:schema||'compatible',titulo:l.titulo||'',autor:l.autor||'',paginas:Number(l.paginas)||0,
+    schema:'lumen_ficha_bibliografica_v1',sourceSchema:schema||'compatible',titulo:text(l.titulo,raw.titulo),autor:text(l.autor,raw.autor),paginas,
     obraOriginal:{tituloOriginal,idiomaOriginal,anioPublicacionOriginal:original,periodoInicio:pi,periodoFin:pf},
     edicionConsultada:{editorial,ciudad,pais,anio:anioEd,mes:mesEd,numeroEdicion:numEd,descripcionEdicion:descEd,isbn,
       coleccion:oldE.coleccion||'',traductores:trads,prologo:asArr(oldE.prologo),introduccion:asArr(oldE.introduccion),notas:asArr(oldE.notas),impresor:oldE.impresor||''},
     historialEdiciones:hist,notasBibliograficas:notes
   };
-  const hasUseful=[payload.paginas,payload.titulo,payload.autor,editorial,ciudad,pais,anioEd,numEd,descEd,isbn,trads.length,original,pi,pf,tituloOriginal,idiomaOriginal,notes].some(v=>v!==''&&v!==null&&v!==undefined&&v!==0);
+  const hasUseful=[paginas,payload.titulo,payload.autor,editorial,ciudad,pais,anioEd,numEd,descEd,isbn,trads.length,original,pi,pf,tituloOriginal,idiomaOriginal,notes].some(v=>v!==''&&v!==null&&v!==undefined&&v!==0);
   if(!hasUseful)throw new Error('El JSON no contiene datos bibliográficos reconocibles.');
+  const losses=bibliographicPayloadFieldLosses(raw,payload);
+  if(losses.length)throw new Error('Campos presentes en JSON que no se pudieron interpretar: '+losses.join(', ')+'. No se guardaron cambios.');
   return payload;
+}
+// Fail closed when known structured bibliographic fields silently disappear.
+function bibliographicPayloadFieldLosses(raw,n){
+  const l=raw.libro&&typeof raw.libro==='object'?raw.libro:raw;
+  const o={...(raw.obra_original||{}),...(l.obra_original||{})};
+  const e={...(raw.edicion_consultada||{}),...(l.edicion_consultada||{})};
+  const source=(...vals)=>vals.find(v=>v!==null&&v!==undefined&&v!==''&&(!Array.isArray(v)||v.length))??null;
+  const cases=[
+    ['Páginas',source(l.paginas,raw.paginas,e.paginas),n.paginas],
+    ['Editorial',source(l.editorial,raw.editorial,e.editorial),n.edicionConsultada.editorial],
+    ['Año de edición',source(l.anio_edicion,raw.anio_edicion,e.anio,e.anio_edicion),n.edicionConsultada.anio],
+    ['Ciudad',source(l.ciudad_publicacion,raw.ciudad_publicacion,e.ciudad),n.edicionConsultada.ciudad],
+    ['ISBN',source(l.isbn,raw.isbn,e.isbn),n.edicionConsultada.isbn],
+    ['Publicación original',source(l.anio_obra_original,l.publicacion_original,raw.anio_obra_original,raw.publicacion_original,o.anio_publicacion_original),n.obraOriginal.anioPublicacionOriginal],
+    ['Título original',source(l.titulo_original,raw.titulo_original,o.titulo_original),n.obraOriginal.tituloOriginal],
+    ['Idioma original',source(l.idioma_original,raw.idioma_original,o.idioma_original),n.obraOriginal.idiomaOriginal],
+    ['Edición',source(typeof l.edicion==='string'?l.edicion:null,typeof raw.edicion==='string'?raw.edicion:null,e.descripcion_edicion),n.edicionConsultada.descripcionEdicion],
+    ['Traductores',source(l.traductores,raw.traductores,e.traductores),n.edicionConsultada.traductores]
+  ];
+  return cases.filter(([label,src,dst])=>src!==null&&(dst===null||dst===undefined||dst===''||(Array.isArray(dst)&&!dst.length)||((label==='Páginas'||label==='Año de edición'||label==='Publicación original')&&!Number.isFinite(Number(dst))))).map(x=>x[0]);
 }
 function currentBibComparable(book){const ed=book?.bibliografia?.edicionConsultada||{},bo=book?.bibliografia?.obraOriginal||{};return {titulo:book?.titulo||'',autor:book?.autor||'',editorial:book?.editorial||ed.editorial||'',ciudad:book?.ciudad_publicacion||ed.ciudad||'',pais:ed.pais||'',anioEdicion:book?.anio_pub||ed.anio||'',edicion:book?.edicion||ed.descripcionEdicion||ed.numeroEdicion||'',isbn:book?.isbn||ed.isbn||'',traductores:book?.traductor||((ed.traductores||[]).join('; ')),anioOriginal:book?.anio_publicacion_original||bo.anioPublicacionOriginal||'',periodo:[book?.periodo_publicacion_inicio??bo.periodoInicio??'',book?.periodo_publicacion_fin??bo.periodoFin??''].filter(x=>x!==''&&x!=null).join('–'),tituloOriginal:bo.tituloOriginal||'',idiomaOriginal:book?.idioma||bo.idiomaOriginal||'',notas:book?.bibliografia?.notasBibliograficas||''};}
 function previewBibliographicJson(){
